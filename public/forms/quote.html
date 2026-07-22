@@ -1,0 +1,216 @@
+	const htmlContent = `
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<meta charset="utf-8" />
+	<title>Service Quote</title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 0; padding: 40px; color: #000; }
+		.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #444; padding-bottom: 10px; }
+		.logo { width: 120px; }
+		.title { background-color: #495057; color: #fff; padding: 15px 25px; font-size: 22px; font-weight: bold; text-align: right; }
+		
+		.meta-info, .addresses { display: flex; justify-content: space-between; margin-top: 20px; }
+		.meta-info div, .addresses div { width: 48%; font-size: 14px; }
+		.meta-info p, .addresses p { margin: 4px 0; }
+	
+		table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+		th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
+		th { background-color: #f0f0f0; }
+	
+		.total { text-align: right; font-size: 16px; font-weight: bold; margin-top: 20px; }
+		
+	.signature-section {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 50px;
+  font-size: 14px;
+}
+.signature-section .date,
+.signature-section .signature {
+  width: 48%;
+}
+.signature-section .signature img {
+  margin-top: 5px;
+  width: 120px;  /* smaller signature */
+  height: auto;
+}
+.signature-section .signature p {
+  margin-top: 10px;
+  line-height: 1.2;
+  white-space: pre-line; /* preserves line breaks */
+}
+
+	
+.payment-link {
+				margin-top: 40px;
+				text-align: center;
+				font-size: 12px;
+			}
+
+			.payment-link p {
+				margin: 0;
+			}
+
+			.payment-link span {
+				display: inline-block;
+				min-width: 250px;
+				border-bottom: 1px solid #000;
+				padding-bottom: 2px;
+			}
+
+			.terms {
+				margin-top: 80px;
+				font-size: 10px;
+				line-height: 1.4;
+				text-align: justify;
+				padding: 0 30px;
+			}
+
+			.footer {
+				margin-top: 140px;
+				font-size: 10px;
+				text-align: center;
+				border-top: 1px solid #000;
+				padding-top: 5px;
+			}
+
+	</style>
+	</head>
+	<body>
+		<div class="header">
+			<img class="logo" src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg" alt="Company Logo">
+			<div class="title">SERVICE QUOTE</div>
+		</div>
+	
+		<div class="meta-info">
+			<div>
+				<p><strong>Ref #:</strong> ${ref_no}</p>
+				<p><strong>Service Dates:</strong> ${service_dates}</p>
+				<p><strong>Due Date:</strong> ${due_date}</p>
+			</div>
+		</div>
+	
+		<div class="addresses">
+			<div>
+				<p><strong>FROM</strong></p>
+				<p>Social Sanitation Commercial Cleaning Solutions</p>
+				<p>5201 N 44TH St</p>
+				<p>Tampa, FL 33610</p>
+			</div>
+			<div>
+				<p><strong>TO</strong></p>
+				<p>${to_company_name}</p>
+				<p>${address_1}</p>
+				<p>${address_2}</p>
+			</div>
+		</div>
+	
+		<table>
+			<thead>
+				<tr>
+					<th>Description</th>
+					<th>Frequency</th>
+					<th>Quantity</th>
+          <th>Sqft</th>
+					<th>Unit Price</th>
+					<th>Amount ($)</th>
+				</tr>
+			</thead>
+			<tbody>
+				${items
+					.map((item) => {
+						const unit_price = Number(item.unit_price || item.unitPrice || 1);
+						const quantity = Number(item.quantity || 0);
+						const sqft = Number(item.sqft || 1);
+						const amount = unit_price * sqft;
+						// const amount = unit_price * quantity;
+
+						return `
+			<tr>
+				<td>${item.description}</td>
+				<td>${item.frequency || "-"}</td>
+				<td>${quantity}</td>
+         <td>${sqft}</td>
+				<td>$${unit_price.toFixed(2)}</td>
+				<td>$${amount.toFixed(2)}</td>
+			</tr>
+		`;
+					})
+					.join("")}
+
+			</tbody>
+		</table>
+	
+		<p class="total">Total: $${total_due.toFixed(2)}</p>
+	
+<div class="signature-section" 
+     style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 60px; font-size: 14px; width: 100%;">
+
+  <!-- Date -->
+  <div class="date" style="width: 48%; text-align: left;">
+    <p style="margin: 0; font-size: 12px; font-weight: bold;">
+      ${
+        date
+          ? new Date(date).toLocaleDateString("en-US", {
+              month: "long",
+              day: "2-digit",
+              year: "numeric",
+            })
+          : "Month-Day-Year"
+      }
+    </p>
+    <div style="border-top: 1px solid #000; width: 220px; margin: 5px 0 0 0;"></div>
+    <p style="margin: 0; font-size: 12px; font-weight: bold; text-align: center; width: 220px;">Date</p>
+  </div>
+
+  <!-- Signature -->
+  <div class="signature" style="width: 48%; text-align: left;">
+    ${
+      signature
+        ? `<img src="${signature}" alt="Signature" crossorigin="anonymous" style="width: 120px; height: auto; margin-bottom: 5px;" />`
+        : '<div style="height: 60px;"></div>'
+    }
+    <div style="border-top: 1px solid #000; width: 280px; margin-top: 5px;"></div>
+    <p style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold; color: #000;">
+      Social Sanitation Legal Representative Signature
+    </p>
+  </div>
+</div>
+
+
+
+	<!-- Square Payment Link Line -->
+		<div
+			class="payment-link"
+			style="margin-top: 60px; text-align: center; font-size: 12px"
+		>
+			<p style="margin: 0">
+				<strong>Square Payment Link:</strong>
+				<span
+					style="
+						display: inline-block;
+						min-width: 250px;
+						border-bottom: 1px solid #000;
+						padding-bottom: 2px;
+					"
+				>
+					${square_payment_url ? square_payment_url : ""}
+				</span>
+			</p>
+		</div>
+
+
+
+
+	
+		<div class="terms">
+			<p>All quotes and estimates are valid within thirty days from signed date. Prices are set for a thirty-day period, once the document is signed and dated by a Social Sanitation legal representative. Thirty days after customer's signature, this document and price becomes void, unless signed in contractual agreement. All services offered are appointment-based services. "Single Services" are charged a fifteen percent fee to schedule time and date any given service. "Reoccurring Service Customers" must have a time and date specified in a service request for additional services. Any holiday scheduling must be done thirty days prior to the scheduled service date. If billed monthly, all charges are final. If any questions, changes, or adjustments are needed, contact your representative.</p>
+		</div>
+	
+		<div class="footer">
+			SOCIAL SANITATION COMMERCIAL CLEANING SOLUTIONS &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp; REF#: ${ref_no}
+		</div>
+	</body>
+	</html>
+	`;

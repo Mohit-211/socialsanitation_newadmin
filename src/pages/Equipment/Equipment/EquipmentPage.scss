@@ -1,0 +1,48 @@
+@use "sass:color";
+
+.equipment-page {
+  padding: 24px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  &__heading {
+    margin: 0 !important;
+  }
+
+  &__subheading {
+    display: block;
+    margin-top: 2px;
+    font-size: 13px;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__search {
+    width: 260px;
+  }
+}
+
+.equipment-import-dragger {
+  margin-top: 12px;
+}
+
+.equipment-import-preview {
+  margin-top: 16px;
+
+  .ant-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+}

@@ -1,0 +1,56 @@
+@use "sass:color";
+
+.job-application-layout {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+
+  h5 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+    text-decoration: underline;
+  }
+  h4 {
+    text-align: center;
+  }
+  .section_form_layout {
+    margin: 10px 0px;
+  }
+  .top_left_heading {
+    font-weight: bold;
+    margin: 20px 0px;
+    p {
+      margin: 0;
+    }
+  }
+  .form_section {
+    margin: 50px 0px;
+  }
+  .Form_section_heading {
+    border: 1px solid black;
+    text-align: center;
+    font-weight: bold;
+    padding: 3px 0px;
+    margin: 20px 0px;
+  }
+  .stepper-container {
+    width: 250px; // Fixed width for stepper
+  }
+
+  .form-content {
+    flex: 1; // Takes remaining space
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    height: 100dvh;
+    overflow: scroll;
+  }
+
+  .step-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+  }
+}

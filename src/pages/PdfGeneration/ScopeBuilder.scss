@@ -1,0 +1,588 @@
+@use "sass:color";
+// ScopeBuilder.scss
+
+// ─── Tokens ───────────────────────────────────────────────
+$bg-page:        #f5f6fa;
+$bg-card:        #ffffff;
+$bg-card-inner:  #fafbfc;
+$bg-task:        #f8f9fb;
+
+$border:         #e8eaef;
+$border-focus:   #3b82f6;
+
+$text-primary:   #1a1a2e;
+$text-secondary: #6b7280;
+$text-muted:     #adb5bd;
+
+$blue:           #3b82f6;
+$blue-light:     #eff6ff;
+$blue-dark:      #1d4ed8;
+
+$green:          #22c55e;
+$green-light:    #dcfce7;
+$green-dark:     #15803d;
+
+$red:            #ef4444;
+$red-light:      #fee2e2;
+$red-accent:     #fef2f2;
+$red-border:     #fca5a5;
+
+$orange:         #f97316;
+$orange-light:   #fff7ed;
+
+$amber:          #f59e0b;
+$amber-light:    #fffbeb;
+
+$radius-lg:      16px;
+$radius-md:      12px;
+$radius-sm:      8px;
+$radius-xs:      6px;
+
+$shadow-card:    0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.04);
+$shadow-hover:   0 4px 20px rgba(0,0,0,.12);
+$transition:     all 0.18s ease;
+
+// ─── Spinner keyframe ─────────────────────────────────────
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Base ─────────────────────────────────────────────────
+.scope-builder {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: $bg-page;
+  padding: 28px;
+  min-height: 100vh;
+  color: $text-primary;
+}
+
+// ─── Header ───────────────────────────────────────────────
+.scope-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $bg-card;
+  padding: 20px 28px;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: 24px;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  &__icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: -0.3px;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: $text-secondary;
+  }
+}
+
+// ─── Add Section button ───────────────────────────────────
+.btn-add-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: $blue;
+  color: #fff;
+  border: none;
+  border-radius: $radius-sm;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition;
+  white-space: nowrap;
+
+  &:hover {
+    background: $blue-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($blue, .35);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ─── Empty state ─────────────────────────────────────────
+.scope-empty {
+  text-align: center;
+  padding: 64px 32px;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  border: 2px dashed $border;
+
+  &__icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  &__text {
+    color: $text-secondary;
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+}
+
+// ─── Sections list ────────────────────────────────────────
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ─── Section card ─────────────────────────────────────────
+.section-card {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  border: 1.5px solid $border;
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-radius 0.2s;
+
+  &:hover {
+    box-shadow: $shadow-hover;
+  }
+
+  // Collapsed variant — tighten radius
+  &--collapsed {
+    .section-card__header {
+      border-bottom: none;
+    }
+  }
+
+  // Red variant
+  &--red {
+    border-color: $red-border;
+    border-left: 4px solid $red;
+
+    .section-card__header {
+      background: $red-accent;
+    }
+
+    .section-card__title-input {
+      color: $red;
+    }
+  }
+
+  // Header
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: $bg-card-inner;
+    border-bottom: 1.5px solid $border;
+  }
+
+  &__drag {
+    color: $text-muted;
+    cursor: grab;
+    font-size: 14px;
+    flex-shrink: 0;
+    padding: 2px;
+
+    &:hover {
+      color: $text-secondary;
+    }
+  }
+
+  &__title-input {
+    flex: 1;
+    border: 1.5px solid transparent;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-primary;
+    padding: 6px 10px;
+    border-radius: $radius-xs;
+    outline: none;
+    transition: $transition;
+    min-width: 0;
+
+    &::placeholder {
+      color: $text-muted;
+      font-weight: 400;
+    }
+
+    &:focus {
+      border-color: $border-focus;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba($blue, .1);
+    }
+
+    // Read-only (saved) state
+    &[readonly] {
+      cursor: default;
+      color: $text-primary;
+
+      &:focus {
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+      }
+    }
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  &__empty {
+    color: $text-muted;
+    font-size: 13px;
+    padding: 8px 0 12px;
+    text-align: center;
+  }
+
+  // Body
+  &__body {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  // Collapsed summary bar
+  &__collapsed-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px 10px;
+    gap: 12px;
+  }
+
+  &__collapsed-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-muted;
+    background: $bg-card-inner;
+    border: 1px solid $border;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  &__collapsed-expand {
+    font-size: 12px;
+    color: $blue;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: $blue-dark;
+    }
+  }
+}
+
+// ─── Red toggle label ─────────────────────────────────────
+.red-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $red;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $text-secondary;
+    font-weight: 500;
+  }
+}
+
+// ─── Icon buttons ─────────────────────────────────────────
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-xs;
+  border: 1.5px solid $border;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 13px;
+  color: $text-secondary;
+  transition: $transition;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: currentColor;
+  }
+}
+
+// ─── Save button ──────────────────────────────────────────
+.btn-save {
+  color: $text-secondary;
+
+  &:hover {
+    color: $blue;
+    background: $blue-light;
+    border-color: $blue;
+  }
+
+  // Dirty = unsaved changes → highlight amber/orange so user notices
+  &--dirty {
+    color: $amber;
+    border-color: $amber;
+    background: $amber-light;
+    animation: pulse-save 1.4s ease-in-out infinite;
+
+    &:hover {
+      color: color.adjust($amber, $lightness: -12%);
+      background: color.adjust($amber-light, $lightness: -4%);
+      border-color: color.adjust($amber, $lightness: -12%);
+      animation: none;
+    }
+  }
+
+  &--saving {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+@keyframes pulse-save {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($amber, 0); }
+  50%       { box-shadow: 0 0 0 4px rgba($amber, .25); }
+}
+
+// ─── Edit button (shown when record is saved) ─────────────
+.btn-edit {
+  color: $green-dark;
+  border-color: $green-light;
+  background: $green-light;
+
+  &:hover {
+    color: $green-dark;
+    background: color.adjust($green-light, $lightness: -4%);
+    border-color: $green;
+  }
+}
+
+// ─── Delete button ────────────────────────────────────────
+.btn-delete {
+  color: $red;
+
+  &:hover {
+    background: $red-light;
+    border-color: $red;
+  }
+}
+
+// ─── Collapse button ──────────────────────────────────────
+.btn-collapse {
+  color: $text-secondary;
+
+  &:hover {
+    color: $text-primary;
+    background: $bg-card-inner;
+  }
+
+  &--collapsed {
+    color: $blue;
+    border-color: $blue-light;
+    background: $blue-light;
+
+    &:hover {
+      background: color.adjust($blue-light, $lightness: -3%);
+    }
+  }
+}
+
+// ─── Spinner inside button ────────────────────────────────
+.btn-spinner {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+// ─── Task row ─────────────────────────────────────────────
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: $radius-sm;
+  background: $bg-task;
+  border: 1.5px solid transparent;
+  transition: $transition;
+
+  &:hover {
+    border-color: $border;
+    background: #fff;
+  }
+
+  // Saved row — subtle green left accent
+  &--saved {
+    border-left: 3px solid $green-light;
+  }
+
+  &__drag {
+    color: $text-muted;
+    cursor: grab;
+    font-size: 13px;
+    flex-shrink: 0;
+
+    &:hover { color: $text-secondary; }
+  }
+
+  &__input {
+    flex: 1;
+    border: 1.5px solid transparent;
+    background: transparent;
+    font-size: 13.5px;
+    color: $text-primary;
+    padding: 5px 8px;
+    border-radius: $radius-xs;
+    outline: none;
+    transition: $transition;
+    min-width: 0;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus {
+      border-color: $border-focus;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba($blue, .08);
+    }
+
+    // Read-only saved state
+    &[readonly] {
+      cursor: default;
+
+      &:focus {
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+      }
+    }
+  }
+
+  &__freq {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Frequency badges ─────────────────────────────────────
+.freq-badge {
+  width: 30px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid $border;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: $transition;
+  letter-spacing: 0.03em;
+
+  &:hover {
+    border-color: $blue;
+    color: $blue;
+    background: $blue-light;
+  }
+
+  &--active {
+    background: $blue;
+    border-color: $blue;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba($blue, .35);
+
+    &:hover {
+      background: $blue-dark;
+      border-color: $blue-dark;
+      color: #fff;
+    }
+  }
+}
+
+// ─── Add task button ─────────────────────────────────────
+.btn-add-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  border: 1.5px dashed $border;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $text-secondary;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition;
+  margin-top: 4px;
+
+  &:hover {
+    border-color: $blue;
+    color: $blue;
+    background: $blue-light;
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────
+@media (max-width: 640px) {
+  .scope-builder {
+    padding: 16px;
+  }
+
+  .scope-header {
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .task-row {
+    flex-wrap: wrap;
+
+    &__input {
+      width: 100%;
+      flex: unset;
+    }
+  }
+
+  .red-toggle__label {
+    display: none;
+  }
+}

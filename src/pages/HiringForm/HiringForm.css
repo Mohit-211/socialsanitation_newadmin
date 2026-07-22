@@ -1,0 +1,25 @@
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.printable-container, .printable-container * {
+		visibility: visible;
+	}
+	.printable-container {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+	}
+}
+
+/* 
+.form-container {
+	font-family: Arial, sans-serif;
+	padding: 30px;
+	background-color: #fff;
+	color: #000;
+	line-height: 1.6;
+	max-width: 800px;
+	margin: auto;
+} */

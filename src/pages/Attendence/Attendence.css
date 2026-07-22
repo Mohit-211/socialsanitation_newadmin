@@ -1,0 +1,25 @@
+.monthly-attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.monthly-attendance-table th,
+.monthly-attendance-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    min-width: 40px;
+}
+.monthly-attendance-table th {
+    background-color: #f5f5f5;
+}
+
+
+
+.fc-daygrid-event {
+  font-size: 0.75rem;
+  white-space: normal;
+  line-height: 1.2;
+  background-color: #3b82f6;
+  border: none;
+}

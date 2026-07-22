@@ -1,0 +1,52 @@
+@use "sass:color";
+
+/** @format */
+
+.sidebar {
+	height: 100vh;
+	overflow: scroll;
+}
+
+.sidebar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+	display: none;
+}
+
+.vertical-line {
+	height: 40px;
+	border-left: 1px solid #ccc;
+	margin: 0 10px;
+}
+
+.admin {
+	margin: 9px !important;
+	margin-top: 5px;
+}
+
+.clicked:hover {
+	cursor: pointer;
+}
+
+.notification {
+	transform: translate3d(988px, 64px, 0px) !important;
+	// text-align: center !important;
+}
+
+.notification_display {
+	p {
+		margin: 0;
+	}
+}
+
+.spinner-container {
+	width: 100%;
+	text-align: center;
+	margin: auto;
+	margin-top: 360px;
+	background-color: rgba(255, 255, 255, 0.8);
+	z-index: 1000;
+}

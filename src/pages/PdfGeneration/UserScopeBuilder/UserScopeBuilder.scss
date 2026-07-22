@@ -1,0 +1,656 @@
+@use "sass:color";
+// ScopeBuilder.scss
+// All classes are prefixed with "usb-" (UserScopeBuilder)
+// so they don't conflict with other pages sharing this stylesheet.
+
+// ─── Tokens ──────────────────────────────────────────────────────────
+$usb-bg-page:       #f5f6fa;
+$usb-bg-card:       #ffffff;
+$usb-bg-inner:      #fafbfc;
+$usb-bg-task:       #f8f9fb;
+
+$usb-border:        #e8eaef;
+$usb-border-focus:  #3b82f6;
+
+$usb-text-primary:  #1a1a2e;
+$usb-text-sec:      #6b7280;
+$usb-text-muted:    #adb5bd;
+
+$usb-blue:          #3b82f6;
+$usb-blue-light:    #eff6ff;
+$usb-blue-dark:     #1d4ed8;
+
+$usb-green:         #22c55e;
+$usb-green-light:   #dcfce7;
+
+$usb-red:           #ef4444;
+$usb-red-light:     #fee2e2;
+$usb-red-accent:    #fef2f2;
+$usb-red-border:    #fca5a5;
+
+$usb-amber:         #f59e0b;
+$usb-amber-light:   #fffbeb;
+
+$usb-radius-lg:     16px;
+$usb-radius-md:     12px;
+$usb-radius-sm:     8px;
+$usb-radius-xs:     6px;
+
+$usb-shadow:        0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.04);
+$usb-shadow-hover:  0 4px 20px rgba(0,0,0,.12);
+$usb-transition:    all 0.18s ease;
+
+// ─── Root ──────────────────────────────────────────────────────────────
+.usb-root {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: $usb-bg-page;
+  padding: 28px;
+  min-height: 100vh;
+  color: $usb-text-primary;
+}
+
+// ─── Loading / Empty ───────────────────────────────────────────────────
+.usb-loading {
+  padding: 80px;
+  text-align: center;
+}
+
+.usb-empty {
+  text-align: center;
+  padding: 64px 32px;
+  background: $usb-bg-card;
+  border-radius: $usb-radius-lg;
+  border: 2px dashed $usb-border;
+
+  &--inner {
+    margin: 0; // used inside sections list
+  }
+
+  &__icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  &__text {
+    color: $usb-text-sec;
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+}
+
+// ─── Page Header ───────────────────────────────────────────────────────
+.usb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $usb-bg-card;
+  padding: 20px 28px;
+  border-radius: $usb-radius-lg;
+  box-shadow: $usb-shadow;
+  margin-bottom: 20px;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  &__icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: $usb-text-primary;
+    letter-spacing: -0.3px;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: $usb-text-sec;
+  }
+}
+
+// ─── Add Section button ─────────────────────────────────────────────────
+.usb-btn-add-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: $usb-blue;
+  color: #fff;
+  border: none;
+  border-radius: $usb-radius-sm;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $usb-transition;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba($usb-blue, .30);
+
+  &:hover {
+    background: $usb-blue-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba($usb-blue, .40);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ─── Initial Client Chart card ──────────────────────────────────────────
+.usb-chart-card {
+  background: $usb-bg-card;
+  border-radius: $usb-radius-lg;
+  border: 1.5px solid $usb-border;
+  box-shadow: $usb-shadow;
+  margin-bottom: 20px;
+  overflow: hidden;
+
+  &__toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 22px;
+    background: $usb-bg-inner;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+
+    &:hover {
+      background: color.adjust($usb-bg-inner, $lightness: -2%);
+    }
+  }
+
+  &__toggle-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: $usb-text-primary;
+    flex: 1;
+  }
+
+  &__toggle-meta {
+    font-size: 12px;
+    color: $usb-text-muted;
+    margin-right: 4px;
+  }
+
+  &__body {
+    padding: 18px 22px;
+    border-top: 1.5px solid $usb-border;
+  }
+
+  &__loading {
+    color: $usb-text-sec;
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  &__empty {
+    color: $usb-text-muted;
+    font-style: italic;
+    font-size: 13px;
+  }
+}
+
+// ─── Table ─────────────────────────────────────────────────────────────
+.usb-table-wrap {
+  overflow-x: auto;
+}
+
+.usb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    padding: 10px 14px;
+    border: 1px solid $usb-border;
+    text-align: left;
+  }
+
+  th {
+    background: $usb-bg-inner;
+    font-weight: 600;
+    color: $usb-text-primary;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(odd) td {
+    background: #fff;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: $usb-bg-task;
+  }
+
+  tbody tr:hover td {
+    background: $usb-blue-light;
+  }
+}
+
+.usb-th-note {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: $usb-text-muted;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 2px;
+}
+
+// ─── Sections list ──────────────────────────────────────────────────────
+.usb-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ─── Section card ───────────────────────────────────────────────────────
+.usb-section-card {
+  background: $usb-bg-card;
+  border-radius: $usb-radius-lg;
+  box-shadow: $usb-shadow;
+  border: 1.5px solid $usb-border;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: $usb-shadow-hover;
+  }
+
+  &--red {
+    border-color: $usb-red-border;
+    border-left: 4px solid $usb-red;
+
+    .usb-section-card__header {
+      background: $usb-red-accent;
+    }
+
+    .usb-section-card__title-input {
+      color: $usb-red;
+    }
+  }
+
+  // ── Header
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: $usb-bg-inner;
+    border-bottom: 1.5px solid $usb-border;
+    flex-wrap: wrap;
+  }
+
+  &__drag {
+    color: $usb-text-muted;
+    cursor: grab;
+    font-size: 14px;
+    flex-shrink: 0;
+
+    &:hover { color: $usb-text-sec; }
+  }
+
+  &__title-input {
+    flex: 1;
+    min-width: 140px;
+    border: 1.5px solid transparent;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: $usb-text-primary;
+    padding: 6px 10px;
+    border-radius: $usb-radius-xs;
+    outline: none;
+    transition: $usb-transition;
+
+    &::placeholder { color: $usb-text-muted; font-weight: 400; }
+
+    &:focus {
+      border-color: $usb-border-focus;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba($usb-blue, .10);
+    }
+  }
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  // ── Body
+  &__body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__empty {
+    font-size: 13px;
+    color: $usb-text-muted;
+    text-align: center;
+    padding: 10px 0 4px;
+  }
+
+  // ── Collapsed summary
+  &__collapsed-summary {
+    padding: 10px 18px;
+    font-size: 12px;
+    color: $usb-text-muted;
+    background: $usb-bg-task;
+    border-top: 1px solid $usb-border;
+  }
+}
+
+// ─── Red toggle ─────────────────────────────────────────────────────────
+.usb-red-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: $usb-radius-xs;
+
+  &:hover {
+    background: $usb-red-light;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $usb-red;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: $usb-text-sec;
+    font-weight: 500;
+  }
+}
+
+// ─── Generic action buttons ──────────────────────────────────────────────
+// These are the labelled buttons on sections and task rows
+.usb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: $usb-radius-xs;
+  border: 1.5px solid $usb-border;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $usb-transition;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  span {
+    font-size: 12px;
+  }
+
+  // Save (blue)
+  &--save {
+    color: $usb-blue;
+    border-color: rgba($usb-blue, .35);
+
+    &:hover {
+      background: $usb-blue-light;
+      border-color: $usb-blue;
+    }
+  }
+
+  // Update/Edit (amber)
+  &--edit {
+    color: color.adjust($usb-amber, $lightness: -15%);
+    border-color: rgba($usb-amber, .45);
+
+    &:hover {
+      background: $usb-amber-light;
+      border-color: $usb-amber;
+    }
+  }
+
+  // Delete (red)
+  &--danger {
+    color: $usb-red;
+    border-color: rgba($usb-red, .30);
+
+    &:hover {
+      background: $usb-red-light;
+      border-color: $usb-red;
+    }
+  }
+
+  // Collapse toggle (neutral)
+  &--collapse {
+    color: $usb-text-sec;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+
+    &:hover {
+      background: $usb-bg-task;
+      border-color: $usb-border;
+      color: $usb-text-primary;
+    }
+  }
+
+  // Loading / disabled
+  &--loading {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+}
+
+// ─── Task row ────────────────────────────────────────────────────────────
+.usb-task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: $usb-radius-sm;
+  background: $usb-bg-task;
+  border: 1.5px solid transparent;
+  transition: $usb-transition;
+  flex-wrap: wrap;
+
+  &:hover {
+    border-color: $usb-border;
+    background: #fff;
+  }
+
+  // Saved = faint green left stripe
+  &--saved {
+    border-left: 3px solid $usb-green;
+  }
+
+  // Unsaved = faint amber left stripe
+  &--new {
+    border-left: 3px solid $usb-amber;
+  }
+
+  &__drag {
+    color: $usb-text-muted;
+    cursor: grab;
+    font-size: 13px;
+    flex-shrink: 0;
+
+    &:hover { color: $usb-text-sec; }
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 120px;
+    border: 1.5px solid transparent;
+    background: transparent;
+    font-size: 13.5px;
+    color: $usb-text-primary;
+    padding: 5px 8px;
+    border-radius: $usb-radius-xs;
+    outline: none;
+    transition: $usb-transition;
+
+    &::placeholder { color: $usb-text-muted; }
+
+    &:focus {
+      border-color: $usb-border-focus;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba($usb-blue, .08);
+    }
+  }
+
+  &__freq {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Task status pill ────────────────────────────────────────────────────
+.usb-task-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+
+  &--saved {
+    background: $usb-green-light;
+    color: color.adjust($usb-green, $lightness: -20%);
+  }
+
+  &--new {
+    background: $usb-amber-light;
+    color: color.adjust($usb-amber, $lightness: -20%);
+  }
+}
+
+// ─── Frequency badges ────────────────────────────────────────────────────
+.usb-freq-badge {
+  width: 30px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid $usb-border;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  color: $usb-text-sec;
+  cursor: pointer;
+  transition: $usb-transition;
+  letter-spacing: 0.03em;
+
+  &:hover {
+    border-color: $usb-blue;
+    color: $usb-blue;
+    background: $usb-blue-light;
+  }
+
+  &--active {
+    background: $usb-blue;
+    border-color: $usb-blue;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba($usb-blue, .30);
+
+    &:hover {
+      background: $usb-blue-dark;
+      border-color: $usb-blue-dark;
+      color: #fff;
+    }
+  }
+}
+
+// ─── Add Task button ─────────────────────────────────────────────────────
+.usb-btn-add-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  border: 1.5px dashed $usb-border;
+  border-radius: $usb-radius-sm;
+  background: transparent;
+  color: $usb-text-sec;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $usb-transition;
+  margin-top: 4px;
+
+  &:hover {
+    border-color: $usb-blue;
+    color: $usb-blue;
+    background: $usb-blue-light;
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .usb-root {
+    padding: 16px;
+  }
+
+  .usb-header {
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .usb-section-card__header {
+    gap: 8px;
+  }
+
+  .usb-section-card__controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .usb-task-row {
+    flex-wrap: wrap;
+
+    &__input {
+      width: 100%;
+      flex: unset;
+    }
+  }
+
+  .usb-red-toggle__label {
+    display: none;
+  }
+
+  .usb-btn span {
+    display: none; // icon-only on very small screens
+  }
+
+  .usb-btn {
+    padding: 0 8px;
+  }
+}

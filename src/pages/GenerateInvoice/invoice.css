@@ -1,0 +1,104 @@
+/** @format */
+
+.invoice-form {
+	font-family: Arial, sans-serif;
+	/* padding: 10px; */
+	font-size: 12px;
+	/* max-width: 900px;
+    margin: auto; */
+}
+
+.invoice-form-container {
+	background: white;
+	padding: 30px;
+	border-radius: 6px;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 10px;
+}
+
+.logo1 {
+	width: 150px;
+}
+
+.quote-title {
+	font-size: 24px;
+	background: #3f4c5c;
+	color: white;
+	padding: 10px;
+}
+
+.invoice-meta-container {
+	width: 100%;
+}
+
+.invoice-meta-container .meta-table {
+	display: flex;
+	gap: 20px;
+	margin-bottom: 28px;
+}
+
+.invoice-meta-container .meta-table div {
+	flex: 1;
+}
+
+.meta-table,
+.address-table {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 20px;
+}
+
+.meta-table input,
+.address-table input {
+	border: none;
+	border-bottom: 1px solid #ccc;
+	padding: 2px;
+	width: 150px;
+}
+
+.items-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+}
+
+.items-table th,
+.items-table td {
+	border: 1px solid #ccc;
+	padding: 5px;
+	text-align: left;
+}
+
+.items-table input {
+	width: 100%;
+	border: none;
+}
+
+.total-row td {
+	font-weight: bold;
+}
+
+.footer-section {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 40px;
+}
+
+.signature-block {
+	text-align: right;
+}
+
+.disclaimer {
+	margin-top: 60px;
+	margin-top: 20px;
+	font-size: 12px;
+	padding: 20px;
+	line-height: 1.4;
+	color: #333;
+}

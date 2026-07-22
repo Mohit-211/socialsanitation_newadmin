@@ -1,0 +1,38 @@
+.custom-header {
+  font-size: 16px; /* Set the desired font size for header names */
+}
+
+.custom-cell {
+  font-size: 14px; /* Set the desired font size for cell content (emails) */
+}
+
+.custom-image-cell img {
+  width: 50px; /* Set the desired width for images */
+  height: 50px; /* Set the desired height for images */
+}
+
+.tabledata {
+  height: 800px;
+  width: 100%;
+  align-items: center;
+  margin-left: 1.5%;
+  margin-top: 3.5%;
+  margin: initial;
+  font-size: 80px;
+  color: black;
+  text-align: center;
+}
+
+.css-1raz6df {
+  background-color: white;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(224, 224, 224, 1);
+  border-radius: 5px;
+}
+
+
+.redirect_button:hover{
+color: #73abce;
+cursor: pointer;
+}
