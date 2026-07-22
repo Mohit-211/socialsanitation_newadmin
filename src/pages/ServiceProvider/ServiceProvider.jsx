@@ -3,6 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 import "./employee.css";
 import {
   DeleteUser,
@@ -13,13 +18,36 @@ import {
   SendTwoWeekSchedule,
 } from "../../services/Api/Api";
 import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
-import Box from "@mui/material/Box";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { ref as dbRef, off } from "firebase/database";
-
 import db from "../Chat/Firebase";
-import { SearchOutlined } from "@ant-design/icons";
+import {
+  Search,
+  Download,
+  Trash2,
+  Plus,
+  Eye,
+  Pencil,
+  Send,
+  MapPin,
+  KeyRound,
+  Check,
+  X,
+} from "lucide-react";
+
+// 🔹 Shared circular icon-button styling so every action button in the
+// table stays visually consistent instead of repeating style objects.
+const actionIconBtn = (color) => ({
+  width: 34,
+  height: 34,
+  border: "1px solid",
+  borderColor: color,
+  color,
+  "&:hover": {
+    backgroundColor: `${color}14`,
+    borderColor: color,
+  },
+});
 
 const ServiceProvider = () => {
   const navigate = useNavigate();
@@ -68,7 +96,7 @@ const ServiceProvider = () => {
           user_id: selectedUser.id,
           new_email: newEmail,
         },
-        localStorage.getItem("adminToken"),
+        localStorage.getItem("adminToken")
       );
 
       message.success(res.data.message || "New credentials sent successfully!");
@@ -77,7 +105,7 @@ const ServiceProvider = () => {
     } catch (error) {
       console.error("Reset credentials failed:", error);
       message.error(
-        error?.response?.data?.message || "Failed to reset credentials",
+        error?.response?.data?.message || "Failed to reset credentials"
       );
     }
   };
@@ -89,7 +117,7 @@ const ServiceProvider = () => {
           user_id: user_id,
           employee_type: type,
         },
-        localStorage.getItem("adminToken"),
+        localStorage.getItem("adminToken")
       );
 
       message.success(res.data.message || "Employee type updated");
@@ -107,7 +135,7 @@ const ServiceProvider = () => {
     } catch (error) {
       console.error(error);
       message.error(
-        error?.response?.data?.message || "Failed to send schedule",
+        error?.response?.data?.message || "Failed to send schedule"
       );
     }
   };
@@ -131,6 +159,7 @@ const ServiceProvider = () => {
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
       width: "8%",
+      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
     },
     {
       title: "Email",
@@ -140,19 +169,13 @@ const ServiceProvider = () => {
         <Space size={6} align="center">
           <span>{email}</span>
           <Tooltip title="Reset Email / Password">
-            <Button
-              icon="pi pi-key"
-              rounded
-              text
-              severity="warning"
-              style={{
-                width: "30px",
-                height: "30px",
-                padding: 0,
-                color: "#FF9800",
-              }}
+            <IconButton
+              size="small"
+              sx={{ color: "#FF9800" }}
               onClick={() => openEditModal(record)}
-            />
+            >
+              <KeyRound size={16} />
+            </IconButton>
           </Tooltip>
         </Space>
       ),
@@ -195,119 +218,74 @@ const ServiceProvider = () => {
         return roleMap[role_id] ? <strong>{roleMap[role_id]}</strong> : "-";
       },
     },
-
     {
       title: "Login / Logout Image",
       width: "10%",
       dataIndex: "logout_image_required",
       render: (logout_image_required, record) => (
         <Tooltip title={logout_image_required ? "Required" : "Not Required"}>
-          <Button
-            icon={logout_image_required ? "pi pi-check" : "pi pi-times"}
-            severity={logout_image_required ? "success" : "secondary"}
-            rounded
-            text
-            style={{
-              borderRadius: "50%",
-              width: "32px",
-              height: "32px",
-              padding: 0,
-            }}
+          <IconButton
+            size="small"
+            sx={actionIconBtn(logout_image_required ? "#2E7D32" : "#9CA3AF")}
             onClick={() => toggleLogoutImageRequirement(record.id)}
-          />
+          >
+            {logout_image_required ? <Check size={16} /> : <X size={16} />}
+          </IconButton>
         </Tooltip>
       ),
     },
-
     {
       title: "Action",
       dataIndex: "action",
+      width: "18%",
       render: (_, record) => (
-        <Space size="middle">
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           <Tooltip title="Send 2-Week Schedule">
-            <Button
-              icon="pi pi-send"
-              rounded
-              outlined
-              severity="success"
-              style={{
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                padding: 0,
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#2E7D32")}
               onClick={() => handleSendSchedule(record.id)}
-            />
+            >
+              <Send size={16} />
+            </IconButton>
           </Tooltip>
           <Tooltip title="Edit Employee">
-            <Button
-              icon="pi pi-pencil"
-              rounded
-              outlined
-              severity="warning"
-              style={{
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                padding: 0,
-                color: "#2196F3",
-                borderColor: "#2196F3",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#2196F3")}
               onClick={() => navigateToEditUser(record.id)}
-            />
+            >
+              <Pencil size={16} />
+            </IconButton>
           </Tooltip>
           <Tooltip title="View Location">
-            <Button
-              icon="pi pi-map"
-              severity="info"
-              rounded
-              outlined
-              style={{
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                padding: 0,
-                color: "#8F00FF",
-                borderColor: "#8F00FF",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#8F00FF")}
               onClick={() => openLocationModal(record.id)}
-            />
+            >
+              <MapPin size={16} />
+            </IconButton>
           </Tooltip>
           <Tooltip title="View Employee">
-            <Button
-              icon="pi pi-eye"
-              rounded
-              outlined
-              style={{
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                padding: 0,
-                margin: "0px",
-                color: "#FF9800",
-                borderColor: "#FF9800",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#FF9800")}
               onClick={(event) => navigateToViewUser(event, record.id)}
-            />
+            >
+              <Eye size={16} />
+            </IconButton>
           </Tooltip>
           <Tooltip title="Delete Employee">
-            <Button
-              icon="pi pi-trash"
-              rounded
-              outlined
-              severity="danger"
-              style={{
-                borderRadius: "50%",
-                width: "32px",
-                height: "32px",
-                padding: 0,
-                color: "red",
-                borderColor: "red",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#EF4444")}
               onClick={() => handleDelete([record.id])}
-            />
+            >
+              <Trash2 size={16} />
+            </IconButton>
           </Tooltip>
-        </Space>
+        </Stack>
       ),
     },
   ];
@@ -337,7 +315,7 @@ const ServiceProvider = () => {
       setLoading(true);
       let result = await GetAllDriver(
         localStorage.getItem("adminToken"),
-        params,
+        params
       );
       const newData = result.data.data.map((item, index) => ({
         ...item,
@@ -431,7 +409,7 @@ const ServiceProvider = () => {
     try {
       const res = await ToggleLogoutImageRequired(
         user_id,
-        localStorage.getItem("adminToken"),
+        localStorage.getItem("adminToken")
       );
       message.success(res.data.message || "Updated successfully");
       getData();
@@ -439,7 +417,7 @@ const ServiceProvider = () => {
       console.error("Toggle failed:", error);
       message.error(
         error?.response?.data?.message ||
-          "Failed to update logout image setting",
+          "Failed to update logout image setting"
       );
     }
   };
@@ -517,66 +495,93 @@ const ServiceProvider = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Paper
+        variant="outlined"
+        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
-        <div>
-          <h3 className="page-title">EMPLOYEE MANAGEMENT</h3>
-          <p className="page-sub-title">View, delete, and add Employee</p>
-        </div>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          flexWrap="wrap"
+          gap={2}
+        >
           <Box>
-            <span className="p-input-icon-left">
-              <i className="pi pi-search" />
-              <Input
-                allowClear
-                prefix={<SearchOutlined />}
-                placeholder="Search..."
-                style={{
-                  width: 250,
-                  height: "47px",
-                }}
-                onChange={(e) => onSearch(e.target.value)}
-              />
-            </span>
-            <Button
-              icon="pi pi-cloud-download"
-              severity="success"
-              style={{
-                marginLeft: "10px",
-                borderRadius: "5px",
-                height: "47px",
-              }}
-              onClick={exportToCSV}
-            />
-            <Button
-              icon="pi pi-trash"
-              severity="danger"
-              style={{
-                marginLeft: "10px",
-                borderRadius: "5px",
-                height: "47px",
-                cursor: "pointer",
-              }}
-              onClick={() => handleDelete(selectedRowKeys)}
-              disabled={!selectedRowKeys.length}
-            />
-            <Button
-              icon="pi pi-plus"
-              severity="info"
-              style={{
-                margin: "0px 10px",
-                borderRadius: "5px",
-                height: "47px",
-              }}
-              onClick={navigateToAddUser}
-            />
+            <Typography className="page-title">EMPLOYEE MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              View, delete, and add Employee
+            </Typography>
           </Box>
+
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+          >
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search by name or email..."
+              style={{ width: 240, height: 44 }}
+              onChange={(e) => onSearch(e.target.value)}
+            />
+
+            <Tooltip title="Export CSV">
+              <Button
+                variant="contained"
+                color="success"
+                sx={{
+                  minWidth: 44,
+                  width: 44,
+                  height: 44,
+                  borderRadius: "8px",
+                }}
+                onClick={exportToCSV}
+              >
+                <Download size={18} />
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Delete Selected">
+              <span>
+                <Button
+                  variant="contained"
+                  color="error"
+                  sx={{
+                    minWidth: 44,
+                    width: 44,
+                    height: 44,
+                    borderRadius: "8px",
+                  }}
+                  onClick={() => handleDelete(selectedRowKeys)}
+                  disabled={!selectedRowKeys.length}
+                >
+                  <Trash2 size={18} />
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Add Employee">
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{
+                  minWidth: 44,
+                  width: 44,
+                  height: 44,
+                  borderRadius: "8px",
+                }}
+                onClick={navigateToAddUser}
+              >
+                <Plus size={18} />
+              </Button>
+            </Tooltip>
+          </Stack>
         </Box>
-      </Box>
+      </Paper>
+
       <Table
         columns={columns}
         rowKey={(record) => record.id}
@@ -585,7 +590,11 @@ const ServiceProvider = () => {
         loading={loading}
         onChange={handleTableChange}
         rowSelection={rowSelection}
+        bordered
+        size="middle"
+        scroll={{ x: 1200 }}
       />
+
       {mapVisible && (
         <Modal
           title="Real-time Employee Location"
@@ -601,7 +610,7 @@ const ServiceProvider = () => {
             />
           ) : (
             <p style={{ textAlign: "center", padding: 20 }}>
-              This employee hasn’t allowed location sharing or has no location
+              This employee hasn't allowed location sharing or has no location
               data.
             </p>
           )}
@@ -623,10 +632,7 @@ const ServiceProvider = () => {
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
-            style={{
-              width: "100%",
-              marginTop: 10,
-            }}
+            style={{ width: "100%", marginTop: 10 }}
           />
         </Modal>
       )}

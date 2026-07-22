@@ -275,31 +275,31 @@ const Dashboard = () => {
     }
   };
 
-useEffect(() => {
-  const loadDashboard = async () => {
-    try {
-      await Promise.all([
-        getServiceCount(),
-        getDriverData(),
-        getCustomerData(),
-        getAdminData(),
-        getLiveEmployees(),
-        getLateAbsent(),
-        getUpcomingBookings(),
-      ]);
-    } catch (e) {
-      console.log(e);
-    }
-  };
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        await Promise.all([
+          getServiceCount(),
+          getDriverData(),
+          getCustomerData(),
+          getAdminData(),
+          getLiveEmployees(),
+          getLateAbsent(),
+          getUpcomingBookings(),
+        ]);
+      } catch (e) {
+        console.log(e);
+      }
+    };
 
-  loadDashboard();
+    loadDashboard();
 
-  const interval = setInterval(() => {
-    getLiveEmployees();
-  }, 60000);
+    const interval = setInterval(() => {
+      getLiveEmployees();
+    }, 60000);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div style={{ padding: "24px", background: "#f5f6fa", minHeight: "100vh" }}>
@@ -518,7 +518,7 @@ useEffect(() => {
             dotColor="#ef4444"
             title={`Not Checked-In (Late / Absent) · ${lateEmployees.length}`}
             btnLabel="Attendance"
-            onClick={() => navigate("/attendence")}
+            onClick={() => navigate("/attendance")}
           />
           {lateEmployees.length === 0 ? (
             <p style={{ color: "#999", fontSize: 14, margin: 0 }}>

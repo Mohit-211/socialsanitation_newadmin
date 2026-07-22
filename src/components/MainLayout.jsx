@@ -242,7 +242,7 @@ const MainLayout = () => {
                             label: "Hiring Form",
                           },
                           {
-                            key: "/attendence",
+                            key: "/attendance",
                             icon: <FaRegCalendarAlt />,
                             label: "Attendance",
                           },
@@ -492,7 +492,7 @@ const MainLayout = () => {
                     {
                       className: "trigger",
                       onClick: () => setCollapsed(!collapsed),
-                    },
+                    }
                   )}
                   <div className="d-flex gap-4 align-items-center">
                     <Button
@@ -523,7 +523,9 @@ const MainLayout = () => {
                           </div>
                         </div>
                         <div
-                          className={`dropdown-menu admin${profileOpen ? " show" : ""}`}
+                          className={`dropdown-menu admin${
+                            profileOpen ? " show" : ""
+                          }`}
                           aria-labelledby="dropdownMenuLink"
                         >
                           <li>

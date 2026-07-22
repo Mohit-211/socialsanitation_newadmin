@@ -64,10 +64,10 @@ import EditServiceChecklist from "./pages/ServiceChecklist/EditServiceChecklist.
 import ViewForm from "./pages/HiringForm/ViewForm.jsx";
 import UpdateCustomer from "./pages/Customer/UpdateCustomer";
 import ServiceQuote from "./pages/Customer/ServiceQuote.jsx";
-import AllAttendance from "./pages/Attendence/AllAttendence.jsx";
+import AllAttendance from "./pages/Attendance/AllAttendance.jsx";
 import CreateBooking from "./pages/Bookings/CreateBooking.jsx";
 import MonthlyBooking from "./pages/Bookings/MonthlyBooking.jsx";
-import AttendanceCalendar from "./pages/Attendence/AttendenceCalender.jsx";
+import AttendanceCalendar from "./pages/Attendance/AttendanceCalender.jsx";
 import ViewServiceChecklist from "./pages/ServiceChecklist/ViewServiceChecklist.jsx";
 import WeeklyChecklistView from "./pages/DailyChecklist/WeeklyChecklistView.jsx";
 import BDMGroupChat from "./pages/GroupChat/BDMGroupChat.jsx";
@@ -204,7 +204,7 @@ function App() {
           <Route path="/payment-history" element={<Payment />} />
           <Route path="/view-form/:id" element={<ViewForm />} />
           <Route path="/service-quote/:id" element={<ServiceQuote />} />
-          <Route path="/attendence" element={<AllAttendance />} />
+          <Route path="/attendance" element={<AllAttendance />} />
           <Route path="/create-client-booking" element={<CreateBooking />} />
           <Route path="/monthlyCalendar" element={<MonthlyBooking />} />
           <Route path="/attendanceCalendar" element={<AttendanceCalendar />} />

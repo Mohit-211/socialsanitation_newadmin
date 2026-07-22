@@ -1,8 +1,21 @@
 /** @format */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
+import {
+  Table,
+  Space,
+  message,
+  Modal,
+  Tooltip,
+  Select,
+  Input,
+  Typography as AntTypography,
+} from "antd";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import {
   DeleteUser,
   GetUsers,
@@ -12,7 +25,6 @@ import {
   GetClosestEmployees,
 } from "../../services/Api/Api";
 import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import dayjs from "@/lib/dayjs";
 import {
@@ -47,6 +59,20 @@ const nearbyMapContainerStyle = {
   width: "100%",
   height: "420px",
 };
+
+// 🔹 Shared circular icon-button styling so every action button in the
+// table stays visually consistent instead of repeating sx objects.
+const actionIconBtn = (color) => ({
+  width: 38,
+  height: 38,
+  border: "1px solid",
+  borderColor: color,
+  color,
+  "&:hover": {
+    backgroundColor: `${color}14`, // subtle tint on hover
+    borderColor: color,
+  },
+});
 
 const User = () => {
   const navigate = useNavigate();
@@ -84,7 +110,7 @@ const User = () => {
           user_id: selectedUser.id,
           new_email: newEmail,
         },
-        localStorage.getItem("adminToken"),
+        localStorage.getItem("adminToken")
       );
 
       message.success(res.data.message || "New credentials sent successfully!");
@@ -93,7 +119,7 @@ const User = () => {
     } catch (error) {
       console.error("Reset credentials failed:", error);
       message.error(
-        error?.response?.data?.message || "Failed to reset credentials",
+        error?.response?.data?.message || "Failed to reset credentials"
       );
     }
   };
@@ -127,7 +153,7 @@ const User = () => {
         if (nearbyMapRef.current.getZoom() > max) {
           nearbyMapRef.current.setZoom(max);
         }
-      },
+      }
     );
   };
 
@@ -136,7 +162,7 @@ const User = () => {
     if (!nearbyMapRef.current || !nearbyClientLocation) return;
 
     const closeEmployees = nearbyEmployees.filter(
-      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI,
+      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI
     );
     // If literally everyone is far away, at least show the closest one
     // rather than an empty map.
@@ -209,7 +235,7 @@ const User = () => {
   };
 
   const selectedNearbyEmployee = nearbyEmployees.find(
-    (emp) => emp.id === selectedNearbyId,
+    (emp) => emp.id === selectedNearbyId
   );
 
   const nearbyEmployeesColumns = [
@@ -285,6 +311,7 @@ const User = () => {
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
       width: 100,
+      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
     },
     {
       title: "Email",
@@ -294,32 +321,28 @@ const User = () => {
         <Space size={6} align="center">
           <span>{email}</span>
           <Tooltip title="Reset Email / Password">
-            <Button
-              sx={{
-                minWidth: 32,
-                width: 32,
-                height: 32,
-                color: "#FF9800",
-              }}
+            <IconButton
+              size="small"
+              sx={{ color: "#FF9800" }}
               onClick={() => openEditModal(record)}
             >
-              <KeyRound size={18} />
-            </Button>
+              <KeyRound size={16} />
+            </IconButton>
           </Tooltip>
         </Space>
       ),
     },
-
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: 160,
+      width: 170,
       render: (assigned_to, record) => {
         return (
           <Select
             value={assigned_to || undefined}
             placeholder="Assign Admin"
-            style={{ width: 150 }}
+            style={{ width: 160 }}
+            allowClear
             onChange={(value) => handleChangeAssignedSelect(record.id, value)}
           >
             <Select.Option value={2}>Marco Williams</Select.Option>
@@ -331,117 +354,75 @@ const User = () => {
     {
       title: "Account Created On",
       dataIndex: "created_at",
-      width: 140,
+      width: 150,
       render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
     },
     {
       title: "Action",
       dataIndex: "action",
-      width: 450,
+      width: 380,
       render: (_, record) => (
-        <Space size={8}>
+        <Stack direction="row" spacing={1}>
           <Tooltip title="View Nearby Employees">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#6B7280",
-                borderColor: "#6B7280",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#6B7280")}
               onClick={() => openNearbyEmployeesModal(record)}
             >
-              <MapPin size={22} strokeWidth={2} />
-            </Button>
+              <MapPin size={18} strokeWidth={2} />
+            </IconButton>
           </Tooltip>
 
           <Tooltip title="Send Review Email">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#2563EB",
-                borderColor: "#2563EB",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#2563EB")}
               onClick={() => handleSendReview(record.id)}
             >
-              <Mail size={18} />
-            </Button>
+              <Mail size={16} />
+            </IconButton>
           </Tooltip>
 
           <Tooltip title="Send Quote">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#A855F7",
-                borderColor: "#A855F7",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#A855F7")}
               onClick={(event) => navigateToQuote(event, record.id)}
             >
-              <Send size={18} />
-            </Button>
+              <Send size={16} />
+            </IconButton>
           </Tooltip>
 
           <Tooltip title="Edit Client">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#6366F1",
-                borderColor: "#6366F1",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#6366F1")}
               onClick={(event) => navigateToEditUser(event, record.id)}
             >
-              <Pencil size={18} />
-            </Button>
+              <Pencil size={16} />
+            </IconButton>
           </Tooltip>
 
           <Tooltip title="View Client">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#F59E0B",
-                borderColor: "#F59E0B",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#F59E0B")}
               onClick={(event) => navigateToViewUser(event, record.id)}
             >
-              <Eye size={18} />
-            </Button>
+              <Eye size={16} />
+            </IconButton>
           </Tooltip>
 
           <Tooltip title="Delete Client">
-            <Button
-              variant="outlined"
-              sx={{
-                width: 40,
-                minWidth: 40,
-                height: 40,
-                borderRadius: "50%",
-                color: "#EF4444",
-                borderColor: "#EF4444",
-              }}
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#EF4444")}
               onClick={() => handleDelete([record.id])}
             >
-              <Trash2 size={18} />
-            </Button>
+              <Trash2 size={16} />
+            </IconButton>
           </Tooltip>
-        </Space>
+        </Stack>
       ),
     },
   ];
@@ -533,7 +514,7 @@ const User = () => {
       data
         .map(
           (row) =>
-            `${row.id},${row.user_profile?.name},${row.email},${row.mobile}`,
+            `${row.id},${row.user_profile?.name},${row.email},${row.mobile}`
         )
         .join("\n");
 
@@ -562,7 +543,6 @@ const User = () => {
   };
 
   const onSelectChange = (newSelectedRowKeys) => {
-    console.log("selectedRowKeys changed: ", newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
@@ -606,81 +586,92 @@ const User = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <Box>
-          <h3 className="page-title">CLIENT MANAGEMENT</h3>
-          <p className="page-sub-title">View, delete, and add Client</p>
-        </Box>
         <Box
           display="flex"
-          justifyContent="flex-end"
+          justifyContent="space-between"
           alignItems="center"
-          flex={1}
+          flexWrap="wrap"
+          gap={2}
         >
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box>
+            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              View, delete, and add Client
+            </Typography>
+          </Box>
+
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <Input
               allowClear
-              prefix={<Search size={18} />}
-              placeholder="Search..."
-              style={{
-                width: 220,
-                height: 47,
-              }}
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search by name or email..."
+              style={{ width: 240, height: 44 }}
               onChange={(e) => onSearch(e.target.value)}
             />
 
-            <Button
-              variant="contained"
-              color="success"
-              sx={{
-                minWidth: 50,
-                width: 50,
-                height: 50,
-                ml: 1,
-                borderRadius: "6px",
-              }}
-              onClick={exportToCSV}
-            >
-              <Download size={18} />
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              sx={{
-                minWidth: 50,
-                width: 50,
-                height: 50,
-                ml: 1,
-                borderRadius: "6px",
-              }}
-              onClick={() => handleDelete(selectedRowKeys)}
-              disabled={!selectedRowKeys.length}
-            >
-              <Trash2 size={18} />
-            </Button>
+            <Tooltip title="Export CSV">
+              <Button
+                variant="contained"
+                color="success"
+                sx={{
+                  minWidth: 44,
+                  width: 44,
+                  height: 44,
+                  borderRadius: "8px",
+                }}
+                onClick={exportToCSV}
+              >
+                <Download size={18} />
+              </Button>
+            </Tooltip>
 
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{
-                minWidth: 50,
-                width: 50,
-                height: 50,
-                ml: 1,
-                borderRadius: "6px",
-              }}
-              onClick={navigateToAddUser}
-            >
-              <Plus size={18} />
-            </Button>
-          </Box>
+            <Tooltip title="Delete Selected">
+              <span>
+                <Button
+                  variant="contained"
+                  color="error"
+                  sx={{
+                    minWidth: 44,
+                    width: 44,
+                    height: 44,
+                    borderRadius: "8px",
+                  }}
+                  onClick={() => handleDelete(selectedRowKeys)}
+                  disabled={!selectedRowKeys.length}
+                >
+                  <Trash2 size={18} />
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Add Client">
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{
+                  minWidth: 44,
+                  width: 44,
+                  height: 44,
+                  borderRadius: "8px",
+                }}
+                onClick={navigateToAddUser}
+              >
+                <Plus size={18} />
+              </Button>
+            </Tooltip>
+          </Stack>
         </Box>
-      </Box>
+      </Paper>
+
       <Table
         columns={columns}
         rowKey={(record) => record.id}
@@ -690,6 +681,8 @@ const User = () => {
         onChange={handleTableChange}
         rowSelection={rowSelection}
         scroll={{ x: 1450 }}
+        bordered
+        size="middle"
       />
 
       {editModalVisible && (
@@ -700,17 +693,15 @@ const User = () => {
           onOk={handleResetCredentials}
           okText="Generate & Send New Password"
         >
-          <p>
-            <strong>Client:</strong> {selectedUser?.user_profile?.name}
+          <AntTypography.Text type="secondary">Client</AntTypography.Text>
+          <p style={{ marginTop: 2, fontWeight: 600 }}>
+            {selectedUser?.user_profile?.name}
           </p>
           <Input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
-            style={{
-              width: "100%",
-              marginTop: 10,
-            }}
+            style={{ width: "100%", marginTop: 8 }}
           />
         </Modal>
       )}
