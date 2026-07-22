@@ -1,0 +1,76 @@
+.service-page {
+  .page-title {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: 25px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .page-sub-title {
+    color: #888;
+    font-size: 15px;
+    text-transform: none;
+    font-weight: 400;
+  }
+
+  .saving_buttons {
+    text-align: right;
+    width: 100%;
+  }
+
+  // Borderless, softly-striped table to match design reference
+  .service-table {
+    :global(.ant-table) {
+      background: transparent;
+    }
+
+    :global(.ant-table-thead > tr > th) {
+      background: transparent;
+      border-bottom: 1px solid #e5e7eb;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    :global(.ant-table-tbody > tr > td) {
+      border-bottom: none;
+    }
+
+    :global(.ant-table-tbody > tr:nth-of-type(odd) > td) {
+      background: #ffffff;
+    }
+
+    :global(.ant-table-tbody > tr:nth-of-type(even) > td) {
+      background: #fafafa;
+    }
+
+    :global(.ant-table-tbody > tr:hover > td) {
+      background: #f5f5f5 !important;
+    }
+  }
+
+  // Responsive tweaks
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 20px;
+    }
+
+    .saving_buttons {
+      text-align: center;
+    }
+
+    :global(.ant-input-affix-wrapper) {
+      max-width: 100% !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-title {
+      font-size: 18px;
+    }
+
+    .page-sub-title {
+      font-size: 13px;
+    }
+  }
+}

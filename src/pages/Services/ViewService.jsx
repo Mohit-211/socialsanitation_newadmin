@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import { List, Row as AntRow, Col as AntCol } from "antd";
 import Form from "react-bootstrap/Form";
-import "./Service.css";
+// import "./Service.css";
 import Button from "@mui/material/Button";
 import "./Rating.scss"
 import { BASE_URL_IMAGE } from "../../services/Host";

@@ -1,0 +1,39 @@
+.bdm-page {
+  .page-title {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: 22px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .page-sub-title {
+    color: #888;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .bdm-card {
+    :global(.ant-table-thead > tr > th) {
+      font-weight: 600;
+      color: #111827;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 18px;
+    }
+
+    :global(.ant-input-affix-wrapper) {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-sub-title {
+      font-size: 12px;
+    }
+  }
+}

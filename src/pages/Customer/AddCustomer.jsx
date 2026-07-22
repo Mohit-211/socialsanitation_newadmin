@@ -4,7 +4,11 @@ import { Box } from "@mui/material";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AddUser, CityAPI, StateAPI } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
-import Card from "@mui/material/Card";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
+import { ArrowLeft } from "lucide-react";
 
 import {
   Input,
@@ -323,26 +327,57 @@ const AddCustomer = () => {
   };
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <div>
-          <h3 className="page-title">CLIENT MANAGEMENT</h3>
-          <p className="page-sub-title">Create New Client</p>
-        </div>
-        <Button
-          icon={<i className="pi pi-arrow-left" />}
-          onClick={() => navigate("/users")}
-          style={{ borderRadius: "5px", height: "47px" }}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          useFlexGap
+          spacing={2}
+          sx={{ width: "100%" }}
         >
-          Return to Clients
-        </Button>
-      </Box>
+          <Box>
+            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
 
-      <Card>
+            <Typography className="page-sub-title">
+              Create New Client
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            color="inherit"
+       startIcon={<ArrowLeft size={18} />}  
+            onClick={navigateToUser}
+            sx={{
+              ml: "auto",
+              height: 44,
+              px: 3,
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+          >
+            Return to Clients
+          </Button>
+        </Stack>
+      </Paper>
+
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 4,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Col span={6}>
             <Form.Item
@@ -361,7 +396,7 @@ const AddCustomer = () => {
             </Form.Item>
           </Col>
 
-          <Row gutter={16}>
+          <Row gutter={[24, 24]}>
             <Col span={6}>
               <Form.Item
                 label="Full Name"
@@ -418,7 +453,7 @@ const AddCustomer = () => {
             <Col span={8}></Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={[24, 24]}>
             <Col span={12}>
               <Form.Item
                 label="State"
@@ -577,7 +612,7 @@ const AddCustomer = () => {
               </div>
             </div>
 
-            <Row gutter={16}>
+            <Row gutter={[24, 24]}>
               <Col span={6}>
                 <Form.Item
                   label="Carpet (%)"
@@ -889,8 +924,13 @@ const AddCustomer = () => {
           </Form.Item>
 
           <Form.Item>
-            <Space>
+            <Space size={12}>
               <Button
+                style={{
+                  height: 44,
+                  borderRadius: 8,
+                  paddingInline: 24,
+                }}
                 type="primary"
                 htmlType="submit"
                 loading={disable}
@@ -900,6 +940,11 @@ const AddCustomer = () => {
               </Button>
 
               <Button
+                style={{
+                  height: 44,
+                  borderRadius: 8,
+                  paddingInline: 24,
+                }}
                 type="default"
                 onClick={navigateToUser}
                 icon={<i className="pi pi-times" />}
@@ -909,7 +954,7 @@ const AddCustomer = () => {
             </Space>
           </Form.Item>
         </Form>
-      </Card>
+      </Paper>
     </Box>
   );
 };

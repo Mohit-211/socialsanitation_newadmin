@@ -110,7 +110,7 @@ const User = () => {
           user_id: selectedUser.id,
           new_email: newEmail,
         },
-        localStorage.getItem("adminToken")
+        localStorage.getItem("adminToken"),
       );
 
       message.success(res.data.message || "New credentials sent successfully!");
@@ -119,7 +119,7 @@ const User = () => {
     } catch (error) {
       console.error("Reset credentials failed:", error);
       message.error(
-        error?.response?.data?.message || "Failed to reset credentials"
+        error?.response?.data?.message || "Failed to reset credentials",
       );
     }
   };
@@ -153,7 +153,7 @@ const User = () => {
         if (nearbyMapRef.current.getZoom() > max) {
           nearbyMapRef.current.setZoom(max);
         }
-      }
+      },
     );
   };
 
@@ -162,7 +162,7 @@ const User = () => {
     if (!nearbyMapRef.current || !nearbyClientLocation) return;
 
     const closeEmployees = nearbyEmployees.filter(
-      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI
+      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI,
     );
     // If literally everyone is far away, at least show the closest one
     // rather than an empty map.
@@ -235,7 +235,7 @@ const User = () => {
   };
 
   const selectedNearbyEmployee = nearbyEmployees.find(
-    (emp) => emp.id === selectedNearbyId
+    (emp) => emp.id === selectedNearbyId,
   );
 
   const nearbyEmployeesColumns = [
@@ -316,7 +316,7 @@ const User = () => {
     {
       title: "Email",
       dataIndex: "email",
-      width: 190,
+      width: 150,
       render: (email, record) => (
         <Space size={6} align="center">
           <span>{email}</span>
@@ -335,13 +335,13 @@ const User = () => {
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: 170,
+      width: 160,
       render: (assigned_to, record) => {
         return (
           <Select
             value={assigned_to || undefined}
             placeholder="Assign Admin"
-            style={{ width: 160 }}
+            style={{ width: 150 }}
             allowClear
             onChange={(value) => handleChangeAssignedSelect(record.id, value)}
           >
@@ -514,7 +514,7 @@ const User = () => {
       data
         .map(
           (row) =>
-            `${row.id},${row.user_profile?.name},${row.email},${row.mobile}`
+            `${row.id},${row.user_profile?.name},${row.email},${row.mobile}`,
         )
         .join("\n");
 
@@ -590,31 +590,47 @@ const User = () => {
         variant="outlined"
         sx={{
           p: 2.5,
-          mb: 2.5,
+          mb: 3,
           borderRadius: "10px",
           borderColor: "#eef0f2",
         }}
       >
-        <Box
-          display="flex"
+        <Stack
+          direction="row"
           justifyContent="space-between"
           alignItems="center"
+          spacing={2}
+          useFlexGap
           flexWrap="wrap"
-          gap={2}
+          sx={{ width: "100%" }}
         >
+          {/* Left */}
           <Box>
             <Typography className="page-title">CLIENT MANAGEMENT</Typography>
+
             <Typography className="page-sub-title">
               View, delete, and add Client
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          {/* Right */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            useFlexGap
+            sx={{
+              ml: "auto",
+              alignItems: "center",
+            }}
+          >
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}
-              placeholder="Search by name or email..."
-              style={{ width: 240, height: 44 }}
+              placeholder="Search..."
+              style={{
+                width: 260,
+                height: 44,
+              }}
               onChange={(e) => onSearch(e.target.value)}
             />
 
@@ -623,9 +639,9 @@ const User = () => {
                 variant="contained"
                 color="success"
                 sx={{
-                  minWidth: 44,
-                  width: 44,
-                  height: 44,
+                  minWidth: 46,
+                  width: 46,
+                  height: 46,
                   borderRadius: "8px",
                 }}
                 onClick={exportToCSV}
@@ -639,14 +655,14 @@ const User = () => {
                 <Button
                   variant="contained"
                   color="error"
+                  disabled={!selectedRowKeys.length}
+                  onClick={() => handleDelete(selectedRowKeys)}
                   sx={{
-                    minWidth: 44,
-                    width: 44,
-                    height: 44,
+                    minWidth: 46,
+                    width: 46,
+                    height: 46,
                     borderRadius: "8px",
                   }}
-                  onClick={() => handleDelete(selectedRowKeys)}
-                  disabled={!selectedRowKeys.length}
                 >
                   <Trash2 size={18} />
                 </Button>
@@ -657,19 +673,19 @@ const User = () => {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={navigateToAddUser}
                 sx={{
-                  minWidth: 44,
-                  width: 44,
-                  height: 44,
+                  minWidth: 46,
+                  width: 46,
+                  height: 46,
                   borderRadius: "8px",
                 }}
-                onClick={navigateToAddUser}
               >
                 <Plus size={18} />
               </Button>
             </Tooltip>
           </Stack>
-        </Box>
+        </Stack>
       </Paper>
 
       <Table
@@ -681,7 +697,6 @@ const User = () => {
         onChange={handleTableChange}
         rowSelection={rowSelection}
         scroll={{ x: 1450 }}
-        bordered
         size="middle"
       />
 

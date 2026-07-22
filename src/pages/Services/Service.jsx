@@ -1,213 +1,267 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message } from "antd";
+import { Table, Space, message, Input } from "antd";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { GetServices, DeleteService } from "../../services/Api/ServiceApi";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Alert from "../Customer/Alert";
-import TextField from "@mui/material/TextField";
-import "./Service.css";
+import "./Service.scss";
 
 const Service = () => {
-	const navigate = useNavigate();
-	const [serviceData, setServiceData] = useState([]);
-	const [filteredData, setFilteredData] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [tableParams, setTableParams] = useState({
-		pagination: {
-			current: 1,
-			pageSize: 100,
-		},
-		sortField: null,
-		sortOrder: null,
-	});
+  const navigate = useNavigate();
+  const [serviceData, setServiceData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 100,
+    },
+    sortField: null,
+    sortOrder: null,
+  });
 
-	const columns = [
-		{
-			title: "S.No.",
-			dataIndex: "index",
-			sorter: (a, b) => a.index - b.index,
-		},
-		{
-			title: "Name",
-			dataIndex: "name",
-			width: "30%",
-		},
-		{
-			title: "Abbreviation",
-			dataIndex: "abbreviation",
-			width: "20%",
-		},
-		{
-			title: "Price",
-			dataIndex: "price",
-			width: "15%",
-			render: (value) => `Starting Price: $${value}`,
-		},
-		{
-			title: "Description",
-			dataIndex: "description",
-			width: "40%",
-			render: (text) => {
-				const words = text?.split(" ");
-				const truncatedText =
-					words?.length > 10 ? words.slice(0, 10).join(" ") + "..." : text;
+  const actionIconBtn = (color) => ({
+    width: 38,
+    height: 38,
+    border: "1px solid",
+    borderColor: color,
+    color,
+    "&:hover": {
+      backgroundColor: `${color}14`,
+      borderColor: color,
+    },
+  });
 
-				return <div dangerouslySetInnerHTML={{ __html: truncatedText }} />;
-			},
-		},
-		{
-			title: "Action",
-			dataIndex: "action",
-			render: (_, record) => (
-				<Space size="middle">
-					<Button
-						icon="pi pi-eye"
-						rounded
-						outlined
-						severity="warning"
-						style={{ borderRadius: "25px" }}
-						onClick={(event) => navigateToViewService(event, record.id)}
-					/>
-					<Button
-						icon="pi pi-pencil"
-						rounded
-						outlined
-						style={{ borderRadius: "25px" }}
-						onClick={(event) => navigateToEditService(event, record.id)}
-					/>
-					<Alert title="Service" handleDelete={() => handleDelete(record.id)} />
-				</Space>
-			),
-		},
-	];
+  const columns = [
+    {
+      title: "S.No.",
+      dataIndex: "index",
+      width: 70,
+      sorter: (a, b) => a.index - b.index,
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      width: 220,
+    },
+    {
+      title: "Abbreviation",
+      dataIndex: "abbreviation",
+      width: 150,
+    },
+    {
+      title: "Price",
+      dataIndex: "price",
+      width: 160,
+      render: (value) => `Starting Price: $${value}`,
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      width: 260,
+      render: (text) => {
+        const words = text?.split(" ");
+        const truncatedText =
+          words?.length > 10 ? words.slice(0, 10).join(" ") + "..." : text;
 
-	const getData = async (params = {}) => {
-		try {
-			setLoading(true);
-			let result = await GetServices(
-				localStorage.getItem("adminToken"),
-				params
-			);
-			const newData = result.data.data.map((item, index) => ({
-				...item,
-				index: index + 1,
-			}));
-			setServiceData(newData);
-			setFilteredData(newData); // Initialize filtered data
-		} catch (e) {
-			console.log(e);
-			if (e.response && e.response.status === 401) {
-				navigate("/error401");
-			} else {
-				console.log("Error loading data. Please try again later.");
-			}
-		} finally {
-			setLoading(false);
-		}
-	};
+        return <div dangerouslySetInnerHTML={{ __html: truncatedText }} />;
+      },
+    },
+    {
+      title: "Action",
+      dataIndex: "action",
+      width: 190,
+      render: (_, record) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View Service">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#F59E0B")}
+              onClick={(event) => navigateToViewService(event, record.id)}
+            >
+              <Eye size={16} />
+            </IconButton>
+          </Tooltip>
 
-	const handleTableChange = (pagination, filters, sorter) => {
-		setTableParams({
-			pagination,
-			filters,
-			sortField: sorter.field,
-			sortOrder: sorter.order,
-		});
-	};
+          <Tooltip title="Edit Service">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#6366F1")}
+              onClick={(event) => navigateToEditService(event, record.id)}
+            >
+              <Pencil size={16} />
+            </IconButton>
+          </Tooltip>
 
-	useEffect(() => {
-		getData({
-			page: tableParams.pagination.current,
-			pageSize: tableParams.pagination.pageSize,
-			sortField: tableParams.sortField,
-			sortOrder: tableParams.sortOrder,
-		});
-	}, [tableParams]);
+          <Tooltip title="Delete Service">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#EF4444")}
+              onClick={() => handleDelete(record.id)}
+            >
+              <Trash2 size={16} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
 
-	const handleDelete = (id) => {
-		DeleteService(id)
-			.then((res) => {
-				message.success(res?.data?.message);
-				getData();
-			})
-			.catch((error) => {
-				console.log(error, "error");
-			});
-	};
+  const getData = async (params = {}) => {
+    try {
+      setLoading(true);
+      let result = await GetServices(
+        localStorage.getItem("adminToken"),
+        params,
+      );
+      const newData = result.data.data.map((item, index) => ({
+        ...item,
+        index: index + 1,
+      }));
+      setServiceData(newData);
+      setFilteredData(newData); // Initialize filtered data
+    } catch (e) {
+      console.log(e);
+      if (e.response && e.response.status === 401) {
+        navigate("/error401");
+      } else {
+        console.log("Error loading data. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const navigateToAddService = () => {
-		navigate("/addService");
-	};
+  const handleTableChange = (pagination, filters, sorter) => {
+    setTableParams({
+      pagination,
+      filters,
+      sortField: sorter.field,
+      sortOrder: sorter.order,
+    });
+  };
 
-	const navigateToViewService = (event, id) => {
-		navigate(`/viewService/${id}`);
-	};
+  useEffect(() => {
+    getData({
+      page: tableParams.pagination.current,
+      pageSize: tableParams.pagination.pageSize,
+      sortField: tableParams.sortField,
+      sortOrder: tableParams.sortOrder,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableParams]);
+const handleDelete = (id) => {
+  Modal.confirm({
+    title: "Confirm",
+    content: "Are you sure you want to delete this service?",
+    onOk: async () => {
+      try {
+        const res = await DeleteService(id);
+        message.success(res?.data?.message || "Service deleted successfully");
+        getData();
+      } catch (error) {
+        console.error(error);
+        message.error("Failed to delete service");
+      }
+    },
+  });
+};
 
-	const navigateToEditService = (event, id) => {
-		navigate(`/editService/${id}`);
-	};
+  const navigateToAddService = () => {
+    navigate("/addService");
+  };
 
-	const onSearch = (searchField) => {
-		const filteredList = serviceData.filter(
-			(item) =>
-				item.name.toLowerCase().includes(searchField.toLowerCase()) ||
-				item.abbreviation.toLowerCase().includes(searchField.toLowerCase())
-		);
-		setFilteredData(filteredList); // Set the filtered data to state
-	};
+  const navigateToViewService = (event, id) => {
+    navigate(`/viewService/${id}`);
+  };
 
-	return (
-		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
-			>
-				<div>
-					<h3 className="page-title">Service MANAGEMENT</h3>
-					<p className="page-sub-title">View, delete, edit and add Service</p>
-				</div>
+  const navigateToEditService = (event, id) => {
+    navigate(`/editService/${id}`);
+  };
 
-				<Box display="flex" justifyContent="space-between" alignItems="center">
-					<Box>
-						<span className="p-input-icon-left">
-							<i className="pi pi-search" />
-							<InputText
-								type="search"
-								onChange={(e) => {
-									onSearch(e.target.value);
-								}}
-								placeholder="Search..."
-							/>
-						</span>
-						<Button
-							label=" Add Service"
-							icon="pi pi-plus"
-							severity="info"
-							style={{
-								margin: "0px 10px",
-								borderRadius: "5px",
-								height: "47px",
-							}}
-							onClick={navigateToAddService}
-						/>
-					</Box>
-				</Box>
-			</Box>
-			<Table
-				columns={columns}
-				rowKey={(record) => record.id}
-				dataSource={filteredData} // Use filtered data
-				pagination={tableParams.pagination}
-				loading={loading}
-				onChange={handleTableChange}
-			/>
-		</Box>
-	);
+  const onSearch = (searchField) => {
+    setSearchTerm(searchField);
+    const filteredList = serviceData.filter(
+      (item) =>
+        item.name.toLowerCase().includes(searchField.toLowerCase()) ||
+        item.abbreviation.toLowerCase().includes(searchField.toLowerCase()),
+    );
+    setFilteredData(filteredList); // Set the filtered data to state
+  };
+
+  return (
+    <Box className="service-page">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          mb: 3,
+        }}
+      >
+        <Box>
+          <Typography className="page-title">SERVICE MANAGEMENT</Typography>
+          <Typography className="page-sub-title">
+            View, delete, edit and add Service
+          </Typography>
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={1.5}
+          useFlexGap
+          sx={{ alignItems: "center", flexWrap: "wrap" }}
+        >
+          <Input
+            allowClear
+            prefix={<Search size={18} color="#9CA3AF" />}
+            placeholder="Search..."
+            style={{ width: 260, height: 44 }}
+            value={searchTerm}
+            onChange={(e) => onSearch(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            startIcon={<Plus size={18} />}
+            sx={{
+              borderRadius: "8px",
+              height: 44,
+              whiteSpace: "nowrap",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+            onClick={navigateToAddService}
+          >
+            Add Service
+          </Button>
+        </Stack>
+      </Stack>
+
+      <div style={{ overflowX: "auto" }}>
+        <Table
+          className="service-table"
+          columns={columns}
+          rowKey={(record) => record.id}
+          dataSource={filteredData} // Use filtered data
+          pagination={tableParams.pagination}
+          loading={loading}
+          onChange={handleTableChange}
+          size="middle"
+          scroll={{ x: 1200 }}
+        />
+      </div>
+    </Box>
+  );
 };
 
 export default Service;

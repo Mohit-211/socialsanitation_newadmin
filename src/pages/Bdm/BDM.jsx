@@ -1,23 +1,23 @@
-/** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Typography } from "antd";
+import { Table, Space, message, Modal, Input } from "antd";
 import Button from "@mui/material/Button";
-import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router";
 import { GetAllBDMS, DeleteBDM, GetUserByBDMId } from "../../services/Api/bdm";
 import {
-  IoArrowForwardCircleOutline,
-  IoEyeOutline,
-  IoPersonAddOutline,
-  IoPencilOutline,
-  IoTrashOutline,
-  IoAddOutline,
-} from "react-icons/io5";
-
-const { Text, Title } = Typography;
+  ArrowUpRight,
+  Eye,
+  UserPlus,
+  Pencil,
+  Trash2,
+  Plus,
+  Search,
+} from "lucide-react";
+import "./BDM.scss";
 
 const BDM = () => {
   const navigate = useNavigate();
@@ -27,66 +27,101 @@ const BDM = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [userdData, setUserData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [tableParams, setTableParams] = useState({
     pagination: { current: 1, pageSize: 10 },
   });
+
+  const actionButtonBase = {
+    borderRadius: "6px",
+    fontSize: "12px",
+    fontWeight: 600,
+    textTransform: "none",
+    boxShadow: "none",
+  };
 
   const columns = [
     {
       title: "S.No.",
       dataIndex: "index",
-      width: "80px",
+      width: 80,
       align: "center",
-      render: (text) => <Text strong>{text}</Text>,
     },
     {
       title: "Name",
       dataIndex: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (name) => <Text style={{ fontWeight: 600 }}>{name}</Text>,
+      render: (name) => <span style={{ fontWeight: 600 }}>{name}</span>,
     },
     {
       title: "Email Address",
       dataIndex: "email",
-      render: (email) => <Text type="secondary">{email}</Text>,
+      render: (email) => <span style={{ color: "#6b7280" }}>{email}</span>,
     },
     {
       title: "Action",
       key: "action",
-      width: "450px",
+      width: 460,
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           <Button
-            label="View"
-            icon={<IoEyeOutline style={{ marginRight: "5px" }} />}
-            className="p-button-sm p-button-outlined"
-            style={{ borderRadius: "6px", fontSize: "12px" }}
+            variant="outlined"
+            size="small"
+            startIcon={<Eye size={14} />}
+            sx={{
+              ...actionButtonBase,
+              color: "#1677ff",
+              borderColor: "#1677ff",
+              "&:hover": { borderColor: "#1677ff", background: "#f0f7ff" },
+            }}
             onClick={() => {
               getUserData(record.id);
               setIsModalVisible(true);
             }}
-          />
+          >
+            View
+          </Button>
           <Button
-            label="Assign"
-            icon={<IoPersonAddOutline style={{ marginRight: "5px" }} />}
-            className="p-button-sm p-button-success p-button-outlined"
-            style={{ borderRadius: "6px", fontSize: "12px" }}
+            variant="outlined"
+            size="small"
+            startIcon={<UserPlus size={14} />}
+            sx={{
+              ...actionButtonBase,
+              color: "#16a34a",
+              borderColor: "#16a34a",
+              "&:hover": { borderColor: "#16a34a", background: "#f0fdf4" },
+            }}
             onClick={(event) => navigateToViewUser(event, record.id)}
-          />
+          >
+            Assign
+          </Button>
           <Button
-            label="Edit"
-            icon={<IoPencilOutline style={{ marginRight: "5px" }} />}
-            className="p-button-sm p-button-warning p-button-outlined"
-            style={{ borderRadius: "6px", fontSize: "12px" }}
+            variant="outlined"
+            size="small"
+            startIcon={<Pencil size={14} />}
+            sx={{
+              ...actionButtonBase,
+              color: "#f59e0b",
+              borderColor: "#f59e0b",
+              "&:hover": { borderColor: "#f59e0b", background: "#fffbeb" },
+            }}
             onClick={() => navigate(`/edit-bdm/${record.id}`)}
-          />
+          >
+            Edit
+          </Button>
           <Button
-            label="Delete"
-            icon={<IoTrashOutline style={{ marginRight: "5px" }} />}
-            className="p-button-sm p-button-danger p-button-outlined"
-            style={{ borderRadius: "6px", fontSize: "12px" }}
+            variant="contained"
+            size="small"
+            startIcon={<Trash2 size={14} />}
+            sx={{
+              ...actionButtonBase,
+              background: "#ef4444",
+              "&:hover": { background: "#dc2626" },
+            }}
             onClick={() => handleDelete([record.id])}
-          />
+          >
+            Delete
+          </Button>
         </Space>
       ),
     },
@@ -133,9 +168,11 @@ const BDM = () => {
 
   useEffect(() => {
     getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSearch = (searchField) => {
+    setSearchTerm(searchField);
     const filtered = userBackupData.filter(
       (item) =>
         item?.name?.toLowerCase().includes(searchField.toLowerCase()) ||
@@ -166,75 +203,98 @@ const BDM = () => {
   };
 
   return (
-    <Box p={3}>
+    <Box className="bdm-page" p={{ xs: 1.5, sm: 3 }}>
       <Card
         elevation={0}
-        style={{
-          padding: "20px",
+        className="bdm-card"
+        sx={{
+          p: { xs: 2, sm: 2.5 },
           borderRadius: "12px",
           border: "1px solid #f0f0f0",
         }}
       >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={3}
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            mb: 3,
+          }}
         >
-          <div>
-            <Title level={3} style={{ margin: 0 }}>
-              BDM MANAGEMENT
-            </Title>
-            <Text type="secondary">
+          <Box>
+            <Typography className="page-title">BDM MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
               View, delete, and add Business Development Managers
-            </Text>
-          </div>
+            </Typography>
+          </Box>
 
-          <Space size="middle">
-            <span className="p-input-icon-left">
-              <i className="pi pi-search" />
-              <InputText
-                type="search"
-                onChange={(e) => onSearch(e.target.value)}
-                placeholder="Search name or email..."
-                style={{ borderRadius: "8px", width: "250px" }}
-              />
-            </span>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            useFlexGap
+            sx={{ alignItems: "center", flexWrap: "wrap" }}
+          >
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search name or email..."
+              style={{ width: 260, height: 44, borderRadius: 8 }}
+              value={searchTerm}
+              onChange={(e) => onSearch(e.target.value)}
+            />
 
-            {/* Multi-Delete Button: Appears only when rows are selected */}
+            {selectedRowKeys.length > 0 && (
+              <Button
+                variant="contained"
+                startIcon={<Trash2 size={16} />}
+                sx={{
+                  borderRadius: "8px",
+                  height: 44,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  background: "#ef4444",
+                  "&:hover": { background: "#dc2626" },
+                }}
+                onClick={() => handleDelete(selectedRowKeys)}
+              >
+                Delete Selected ({selectedRowKeys.length})
+              </Button>
+            )}
+
             <Button
-              label={`Delete Selected (${selectedRowKeys.length})`}
-              icon={<IoTrashOutline style={{ marginRight: "8px" }} />}
-              severity="danger"
-              style={{
+              variant="contained"
+              startIcon={<Plus size={18} />}
+              sx={{
                 borderRadius: "8px",
-                display: selectedRowKeys.length > 0 ? "inline-flex" : "none",
+                height: 44,
+                whiteSpace: "nowrap",
+                textTransform: "none",
+                fontWeight: 600,
               }}
-              onClick={() => handleDelete(selectedRowKeys)}
-            />
-
-            <Button
-              label="Add New BDM"
-              icon={<IoAddOutline style={{ marginRight: "8px" }} />}
-              severity="info"
-              style={{ borderRadius: "8px" }}
               onClick={() => navigate("/add-bdm")}
-            />
-          </Space>
-        </Box>
+            >
+              Add New BDM
+            </Button>
+          </Stack>
+        </Stack>
 
-        <Table
-          columns={columns}
-          rowKey={(record) => record.id}
-          dataSource={data}
-          pagination={{ ...tableParams.pagination, showSizeChanger: true }}
-          loading={loading}
-          //   rowSelection={{
-          //     selectedRowKeys,
-          //     onChange: onSelectChange,
-          //   }}
-          className="custom-table"
-        />
+        <div style={{ overflowX: "auto" }}>
+          <Table
+            columns={columns}
+            rowKey={(record) => record.id}
+            dataSource={data}
+            pagination={{ ...tableParams.pagination, showSizeChanger: true }}
+            loading={loading}
+            //   rowSelection={{
+            //     selectedRowKeys,
+            //     onChange: onSelectChange,
+            //   }}
+            className="custom-table"
+            scroll={{ x: "max-content" }}
+          />
+        </div>
       </Card>
 
       <Modal
@@ -262,12 +322,9 @@ const BDM = () => {
               key: "redirect",
               align: "center",
               render: (text, record) => (
-                <IoArrowForwardCircleOutline
-                  style={{
-                    fontSize: "24px",
-                    cursor: "pointer",
-                    color: "#2196F3",
-                  }}
+                <ArrowUpRight
+                  size={20}
+                  style={{ cursor: "pointer", color: "#2196F3" }}
                   onClick={() => navigate(`/viewUser/${record.user_id}`)}
                 />
               ),
@@ -276,6 +333,7 @@ const BDM = () => {
           dataSource={userdData}
           rowKey={(record) => record.id}
           pagination={false}
+          scroll={{ x: "max-content" }}
         />
       </Modal>
     </Box>

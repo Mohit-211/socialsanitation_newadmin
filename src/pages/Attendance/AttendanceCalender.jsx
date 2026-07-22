@@ -135,7 +135,7 @@ const AttendanceCalendar = () => {
 				<Box>
 					<Button
 						icon={<i className="pi pi-arrow-left" />}
-						onClick={() => navigate("/attendence")}
+						onClick={() => navigate("/attendance")}
 						style={{ borderRadius: "5px", height: "47px" }}
 					>
 						Return to Attendance
