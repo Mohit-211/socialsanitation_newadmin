@@ -3,10 +3,10 @@
 .LoginContainer {
   display: flex;
   justify-content: center;
-  /* Center horizontally */
   align-items: center;
-  /* Center vertically */
-  height: 100vh;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
 
   .btntheme,
   .btn-primary {
@@ -22,35 +22,31 @@
     font-size: large;
   }
 
-  /* This ensures that the container takes up the full viewport height */
   .Login {
     margin: 20px auto;
     width: 100%;
 
     .Login_Container {
       padding: 20px;
-      box-shadow: rgba(9, 30, 66, 0.25) 0px 4px 8px -2px,
+      box-shadow:
+        rgba(9, 30, 66, 0.25) 0px 4px 8px -2px,
         rgba(9, 30, 66, 0.08) 0px 0px 0px 1px;
       margin: auto;
 
       width: 40%;
+      min-width: 320px;
+      max-width: 460px;
       border-radius: 10px;
+
+      @media (max-width: 768px) {
+        width: 90%;
+      }
 
       h1 {
         text-align: center;
       }
     }
   }
-}
-
-.password-toggle-icon {
-  position: absolute !important;
-  top: 68%;
-  left: 500px;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 1.2em;
-  color: #6c757d;
 }
 
 .LogoContainer {
@@ -62,83 +58,62 @@
 }
 
 .Logo {
-  width: 180px; 
+  width: 180px;
   height: auto;
   margin-bottom: 10px;
   margin-right: 2px;
 }
 
-.heading_two_content{
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-margin-bottom: 30px;
-margin-top: 40px;
+.heading_two_content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  margin-top: 40px;
 }
 
-.heading_2{
+.heading_2 {
   margin: 0px 0px 0.35em;
   font-size: 1.5rem;
   font-weight: 700;
   font-family: Roboto, sans-serif;
   line-height: 1.2;
-  color: #2391B1;
+  color: #2391b1;
 }
 
-.heading_two_item{
+.heading_two_item {
   color: rgb(105, 117, 134);
-    font-weight: 400;
-    font-family: Roboto, sans-serif;
-    line-height: 1.66;
-    font-size: 16px;
-    text-align: inherit;
-    
-}
-
-.forget-password-link {
-  position: absolute;
-  top: 95px;
-  right: 10px;
-  font-size: 14px;
-  color: #8B0D0E; 
-  cursor: pointer;
-  margin: 0px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 400;
   font-family: Roboto, sans-serif;
-  line-height: 1.75;
-  text-decoration: none;
-  cursor: pointer;
+  line-height: 1.66;
+  font-size: 16px;
+  text-align: inherit;
 }
 
-
-.button_div{
+.button_div {
   margin-top: 50px;
   margin-bottom: 30px;
-
 }
 
-.login_button{
- border-radius: 4px;
- position: relative;
- width: 100%;
- border: 0px;
- border-radius: 5px;
- margin: 0px;
- outline: 0px;
- justify-content: center;
- background: linear-gradient(135deg, #243352, #08F624);
+.login_button {
+  border-radius: 4px;
+  position: relative;
+  width: 100%;
+  border: 0px;
+  border-radius: 5px;
+  margin: 0px;
+  outline: 0px;
+  justify-content: center;
+  background: linear-gradient(135deg, #243352, #08f624);
 }
-.login_button:hover{
-  background: linear-gradient(135deg, #08F624, #243352);
+.login_button:hover {
+  background: linear-gradient(135deg, #08f624, #243352);
 }
 
 .login_form_control {
   box-shadow: none;
-  border-color: var(--color-c3d4da);
+  border-color: #c3d4da;
   height: 55px;
   border-radius: 10px;
 }
-
-

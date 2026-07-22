@@ -1,0 +1,55 @@
+/** @format */
+
+.page-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+  color: #111827;
+  letter-spacing: 0.3px;
+}
+
+.page-sub-title {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+// Table header + cell text sizing
+.custom-header {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.custom-cell {
+  font-size: 14px;
+}
+
+// Ant Design table polish to match rounded, bordered look in screenshot
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+// Search input — rounded pill style like screenshot
+.ant-input-affix-wrapper {
+  border-radius: 8px;
+}
+
+// Action icon buttons — circular, consistent spacing
+.redirect_button {
+  &:hover {
+    color: #73abce;
+    cursor: pointer;
+  }
+}

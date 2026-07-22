@@ -5,14 +5,13 @@ import { AdminLogin } from "../../services/Api/Api";
 import "./Login.scss";
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
-import { Form, Input } from "antd";
-import { message } from "antd";
+import { Form, Input, message } from "antd";
 import logo from "../../assets/WhatsApp Image 2024-11-20 at 9.55.51 AM (1) 1.png";
+
 const Login = () => {
   const navigate = useNavigate();
+
   const onFinish = (values) => {
-	   console.log("FORM SUBMITTED");
-    console.log(values);
     let formData = {
       email: values.email,
       password: values.password,
@@ -34,21 +33,24 @@ const Login = () => {
         }, 1000);
       })
       .catch((error) => {
-        if (error.response.data.message === "Error: User not found.") {
+        if (error.response?.data?.message === "Error: User not found.") {
           message.error("Email Doesn't Exist");
         } else if (
-          error.response.data.message ===
+          error.response?.data?.message ===
           "Error: Invalid email or password. Please try again."
         ) {
           message.error("Invalid Password");
         } else if (
-          error.response.data.message ===
+          error.response?.data?.message ===
           "Please Enter Required Fields : [ email_id || password ]"
         ) {
           message.error("Please enter Required Fields");
+        } else {
+          message.error("Something went wrong. Please try again.");
         }
       });
   };
+
   const onFinishFailed = (errorInfo) => {};
 
   return (
@@ -68,9 +70,7 @@ const Login = () => {
           <Form
             name="basic"
             layout="vertical"
-            initialValues={{
-              remember: true,
-            }}
+            initialValues={{ remember: true }}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
             autoComplete="off"
@@ -79,39 +79,19 @@ const Login = () => {
               label="Email Address"
               name="email"
               rules={[
-                {
-                  required: true,
-                  message: "Please enter your EmailId",
-                },
+                { required: true, message: "Please enter your EmailId" },
               ]}
             >
-              <Input
-                style={{
-                  height: "55px",
-                  borderRadius: "10px",
-                  borderColor: "var(--color-c3d4da)",
-                  boxShadow: "none",
-                }}
-              />
+              <Input className="login_form_control" />
             </Form.Item>
             <Form.Item
               label="Password"
               name="password"
               rules={[
-                {
-                  required: true,
-                  message: "Please enter your Password",
-                },
+                { required: true, message: "Please enter your Password" },
               ]}
             >
-              <Input.Password
-                style={{
-                  height: "55px",
-                  borderRadius: "10px",
-                  borderColor: "var(--color-c3d4da)",
-                  boxShadow: "none",
-                }}
-              />
+              <Input.Password className="login_form_control" />
             </Form.Item>
             <div className="button_div">
               <Button
@@ -128,4 +108,5 @@ const Login = () => {
     </div>
   );
 };
+
 export default Login;

@@ -34,6 +34,7 @@ import {
   KeyRound,
   RefreshCw,
 } from "lucide-react";
+import "./User.scss";
 
 // 🔹 role_id -> readable label for the nearby-employees panel
 const NEARBY_ROLE_LABELS = {
@@ -276,19 +277,19 @@ const User = () => {
     {
       title: "S.No.",
       dataIndex: "index",
-      width: "3%",
+      width: 20,
       sorter: (a, b) => a.index - b.index,
     },
     {
-      title: "Client's Name",
+      title: "Name",
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
-      width: "10%",
+      width: 100,
     },
     {
       title: "Email",
       dataIndex: "email",
-      width: "15%",
+      width: 190,
       render: (email, record) => (
         <Space size={6} align="center">
           <span>{email}</span>
@@ -312,13 +313,13 @@ const User = () => {
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: "20%",
+      width: 160,
       render: (assigned_to, record) => {
         return (
           <Select
             value={assigned_to || undefined}
             placeholder="Assign Admin"
-            style={{ width: 180 }}
+            style={{ width: 150 }}
             onChange={(value) => handleChangeAssignedSelect(record.id, value)}
           >
             <Select.Option value={2}>Marco Williams</Select.Option>
@@ -330,12 +331,13 @@ const User = () => {
     {
       title: "Account Created On",
       dataIndex: "created_at",
-      width: "30%",
+      width: 140,
       render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
     },
     {
       title: "Action",
       dataIndex: "action",
+      width: 450,
       render: (_, record) => (
         <Space size={8}>
           <Tooltip title="View Nearby Employees">
@@ -351,7 +353,7 @@ const User = () => {
               }}
               onClick={() => openNearbyEmployeesModal(record)}
             >
-              <MapPin size={18} />
+              <MapPin size={22} strokeWidth={2} />
             </Button>
           </Tooltip>
 
@@ -610,19 +612,24 @@ const User = () => {
         alignItems="center"
         marginBottom="20px"
       >
-        <div>
+        <Box>
           <h3 className="page-title">CLIENT MANAGEMENT</h3>
           <p className="page-sub-title">View, delete, and add Client</p>
-        </div>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
+        </Box>
+        <Box
+          display="flex"
+          justifyContent="flex-end"
+          alignItems="center"
+          flex={1}
+        >
+          <Box display="flex" alignItems="center" gap={1}>
             <Input
               allowClear
               prefix={<Search size={18} />}
               placeholder="Search..."
               style={{
-                width: 250,
-                height: "47px",
+                width: 220,
+                height: 47,
               }}
               onChange={(e) => onSearch(e.target.value)}
             />
@@ -682,6 +689,7 @@ const User = () => {
         loading={loading}
         onChange={handleTableChange}
         rowSelection={rowSelection}
+        scroll={{ x: 1450 }}
       />
 
       {editModalVisible && (

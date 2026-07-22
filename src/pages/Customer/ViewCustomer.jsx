@@ -5,16 +5,15 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import { Box } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import Form from "react-bootstrap/Form";
 import {
   DeleteContractAgreement,
   DeleteServiceEstimate,
   GetUserById,
 } from "../../services/Api/Api";
 import Card from "@mui/material/Card";
-import Tab from "react-bootstrap/Tab";
-import Tabs from "react-bootstrap/Tabs";
-import { Space, Table, Tag, Col, message, Modal } from "antd";
+import { Space, Table, Tag, Col, message, Modal, Tabs } from "antd";
+import EditIcon from "@mui/icons-material/Edit";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import {
   DeleteServiceQuote,
@@ -101,6 +100,19 @@ const CardGrid = ({ children }) => (
   </div>
 );
 
+// Small square icon-button used for the Edit/Delete pair on every card header
+const CardIconButton = ({ color, onClick, children }) => (
+  <Button
+    variant="contained"
+    color={color}
+    size="small"
+    sx={{ minWidth: 32, width: 32, height: 32, padding: 0 }}
+    onClick={onClick}
+  >
+    {children}
+  </Button>
+);
+
 /**
  * Generic "document" card used for Monthly Invoices, Contract Agreements
  * and Service Estimates so all three share one clean, consistent look.
@@ -168,21 +180,14 @@ const DocumentCard = ({
         {(onEdit || onDelete) && (
           <div style={{ display: "flex", gap: "8px" }}>
             {onEdit && (
-              <Button
-                icon="pi pi-pencil"
-                severity="warning"
-                size="small"
-                onClick={onEdit}
-              />
+              <CardIconButton color="warning" onClick={onEdit}>
+                <EditIcon fontSize="small" />
+              </CardIconButton>
             )}
             {onDelete && (
-              <Button
-                type="button"
-                icon={<DeleteOutlined />}
-                danger
-                size="small"
-                onClick={onDelete}
-              />
+              <CardIconButton color="error" onClick={onDelete}>
+                <DeleteOutlined style={{ fontSize: 16 }} />
+              </CardIconButton>
             )}
           </div>
         )}
@@ -358,6 +363,8 @@ const DocumentCard = ({
   </Card>
 );
 
+const IoCardOutlineFallback = () => <span>💰</span>;
+
 /* -------------------------------------------------------------------------- */
 
 const ViewCustomer = () => {
@@ -377,7 +384,6 @@ const ViewCustomer = () => {
   const fetchServiceRequests = async () => {
     try {
       const res = await GetServiceRequestsByUserId(id);
-
       setServiceRequests(res?.data?.data?.data || []);
     } catch (err) {
       console.error(err);
@@ -395,10 +401,7 @@ const ViewCustomer = () => {
       onOk: async () => {
         try {
           await DeleteServiceEstimate(estimateId);
-
           message.success("Service Estimate deleted successfully");
-
-          // Refresh Service Estimates
           fetchServiceEstimates();
         } catch (error) {
           console.error(error);
@@ -417,10 +420,7 @@ const ViewCustomer = () => {
       onOk: async () => {
         try {
           await DeleteContractAgreement(contractId);
-
           message.success("Contract Agreement deleted successfully");
-
-          // Refresh Contract Agreements
           fetchContractAgreements();
         } catch (error) {
           console.error(error);
@@ -439,10 +439,7 @@ const ViewCustomer = () => {
       onOk: async () => {
         try {
           await DeleteInvoice(invoiceId);
-
           message.success("Invoice deleted successfully");
-
-          // Refresh Monthly Invoices
           fetchMonthlyInvoices();
         } catch (error) {
           console.error(error);
@@ -455,7 +452,6 @@ const ViewCustomer = () => {
   const fetchServiceEstimates = async () => {
     try {
       const res = await GetServiceEstimatesByUserId(id);
-      console.log("service estimates ==>", res?.data?.data);
       setServiceEstimates(res?.data?.data?.data || []);
     } catch (err) {
       console.error("Error fetching service estimates:", err);
@@ -465,7 +461,6 @@ const ViewCustomer = () => {
   const fetchContractAgreements = async () => {
     try {
       const res = await GetContractAgreementsByUserId(id);
-      console.log("contract agreements ==>", res?.data?.data);
       setContractAgreements(res?.data?.data?.data || []);
     } catch (err) {
       console.error("Error fetching contract agreements:", err);
@@ -475,7 +470,6 @@ const ViewCustomer = () => {
   const fetchMonthlyInvoices = async () => {
     try {
       const res = await GetMonthlyInvoicesByUserId(id);
-      console.log("monthly invoices==>", res?.data?.data);
       setMonthlyInvoices(res?.data?.data?.data || []);
     } catch (err) {
       console.error("Error fetching monthly invoices:", err);
@@ -486,7 +480,6 @@ const ViewCustomer = () => {
     GetUserById(id)
       .then((res) => {
         setUserData(res.data.data);
-        console.log("user", res.data.data);
       })
       .catch((err) => {
         console.log(err, "error");
@@ -497,13 +490,11 @@ const ViewCustomer = () => {
     try {
       const formData = { id: id, booking_status };
       let result = await GetBookingByUserId(formData);
-      // Add an auto-increment ID to each booking
       const dataWithIndex = result.data.data.map((item, index) => ({
         ...item,
         autoIncrementId: index + 1,
       }));
       setBookingData(dataWithIndex);
-      console.log("userbooking==>", dataWithIndex);
     } catch (e) {
       console.log(e);
     }
@@ -545,10 +536,7 @@ const ViewCustomer = () => {
       onOk: async () => {
         try {
           await DeleteServiceQuote(invoiceId);
-
           message.success("Invoice deleted successfully");
-
-          // refresh quotes
           fetchQuotes();
         } catch (error) {
           console.error("Delete error:", error);
@@ -557,13 +545,6 @@ const ViewCustomer = () => {
       },
     });
   };
-
-  const tabsContent = [
-    { label: "All", key: "all" },
-    { label: "Ongoing", key: "ONGOING" },
-    { label: "Upcoming", key: "UPCOMING" },
-    { label: "Completed", key: "COMPLETED" },
-  ];
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -582,33 +563,21 @@ const ViewCustomer = () => {
       case "PENDING":
         return "yellow";
       case "COMPLETED":
-        return "green"; // Assuming you want COMPLETED to have the same color as SUCCESS
+        return "green";
       default:
-        return "geekblue"; // Default color
+        return "geekblue";
     }
   };
 
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "autoIncrementId",
-      key: "id",
-    },
-    {
-      title: "Booking ID",
-      dataIndex: "booking_unique_id",
-      key: "booking_id",
-    },
+    { title: "ID", dataIndex: "autoIncrementId", key: "id" },
+    { title: "Booking ID", dataIndex: "booking_unique_id", key: "booking_id" },
     {
       title: "Service",
       dataIndex: ["service_booking", "name"],
       key: "service",
     },
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-    },
+    { title: "Type", dataIndex: "type", key: "type" },
     {
       title: "Date",
       dataIndex: "date",
@@ -685,14 +654,14 @@ const ViewCustomer = () => {
   };
 
   const jobStatusConfig = {
-    NOT_BOOKED: { label: "NOT BOOKED", color: "#f1c40f" }, // yellow
-    BOOKED: { label: "BOOKED", color: "#3498db" }, // blue
-    EXPIRED: { label: "EXPIRED", color: "#e74c3c" }, // red
+    NOT_BOOKED: { label: "NOT BOOKED", color: "#f1c40f" },
+    BOOKED: { label: "BOOKED", color: "#3498db" },
+    EXPIRED: { label: "EXPIRED", color: "#e74c3c" },
   };
 
   const paymentStatusConfig = {
-    NOT_PAID: { label: "NOT PAID", color: "#e67e22" }, // orange
-    PAID: { label: "PAID", color: "#2ecc71" }, // green
+    NOT_PAID: { label: "NOT PAID", color: "#e67e22" },
+    PAID: { label: "PAID", color: "#2ecc71" },
     CASH_PAID: { label: "PAID (CASH)", color: "#2ecc71" },
     EXPIRED: { label: "EXPIRED", color: "#95a5a6" },
   };
@@ -703,7 +672,822 @@ const ViewCustomer = () => {
     background: "linear-gradient(to bottom, #ffffff, #fafafa)",
     borderRadius: "16px",
     border: "1px solid #e8e8e8",
+    padding: "20px",
   };
+
+  /* ---------------------------------------------------------------- */
+  /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
+  /* ---------------------------------------------------------------- */
+  const bookingStatusTabItems = [
+    { label: "All", key: "all" },
+    { label: "Ongoing", key: "ONGOING" },
+    { label: "Upcoming", key: "UPCOMING" },
+    { label: "Completed", key: "COMPLETED" },
+  ].map((tab) => ({
+    key: tab.key,
+    label: tab.label,
+    children: (
+      <div style={{ marginTop: "20px" }}>
+        <Table
+          columns={columns}
+          dataSource={bookingData}
+          rowKey="autoIncrementId"
+        />
+      </div>
+    ),
+  }));
+
+  /* ---------------------------------------------------------------- */
+  /* Overview tab content                                               */
+  /* ---------------------------------------------------------------- */
+  const overviewContent = (
+    <>
+      <Card
+        style={{
+          width: "100%",
+          marginTop: "20px",
+          marginBottom: "40px",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "20px",
+            marginBottom: "40px",
+          }}
+        >
+          <div>
+            <h5
+              style={{
+                fontSize: "0.9rem",
+                fontFamily: "Cerebri Sans,sans-serif",
+                fontWeight: "700",
+                marginTop: "14px",
+                color: "black",
+              }}
+            >
+              User's Name:
+            </h5>
+            <p>{userData?.user_profile?.name || "---"}</p>
+          </div>
+          <div>
+            <h5
+              style={{
+                fontSize: "0.9rem",
+                fontFamily: "Cerebri Sans,sans-serif",
+                fontWeight: "700",
+                marginTop: "14px",
+                color: "black",
+              }}
+            >
+              Email
+            </h5>
+            <p>{userData?.email || "---"}</p>
+          </div>
+          <div>
+            <h5
+              style={{
+                fontSize: "0.9rem",
+                fontFamily: "Cerebri Sans,sans-serif",
+                fontWeight: "700",
+                marginTop: "14px",
+                color: "black",
+              }}
+            >
+              Mobile:
+            </h5>
+            <p>{userData?.user_profile?.mobile || "---"}</p>
+          </div>
+          <Col>
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{ fontWeight: "bold", color: "black", display: "block" }}
+              >
+                Client's Addresses:
+              </label>
+              <div>
+                {userData?.user_address?.length > 0 ? (
+                  userData.user_address.map((address, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      <li>
+                        {address.address}, {address.user_city?.name},{" "}
+                        {address.user_state?.name}, {address.user_country?.name}
+                      </li>
+                    </div>
+                  ))
+                ) : (
+                  <div>No address available</div>
+                )}
+              </div>
+            </div>
+          </Col>
+        </div>
+      </Card>
+
+      <Card style={{ padding: "20px" }}>
+        <h5 style={{ marginBottom: "20px", marginTop: "20px" }}>
+          View all the bookings associated with {clientName}
+        </h5>
+        <Tabs
+          activeKey={activeTab}
+          onChange={handleTabSelect}
+          items={bookingStatusTabItems}
+        />
+      </Card>
+    </>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Service Quotes tab content                                         */
+  /* ---------------------------------------------------------------- */
+  const quotesContent = (
+    <Card style={sectionCardStyle}>
+      <SectionHeader title={`Service Quotes for ${clientName}`} />
+
+      {serviceQuotes.length === 0 ? (
+        <EmptyState message="No service quotes available for this client." />
+      ) : (
+        <CardGrid>
+          {serviceQuotes.map((quote) => (
+            <Card
+              key={quote.id}
+              style={{
+                border: "1px solid #e8e8e8",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                borderRadius: "12px",
+                overflow: "hidden",
+                transition: "all 0.3s ease",
+                cursor: "default",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.12)";
+                e.currentTarget.style.transform = "translateY(-4px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  padding: "20px",
+                  color: "white",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "16px",
+                    width: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "6px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Tag
+                      style={{
+                        background: jobStatusConfig[quote.job_status]?.color,
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "11px",
+                        padding: "4px 10px",
+                        borderRadius: "4px",
+                        border: "none",
+                        margin: 0,
+                      }}
+                    >
+                      {jobStatusConfig[quote.job_status]?.label}
+                    </Tag>
+
+                    <Tag
+                      style={{
+                        background:
+                          paymentStatusConfig[quote.payment_status]?.color,
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "11px",
+                        padding: "4px 10px",
+                        borderRadius: "4px",
+                        border: "none",
+                        margin: 0,
+                      }}
+                    >
+                      {paymentStatusConfig[quote.payment_status]?.label}
+                    </Tag>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <CardIconButton
+                      color="warning"
+                      onClick={() =>
+                        navigate(`/edit-service-quote/${quote.id}`)
+                      }
+                    >
+                      <EditIcon fontSize="small" />
+                    </CardIconButton>
+                    <CardIconButton
+                      color="error"
+                      onClick={() => handleDelete(quote.id)}
+                    >
+                      <DeleteOutlined style={{ fontSize: 16 }} />
+                    </CardIconButton>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        opacity: 0.8,
+                        letterSpacing: "0.05em",
+                        display: "block",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      QUOTE REFERENCE
+                    </span>
+                    <div
+                      style={{
+                        fontSize: "22px",
+                        fontWeight: "700",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {quote.ref_no}
+                    </div>
+                  </div>
+
+                  <Tag
+                    style={{
+                      background: "rgba(255,255,255,0.25)",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      color: "white",
+                      fontWeight: "700",
+                      fontSize: "18px",
+                      padding: "6px 14px",
+                      borderRadius: "6px",
+                      margin: 0,
+                    }}
+                  >
+                    ${Number(quote.total_due).toFixed(2)}
+                  </Tag>
+                </div>
+              </div>
+
+              <div style={{ padding: "20px" }}>
+                <div
+                  style={{
+                    background: "#f8f9fa",
+                    padding: "14px",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "15px",
+                      fontWeight: "600",
+                      color: "#2c3e50",
+                    }}
+                  >
+                    {quote.to_company_name}
+                  </p>
+                </div>
+
+                <div
+                  style={{ display: "grid", gap: "12px", marginBottom: "16px" }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        color: "#6c757d",
+                        minWidth: "100px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Service Dates:
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "#2c3e50",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {quote.service_dates
+                        ? dayjs(quote.service_dates).format(
+                            "MM-DD-YYYY hh:mm A",
+                          )
+                        : "N/A"}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "flex-start" }}>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        color: "#6c757d",
+                        minWidth: "100px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Due Date:
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "#2c3e50",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {quote.due_date
+                        ? dayjs(quote.due_date).format("MM-DD-YYYY hh:mm A")
+                        : "N/A"}
+                    </span>
+                  </div>
+
+                  {(quote.address_1 || quote.address_2) && (
+                    <div style={{ display: "flex", alignItems: "flex-start" }}>
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          color: "#6c757d",
+                          minWidth: "100px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        Address:
+                      </span>
+                      <span
+                        style={{ fontSize: "14px", color: "#2c3e50", flex: 1 }}
+                      >
+                        {quote.address_1 || ""} {quote.address_2 || ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    borderTop: "1px solid #e9ecef",
+                    paddingTop: "16px",
+                    marginTop: "16px",
+                  }}
+                >
+                  <h6
+                    style={{
+                      margin: "0 0 12px 0",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      color: "#495057",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    Items
+                  </h6>
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    {quote.service_quote_item?.map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          background: "#f8f9fa",
+                          padding: "10px 12px",
+                          borderRadius: "6px",
+                          borderLeft: "3px solid #667eea",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#2c3e50",
+                            marginBottom: "4px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {item.description}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "13px",
+                            color: "#6c757d",
+                          }}
+                        >
+                          <span>{item.frequency || "N/A"}</span>
+                          <span style={{ fontWeight: "600", color: "#667eea" }}>
+                            ${Number(item.amount).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "16px" }}>
+                  {quote.payment_status === "PAID" ? (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "12px",
+                        background: "#d4edda",
+                        color: "#155724",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      ✅ Payment Completed
+                    </div>
+                  ) : quote.payment_status === "EXPIRED" ? (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "12px",
+                        background: "#fff3cd",
+                        color: "#856404",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      ⏰ Payment Link Expired
+                    </div>
+                  ) : quote.square_payment_url ? (
+                    <a
+                      href={quote.square_payment_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "block",
+                        textAlign: "center",
+                        padding: "12px",
+                        background:
+                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        color: "white",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        transition: "all 0.3s ease",
+                        border: "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.02)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(102, 126, 234, 0.4)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      💳 View Payment Link
+                    </a>
+                  ) : (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "12px",
+                        background: "#f8f9fa",
+                        color: "#6c757d",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      ⚠️ Payment Link Not Available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </CardGrid>
+      )}
+    </Card>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Monthly Invoices tab content                                       */
+  /* ---------------------------------------------------------------- */
+  const invoicesContent = (
+    <Card style={sectionCardStyle}>
+      <SectionHeader title={`Monthly Invoices for ${clientName}`} />
+
+      {monthlyInvoices.length === 0 ? (
+        <EmptyState message="No monthly invoices available for this client." />
+      ) : (
+        <CardGrid>
+          {monthlyInvoices.map((invoice) => {
+            const paymentStatus = getStatusStyle(invoice.payment_status);
+            return (
+              <DocumentCard
+                key={invoice.id}
+                statusTags={[
+                  { label: paymentStatus.label, color: paymentStatus.bg },
+                ]}
+                eyebrow="INVOICE REF"
+                title={invoice.ref_no}
+                company={invoice.to_company_name}
+                onEdit={() => navigate(`/edit-invoice/${invoice.id}`)}
+                onDelete={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteMonthlyInvoice(invoice.id);
+                }}
+                details={[
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Billing Date",
+                    value: invoice.billing_date
+                      ? dayjs(invoice.billing_date).format("MM/DD/YYYY")
+                      : null,
+                  },
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Due Date",
+                    value: invoice.due_date
+                      ? dayjs(invoice.due_date).format("MM/DD/YYYY")
+                      : null,
+                  },
+                  {
+                    icon: <IoDocumentTextOutline />,
+                    label: "Service Dates",
+                    value: invoice.service_dates,
+                  },
+                  {
+                    icon: <IoCardOutlineFallback />,
+                    label: "Amount Due",
+                    value: `$${Number(invoice.total_due || 0).toFixed(2)}`,
+                  },
+                ]}
+                actions={[
+                  invoice.pdf_url && {
+                    href: invoice.pdf_url,
+                    label: "View Invoice",
+                    icon: "📄",
+                  },
+                  invoice.payment_url && {
+                    href: invoice.payment_url,
+                    label: "Payment Link",
+                    icon: "💳",
+                    background: "#2ecc71",
+                  },
+                ].filter(Boolean)}
+              />
+            );
+          })}
+        </CardGrid>
+      )}
+    </Card>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Contract Agreements tab content                                    */
+  /* ---------------------------------------------------------------- */
+  const contractsContent = (
+    <Card style={sectionCardStyle}>
+      <SectionHeader title={`Contract Agreements for ${clientName}`} />
+
+      {contractAgreements.length === 0 ? (
+        <EmptyState message="No contract agreements available for this client." />
+      ) : (
+        <CardGrid>
+          {contractAgreements.map((agreement) => {
+            const status = getStatusStyle(agreement.status);
+            return (
+              <DocumentCard
+                key={agreement.id}
+                statusTags={[{ label: status.label, color: status.bg }]}
+                eyebrow="AGREEMENT"
+                title="Contract Agreement"
+                company={agreement.client_company_name}
+                onEdit={() =>
+                  navigate(`/edit-contract-agreement/${agreement.id}`)
+                }
+                onDelete={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteContractAgreement(agreement.id);
+                }}
+                details={[
+                  {
+                    icon: <IoPersonOutline />,
+                    label: "Client",
+                    value: agreement.client_name,
+                  },
+                  {
+                    icon: <IoMailOutline />,
+                    label: "Email",
+                    value: agreement.client_email,
+                  },
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Created",
+                    value: agreement.created_at
+                      ? dayjs(agreement.created_at).format("MM/DD/YYYY")
+                      : null,
+                  },
+                ]}
+                actions={[
+                  agreement.file_url && {
+                    href: agreement.file_url,
+                    label: "View Agreement",
+                    icon: "📄",
+                  },
+                  agreement.payment_url && {
+                    href: agreement.payment_url,
+                    label: "Payment Link",
+                    icon: "💳",
+                    background: "#2ecc71",
+                  },
+                ].filter(Boolean)}
+              />
+            );
+          })}
+        </CardGrid>
+      )}
+    </Card>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Service Estimates tab content                                      */
+  /* ---------------------------------------------------------------- */
+  const estimatesContent = (
+    <Card style={sectionCardStyle}>
+      <SectionHeader title={`Service Estimates for ${clientName}`} />
+
+      {serviceEstimates.length === 0 ? (
+        <EmptyState message="No service estimates available for this client." />
+      ) : (
+        <CardGrid>
+          {serviceEstimates.map((estimate) => {
+            const status = getStatusStyle(estimate.status);
+            return (
+              <DocumentCard
+                key={estimate.id}
+                statusTags={[{ label: status.label, color: status.bg }]}
+                eyebrow="ESTIMATE"
+                title="Service Estimate"
+                company={estimate.client_company_name}
+                onEdit={() => navigate(`/edit-service-estimate/${estimate.id}`)}
+                onDelete={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDeleteServiceEstimate(estimate.id);
+                }}
+                details={[
+                  {
+                    icon: <IoMailOutline />,
+                    label: "Email",
+                    value: estimate.client_email,
+                  },
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Created",
+                    value: estimate.created_at
+                      ? dayjs(estimate.created_at).format("MM/DD/YYYY")
+                      : null,
+                  },
+                ]}
+                actions={[
+                  estimate.file_url && {
+                    href: estimate.file_url,
+                    label: "View Service Estimate",
+                    icon: "📄",
+                  },
+                ].filter(Boolean)}
+              />
+            );
+          })}
+        </CardGrid>
+      )}
+    </Card>
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Service Requests tab content                                       */
+  /* ---------------------------------------------------------------- */
+  const serviceRequestsContent = (
+    <Card style={sectionCardStyle}>
+      <SectionHeader title={`Service Requests for ${clientName}`} />
+
+      {serviceRequests.length === 0 ? (
+        <EmptyState message="No service requests available for this client." />
+      ) : (
+        <CardGrid>
+          {serviceRequests.map((request) => {
+            const paymentStatus = getStatusStyle(request.payment_status);
+
+            return (
+              <DocumentCard
+                key={request.id}
+                statusTags={[
+                  { label: paymentStatus.label, color: paymentStatus.bg },
+                ]}
+                eyebrow="SERVICE REQUEST"
+                title={request.ref_no}
+                company={request.to_company_name}
+                onEdit={() => navigate(`/edit-service-request/${request.id}`)}
+                onDelete={() => handleDelete(request.id)}
+                details={[
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Date",
+                    value: request.date
+                      ? dayjs(request.date).format("MM/DD/YYYY")
+                      : null,
+                  },
+                  {
+                    icon: <IoCalendarOutline />,
+                    label: "Due Date",
+                    value: request.due_date
+                      ? dayjs(request.due_date).format("MM/DD/YYYY")
+                      : null,
+                  },
+                  {
+                    icon: <IoDocumentTextOutline />,
+                    label: "Service Days",
+                    value: request.service_days,
+                  },
+                  {
+                    icon: <IoCardOutlineFallback />,
+                    label: "Amount",
+                    value: `$${Number(request.total_due || 0).toFixed(2)}`,
+                  },
+                ]}
+                actions={[
+                  request.file_url && {
+                    href: request.file_url,
+                    label: "View Service Request",
+                    icon: "📄",
+                  },
+                ].filter(Boolean)}
+              />
+            );
+          })}
+        </CardGrid>
+      )}
+    </Card>
+  );
+
+  const mainTabItems = [
+    { key: "overview", label: "Overview", children: overviewContent },
+    {
+      key: "quotes",
+      label: `Service Quotes (${serviceQuotes.length})`,
+      children: quotesContent,
+    },
+    {
+      key: "invoices",
+      label: `Monthly Invoices (${monthlyInvoices.length})`,
+      children: invoicesContent,
+    },
+    {
+      key: "contracts",
+      label: `Contract Agreements (${contractAgreements.length})`,
+      children: contractsContent,
+    },
+    {
+      key: "estimates",
+      label: `Service Estimates (${serviceEstimates.length})`,
+      children: estimatesContent,
+    },
+    {
+      key: "serviceRequests",
+      label: `Service Requests (${serviceRequests.length})`,
+      children: serviceRequestsContent,
+    },
+  ];
 
   return (
     <Box>
@@ -711,873 +1495,39 @@ const ViewCustomer = () => {
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        marginBottom="30px"
+        width="100%"
+        mb={4}
       >
-        <div>
+        <Box flex={1}>
           <h3 className="page-title">CLIENT MANAGEMENT</h3>
           <p className="page-sub-title">View Information related with Client</p>
-        </div>
-        <div>
-          <Button
-            icon="pi pi-arrow-left"
-            severity="secondary"
-            onClick={navigateToUser}
-            style={{ borderRadius: "5px", height: "47px" }}
-          >
-            <span style={{ marginLeft: "5px" }}>Return to Clients</span>
-          </Button>
-        </div>
+        </Box>
+
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<ArrowBackIcon />}
+          onClick={navigateToUser}
+          sx={{
+            height: 47,
+            borderRadius: "6px",
+            minWidth: 180,
+          }}
+        >
+          Return to Clients
+        </Button>
       </Box>
 
-      <Form className="admin_details_form">
+      <div className="admin_details_form">
         <Tabs
           activeKey={mainTab}
-          onSelect={(k) => setMainTab(k)}
+          onChange={(k) => setMainTab(k)}
           className="mb-4 client-main-tabs"
-        >
-          {/* ---------------------------------------------------------------- */}
-          {/* OVERVIEW: basic info + bookings                                   */}
-          {/* ---------------------------------------------------------------- */}
-          <Tab eventKey="overview" title="Overview">
-            <Card
-              style={{ width: "100%", marginTop: "20px", marginBottom: "40px" }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "20px",
-                  marginBottom: "40px",
-                }}
-              >
-                <div>
-                  <h5
-                    style={{
-                      fontSize: "0.9rem",
-                      fontFamily: "Cerebri Sans,sans-serif",
-                      fontWeight: "700",
-                      marginTop: "14px",
-                      color: "black",
-                    }}
-                  >
-                    User's Name:
-                  </h5>
-                  <p>{userData?.user_profile?.name || "---"}</p>
-                </div>
-                <div>
-                  <h5
-                    style={{
-                      fontSize: "0.9rem",
-                      fontFamily: "Cerebri Sans,sans-serif",
-                      fontWeight: "700",
-                      marginTop: "14px",
-                      color: "black",
-                    }}
-                  >
-                    Email
-                  </h5>
-                  <p>{userData?.email || "---"}</p>
-                </div>
-                <div>
-                  <h5
-                    style={{
-                      fontSize: "0.9rem",
-                      fontFamily: "Cerebri Sans,sans-serif",
-                      fontWeight: "700",
-                      marginTop: "14px",
-                      color: "black",
-                    }}
-                  >
-                    Mobile:
-                  </h5>
-                  <p>{userData?.user_profile?.mobile || "---"}</p>
-                </div>
-                <Col>
-                  <Form.Group className="mb-3">
-                    <Form.Label style={{ fontWeight: "bold", color: "black" }}>
-                      Client's Addresses:
-                    </Form.Label>
-                    <div>
-                      {userData?.user_address?.length > 0 ? (
-                        userData.user_address.map((address, index) => (
-                          <div
-                            key={index}
-                            style={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            <li>
-                              {address.address}, {address.user_city?.name},{" "}
-                              {address.user_state?.name},{" "}
-                              {address.user_country?.name}
-                            </li>
-                          </div>
-                        ))
-                      ) : (
-                        <div>No address available</div>
-                      )}
-                    </div>
-                  </Form.Group>
-                </Col>
-              </div>
-            </Card>
-
-            <Card>
-              <h5 style={{ marginBottom: "20px", marginTop: "20px" }}>
-                View all the bookings associated with {clientName}
-              </h5>
-              <Tabs activeKey={activeTab} onSelect={handleTabSelect}>
-                {tabsContent.map((tab) => (
-                  <Tab eventKey={tab.key} title={tab.label} key={tab.key}>
-                    <div style={{ marginTop: "20px" }}>
-                      <Table
-                        columns={columns}
-                        dataSource={bookingData}
-                        rowKey="autoIncrementId"
-                      />
-                    </div>
-                  </Tab>
-                ))}
-              </Tabs>
-            </Card>
-          </Tab>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* SERVICE QUOTES                                                    */}
-          {/* ---------------------------------------------------------------- */}
-          <Tab
-            eventKey="quotes"
-            title={`Service Quotes (${serviceQuotes.length})`}
-          >
-            <Card style={sectionCardStyle}>
-              <SectionHeader title={`Service Quotes for ${clientName}`} />
-
-              {serviceQuotes.length === 0 ? (
-                <EmptyState message="No service quotes available for this client." />
-              ) : (
-                <CardGrid>
-                  {serviceQuotes.map((quote) => (
-                    <Card
-                      key={quote.id}
-                      style={{
-                        border: "1px solid #e8e8e8",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                        transition: "all 0.3s ease",
-                        cursor: "default",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 20px rgba(0,0,0,0.12)";
-                        e.currentTarget.style.transform = "translateY(-4px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(0,0,0,0.06)";
-                        e.currentTarget.style.transform = "translateY(0)";
-                      }}
-                    >
-                      {/* Header Section */}
-                      <div
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          padding: "20px",
-                          color: "white",
-                        }}
-                      >
-                        {/* Status + Edit/Delete Row */}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "16px",
-                            width: "100%",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "6px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Tag
-                              style={{
-                                background:
-                                  jobStatusConfig[quote.job_status]?.color,
-                                color: "white",
-                                fontWeight: 700,
-                                fontSize: "11px",
-                                padding: "4px 10px",
-                                borderRadius: "4px",
-                                border: "none",
-                                margin: 0,
-                              }}
-                            >
-                              {jobStatusConfig[quote.job_status]?.label}
-                            </Tag>
-
-                            <Tag
-                              style={{
-                                background:
-                                  paymentStatusConfig[quote.payment_status]
-                                    ?.color,
-                                color: "white",
-                                fontWeight: 700,
-                                fontSize: "11px",
-                                padding: "4px 10px",
-                                borderRadius: "4px",
-                                border: "none",
-                                margin: 0,
-                              }}
-                            >
-                              {paymentStatusConfig[quote.payment_status]?.label}
-                            </Tag>
-                          </div>
-
-                          {/* Same edit/delete buttons as Invoices / Contracts / Estimates */}
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <Button
-                              icon="pi pi-pencil"
-                              severity="warning"
-                              size="small"
-                              onClick={() =>
-                                navigate(`/edit-service-quote/${quote.id}`)
-                              }
-                            />
-                            <Button
-                              type="button"
-                              icon={<DeleteOutlined />}
-                              danger
-                              size="small"
-                              onClick={() => handleDelete(quote.id)}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Quote Ref + Price */}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div>
-                            <span
-                              style={{
-                                fontSize: "11px",
-                                fontWeight: "600",
-                                opacity: 0.8,
-                                letterSpacing: "0.05em",
-                                display: "block",
-                                marginBottom: "2px",
-                              }}
-                            >
-                              QUOTE REFERENCE
-                            </span>
-
-                            <div
-                              style={{
-                                fontSize: "22px",
-                                fontWeight: "700",
-                                letterSpacing: "-0.01em",
-                              }}
-                            >
-                              {quote.ref_no}
-                            </div>
-                          </div>
-
-                          <Tag
-                            style={{
-                              background: "rgba(255,255,255,0.25)",
-                              border: "1px solid rgba(255,255,255,0.3)",
-                              color: "white",
-                              fontWeight: "700",
-                              fontSize: "18px",
-                              padding: "6px 14px",
-                              borderRadius: "6px",
-                              margin: 0,
-                            }}
-                          >
-                            ${Number(quote.total_due).toFixed(2)}
-                          </Tag>
-                        </div>
-                      </div>
-
-                      {/* Content Section */}
-                      <div style={{ padding: "20px" }}>
-                        {/* Company Info */}
-                        <div
-                          style={{
-                            background: "#f8f9fa",
-                            padding: "14px",
-                            borderRadius: "8px",
-                            marginBottom: "16px",
-                          }}
-                        >
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: "15px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                            }}
-                          >
-                            {quote.to_company_name}
-                          </p>
-                        </div>
-
-                        {/* Details Grid */}
-                        <div
-                          style={{
-                            display: "grid",
-                            gap: "12px",
-                            marginBottom: "16px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "13px",
-                                color: "#6c757d",
-                                minWidth: "100px",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Service Dates:
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                color: "#2c3e50",
-                                fontWeight: "500",
-                              }}
-                            >
-                              {quote.service_dates
-                                ? dayjs(quote.service_dates).format(
-                                    "MM-DD-YYYY hh:mm A",
-                                  )
-                                : "N/A"}
-                            </span>
-                          </div>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "13px",
-                                color: "#6c757d",
-                                minWidth: "100px",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Due Date:
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                color: "#2c3e50",
-                                fontWeight: "500",
-                              }}
-                            >
-                              {quote.due_date
-                                ? dayjs(quote.due_date).format(
-                                    "MM-DD-YYYY hh:mm A",
-                                  )
-                                : "N/A"}
-                            </span>
-                          </div>
-
-                          {(quote.address_1 || quote.address_2) && (
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  color: "#6c757d",
-                                  minWidth: "100px",
-                                  fontWeight: "500",
-                                }}
-                              >
-                                Address:
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  color: "#2c3e50",
-                                  flex: 1,
-                                }}
-                              >
-                                {quote.address_1 || ""} {quote.address_2 || ""}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Items Section */}
-                        <div
-                          style={{
-                            borderTop: "1px solid #e9ecef",
-                            paddingTop: "16px",
-                            marginTop: "16px",
-                          }}
-                        >
-                          <h6
-                            style={{
-                              margin: "0 0 12px 0",
-                              fontSize: "13px",
-                              fontWeight: "600",
-                              color: "#495057",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            Items
-                          </h6>
-                          <div style={{ display: "grid", gap: "8px" }}>
-                            {quote.service_quote_item?.map((item) => (
-                              <div
-                                key={item.id}
-                                style={{
-                                  background: "#f8f9fa",
-                                  padding: "10px 12px",
-                                  borderRadius: "6px",
-                                  borderLeft: "3px solid #667eea",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: "14px",
-                                    color: "#2c3e50",
-                                    marginBottom: "4px",
-                                    fontWeight: "500",
-                                  }}
-                                >
-                                  {item.description}
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    fontSize: "13px",
-                                    color: "#6c757d",
-                                  }}
-                                >
-                                  <span>{item.frequency || "N/A"}</span>
-                                  <span
-                                    style={{
-                                      fontWeight: "600",
-                                      color: "#667eea",
-                                    }}
-                                  >
-                                    ${Number(item.amount).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Payment Link Section */}
-                        <div style={{ marginTop: "16px" }}>
-                          {quote.payment_status === "PAID" ? (
-                            <div
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                background: "#d4edda",
-                                color: "#155724",
-                                borderRadius: "8px",
-                                fontSize: "13px",
-                                fontWeight: "600",
-                              }}
-                            >
-                              ✅ Payment Completed
-                            </div>
-                          ) : quote.payment_status === "EXPIRED" ? (
-                            <div
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                background: "#fff3cd",
-                                color: "#856404",
-                                borderRadius: "8px",
-                                fontSize: "13px",
-                                fontWeight: "600",
-                              }}
-                            >
-                              ⏰ Payment Link Expired
-                            </div>
-                          ) : quote.square_payment_url ? (
-                            <a
-                              href={quote.square_payment_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                display: "block",
-                                textAlign: "center",
-                                padding: "12px",
-                                background:
-                                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                color: "white",
-                                borderRadius: "8px",
-                                textDecoration: "none",
-                                fontWeight: "600",
-                                fontSize: "14px",
-                                transition: "all 0.3s ease",
-                                border: "none",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "scale(1.02)";
-                                e.currentTarget.style.boxShadow =
-                                  "0 4px 12px rgba(102, 126, 234, 0.4)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "scale(1)";
-                                e.currentTarget.style.boxShadow = "none";
-                              }}
-                            >
-                              💳 View Payment Link
-                            </a>
-                          ) : (
-                            <div
-                              style={{
-                                textAlign: "center",
-                                padding: "12px",
-                                background: "#f8f9fa",
-                                color: "#6c757d",
-                                borderRadius: "8px",
-                                fontSize: "13px",
-                                fontWeight: "500",
-                              }}
-                            >
-                              ⚠️ Payment Link Not Available
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </CardGrid>
-              )}
-            </Card>
-          </Tab>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* MONTHLY INVOICES                                                  */}
-          {/* ---------------------------------------------------------------- */}
-          <Tab
-            eventKey="invoices"
-            title={`Monthly Invoices (${monthlyInvoices.length})`}
-          >
-            <Card style={sectionCardStyle}>
-              <SectionHeader title={`Monthly Invoices for ${clientName}`} />
-
-              {monthlyInvoices.length === 0 ? (
-                <EmptyState message="No monthly invoices available for this client." />
-              ) : (
-                <CardGrid>
-                  {monthlyInvoices.map((invoice) => {
-                    const paymentStatus = getStatusStyle(
-                      invoice.payment_status,
-                    );
-                    return (
-                      <DocumentCard
-                        key={invoice.id}
-                        statusTags={[
-                          {
-                            label: paymentStatus.label,
-                            color: paymentStatus.bg,
-                          },
-                        ]}
-                        eyebrow="INVOICE REF"
-                        title={invoice.ref_no}
-                        company={invoice.to_company_name}
-                        onEdit={() => navigate(`/edit-invoice/${invoice.id}`)}
-                        onDelete={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteMonthlyInvoice(invoice.id);
-                        }}
-                        details={[
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Billing Date",
-                            value: invoice.billing_date
-                              ? dayjs(invoice.billing_date).format("MM/DD/YYYY")
-                              : null,
-                          },
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Due Date",
-                            value: invoice.due_date
-                              ? dayjs(invoice.due_date).format("MM/DD/YYYY")
-                              : null,
-                          },
-                          {
-                            icon: <IoDocumentTextOutline />,
-                            label: "Service Dates",
-                            value: invoice.service_dates,
-                          },
-                          {
-                            icon: <IoCardOutlineFallback />,
-                            label: "Amount Due",
-                            value: `$${Number(invoice.total_due || 0).toFixed(2)}`,
-                          },
-                        ]}
-                        actions={[
-                          invoice.pdf_url && {
-                            href: invoice.pdf_url,
-                            label: "View Invoice",
-                            icon: "📄",
-                          },
-                          invoice.payment_url && {
-                            href: invoice.payment_url,
-                            label: "Payment Link",
-                            icon: "💳",
-                            background: "#2ecc71",
-                          },
-                        ].filter(Boolean)}
-                      />
-                    );
-                  })}
-                </CardGrid>
-              )}
-            </Card>
-          </Tab>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* CONTRACT AGREEMENTS                                               */}
-          {/* ---------------------------------------------------------------- */}
-          <Tab
-            eventKey="contracts"
-            title={`Contract Agreements (${contractAgreements.length})`}
-          >
-            <Card style={sectionCardStyle}>
-              <SectionHeader title={`Contract Agreements for ${clientName}`} />
-
-              {contractAgreements.length === 0 ? (
-                <EmptyState message="No contract agreements available for this client." />
-              ) : (
-                <CardGrid>
-                  {contractAgreements.map((agreement) => {
-                    const status = getStatusStyle(agreement.status);
-                    return (
-                      <DocumentCard
-                        key={agreement.id}
-                        statusTags={[{ label: status.label, color: status.bg }]}
-                        eyebrow="AGREEMENT"
-                        title="Contract Agreement"
-                        company={agreement.client_company_name}
-                        onEdit={() =>
-                          navigate(`/edit-contract-agreement/${agreement.id}`)
-                        }
-                        onDelete={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteContractAgreement(agreement.id);
-                        }}
-                        details={[
-                          {
-                            icon: <IoPersonOutline />,
-                            label: "Client",
-                            value: agreement.client_name,
-                          },
-                          {
-                            icon: <IoMailOutline />,
-                            label: "Email",
-                            value: agreement.client_email,
-                          },
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Created",
-                            value: agreement.created_at
-                              ? dayjs(agreement.created_at).format("MM/DD/YYYY")
-                              : null,
-                          },
-                        ]}
-                        actions={[
-                          agreement.file_url && {
-                            href: agreement.file_url,
-                            label: "View Agreement",
-                            icon: "📄",
-                          },
-                          agreement.payment_url && {
-                            href: agreement.payment_url,
-                            label: "Payment Link",
-                            icon: "💳",
-                            background: "#2ecc71",
-                          },
-                        ].filter(Boolean)}
-                      />
-                    );
-                  })}
-                </CardGrid>
-              )}
-            </Card>
-          </Tab>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* SERVICE ESTIMATES                                                 */}
-          {/* ---------------------------------------------------------------- */}
-          <Tab
-            eventKey="estimates"
-            title={`Service Estimates (${serviceEstimates.length})`}
-          >
-            <Card style={sectionCardStyle}>
-              <SectionHeader title={`Service Estimates for ${clientName}`} />
-
-              {serviceEstimates.length === 0 ? (
-                <EmptyState message="No service estimates available for this client." />
-              ) : (
-                <CardGrid>
-                  {serviceEstimates.map((estimate) => {
-                    const status = getStatusStyle(estimate.status);
-                    return (
-                      <DocumentCard
-                        key={estimate.id}
-                        statusTags={[{ label: status.label, color: status.bg }]}
-                        eyebrow="ESTIMATE"
-                        title="Service Estimate"
-                        company={estimate.client_company_name}
-                        onEdit={() => navigate(`/edit-service-estimate/${estimate.id}`)}
-                        onDelete={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteServiceEstimate(estimate.id);
-                        }}
-                        details={[
-                          {
-                            icon: <IoMailOutline />,
-                            label: "Email",
-                            value: estimate.client_email,
-                          },
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Created",
-                            value: estimate.created_at
-                              ? dayjs(estimate.created_at).format("MM/DD/YYYY")
-                              : null,
-                          },
-                        ]}
-                        actions={[
-                          estimate.file_url && {
-                            href: estimate.file_url,
-                            label: "View Service Estimate",
-                            icon: "📄",
-                          },
-                        ].filter(Boolean)}
-                      />
-                    );
-                  })}
-                </CardGrid>
-              )}
-            </Card>
-          </Tab>
-
-          {/* ---------------------------------------------------------------- */}
-          {/* SERVICE REQUESTS                                                    */}
-          {/* ---------------------------------------------------------------- */}
-
-          <Tab
-            eventKey="serviceRequests"
-            title={`Service Requests (${serviceRequests.length})`}
-          >
-            <Card style={sectionCardStyle}>
-              <SectionHeader title={`Service Requests for ${clientName}`} />
-
-              {serviceRequests.length === 0 ? (
-                <EmptyState message="No service requests available for this client." />
-              ) : (
-                <CardGrid>
-                  {serviceRequests.map((request) => {
-                    const paymentStatus = getStatusStyle(
-                      request.payment_status,
-                    );
-
-                    return (
-                      <DocumentCard
-                        key={request.id}
-                        statusTags={[
-                          {
-                            label: paymentStatus.label,
-                            color: paymentStatus.bg,
-                          },
-                        ]}
-                        eyebrow="SERVICE REQUEST"
-                        title={request.ref_no}
-                        company={request.to_company_name}
-                        onEdit={() =>
-                          navigate(`/edit-service-request/${request.id}`)
-                        }
-                        onDelete={() => handleDelete(request.id)}
-                        details={[
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Date",
-                            value: request.date
-                              ? dayjs(request.date).format("MM/DD/YYYY")
-                              : null,
-                          },
-                          {
-                            icon: <IoCalendarOutline />,
-                            label: "Due Date",
-                            value: request.due_date
-                              ? dayjs(request.due_date).format("MM/DD/YYYY")
-                              : null,
-                          },
-                          {
-                            icon: <IoDocumentTextOutline />,
-                            label: "Service Days",
-                            value: request.service_days,
-                          },
-                          {
-                            icon: <IoCardOutlineFallback />,
-                            label: "Amount",
-                            value: `$${Number(request.total_due || 0).toFixed(
-                              2,
-                            )}`,
-                          },
-                        ]}
-                        actions={[
-                          request.file_url && {
-                            href: request.file_url,
-                            label: "View Service Request",
-                            icon: "📄",
-                          },
-                        ].filter(Boolean)}
-                      />
-                    );
-                  })}
-                </CardGrid>
-              )}
-            </Card>
-          </Tab>
-        </Tabs>
-      </Form>
+          items={mainTabItems}
+        />
+      </div>
     </Box>
   );
 };
-
-const IoCardOutlineFallback = () => <span>💰</span>;
 
 export default ViewCustomer;

@@ -5,8 +5,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { AiOutlineDashboard } from "react-icons/ai";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Link } from "react-router-dom";
-import { Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import {
   FaBoxes,
   FaClipboardList,
@@ -14,22 +13,27 @@ import {
   FaToolbox,
   FaUsers,
 } from "react-icons/fa";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiActivity } from "react-icons/fi";
 import { IoMdChatboxes } from "react-icons/io";
 import { LuSettings } from "react-icons/lu";
 import { FaChartGantt, FaRegCircleUser } from "react-icons/fa6";
-import { FiActivity } from "react-icons/fi";
 import { CiLogin } from "react-icons/ci";
-import { FaFilePdf } from "react-icons/fa6";
-import { Layout, theme, Menu, Spin, Badge, Modal, Button } from "antd";
-import { useNavigate } from "react-router-dom";
-import { FaFileInvoiceDollar } from "react-icons/fa";
+import {
+  FaFilePdf,
+  FaRegCirclePause,
+  FaUserTie,
+  FaRegCalendar,
+} from "react-icons/fa6";
+import { Layout, theme, Menu, Spin, Badge, Modal, Button, message } from "antd";
+import { FaFileInvoiceDollar, FaCalculator } from "react-icons/fa";
 import { BiSolidCategoryAlt } from "react-icons/bi";
-import { MdManageAccounts } from "react-icons/md";
-import { MdCategory } from "react-icons/md";
-import { FaCalculator } from "react-icons/fa";
-import { message } from "antd";
-import { FileTextOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import {
+  MdManageAccounts,
+  MdCategory,
+  MdVideoLibrary,
+  MdOutlineReportGmailerrorred,
+} from "react-icons/md";
+import { FileTextOutlined } from "@ant-design/icons";
 import Login from "../pages/Login/Login";
 import {
   GetAdminProfile,
@@ -37,23 +41,16 @@ import {
   GetReviewLink,
   CreateOrUpdateReviewLink,
 } from "../services/Api/Api";
-import { MdVideoLibrary } from "react-icons/md";
-import { FaRegCirclePause } from "react-icons/fa6";
 import { GiProgression } from "react-icons/gi";
 import { LuLayoutList } from "react-icons/lu";
-import { PiCalendarCheckFill } from "react-icons/pi";
-import { TbBrandBooking } from "react-icons/tb";
-import "./MainLayout.scss";
-import { TbBrandCashapp } from "react-icons/tb";
-import { MdOutlineReportGmailerrorred } from "react-icons/md";
-import { FaUserTie } from "react-icons/fa6";
+import { PiCalendarCheckFill, PiChatsFill } from "react-icons/pi";
+import { TbBrandBooking, TbBrandCashapp } from "react-icons/tb";
 import { VscChecklist } from "react-icons/vsc";
-import { FaRegCalendar } from "react-icons/fa6";
 import { FaRegCalendarAlt } from "react-icons/fa";
+import { IoInformationCircle } from "react-icons/io5";
 import logo from "../assets/image.png";
 import smallLogo from "../assets/WhatsApp Image 2024-11-20 at 9.55.51 AM (1) 1.png";
-import { IoInformationCircle } from "react-icons/io5";
-import { PiChatsFill } from "react-icons/pi";
+import "./MainLayout.scss";
 
 const { Header, Sider, Content } = Layout;
 
@@ -61,11 +58,17 @@ const MainLayout = () => {
   const [idData, setIdData] = useState({});
   const [loading, setLoading] = useState(false);
   const [hasBookings, setHasBookings] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const {
+    token: { colorBgContainer },
+  } = theme.useToken();
+  const navigate = useNavigate();
 
   const getData = async () => {
     try {
       let result = await GetAdminProfile(localStorage.getItem("adminToken"));
-
       if (result.status === 200) {
         setIdData(result.data.data);
       }
@@ -78,11 +81,20 @@ const MainLayout = () => {
     getData();
   }, []);
 
-  const [collapsed, setCollapsed] = useState(false);
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
-  const navigate = useNavigate();
+  // Close profile dropdown when clicking outside it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        profileOpen &&
+        !e.target.closest("#dropdownMenuLink") &&
+        !e.target.closest(".dropdown-menu")
+      ) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [profileOpen]);
 
   function logout() {
     localStorage.removeItem("adminToken");
@@ -101,7 +113,6 @@ const MainLayout = () => {
   });
   const [reviewLoading, setReviewLoading] = useState(false);
 
-  // Fetch existing review links
   const getReviewLinks = async () => {
     try {
       setReviewLoading(true);
@@ -109,14 +120,13 @@ const MainLayout = () => {
       const data = res.data;
 
       if (data.success && data.data.length > 0) {
-        const links = data.data[0]; // map the 0th element
+        const links = data.data[0];
         setReviewLinks({
           apple_review_link: links.apple_review_link || "",
           google_review_link: links.google_review_link || "",
           booking_review_link: links.booking_review_link || "",
         });
       } else {
-        // no links yet, reset to empty
         setReviewLinks({
           apple_review_link: "",
           google_review_link: "",
@@ -131,18 +141,15 @@ const MainLayout = () => {
     }
   };
 
-  // Save review links
   const saveReviewLinks = async () => {
     try {
       setReviewLoading(true);
 
-      // Create FormData and append fields
       const formData = new FormData();
       formData.append("apple_review_link", reviewLinks.apple_review_link);
       formData.append("google_review_link", reviewLinks.google_review_link);
       formData.append("booking_review_link", reviewLinks.booking_review_link);
 
-      // Call API with FormData
       const res = await CreateOrUpdateReviewLink(formData);
 
       if (res.status === 200) {
@@ -184,254 +191,18 @@ const MainLayout = () => {
                         src={smallLogo}
                         className="logo-image"
                         alt="logo"
-                        style={{
-                          width: "50px",
-                        }}
+                        style={{ width: "50px" }}
                       />
                     ) : (
                       <img
                         src={logo}
                         className="logo-image"
                         alt="logo"
-                        style={{
-                          width: "180px",
-                        }}
+                        style={{ width: "180px" }}
                       />
                     )}
                   </div>
-                  {/* <div className="logo">
-										<h2 className="text-white fs-5 text-center py-3 mb-0">
-											<span className="sm-logo">SS</span>
-											<span className="lg-logo">
-												<img
-													alt="logo"
-													src={logo}
-													style={{ width: "250px" }}
-												></img>
-											</span>
-										</h2>
-									</div> */}
 
-                  {/* <Menu
-										theme="dark"
-										mode="inline"
-										defaultSelectedKeys={[""]}
-										onClick={({ key }) => {
-											if (key === "signout") {
-												logout();
-											}
-											// else if (key === "chat") {
-											// 	handleChatClick();
-											// }
-											else {
-												navigate(key);
-											}
-										}}
-										items={[
-											{
-												key: "/",
-												icon: <AiOutlineDashboard className="fs-4" />,
-												label: "Dashboard",
-											},
-											{
-												key: "/users",
-												icon: <FaUsers className="fs-4" />,
-												label: "Client Management",
-											},
-											{
-												key: "/employees",
-												icon: <FaUsers className="fs-4" />,
-
-												label: (
-													<span style={{ fontSize: "15px" }}>
-														Employee Management
-													</span>
-												),
-											},
-											{
-												key: "/hiring-form",
-												icon: <IoInformationCircle className="fs-4" />,
-												label: "Hiring Form",
-											},
-											{
-												key: "/supplies",
-												icon: <MdCategory className="fs-4" />,
-												label: "Supplies",
-												children: [
-													{
-														key: "/supplies/list",
-														label: "Supplies",
-													},
-													{
-														key: "/supplies/requests",
-														label: "Restock Requests",
-													},
-												],
-											},
-
-											{
-												key: "/quote-management",
-												icon: <FileTextOutlined className="fs-6" />,
-												label: "Quote Management",
-												children: [
-													{
-														key: "/quote-questions",
-														icon: <UnorderedListOutlined />,
-														label: "Quote Questions",
-													},
-													{
-														key: "/quote-requests",
-														icon: <FileTextOutlined />,
-														label: "Quote Requests",
-													},
-												],
-											},
-
-											{
-												key: "/overview",
-												icon: <FaChartGantt className="fs-4" />,
-												label: "Day Overview",
-											},
-											{
-												key: "/weeklyOverview",
-												icon: <GiProgression className="fs-4" />,
-												label: "Schedule",
-											},
-											{
-												key: "/checklist",
-												icon: <VscChecklist className="fs-4" />,
-												label: "Service Checklist",
-											},
-											{
-												key: "/daily-checklist",
-												icon: <LuLayoutList className="fs-4" />,
-												label: (
-													<span style={{ fontSize: "15px" }}>
-														{" "}
-														Housekeeping Checklist
-													</span>
-												),
-											},
-											{
-												key: "/weeklyChecklistView",
-												icon: <PiCalendarCheckFill className="fs-4" />,
-												label: "WeeklyChecklistView",
-											},
-											{
-												key: "/services",
-												icon: <BiSolidCategoryAlt className="fs-4" />,
-												label: "Services",
-											},
-											{
-												key: "/bookings",
-												icon: <TbBrandBooking className="fs-4" />,
-												label: (
-													<span>Bookings {hasBookings && <Badge dot />}</span>
-												),
-											},
-											{
-												key: "/invoices",
-												icon: <FaFileInvoiceDollar className="fs-4" />,
-												label: "Invoice",
-											},
-											{
-												key: "/payment-history",
-												icon: <TbBrandCashapp className="fs-4" />,
-												label: "Payments",
-											},
-											{
-												key: "/attendence",
-												icon: <FaRegCalendarAlt className="fs-4" />,
-												label: "Attendance",
-											},
-											{
-												key: "/breaks",
-												icon: <FaRegCirclePause className="fs-4" />,
-												label: "Breaks",
-											},
-											{
-												key: "/leave-request",
-												icon: <FaRegCalendar className="fs-4" />,
-												label: "Leave Request",
-											},
-											{
-												key: "/training-videos",
-												icon: <MdVideoLibrary className="fs-4" />,
-												label: "Training Videos",
-											},
-											{
-												key: "/reports",
-												icon: <MdOutlineReportGmailerrorred className="fs-4" />,
-												label: "Client Complaints",
-											},
-											{
-												key: "/bdm-list",
-												icon: <FaUserTie className="fs-4" />,
-												label: "BDM",
-											},
-											...(idData?.role_id === 5
-												? [
-														{
-															key: "/chats",
-															icon: <IoMdChatboxes className="fs-4" />,
-															label: "Chat",
-														},
-														//   {
-														//     key: "/group-chats",
-														//     icon: <PiChatsFill className="fs-4" />,
-														//     label: "Group Chat",
-														//   },
-												  ]
-												: []),
-											// {
-											// 	key: "/chats",
-											// 	icon: <IoMdChatboxes className="fs-4" />,
-											// 	label: "Chat",
-											// },
-											{
-												key: "/group-chats",
-												icon: <PiChatsFill className="fs-4" />,
-												label: "Group Chat",
-											},
-											// {
-											// 	key: "/contact-us",
-											// 	icon: <MdContactSupport className="fs-4" />,
-											// 	label: "Contact Us",
-											// },
-											// {
-											// 	key: "/t&c1",
-											// 	icon: <IoLayers className="fs-4" />,
-											// 	label: "Content",
-											// 	children: [
-											// 		{
-											// 			key: "termsAndConditions",
-											// 			icon: <LuLayers className="fs-4" />,
-											// 			label: "T&C",
-											// 		},
-											// 		{
-											// 			key: "aboutUs",
-											// 			icon: <LuLayers className="fs-4" />,
-											// 			label: "About Us",
-											// 		},
-											// 		{
-											// 			key: "support",
-											// 			icon: <LuLayers className="fs-4" />,
-											// 			label: "Support",
-											// 		},
-											// 		// {
-											// 		// 	key: "banner",
-											// 		// 	icon: <LuLayers className="fs-4" />,
-											// 		// 	label: "Banner Content",
-											// 		// },
-											// 	],
-											// },
-											{
-												key: "/adminList",
-												icon: <MdManageAccounts className="fs-4" />,
-												label: "Access Management",
-											},
-										]}
-									/> */}
                   <Menu
                     theme="dark"
                     mode="inline"
@@ -440,7 +211,6 @@ const MainLayout = () => {
                       else navigate(key);
                     }}
                     items={[
-                      /* ================= CORE ================= */
                       {
                         type: "group",
                         label: "CORE",
@@ -452,8 +222,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= PEOPLE ================= */
                       {
                         type: "group",
                         label: "PEOPLE MANAGEMENT",
@@ -495,8 +263,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= OPERATIONS ================= */
                       {
                         type: "group",
                         label: "OPERATIONS",
@@ -515,7 +281,6 @@ const MainLayout = () => {
                             icon: <FaChartGantt />,
                             label: "Day Overview",
                           },
-
                           {
                             key: "/employee-timesheet",
                             icon: <FaChartGantt />,
@@ -543,7 +308,6 @@ const MainLayout = () => {
                               },
                             ],
                           },
-
                           {
                             key: "/equipment",
                             icon: <FaToolbox />,
@@ -563,8 +327,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= DOCUMENTS ================= */
                       {
                         type: "group",
                         label: "DOCUMENTS",
@@ -591,7 +353,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-                      /* ================= SERVICES ================= */
                       {
                         type: "group",
                         label: "SERVICES",
@@ -618,8 +379,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= INVENTORY & QUOTES ================= */
                       {
                         type: "group",
                         label: "INVENTORY & QUOTES",
@@ -653,8 +412,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= FINANCE ================= */
                       {
                         type: "group",
                         label: "FINANCE",
@@ -671,8 +428,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= COMMUNICATION ================= */
                       {
                         type: "group",
                         label: "COMMUNICATION",
@@ -693,8 +448,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= TRAINING & REPORTS ================= */
                       {
                         type: "group",
                         label: "TRAINING & REPORTS",
@@ -711,8 +464,6 @@ const MainLayout = () => {
                           },
                         ],
                       },
-
-                      /* ================= ADMIN ================= */
                       {
                         type: "group",
                         label: "ADMIN",
@@ -730,9 +481,9 @@ const MainLayout = () => {
               )}
               <Layout className="site-layout">
                 <Header
-                  className="d-flex justify-content-between ps-1 pe-5"
+                  className="d-flex justify-content-between"
                   style={{
-                    padding: 0,
+                    padding: "0 24px",
                     background: colorBgContainer,
                   }}
                 >
@@ -761,29 +512,21 @@ const MainLayout = () => {
                         <div
                           role="button"
                           id="dropdownMenuLink"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
+                          aria-expanded={profileOpen}
+                          onClick={() => setProfileOpen((prev) => !prev)}
                           className="d-flex align-items-center"
                         >
                           <FaRegCircleUser className="fs-3 me-2" />
-                          <div className="d-flex flex-column">
-                            <p className="mb-0" style={{ fontWeight: "700" }}>
-                              {idData?.name}
-                            </p>
-                            <p className="mb-0">
-                              {idData?.admin_role?.name || ""}
-                            </p>
+                          <div className="profile-info">
+                            <p>{idData?.name}</p>
+                            <p>{idData?.admin_role?.name}</p>
                           </div>
                         </div>
                         <div
-                          className="dropdown-menu admin"
+                          className={`dropdown-menu admin${profileOpen ? " show" : ""}`}
                           aria-labelledby="dropdownMenuLink"
-                          style={{
-                            borderTopColor: "purple",
-                            borderTopWidth: "4px",
-                          }}
                         >
-                          <li to="/viewAdmin">
+                          <li>
                             <Link
                               className="dropdown-item py-1 mb-1"
                               style={{ height: "auto", lineHeight: "30px" }}

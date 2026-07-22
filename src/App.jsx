@@ -5,7 +5,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import ChangePassword from "./pages/Sidebar/Settings/ChangePassword/ChangePassword";
-import Forgotpassword from "./pages/Forgotpassword";
 import MainLayout from "./components/MainLayout";
 import RoleList from "./pages/Roles/RoleList";
 import AddRole from "./pages/Roles/AddRole";
@@ -34,7 +33,7 @@ import AddAboutUs from "./pages/Content/AboutUs/AddAboutUs";
 import EditAboutUs from "./pages/Content/AboutUs/EditAboutUs";
 import EditBookings from "./pages/Bookings/EditBookings";
 import ViewBooking from "./pages/Bookings/ViewBooking";
-import Test from "./pages/test";
+
 import Error401 from "./pages/ErrorPages/Error401";
 import User from "./pages/Customer/User";
 import ServiceProvider from "./pages/ServiceProvider/ServiceProvider";
@@ -117,7 +116,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/forgot-password" element={<Forgotpassword />} />
         <Route path="/docusign-success" element={<DocuSignSuccess />} />
         <Route path="/checkout/:transactionId" element={<CheckoutStatus />} />
         <Route path="/Login" element={<Login />} />
@@ -142,7 +140,6 @@ function App() {
           <Route path="/addUser" element={<AddCustomer />} />
           <Route path="/editUser/:id" element={<UpdateCustomer />} />
           <Route path="/viewUser/:id" element={<ViewCustomer />} />
-          <Route path="/test" element={<Test />} />
           <Route path="/role-list" element={<RoleList />} />
           <Route path="/addRole" element={<AddRole />} />
           <Route path="/editRole/:id" element={<EditRole />} />
