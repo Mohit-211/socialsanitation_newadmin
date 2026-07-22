@@ -1,7 +1,7 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Select } from "antd";
+import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
 import Button from "@mui/material/Button";
 import "./employee.css";
 import {
@@ -19,6 +19,7 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { ref as dbRef, off } from "firebase/database";
 
 import db from "../Chat/Firebase";
+import { SearchOutlined } from "@ant-design/icons";
 
 const ServiceProvider = () => {
   const navigate = useNavigate();
@@ -530,12 +531,15 @@ const ServiceProvider = () => {
           <Box>
             <span className="p-input-icon-left">
               <i className="pi pi-search" />
-              <InputText
-                type="search"
-                onChange={(e) => {
-                  onSearch(e.target.value);
-                }}
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
                 placeholder="Search..."
+                style={{
+                  width: 250,
+                  height: "47px",
+                }}
+                onChange={(e) => onSearch(e.target.value)}
               />
             </span>
             <Button
@@ -615,11 +619,14 @@ const ServiceProvider = () => {
           <p>
             <strong>Employee:</strong> {selectedUser?.user_profile?.name}
           </p>
-          <InputText
+          <Input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
-            style={{ width: "100%", marginTop: 10 }}
+            style={{
+              width: "100%",
+              marginTop: 10,
+            }}
           />
         </Modal>
       )}

@@ -1,7 +1,7 @@
 /** @format */
 
 import React, { useEffect, useRef, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Select } from "antd";
+import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
 import Button from "@mui/material/Button";
 import {
   DeleteUser,
@@ -21,6 +21,19 @@ import {
   InfoWindow,
   useJsApiLoader,
 } from "@react-google-maps/api";
+import {
+  Search,
+  Download,
+  Trash2,
+  Plus,
+  Eye,
+  Pencil,
+  Send,
+  Mail,
+  MapPin,
+  KeyRound,
+  RefreshCw,
+} from "lucide-react";
 
 // 🔹 role_id -> readable label for the nearby-employees panel
 const NEARBY_ROLE_LABELS = {
@@ -281,18 +294,16 @@ const User = () => {
           <span>{email}</span>
           <Tooltip title="Reset Email / Password">
             <Button
-              icon="pi pi-key"
-              rounded
-              text
-              severity="warning"
-              style={{
-                width: "30px",
-                height: "30px",
-                padding: 0,
+              sx={{
+                minWidth: 32,
+                width: 32,
+                height: 32,
                 color: "#FF9800",
               }}
               onClick={() => openEditModal(record)}
-            />
+            >
+              <KeyRound size={18} />
+            </Button>
           </Tooltip>
         </Space>
       ),
@@ -326,104 +337,107 @@ const User = () => {
       title: "Action",
       dataIndex: "action",
       render: (_, record) => (
-        <Space size="middle">
-          <Tooltip title="View Nearby Employees" placement="top">
+        <Space size={8}>
+          <Tooltip title="View Nearby Employees">
             <Button
-              icon="pi pi-map-marker"
-              rounded
-              outlined
-              severity="secondary"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                margin: "0px",
-                borderRadius: "25px",
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#6B7280",
+                borderColor: "#6B7280",
               }}
               onClick={() => openNearbyEmployeesModal(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Send Review Email" placement="top">
-            <Button
-              icon="pi pi-envelope"
-              rounded
-              outlined
-              severity="info"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                marginLeft: "2px",
-                borderRadius: "25px",
-              }}
-              onClick={() => handleSendReview(record.id)}
-            />
-          </Tooltip>
-          <Tooltip title="Send Quote" position="top">
-            <Button
-              icon="pi pi-send"
-              severity="help"
-              outlined
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                marginRight: "2px",
-                borderRadius: "25px",
-              }}
-              onClick={(event) => navigateToQuote(event, record.id)}
-            />
+            >
+              <MapPin size={18} />
+            </Button>
           </Tooltip>
 
-          <Tooltip title="Edit Client" placement="top">
+          <Tooltip title="Send Review Email">
             <Button
-              icon="pi pi-pencil"
-              rounded
-              outlined
-              className="mr-2"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                margin: "0px",
-                borderRadius: "25px",
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#2563EB",
+                borderColor: "#2563EB",
+              }}
+              onClick={() => handleSendReview(record.id)}
+            >
+              <Mail size={18} />
+            </Button>
+          </Tooltip>
+
+          <Tooltip title="Send Quote">
+            <Button
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#A855F7",
+                borderColor: "#A855F7",
+              }}
+              onClick={(event) => navigateToQuote(event, record.id)}
+            >
+              <Send size={18} />
+            </Button>
+          </Tooltip>
+
+          <Tooltip title="Edit Client">
+            <Button
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#6366F1",
+                borderColor: "#6366F1",
               }}
               onClick={(event) => navigateToEditUser(event, record.id)}
-            />
+            >
+              <Pencil size={18} />
+            </Button>
           </Tooltip>
-          <Tooltip title="View Client" placement="top">
+
+          <Tooltip title="View Client">
             <Button
-              icon="pi pi-eye"
-              rounded
-              outlined
-              severity="warning"
-              className="mr-2"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                margin: "0px",
-                borderRadius: "25px",
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#F59E0B",
+                borderColor: "#F59E0B",
               }}
               onClick={(event) => navigateToViewUser(event, record.id)}
-            />
+            >
+              <Eye size={18} />
+            </Button>
           </Tooltip>
-          <Tooltip title="Delete Client" placement="top">
+
+          <Tooltip title="Delete Client">
             <Button
-              icon="pi pi-trash"
-              rounded
-              outlined
-              severity="danger"
-              style={{
-                width: "40px",
-                height: "40px",
-                padding: 0,
-                borderRadius: "25px",
-                color: "red",
-                borderColor: "red",
+              variant="outlined"
+              sx={{
+                width: 40,
+                minWidth: 40,
+                height: 40,
+                borderRadius: "50%",
+                color: "#EF4444",
+                borderColor: "#EF4444",
               }}
               onClick={() => handleDelete([record.id])}
-            />
+            >
+              <Trash2 size={18} />
+            </Button>
           </Tooltip>
         </Space>
       ),
@@ -602,49 +616,61 @@ const User = () => {
         </div>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <span className="p-input-icon-left">
-              <i className="pi pi-search" />
-              <InputText
-                type="search"
-                onChange={(e) => {
-                  onSearch(e.target.value);
-                }}
-                placeholder="Search..."
-              />
-            </span>
-
-            <Button
-              icon="pi pi-cloud-download"
-              severity="success"
+            <Input
+              allowClear
+              prefix={<Search size={18} />}
+              placeholder="Search..."
               style={{
-                marginLeft: "10px",
-                borderRadius: "5px",
+                width: 250,
                 height: "47px",
               }}
-              onClick={exportToCSV}
+              onChange={(e) => onSearch(e.target.value)}
             />
+
             <Button
-              icon="pi pi-trash"
-              severity="danger"
-              style={{
-                marginLeft: "10px",
-                borderRadius: "5px",
-                height: "47px",
-                cursor: "pointer",
+              variant="contained"
+              color="success"
+              sx={{
+                minWidth: 50,
+                width: 50,
+                height: 50,
+                ml: 1,
+                borderRadius: "6px",
+              }}
+              onClick={exportToCSV}
+            >
+              <Download size={18} />
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              sx={{
+                minWidth: 50,
+                width: 50,
+                height: 50,
+                ml: 1,
+                borderRadius: "6px",
               }}
               onClick={() => handleDelete(selectedRowKeys)}
               disabled={!selectedRowKeys.length}
-            />
+            >
+              <Trash2 size={18} />
+            </Button>
+
             <Button
-              icon="pi pi-plus"
-              severity="info"
-              style={{
-                margin: "0px 10px",
-                borderRadius: "5px",
-                height: "47px",
+              variant="contained"
+              color="primary"
+              sx={{
+                minWidth: 50,
+                width: 50,
+                height: 50,
+                ml: 1,
+                borderRadius: "6px",
               }}
               onClick={navigateToAddUser}
-            />
+            >
+              <Plus size={18} />
+            </Button>
           </Box>
         </Box>
       </Box>
@@ -669,11 +695,14 @@ const User = () => {
           <p>
             <strong>Client:</strong> {selectedUser?.user_profile?.name}
           </p>
-          <InputText
+          <Input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
-            style={{ width: "100%", marginTop: 10 }}
+            style={{
+              width: "100%",
+              marginTop: 10,
+            }}
           />
         </Modal>
       )}
@@ -696,12 +725,12 @@ const User = () => {
               <Box display="flex" justifyContent="flex-end" marginBottom="6px">
                 <Tooltip title="Zoom back out to all nearby employees">
                   <Button
-                    label="Reset view"
-                    icon="pi pi-refresh"
-                    text
+                    startIcon={<RefreshCw size={16} />}
                     size="small"
                     onClick={handleResetMapView}
-                  />
+                  >
+                    Reset View
+                  </Button>
                 </Tooltip>
               </Box>
               {!isNearbyMapLoaded ? (

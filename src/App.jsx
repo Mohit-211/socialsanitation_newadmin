@@ -66,7 +66,6 @@ import ViewForm from "./pages/HiringForm/ViewForm.jsx";
 import UpdateCustomer from "./pages/Customer/UpdateCustomer";
 import ServiceQuote from "./pages/Customer/ServiceQuote.jsx";
 import AllAttendance from "./pages/Attendence/AllAttendence.jsx";
-import DeleteAccount from "./pages/DeleteAccount.jsx";
 import CreateBooking from "./pages/Bookings/CreateBooking.jsx";
 import MonthlyBooking from "./pages/Bookings/MonthlyBooking.jsx";
 import AttendanceCalendar from "./pages/Attendence/AttendenceCalender.jsx";
@@ -97,7 +96,6 @@ import AllInvoices from "./pages/GenerateInvoice/AllInvoice.jsx";
 import DocuSignSuccess from "./pages/PdfGeneration/DocuSignSuccess.jsx";
 import ContractAgreement from "./pages/ContractAgreement/ContractAgreement.jsx";
 import CreateContractAgreement from "./pages/ContractAgreement/CreateContractAgreement.jsx";
-import SubscriptionTest from "./pages/SubscriptionTest.jsx";
 import ServiceRequest from "./pages/ServiceRequest/ServiceRequest";
 import ServiceRequestPdf from "./pages/ServiceRequest/ServiceRequestPdf.jsx";
 import EditInvoice from "./pages/GenerateInvoice/EditInvoice.jsx";
@@ -124,7 +122,6 @@ function App() {
         <Route path="/checkout/:transactionId" element={<CheckoutStatus />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/error401" element={<Error401 />} />
-        <Route path="/how-to-delete-account" element={<DeleteAccount />} />
         <Route
           path="/authorization-success/:token"
           element={<AuthorizationSuccess />}
@@ -247,7 +244,6 @@ function App() {
             path="/create-contract-agreement"
             element={<CreateContractAgreement />}
           />
-          <Route path="/sub-test" element={<SubscriptionTest />} />
           <Route path="/service-request" element={<ServiceRequest />} />
           <Route
             path="/generate-service-request"
