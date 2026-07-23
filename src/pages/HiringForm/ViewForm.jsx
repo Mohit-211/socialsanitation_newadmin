@@ -6,9 +6,20 @@ import axios from "axios";
 import html2pdf from "html2pdf.js";
 import "./HiringForm.css";
 import dayjs from "@/lib/dayjs";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const ViewForm = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+
+const navigateToHiringForms = () => {
+  navigate("/hiring-form");
+};
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const formRef = useRef();
@@ -64,10 +75,60 @@ const ViewForm = () => {
 
   if (loading) return <div className="p-6 text-center">Loading...</div>;
 
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2>Form Details</h2>
-      {/* <button onClick={downloadPDF}>Download as PDF</button> */}
+return (
+  <Box sx={{ p: 3 }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2.5,
+        mb: 3,
+        borderRadius: "10px",
+        borderColor: "#eef0f2",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography className="page-title">
+            EMPLOYEE HIRING FORM MANAGEMENT
+          </Typography>
+
+          <Typography className="page-sub-title">
+            View Employee Hiring Form
+          </Typography>
+        </Box>
+
+        <Button
+          variant="contained"
+          disableElevation
+          startIcon={<ArrowBackIcon />}
+          onClick={navigateToHiringForms}
+          sx={{
+            ml: "auto",
+            height: 47,
+            px: 3,
+            borderRadius: "8px",
+            minWidth: 180,
+            textTransform: "none",
+            fontWeight: 600,
+            backgroundColor: "#2c3345",
+            "&:hover": {
+              backgroundColor: "#1f2433",
+            },
+          }}
+        >
+          Return to Hiring Forms
+        </Button>
+      </Box>
+    </Paper>
+
+    {/* <button onClick={downloadPDF}>Download as PDF</button> */}
 
       {sections.map((section, idx) => (
         <div
@@ -227,7 +288,7 @@ const ViewForm = () => {
           </ul>
         </div>
       ))}
-    </div>
+    </Box>
   );
 };
 

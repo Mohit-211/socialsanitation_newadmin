@@ -259,13 +259,13 @@ const AllAttendance = () => {
       title: "Employee Name",
       dataIndex: "user_name",
       key: "name",
-      width: 160,
+      width: 150,
       sorter: (a, b) => a.user_name.localeCompare(b.user_name),
     },
     {
       title: "Employee Type",
       dataIndex: "role_id",
-      width: "10%",
+      width: 100,
       key: "role_id",
       sorter: (a, b) => a.role_id - b.role_id,
       render: (role_id) => {
@@ -279,6 +279,7 @@ const AllAttendance = () => {
     },
     {
       title: "Date",
+      width: 80,
       dataIndex: "date",
       key: "date",
       width: "10%",
@@ -287,6 +288,7 @@ const AllAttendance = () => {
     {
       title: "Clock-In Location",
       key: "clock_in_location",
+      width: 100,
       render: (_, record) => {
         const lat = record?.clock_in_location?.lat;
         const lng = record?.clock_in_location?.lng;
@@ -308,6 +310,7 @@ const AllAttendance = () => {
     {
       title: "Clock-Out Location",
       key: "clock_out_location",
+      width: 100,
       render: (_, record) => {
         const lat = record?.clock_out_location?.lat;
         const lng = record?.clock_out_location?.lng;
@@ -329,6 +332,7 @@ const AllAttendance = () => {
     {
       title: "Status",
       dataIndex: "status",
+      width: 80,
       key: "status",
       sorter: (a, b) => a.status.localeCompare(b.status),
       render: (status) => {
@@ -337,14 +341,14 @@ const AllAttendance = () => {
           status === "PRESENT"
             ? "green"
             : status === "LATE"
-            ? "orange"
-            : status === "ON LEAVE"
-            ? "blue"
-            : status === "APPLIED LEAVE"
-            ? "orange"
-            : status === "ABSENT"
-            ? "red"
-            : "black";
+              ? "orange"
+              : status === "ON LEAVE"
+                ? "blue"
+                : status === "APPLIED LEAVE"
+                  ? "orange"
+                  : status === "ABSENT"
+                    ? "red"
+                    : "black";
 
         return (
           <span style={{ color, fontWeight: "bold" }}>{displayStatus}</span>
@@ -354,6 +358,7 @@ const AllAttendance = () => {
     {
       title: "Clock In",
       dataIndex: "clock_in",
+      width: 80,
       key: "clock_in",
       render: (clock_in) =>
         clock_in ? dayjs.utc(clock_in).format("hh:mm A") : "---",
@@ -361,6 +366,7 @@ const AllAttendance = () => {
     {
       title: "Clock Out",
       dataIndex: "clock_out",
+      width: 80,
       key: "clock_out",
       render: (clock_out) =>
         clock_out ? dayjs.utc(clock_out).format("hh:mm A") : "---",
@@ -368,6 +374,7 @@ const AllAttendance = () => {
     {
       title: "Clock-In Image",
       dataIndex: "clock_in_image_uri",
+      width: 80,
       key: "clock_in_image_uri",
       render: (uri) =>
         uri ? (
@@ -390,6 +397,7 @@ const AllAttendance = () => {
     {
       title: "Clock-Out Image",
       dataIndex: "clock_out_image_uri",
+      width: 80,
       key: "clock_out_image_uri",
       render: (uri) =>
         uri ? (
@@ -412,6 +420,7 @@ const AllAttendance = () => {
     {
       title: "Total Hours",
       dataIndex: "total_hours",
+      width: 80,
       key: "total_hours",
       render: (total_hours, record) =>
         ["PRESENT", "LATE"].includes(record.status)
@@ -421,6 +430,7 @@ const AllAttendance = () => {
     {
       title: "",
       key: "actions",
+      width: 80,
       render: (text, record) => (
         <Tooltip title="Manual Clock In/Out">
           <IconAction
@@ -482,39 +492,51 @@ const AllAttendance = () => {
             </Stack>
           ) : (
             <Stack
-              direction="row"
-              spacing={1.5}
-              sx={{ alignItems: "center", flexWrap: "wrap" }}
+              spacing={2}
+              sx={{
+                width: 470, // adjust to 500 if needed
+              }}
             >
-              <DatePicker
-                value={selectedDate}
-                onChange={handleDateChange}
-                placeholder="Select a date"
-              />
-              <Button type="primary" onClick={() => setIsMonthlyView(true)}>
-                Monthly Summary View
-              </Button>
-              <Button
-                type="default"
-                onClick={() => navigate("/attendanceCalendar")}
+              {/* Top Row */}
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                gap={2}
               >
-                Calendar View
-              </Button>
+                <DatePicker
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  placeholder="Select a date"
+                  style={{ width: 140,margin:5 }}
+                />
+
+                <Button type="primary" onClick={() => setIsMonthlyView(true)}  style={{ margin:5 }}>
+                  Monthly Summary View
+                </Button>
+
+                <Button
+                  type="primary"
+                  onClick={() => navigate("/attendanceCalendar")}
+                >
+                  Calendar View
+                </Button>
+              </Box>
+
+              {/* Search */}
+              <Input
+                allowClear
+                prefix={<Search size={18} color="#9CA3AF" />}
+                placeholder="Search by employee name..."
+                style={{
+                  width: "100%",
+                  height: 44,
+                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </Stack>
           )}
         </Stack>
-
-        {!isMonthlyView && (
-          <Box sx={{ mt: 2.5 }}>
-            <Input
-              allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
-              placeholder="Search by employee name..."
-              style={{ width: "100%", maxWidth: 420, height: 44 }}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </Box>
-        )}
       </Paper>
 
       {isMonthlyView ? (
@@ -564,7 +586,7 @@ const AllAttendance = () => {
                 const fullDate = `${year}-${month}-${day}`; // match API date format (YYYY-MM-DD)
 
                 const statusEntry = emp.monthly_attendance?.find(
-                  (a) => a.date === fullDate
+                  (a) => a.date === fullDate,
                 );
 
                 let symbol = ""; // Default blank
@@ -638,7 +660,7 @@ const AllAttendance = () => {
           <Table
             columns={columns}
             dataSource={attendanceData.filter((item) =>
-              item.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
+              item.user_name?.toLowerCase().includes(searchTerm.toLowerCase()),
             )}
             loading={loading}
             pagination={{ pageSize: 100 }}

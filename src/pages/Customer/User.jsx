@@ -16,6 +16,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
 import {
   DeleteUser,
   GetUsers,
@@ -45,6 +46,8 @@ import {
   MapPin,
   KeyRound,
   RefreshCw,
+  User as UserIcon,
+  Navigation,
 } from "lucide-react";
 import "./User.scss";
 
@@ -54,6 +57,10 @@ const NEARBY_ROLE_LABELS = {
   7: "INSPECTOR/SUPERVISOR",
   8: "QUALITY ASSURANCE TECHNICIAN",
 };
+
+const NEARBY_CLIENT_COLOR = "#1976D2";
+const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
+const NEARBY_SELECTED_COLOR = "#FB8C00";
 
 const nearbyMapContainerStyle = {
   width: "100%",
@@ -241,29 +248,38 @@ const User = () => {
   const nearbyEmployeesColumns = [
     {
       title: "#",
-      width: "8%",
-      render: (_, __, index) => index + 1,
+      width: 50,
+      align: "center",
+      render: (_, __, index) => (
+        <span style={{ color: "#9ca3af" }}>{index + 1}</span>
+      ),
     },
     {
       title: "Name",
       dataIndex: "name",
-      width: "27%",
+      width: "30%",
+      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
     },
     {
       title: "Role",
       dataIndex: "role_id",
-      width: "30%",
+      width: 220,
       render: (role_id) => (
-        <strong>{NEARBY_ROLE_LABELS[role_id] || "-"}</strong>
+        <strong style={{ fontSize: "12.5px" }}>
+          {NEARBY_ROLE_LABELS[role_id] || "-"}
+        </strong>
       ),
     },
     {
       title: "Distance",
       dataIndex: "distance",
-      width: "20%",
+      width: 110,
+      align: "right",
       sorter: (a, b) => a.distance - b.distance,
       defaultSortOrder: "ascend",
-      render: (distance) => `${distance} mi`,
+      render: (distance) => (
+        <span style={{ fontWeight: 500 }}>{distance} mi</span>
+      ),
     },
   ];
 
@@ -700,58 +716,256 @@ const User = () => {
         size="middle"
       />
 
+      {/* ---------------------------------------------------------------- */}
+      {/* Reset Email / Password modal                                      */}
+      {/* ---------------------------------------------------------------- */}
       {editModalVisible && (
         <Modal
-          title="Edit Client Email & Reset Password"
+          title={
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#FFF3E0",
+                  color: "#FF9800",
+                  flexShrink: 0,
+                }}
+              >
+                <KeyRound size={17} />
+              </Box>
+              <span style={{ fontWeight: 600 }}>
+                Edit Client Email &amp; Reset Password
+              </span>
+            </Stack>
+          }
           open={editModalVisible}
           onCancel={() => setEditModalVisible(false)}
           onOk={handleResetCredentials}
           okText="Generate & Send New Password"
+          width={460}
         >
-          <AntTypography.Text type="secondary">Client</AntTypography.Text>
-          <p style={{ marginTop: 2, fontWeight: 600 }}>
-            {selectedUser?.user_profile?.name}
-          </p>
+          <Divider sx={{ mt: 1, mb: 2.5 }} />
+
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              background: "#f8f9fa",
+              border: "1px solid #eef0f2",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              marginBottom: "20px",
+            }}
+          >
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#e8eaf6",
+                color: "#5c6bc0",
+                flexShrink: 0,
+              }}
+            >
+              <UserIcon size={18} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "#9ca3af",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  lineHeight: 1.4,
+                }}
+              >
+                Client
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#1a1a1a",
+                  lineHeight: 1.3,
+                }}
+              >
+                {selectedUser?.user_profile?.name || "—"}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Typography
+            component="label"
+            sx={{
+              display: "block",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#374151",
+              marginBottom: "8px",
+            }}
+          >
+            New Email Address
+          </Typography>
           <Input
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
-            style={{ width: "100%", marginTop: 8 }}
+            size="large"
+            style={{ width: "100%" }}
           />
+          <Typography
+            sx={{
+              fontSize: "12.5px",
+              color: "#9ca3af",
+              marginTop: "10px",
+              lineHeight: 1.5,
+            }}
+          >
+            A new temporary password will be generated and emailed to this
+            client along with their updated login email.
+          </Typography>
         </Modal>
       )}
 
+      {/* ---------------------------------------------------------------- */}
+      {/* Nearby Employees modal (map + list) — redesigned                   */}
+      {/* ---------------------------------------------------------------- */}
       {nearbyModalVisible && (
         <Modal
-          title={`Nearby Employees${
-            nearbyClient?.user_profile?.name
-              ? ` — ${nearbyClient.user_profile.name}`
-              : ""
-          }`}
+          title={
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#F3F4F6",
+                  color: "#6B7280",
+                  flexShrink: 0,
+                }}
+              >
+                <MapPin size={17} />
+              </Box>
+              <Box>
+                <div style={{ fontWeight: 600, lineHeight: 1.3 }}>
+                  Nearby Employees
+                </div>
+                {nearbyClient?.user_profile?.name && (
+                  <div
+                    style={{
+                      fontSize: "12.5px",
+                      fontWeight: 400,
+                      color: "#9ca3af",
+                    }}
+                  >
+                    For {nearbyClient.user_profile.name}
+                  </div>
+                )}
+              </Box>
+            </Stack>
+          }
           open={nearbyModalVisible}
           onCancel={() => setNearbyModalVisible(false)}
           footer={null}
           width={900}
+          // style={{ top: 40 }}
         >
-          <Box display="flex" style={{ gap: 16 }}>
-            {/* Map panel */}
-            <Box style={{ width: "48%" }}>
-              <Box display="flex" justifyContent="flex-end" marginBottom="6px">
-                <Tooltip title="Zoom back out to all nearby employees">
-                  <Button
-                    startIcon={<RefreshCw size={16} />}
-                    size="small"
-                    onClick={handleResetMapView}
-                  >
-                    Reset View
-                  </Button>
-                </Tooltip>
-              </Box>
+          <Divider sx={{ mt: 1, mb: 2 }} />
+
+          {/* Map Controls Row (Aligned at top) */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              alignItems: "center",
+              marginBottom: "10px",
+            }}
+          >
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <Navigation size={14} color="#9ca3af" />
+                <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+                  Client & closest employees
+                </Typography>
+              </Stack>
+              <Tooltip title="Zoom back out to all nearby employees">
+                <Button
+                  startIcon={<RefreshCw size={14} />}
+                  size="small"
+                  onClick={handleResetMapView}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    p: 0,
+                  }}
+                >
+                  Reset View
+                </Button>
+              </Tooltip>
+            </Box>
+
+            <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+              {nearbyEmployees.length > 0
+                ? `${nearbyEmployees.length} employee${
+                    nearbyEmployees.length > 1 ? "s" : ""
+                  } found`
+                : "Closest employees"}
+            </Typography>
+          </Box>
+
+          {/* Content Grid Row */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              alignItems: "stretch",
+              width: "100%",
+            }}
+          >
+            {/* Map Panel */}
+            <Box
+              sx={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: "380px",
+              }}
+            >
               {!isNearbyMapLoaded ? (
-                <p style={{ textAlign: "center" }}>Loading map...</p>
+                <Box
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#9ca3af",
+                  }}
+                >
+                  Loading map...
+                </Box>
               ) : (
                 <GoogleMap
-                  mapContainerStyle={nearbyMapContainerStyle}
+                  mapContainerStyle={{ width: "100%", height: "100%" }}
                   center={
                     nearbyClientLocation
                       ? {
@@ -775,7 +989,7 @@ const User = () => {
                       icon={{
                         path: window.google.maps.SymbolPath.CIRCLE,
                         scale: 12,
-                        fillColor: "#1976D2",
+                        fillColor: NEARBY_CLIENT_COLOR,
                         fillOpacity: 1,
                         strokeColor: "#ffffff",
                         strokeWeight: 2,
@@ -804,7 +1018,9 @@ const User = () => {
                         icon={{
                           path: window.google.maps.SymbolPath.CIRCLE,
                           scale: isSelected ? 14 : 11,
-                          fillColor: isSelected ? "#FB8C00" : "#2E7D32",
+                          fillColor: isSelected
+                            ? NEARBY_SELECTED_COLOR
+                            : NEARBY_EMPLOYEE_COLOR,
                           fillOpacity: 1,
                           strokeColor: "#ffffff",
                           strokeWeight: 2,
@@ -850,8 +1066,17 @@ const User = () => {
               )}
             </Box>
 
-            {/* List panel */}
-            <Box style={{ width: "52%" }}>
+            {/* List Panel */}
+            <Box
+              sx={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: "380px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
               <Table
                 columns={nearbyEmployeesColumns}
                 rowKey={(record) => record.id}

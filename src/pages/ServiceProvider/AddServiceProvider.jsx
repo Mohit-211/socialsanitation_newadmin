@@ -1,216 +1,313 @@
 /** @format */
 
-import { Box } from "@mui/material";
-import React from "react";
-import { useState } from "react";
-import Form from "react-bootstrap/Form";
+import React, { useState } from "react";
+import {
+    Box,
+    Card,
+    Button,
+    Paper,
+    Typography,
+    TextField,
+    MenuItem,
+    Select,
+    FormControl,
+    FormLabel
+} from "@mui/material";
 import { AddUser } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
-import Card from "@mui/material/Card";
-import Button from "@mui/material/Button";
 import { message } from "antd";
+import { ArrowLeft, Check, X } from "lucide-react";
 
 const AddServiceProvider = () => {
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-	const [roleId, setRoleId] = useState("");
-	const [disable, setDisable] = useState(false);
-	const [employeeType, setEmployeeType] = useState("");
-	const navigate = useNavigate();
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [roleId, setRoleId] = useState("");
+    const [disable, setDisable] = useState(false);
+    const [employeeType, setEmployeeType] = useState("");
+    const navigate = useNavigate();
 
-	const handleSubmit = async (event) => {
-		event.preventDefault();
-		setDisable(true);
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setDisable(true);
 
-		if (!name) {
-			message.error("Please enter name ");
-			setDisable(false);
-			return;
-		}
-		if (!email) {
-			message.error("Please enter email");
-			setDisable(false);
-			return;
-		}
-		if (!roleId) {
-			message.error("Please select a user type");
-			setDisable(false);
-			return;
-		}
+        if (!name) {
+            message.error("Please enter name ");
+            setDisable(false);
+            return;
+        }
+        if (!email) {
+            message.error("Please enter email");
+            setDisable(false);
+            return;
+        }
+        if (!roleId) {
+            message.error("Please select a user type");
+            setDisable(false);
+            return;
+        }
 
-		if (!employeeType) {
-			message.error("Please select employee type");
-			setDisable(false);
-			return;
-		}
+        if (!employeeType) {
+            message.error("Please select employee type");
+            setDisable(false);
+            return;
+        }
 
-		let finalRoleId = roleId;
-		let subRoleId = null;
+        let finalRoleId = roleId;
+        let subRoleId = null;
 
-		// Handle sub_role_id if needed
-		if (roleId.includes("-")) {
-			const [role, subRole] = roleId.split("-");
-			finalRoleId = parseInt(role);
-			subRoleId = parseInt(subRole);
-		} else {
-			finalRoleId = parseInt(roleId);
-		}
+        if (roleId.includes("-")) {
+            const [role, subRole] = roleId.split("-");
+            finalRoleId = parseInt(role);
+            subRoleId = parseInt(subRole);
+        } else {
+            finalRoleId = parseInt(roleId);
+        }
 
-		try {
-			const response = await AddUser({
-				email,
-				name,
-				role_id: finalRoleId,
-				sub_role_id: subRoleId, // will be null if not applicable
-				employee_type: finalRoleId === 7 ? employeeType : null
-			});
+        try {
+            const response = await AddUser({
+                email,
+                name,
+                role_id: finalRoleId,
+                sub_role_id: subRoleId,
+                employee_type: finalRoleId === 7 ? employeeType : null
+            });
 
-			if (response.status === 200) {
-				message.success("Employee added successfully");
-				setTimeout(() => {
-					navigate("/employees");
-				}, 1000);
-			}
-			setDisable(false);
-		} catch (error) {
-			if (error.response && error.response.status === 500) {
-				message.error("Email already exists");
-			} else if (error.response?.status === 401) {
-				message.error("Token expired");
-				localStorage.removeItem("adminToken");
-				setTimeout(() => {
-					navigate("/Login");
-				}, 3000);
-			} else {
-				message.error("Something went wrong");
-			}
-			setDisable(false);
-		}
-	};
+            if (response.status === 200) {
+                message.success("Employee added successfully");
+                setTimeout(() => {
+                    navigate("/employees");
+                }, 1000);
+            }
+            setDisable(false);
+        } catch (error) {
+            if (error.response && error.response.status === 500) {
+                message.error("Email already exists");
+            } else if (error.response?.status === 401) {
+                message.error("Token expired");
+                localStorage.removeItem("adminToken");
+                setTimeout(() => {
+                    navigate("/Login");
+                }, 3000);
+            } else {
+                message.error("Something went wrong");
+            }
+            setDisable(false);
+        }
+    };
 
-	const navigateToUser = () => {
-		navigate("/employees");
-	};
+    const navigateToUser = () => {
+        navigate("/employees");
+    };
 
-	return (
-		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
-			>
-				<div>
-					<h3 className="page-title">EMPLOYEE MANAGEMENT</h3>
-					<p className="page-sub-title">Create New Employee</p>
-				</div>
-				<div>
-					<Button
-						icon="pi pi-arrow-left"
-						severity="secondary"
-						onClick={navigateToUser}
-						style={{ borderRadius: "5px", height: "47px" }}
-					>
-						<span style={{ marginLeft: "5px" }}>Return to Employee</span>
-					</Button>
-				</div>
-			</Box>
-			<Card>
-				<div>
-					<Form>
-						<Form.Group className="mb-3">
-							<Form.Label>Full Name</Form.Label>
-							<Form.Control
-								type="text"
-								required
-								placeholder="Enter name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								className="new_form_control"
-							/>
-						</Form.Group>
+    return (
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
+            {/* Kept header intact */}
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: 2.5,
+                    mb: 3,
+                    borderRadius: "10px",
+                    borderColor: "#eef0f2",
+                    backgroundColor: "#ffffff",
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 2,
+                    }}
+                >
+                    <Box>
+                        <Typography className="page-title" sx={{ fontWeight: 700, fontSize: "1.25rem" }}>
+                            EMPLOYEE MANAGEMENT
+                        </Typography>
+                        <Typography className="page-sub-title" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+                            Create New Employee
+                        </Typography>
+                    </Box>
 
-						<Form.Group className="mb-3">
-							<Form.Label>Email address</Form.Label>
-							<Form.Control
-								type="email"
-								placeholder="Enter email"
-								value={email}
-								required
-								onChange={(e) => setEmail(e.target.value)}
-								className="new_form_control"
-							/>
-						</Form.Group>
+                    <Button
+                        variant="contained"
+                        disableElevation
+                        startIcon={<ArrowLeft size={18} />}
+                        onClick={navigateToUser}
+                        sx={{
+                            ml: "auto",
+                            height: 44,
+                            px: 3,
+                            borderRadius: "6px",
+                            minWidth: 185,
+                            textTransform: "none",
+                            fontWeight: 600,
+                            backgroundColor: "#5a6a85",
+                            "&:hover": {
+                                backgroundColor: "#48556d",
+                            },
+                        }}
+                    >
+                        Return to Employee
+                    </Button>
+                </Box>
+            </Paper>
 
-						<Form.Group className="mb-3">
-							<Form.Label>User Type:</Form.Label>
-							<Form.Select
-								aria-label="Default select example"
-								className="new_form_control"
-								value={roleId}
-								onChange={(e) => setRoleId(e.target.value)}
-							>
-								<option value="">Select User Type:</option>
-								<option value="7">Inspector/Supervisor</option>
-								<option value="8">Quality Assurance Technician</option>
-								<option value="9-10">Cleaner</option>{" "}
-								{/* role 9, sub_role 10 */}
-								<option value="9-11">HouseKeeping</option>{" "}
-								{/* role 9, sub_role 11 */}
-							</Form.Select>
-						</Form.Group>
+            {/* Pure MUI Form Container */}
+            <Card
+                variant="outlined"
+                sx={{
+                    borderRadius: "10px",
+                    borderColor: "#eef0f2",
+                    p: { xs: 3, sm: 4 },
+                    backgroundColor: "#ffffff",
+                }}
+            >
+                <form onSubmit={handleSubmit}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        
+                        {/* Full Name */}
+                        <FormControl fullWidth>
+                            <FormLabel sx={{ fontWeight: 600, color: "#374151", mb: 1, fontSize: "0.95rem" }}>
+                                Full Name
+                            </FormLabel>
+                            <TextField
+                                fullWidth
+                                placeholder="Enter name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                size="small"
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        height: "45px",
+                                        borderRadius: "6px",
+                                        borderColor: "#e2e8f0"
+                                    }
+                                }}
+                            />
+                        </FormControl>
 
-						<Form.Group className="mb-3">
-							<Form.Label>Employee Type:</Form.Label>
-							<Form.Select
-								className="new_form_control"
-								value={employeeType}
-								onChange={(e) => setEmployeeType(e.target.value)}
-							>
-								<option value="">Select Employee Type</option>
-								<option value="W2_BI_WEEKLY">W2 Bi-Weekly</option>
-								<option value="1099">1099 Contractor</option>
-							</Form.Select>
-						</Form.Group>
+                        {/* Email Address */}
+                        <FormControl fullWidth>
+                            <FormLabel sx={{ fontWeight: 600, color: "#374151", mb: 1, fontSize: "0.95rem" }}>
+                                Email address
+                            </FormLabel>
+                            <TextField
+                                fullWidth
+                                type="email"
+                                placeholder="Enter email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                size="small"
+                                sx={{
+                                    "& .MuiOutlinedInput-root": {
+                                        height: "45px",
+                                        borderRadius: "6px",
+                                        borderColor: "#e2e8f0"
+                                    }
+                                }}
+                            />
+                        </FormControl>
 
-						<div style={{ marginTop: "60px" }}>
-							<Button
-								icon="pi pi-check"
-								severity="info"
-								type="submit"
-								onClick={handleSubmit}
-								disabled={disable}
-								style={{
-									height: "45px",
-									padding: "20px",
-									borderRadius: "5px",
-								}}
-							>
-								{disable ? "Saving...." : "Save"}
-							</Button>
+                        {/* User Type */}
+                        <FormControl fullWidth>
+                            <FormLabel sx={{ fontWeight: 600, color: "#374151", mb: 1, fontSize: "0.95rem" }}>
+                                User Type:
+                            </FormLabel>
+                            <Select
+                                displayEmpty
+                                value={roleId}
+                                onChange={(e) => setRoleId(e.target.value)}
+                                size="small"
+                                sx={{
+                                    height: "45px",
+                                    borderRadius: "6px",
+                                    borderColor: "#e2e8f0"
+                                }}
+                            >
+                                <MenuItem value="" disabled>
+                                    <Typography color="text.secondary">Select User Type:</Typography>
+                                </MenuItem>
+                                <MenuItem value="7">Inspector/Supervisor</MenuItem>
+                                <MenuItem value="8">Quality Assurance Technician</MenuItem>
+                                <MenuItem value="9-10">Cleaner</MenuItem>
+                                <MenuItem value="9-11">HouseKeeping</MenuItem>
+                            </Select>
+                        </FormControl>
 
-							<Button
-								icon="pi pi-times"
-								severity="secondary"
-								onClick={(e) => {
-									navigateToUser();
-								}}
-								style={{
-									marginLeft: "10px",
-									marginTop: "10px",
-									height: "45px",
-									padding: "20px",
-									borderRadius: "5px",
-								}}
-							>
-								Cancel
-							</Button>
-						</div>
-					</Form>
-				</div>
-			</Card>
-		</Box>
-	);
+                        {/* Employee Type */}
+                        <FormControl fullWidth>
+                            <FormLabel sx={{ fontWeight: 600, color: "#374151", mb: 1, fontSize: "0.95rem" }}>
+                                Employee Type:
+                            </FormLabel>
+                            <Select
+                                displayEmpty
+                                value={employeeType}
+                                onChange={(e) => setEmployeeType(e.target.value)}
+                                size="small"
+                                sx={{
+                                    height: "45px",
+                                    borderRadius: "6px",
+                                    borderColor: "#e2e8f0"
+                                }}
+                            >
+                                <MenuItem value="" disabled>
+                                    <Typography color="text.secondary">Select Employee Type</Typography>
+                                </MenuItem>
+                                <MenuItem value="W2_BI_WEEKLY">W2 Bi-Weekly</MenuItem>
+                                <MenuItem value="1099">1099 Contractor</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        {/* Action Buttons */}
+                        <Box sx={{ display: "flex", gap: 1.5, mt: 2 }}>
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                type="submit"
+                                disabled={disable}
+                                startIcon={!disable ? <Check size={18} /> : null}
+                                sx={{
+                                    height: 42,
+                                    px: 3,
+                                    borderRadius: "6px",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    backgroundColor: "#3b82f6",
+                                    "&:hover": {
+                                        backgroundColor: "#2563eb",
+                                    },
+                                }}
+                            >
+                                {disable ? "Saving..." : "Save"}
+                            </Button>
+
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                startIcon={<X size={18} />}
+                                onClick={navigateToUser}
+                                sx={{
+                                    height: 42,
+                                    px: 3,
+                                    borderRadius: "6px",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    backgroundColor: "#6b7280",
+                                    color: "#ffffff",
+                                    "&:hover": {
+                                        backgroundColor: "#4b5563",
+                                    },
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        </Box>
+                    </Box>
+                </form>
+            </Card>
+        </Box>
+    );
 };
 
 export default AddServiceProvider;

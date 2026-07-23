@@ -4,6 +4,9 @@ import React, { useEffect, useState } from "react";
 import { Table, Input, Modal, message, Space, Button } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import dayjs from "@/lib/dayjs";
 import {
 	DeleteHiringForm,
@@ -182,26 +185,46 @@ const HiringForm = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
-			>
-				<div>
-					<h3 className="page-title">EMPLOYEE HIRING FORM MANAGEMENT</h3>
-					<p className="page-sub-title">View Employee Hiring Form</p>
-				</div>
+			<Paper
+	variant="outlined"
+	sx={{
+		p: 2.5,
+		mb: 3,
+		borderRadius: "10px",
+		borderColor: "#eef0f2",
+	}}
+>
+	<Stack
+		direction="row"
+		spacing={2}
+		sx={{
+			justifyContent: "space-between",
+			alignItems: "center",
+			flexWrap: "wrap",
+		}}
+	>
+		<Box>
+			<Typography className="page-title">
+				EMPLOYEE HIRING FORM MANAGEMENT
+			</Typography>
 
-				{/* 🔍 Search Box */}
-				<Input
-					placeholder="Search by name or email"
-					value={searchText}
-					onChange={(e) => setSearchText(e.target.value)}
-					style={{ width: 300 }}
-					allowClear
-				/>
-			</Box>
+			<Typography className="page-sub-title">
+				View Employee Hiring Form
+			</Typography>
+		</Box>
+
+		<Input
+			allowClear
+			placeholder="Search by name or email..."
+			value={searchText}
+			onChange={(e) => setSearchText(e.target.value)}
+			style={{
+				width: 270,
+				height: 44,
+			}}
+		/>
+	</Stack>
+</Paper>
 
 			<Table
 				columns={columns}

@@ -4,9 +4,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   Form,
   Input,
-  Button,
+  Button as AntButton,
   Select,
-  Card,
   Row,
   Col,
   Typography,
@@ -15,6 +14,8 @@ import {
   Radio,
   InputNumber,
 } from "antd";
+import { Box, Paper, Button, Card } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   GetUserById,
@@ -26,6 +27,33 @@ import {
 } from "../../services/Api/Api";
 
 const { Title } = Typography;
+
+// ---- shared table style tokens (matches AddCustomer / ViewCustomer) ----
+const tableWrapStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: "10px",
+  overflow: "hidden",
+};
+
+const thStyle = {
+  textAlign: "left",
+  padding: "14px 16px",
+  background: "#fafafa",
+  borderBottom: "1px solid #e5e7eb",
+  borderRight: "1px solid #e5e7eb",
+  fontSize: "13px",
+  fontWeight: 600,
+  color: "#374151",
+  verticalAlign: "top",
+};
+
+const tdStyle = {
+  padding: "14px 16px",
+  borderBottom: "1px solid #e5e7eb",
+  borderRight: "1px solid #e5e7eb",
+  verticalAlign: "middle",
+  background: "#fff",
+};
 
 const UpdateCustomer = () => {
   const [form] = Form.useForm();
@@ -56,6 +84,10 @@ const UpdateCustomer = () => {
     { name: "Group / Common Rooms", editable: false },
     { name: "All Areas / Hallways", editable: false },
   ]);
+
+  const navigateToUser = () => {
+    navigate("/users");
+  };
 
   useEffect(() => {
     StateAPI(233).then((res) => {
@@ -256,16 +288,6 @@ const UpdateCustomer = () => {
     }
   };
 
-  const defaultServiceAreas = [
-    "Entrance / Lobby Areas",
-    "Restrooms",
-    "Kitchen Areas",
-    "Office Areas",
-    "Classrooms / Conference Rooms",
-    "Group / Common Rooms",
-    "All Areas / Hallways",
-  ];
-
   const onClientTypeChange = (type) => {
     setClientType(type);
 
@@ -306,11 +328,8 @@ const UpdateCustomer = () => {
 
     const total = details.reduce((sum, item) => {
       const desks = Number(item?.num_desks_trash_cans || 0);
-
       const stalls = Number(item?.stalls || 0);
-
       const sinks = Number(item?.sinks || 0);
-
       const restrooms = Number(item?.restrooms || 0);
 
       return sum + desks + stalls + sinks + restrooms;
@@ -320,802 +339,874 @@ const UpdateCustomer = () => {
   };
 
   return (
-    <Card>
-      <Title level={4}>Update Client Details</Title>
-      <Form
-        layout="vertical"
-        form={form}
-        onFinish={handleSave}
-        onValuesChange={(changed) => {
-          if (changed.address) fetchCoordinates(changed.address);
-          if (changed.state_id) fetchCities(changed.state_id);
+    <Box>
+      {/* ---- Shared header (matches AddCustomer / ViewCustomer) ---- */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        <Col span={8}>
-          <Form.Item
-            name="client_type"
-            label="Client Type"
-            rules={[{ required: true }]}
-          >
-            <Radio.Group
-              value={clientType}
-              onChange={(e) => onClientTypeChange(e.target.value)}
-            >
-              <Radio value="residential">Residential</Radio>
-              <Radio value="commercial">Commercial</Radio>
-            </Radio.Group>
-          </Form.Item>
-        </Col>
-        <Row gutter={16}>
-          <Col span={6}>
-            <Form.Item
-              name="name"
-              label="Full Name"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item name="email" label="Email">
-              <Input disabled />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item name="sqft" label="Estimated Sq/Ft">
-              <Input type="number" min={0} />
-            </Form.Item>
-          </Col>
-          <Col span={6}>
-            <Form.Item
-              name="walkaround_minutes"
-              label="Walkaround Time (Minutes)"
-            >
-              <Input type="number" min={0} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Card style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Title level={5} style={{ margin: 0 }}>
-              User Addresses
-            </Title>
-            <Button
-              type="primary"
-              onClick={() => {
-                setEditingAddress(null);
-                addressForm.resetFields();
-                setCoordinates({ lat: null, lng: null });
-                setAddressModalVisible(true);
-              }}
-            >
-              + Add Address
-            </Button>
-          </div>
-
-          {userAddresses.length === 0 ? (
-            <Typography.Text type="secondary">No address found</Typography.Text>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {userAddresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 16px",
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 8,
-                    backgroundColor: "#fff",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <div style={{ fontSize: 14, color: "#333" }}>
-                    {addr.address}, {addr.user_city?.name},{" "}
-                    {addr.user_state?.name}, {addr.user_country?.name}
-                  </div>
-                  <Button
-                    type="link"
-                    onClick={() => {
-                      console.log("Editing Address:", addr);
-                      setEditingAddress(addr);
-                      setAddressModalVisible(true);
-
-                      // Wait for modal to open
-                      setTimeout(() => {
-                        addressForm.resetFields();
-
-                        // ✅ Optional debug log for individual fields
-                        console.log("Setting address:", addr.address);
-                        console.log("Setting state_id:", addr.state_id);
-                        console.log("Setting city_id:", addr.city_id);
-
-                        addressForm.setFieldsValue({
-                          address: addr.address,
-                          state_id: addr.state_id,
-                        });
-                        console.log(addressForm, "addressForm");
-
-                        setAddressCoordinates({
-                          lat: addr.address_lat,
-                          lng: addr.address_long,
-                        });
-
-                        fetchCities(addr.state_id).then(() => {
-                          addressForm.setFieldsValue({
-                            city_id: addr.city_id,
-                          });
-                        });
-
-                        console.log(addr.address, "addres");
-
-                        setTimeout(() => fetchCoordinates(addr.address), 200);
-                      }, 100); // Delay ensures modal and form are mounted
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "20px",
-            marginBottom: "20px",
-            background: "#fff",
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            gap: 2,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
+          <Box>
+            <h3 className="page-title">CLIENT MANAGEMENT</h3>
+            <p className="page-sub-title">Update Client Details</p>
+          </Box>
+
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowBackIcon />}
+            onClick={navigateToUser}
+            sx={{
+              height: 47,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              flexShrink: 0,
+              ml: "auto",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 600,
-                }}
-              >
-                Overall Building Floor Composition
-              </div>
+            Return to Clients
+          </Button>
+        </Box>
+      </Paper>
 
-              <div
-                style={{
-                  fontSize: "13px",
-                  color: "#6b7280",
-                  marginTop: "4px",
-                }}
-              >
-                Enter the percentage of each flooring type for the entire
-                building. Total must equal 100%.
-              </div>
-            </div>
-            <div
-              style={{
-                background:
-                  totalFloorPercentage === 100 ? "#ecfdf5" : "#fef2f2",
-                color: totalFloorPercentage === 100 ? "#15803d" : "#dc2626",
-                border:
-                  totalFloorPercentage === 100
-                    ? "1px solid #bbf7d0"
-                    : "1px solid #fecaca",
-                borderRadius: "20px",
-                padding: "6px 14px",
-                fontWeight: 600,
-              }}
-            >
-              Total: {totalFloorPercentage}% / 100%
-            </div>
-          </div>
-
-          <Row gutter={16}>
-            <Col span={6}>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 4,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Form
+          layout="vertical"
+          form={form}
+          onFinish={handleSave}
+          onValuesChange={(changed) => {
+            if (changed.address) fetchCoordinates(changed.address);
+            if (changed.state_id) fetchCities(changed.state_id);
+          }}
+        >
+          <Row>
+            <Col span={24}>
               <Form.Item
-                label="Carpet (%)"
-                name="carpet_percentage"
-                initialValue={0}
+                name="client_type"
+                label="Client Type"
+                rules={[{ required: true }]}
+                style={{ marginBottom: 24 }}
               >
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item
-                label="Concrete (%)"
-                name="concrete_percentage"
-                initialValue={0}
-              >
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item
-                label="VCT/LVT (%)"
-                name="vct_lvt_percentage"
-                initialValue={0}
-              >
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item
-                label="Tile (%)"
-                name="tile_percentage"
-                initialValue={0}
-              >
-                <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                <Radio.Group
+                  value={clientType}
+                  onChange={(e) => onClientTypeChange(e.target.value)}
+                >
+                  <Radio value="residential">Residential</Radio>
+                  <Radio value="commercial">Commercial</Radio>
+                </Radio.Group>
               </Form.Item>
             </Col>
           </Row>
-        </div>
 
-        <Form.Item>
+          <Row gutter={[24, 24]}>
+            <Col span={6}>
+              <Form.Item
+                name="name"
+                label="Full Name"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="email" label="Email">
+                <Input disabled />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="sqft" label="Estimated Sq/Ft">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="walkaround_minutes"
+                label="Walkaround Time (Minutes)"
+              >
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "10px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              padding: "20px",
+              marginBottom: 24,
+              background: "#fff",
             }}
           >
-            <label
+            <div
               style={{
-                fontSize: "16px",
-                fontWeight: 500,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
               }}
             >
-              Initial Client Chart
-            </label>
-
-            {clientType === "commercial" && (
-              <Button
+              <Title level={5} style={{ margin: 0 }}>
+                User Addresses
+              </Title>
+              <AntButton
                 type="primary"
                 onClick={() => {
-                  const restroomCount = commercialAreas.filter((area) =>
-                    area.name.includes("Restrooms"),
-                  ).length;
-
-                  const restroomName = `Restrooms ${restroomCount + 1}`;
-
-                  // Add visible row
-                  setCommercialAreas((prev) => [
-                    ...prev,
-                    {
-                      name: restroomName,
-                      editable: true,
-                    },
-                  ]);
-
-                  // Add form row
-                  const details = form.getFieldValue("details") || [];
-
-                  form.setFieldsValue({
-                    details: [
-                      ...details,
-                      {
-                        service_area: restroomName,
-                        stalls: 0,
-                        sinks: 0,
-                        restrooms: 0,
-                        flooring_type: null,
-                        special_requests: "",
-                      },
-                    ],
-                  });
+                  setEditingAddress(null);
+                  addressForm.resetFields();
+                  setCoordinates({ lat: null, lng: null });
+                  setAddressModalVisible(true);
                 }}
               >
-                + Add Rooms
-              </Button>
+                + Add Address
+              </AntButton>
+            </div>
+
+            {userAddresses.length === 0 ? (
+              <Typography.Text type="secondary">
+                No address found
+              </Typography.Text>
+            ) : (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {userAddresses.map((addr) => (
+                  <div
+                    key={addr.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px 16px",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: 8,
+                      backgroundColor: "#fff",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, color: "#333" }}>
+                      {addr.address}, {addr.user_city?.name},{" "}
+                      {addr.user_state?.name}, {addr.user_country?.name}
+                    </div>
+                    <AntButton
+                      type="link"
+                      onClick={() => {
+                        console.log("Editing Address:", addr);
+                        setEditingAddress(addr);
+                        setAddressModalVisible(true);
+
+                        // Wait for modal to open
+                        setTimeout(() => {
+                          addressForm.resetFields();
+
+                          // ✅ Optional debug log for individual fields
+                          console.log("Setting address:", addr.address);
+                          console.log("Setting state_id:", addr.state_id);
+                          console.log("Setting city_id:", addr.city_id);
+
+                          addressForm.setFieldsValue({
+                            address: addr.address,
+                            state_id: addr.state_id,
+                          });
+                          console.log(addressForm, "addressForm");
+
+                          setAddressCoordinates({
+                            lat: addr.address_lat,
+                            lng: addr.address_long,
+                          });
+
+                          fetchCities(addr.state_id).then(() => {
+                            addressForm.setFieldsValue({
+                              city_id: addr.city_id,
+                            });
+                          });
+
+                          console.log(addr.address, "addres");
+
+                          setTimeout(
+                            () => fetchCoordinates(addr.address),
+                            200,
+                          );
+                        }, 100); // Delay ensures modal and form are mounted
+                      }}
+                    >
+                      Edit
+                    </AntButton>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Service Area</th>
+          <div
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              padding: "20px",
+              marginBottom: "24px",
+              background: "#fff",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                  Overall Building Floor Composition
+                </div>
 
-                  {clientType === "commercial" ? (
-                    <>
-                      <th>
-                        # of Trash Cans
-                        <br />
-                        <small>or Stalls</small>
-                      </th>
-                      <th>
-                        # of Desks
-                        <br />
-                        <small>or Sinks</small>
-                      </th>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#6b7280",
+                    marginTop: "4px",
+                  }}
+                >
+                  Enter the percentage of each flooring type for the entire
+                  building. Total must equal 100%.
+                </div>
+              </div>
+              <div
+                style={{
+                  background:
+                    totalFloorPercentage === 100 ? "#ecfdf5" : "#fef2f2",
+                  color: totalFloorPercentage === 100 ? "#15803d" : "#dc2626",
+                  border:
+                    totalFloorPercentage === 100
+                      ? "1px solid #bbf7d0"
+                      : "1px solid #fecaca",
+                  borderRadius: "20px",
+                  padding: "6px 14px",
+                  fontWeight: 600,
+                }}
+              >
+                Total: {totalFloorPercentage}% / 100%
+              </div>
+            </div>
 
-                      <th>
-                        # of Rooms
-                        <br />
-                        <small>or Restrooms</small>
-                      </th>
-                    </>
-                  ) : (
-                    <th>
-                      # of Desks / Trash Cans (Big Buildings)
-                      <br />
-                      <strong>OR</strong>
-                      <br /># of Restrooms
-                    </th>
-                  )}
+            <Row gutter={[24, 24]}>
+              <Col span={6}>
+                <Form.Item
+                  label="Carpet (%)"
+                  name="carpet_percentage"
+                  initialValue={0}
+                >
+                  <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
 
-                  <th>
-                    Type of Flooring
-                    <br />
-                    <small>(Carpet, Hard Floor, VCT)</small>
-                  </th>
+              <Col span={6}>
+                <Form.Item
+                  label="Concrete (%)"
+                  name="concrete_percentage"
+                  initialValue={0}
+                >
+                  <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
 
-                  <th
-                    style={{
-                      minWidth: "260px",
-                    }}
-                  >
-                    Special Requests / Hot Spots
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {(clientType === "commercial"
-                  ? commercialAreas.map((item) => item.name)
-                  : getServiceAreasByType(clientType)
-                ).map((area, index) => (
-                  <tr key={index}>
-                    <td>
-                      {clientType === "commercial" &&
-                      commercialAreas[index]?.editable ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Input
-                            value={commercialAreas[index]?.name}
-                            onChange={(e) => {
-                              const value = e.target.value;
+              <Col span={6}>
+                <Form.Item
+                  label="VCT/LVT (%)"
+                  name="vct_lvt_percentage"
+                  initialValue={0}
+                >
+                  <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
 
-                              // Update UI state
-                              const updated = [...commercialAreas];
-                              updated[index].name = value;
-                              setCommercialAreas(updated);
+              <Col span={6}>
+                <Form.Item
+                  label="Tile (%)"
+                  name="tile_percentage"
+                  initialValue={0}
+                >
+                  <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
 
-                              // ✅ Update form details also
-                              const details =
-                                form.getFieldValue("details") || [];
+          <Form.Item>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <label style={{ fontSize: "16px", fontWeight: 600 }}>
+                Initial Client Chart
+              </label>
 
-                              details[index] = {
-                                ...details[index],
-                                service_area: value,
-                              };
+              {clientType === "commercial" && (
+                <AntButton
+                  type="primary"
+                  onClick={() => {
+                    const restroomCount = commercialAreas.filter((area) =>
+                      area.name.includes("Restrooms"),
+                    ).length;
 
-                              form.setFieldsValue({
-                                details,
-                              });
-                            }}
-                          />
+                    const restroomName = `Restrooms ${restroomCount + 1}`;
 
-                          <Button
-                            danger
-                            type="text"
-                            onClick={() => {
-                              const updated = commercialAreas.filter(
-                                (_, i) => i !== index,
-                              );
+                    // Add visible row
+                    setCommercialAreas((prev) => [
+                      ...prev,
+                      {
+                        name: restroomName,
+                        editable: true,
+                      },
+                    ]);
 
-                              setCommercialAreas(updated);
+                    // Add form row
+                    const details = form.getFieldValue("details") || [];
 
-                              const details =
-                                form.getFieldValue("details") || [];
+                    form.setFieldsValue({
+                      details: [
+                        ...details,
+                        {
+                          service_area: restroomName,
+                          stalls: 0,
+                          sinks: 0,
+                          restrooms: 0,
+                          flooring_type: null,
+                          special_requests: "",
+                        },
+                      ],
+                    });
+                  }}
+                >
+                  + Add Rooms
+                </AntButton>
+              )}
+            </div>
 
-                              details.splice(index, 1);
-
-                              form.setFieldsValue({ details });
-
-                              calculateTotal();
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      ) : (
-                        <strong>{area}</strong>
-                      )}
-
-                      <Form.Item
-                        name={["details", index, "service_area"]}
-                        initialValue={area}
-                        style={{ display: "none" }}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </td>
+            <div style={tableWrapStyle}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...thStyle, width: "20%" }}>Service Area</th>
 
                     {clientType === "commercial" ? (
                       <>
-                        {/* Stalls */}
-                        <td>
-                          <Form.Item
-                            shouldUpdate={(prev, curr) =>
-                              prev.details?.[index]?.stalls !==
-                                curr.details?.[index]?.stalls ||
-                              prev.details?.[index]?.restrooms !==
-                                curr.details?.[index]?.restrooms
-                            }
-                            noStyle
-                          >
-                            {() => {
-                              const stalls =
-                                Number(
-                                  form.getFieldValue([
-                                    "details",
-                                    index,
-                                    "stalls",
-                                  ]),
-                                ) || 0;
-                              const rooms =
-                                Number(
-                                  form.getFieldValue([
-                                    "details",
-                                    index,
-                                    "restrooms",
-                                  ]),
-                                ) || 0;
+                        <th style={{ ...thStyle, width: "18%" }}>
+                          # of Trash Cans
+                          <br />
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Stalls
+                          </small>
+                        </th>
+                        <th style={{ ...thStyle, width: "18%" }}>
+                          # of Desks
+                          <br />
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Sinks
+                          </small>
+                        </th>
 
-                              return (
-                                <>
-                                  <Form.Item
-                                    name={["details", index, "stalls"]}
-                                    initialValue={0}
-                                    style={{ marginBottom: 0 }}
-                                  >
-                                    <InputNumber
-                                      min={0}
-                                      style={{ width: "100%" }}
-                                      onChange={calculateTotal}
-                                    />
-                                  </Form.Item>
+                        <th style={{ ...thStyle, width: "18%" }}>
+                          # of Rooms
+                          <br />
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Restrooms
+                          </small>
+                        </th>
+                      </>
+                    ) : (
+                      <th style={{ ...thStyle, width: "22%" }}>
+                        # of Desks / Trash Cans (Big Buildings)
+                        <br />
+                        <strong>OR</strong>
+                        <br /># of Restrooms
+                      </th>
+                    )}
 
-                                  {rooms > 0 && stalls > 0 && (
-                                    <div
-                                      style={{
-                                        marginTop: 4,
-                                        fontSize: 12,
-                                        color: "#6b7280",
-                                        textAlign: "center",
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      Total: <strong>{rooms * stalls}</strong>
-                                    </div>
-                                  )}
-                                </>
-                              );
+                    <th style={{ ...thStyle, width: "26%" }}>
+                      Type of Flooring
+                      <br />
+                      <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                        (Carpet, Hard Floor, VCT)
+                      </small>
+                    </th>
+
+                    <th style={{ ...thStyle, borderRight: "none" }}>
+                      Special Requests / Hot Spots
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(clientType === "commercial"
+                    ? commercialAreas.map((item) => item.name)
+                    : getServiceAreasByType(clientType)
+                  ).map((area, index) => (
+                    <tr key={index}>
+                      <td style={tdStyle}>
+                        {clientType === "commercial" &&
+                        commercialAreas[index]?.editable ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              alignItems: "center",
                             }}
-                          </Form.Item>
-                        </td>
-
-                        {/* Sinks */}
-                        <td>
-                          <Form.Item
-                            shouldUpdate={(prev, curr) =>
-                              prev.details?.[index]?.sinks !==
-                                curr.details?.[index]?.sinks ||
-                              prev.details?.[index]?.restrooms !==
-                                curr.details?.[index]?.restrooms
-                            }
-                            noStyle
                           >
-                            {() => {
-                              const sinks =
-                                Number(
-                                  form.getFieldValue([
-                                    "details",
-                                    index,
-                                    "sinks",
-                                  ]),
-                                ) || 0;
-                              const rooms =
-                                Number(
-                                  form.getFieldValue([
-                                    "details",
-                                    index,
-                                    "restrooms",
-                                  ]),
-                                ) || 0;
+                            <Input
+                              value={commercialAreas[index]?.name}
+                              onChange={(e) => {
+                                const value = e.target.value;
 
-                              return (
-                                <>
-                                  <Form.Item
-                                    name={["details", index, "sinks"]}
-                                    initialValue={0}
-                                    style={{ marginBottom: 0 }}
-                                  >
-                                    <InputNumber
-                                      min={0}
-                                      style={{ width: "100%" }}
-                                      onChange={calculateTotal}
-                                    />
-                                  </Form.Item>
+                                // Update UI state
+                                const updated = [...commercialAreas];
+                                updated[index].name = value;
+                                setCommercialAreas(updated);
 
-                                  {rooms > 0 && sinks > 0 && (
-                                    <div
-                                      style={{
-                                        marginTop: 4,
-                                        fontSize: 12,
-                                        color: "#6b7280",
-                                        textAlign: "center",
-                                        fontWeight: 500,
-                                      }}
+                                // ✅ Update form details also
+                                const details =
+                                  form.getFieldValue("details") || [];
+
+                                details[index] = {
+                                  ...details[index],
+                                  service_area: value,
+                                };
+
+                                form.setFieldsValue({
+                                  details,
+                                });
+                              }}
+                            />
+
+                            <AntButton
+                              danger
+                              type="text"
+                              onClick={() => {
+                                const updated = commercialAreas.filter(
+                                  (_, i) => i !== index,
+                                );
+
+                                setCommercialAreas(updated);
+
+                                const details =
+                                  form.getFieldValue("details") || [];
+
+                                details.splice(index, 1);
+
+                                form.setFieldsValue({ details });
+
+                                calculateTotal();
+                              }}
+                            >
+                              Delete
+                            </AntButton>
+                          </div>
+                        ) : (
+                          <strong>{area}</strong>
+                        )}
+
+                        <Form.Item
+                          name={["details", index, "service_area"]}
+                          initialValue={area}
+                          style={{ display: "none" }}
+                        >
+                          <Input />
+                        </Form.Item>
+                      </td>
+
+                      {clientType === "commercial" ? (
+                        <>
+                          {/* Stalls */}
+                          <td style={tdStyle}>
+                            <Form.Item
+                              shouldUpdate={(prev, curr) =>
+                                prev.details?.[index]?.stalls !==
+                                  curr.details?.[index]?.stalls ||
+                                prev.details?.[index]?.restrooms !==
+                                  curr.details?.[index]?.restrooms
+                              }
+                              noStyle
+                            >
+                              {() => {
+                                const stalls =
+                                  Number(
+                                    form.getFieldValue([
+                                      "details",
+                                      index,
+                                      "stalls",
+                                    ]),
+                                  ) || 0;
+                                const rooms =
+                                  Number(
+                                    form.getFieldValue([
+                                      "details",
+                                      index,
+                                      "restrooms",
+                                    ]),
+                                  ) || 0;
+
+                                return (
+                                  <>
+                                    <Form.Item
+                                      name={["details", index, "stalls"]}
+                                      initialValue={0}
+                                      style={{ marginBottom: 0 }}
                                     >
-                                      Total: <strong>{rooms * sinks}</strong>
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            }}
-                          </Form.Item>
-                        </td>
+                                      <InputNumber
+                                        min={0}
+                                        style={{ width: "100%" }}
+                                        onChange={calculateTotal}
+                                      />
+                                    </Form.Item>
 
-                        {/* Restrooms */}
-                        <td>
+                                    {rooms > 0 && stalls > 0 && (
+                                      <div
+                                        style={{
+                                          marginTop: 4,
+                                          fontSize: 12,
+                                          color: "#6b7280",
+                                          textAlign: "center",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Total: <strong>{rooms * stalls}</strong>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              }}
+                            </Form.Item>
+                          </td>
+
+                          {/* Sinks */}
+                          <td style={tdStyle}>
+                            <Form.Item
+                              shouldUpdate={(prev, curr) =>
+                                prev.details?.[index]?.sinks !==
+                                  curr.details?.[index]?.sinks ||
+                                prev.details?.[index]?.restrooms !==
+                                  curr.details?.[index]?.restrooms
+                              }
+                              noStyle
+                            >
+                              {() => {
+                                const sinks =
+                                  Number(
+                                    form.getFieldValue([
+                                      "details",
+                                      index,
+                                      "sinks",
+                                    ]),
+                                  ) || 0;
+                                const rooms =
+                                  Number(
+                                    form.getFieldValue([
+                                      "details",
+                                      index,
+                                      "restrooms",
+                                    ]),
+                                  ) || 0;
+
+                                return (
+                                  <>
+                                    <Form.Item
+                                      name={["details", index, "sinks"]}
+                                      initialValue={0}
+                                      style={{ marginBottom: 0 }}
+                                    >
+                                      <InputNumber
+                                        min={0}
+                                        style={{ width: "100%" }}
+                                        onChange={calculateTotal}
+                                      />
+                                    </Form.Item>
+
+                                    {rooms > 0 && sinks > 0 && (
+                                      <div
+                                        style={{
+                                          marginTop: 4,
+                                          fontSize: 12,
+                                          color: "#6b7280",
+                                          textAlign: "center",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        Total: <strong>{rooms * sinks}</strong>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              }}
+                            </Form.Item>
+                          </td>
+
+                          {/* Restrooms */}
+                          <td style={tdStyle}>
+                            <Form.Item
+                              name={["details", index, "restrooms"]}
+                              initialValue={0}
+                              style={{ marginBottom: 0 }}
+                            >
+                              <InputNumber
+                                min={0}
+                                style={{ width: "100%" }}
+                                onChange={calculateTotal}
+                              />
+                            </Form.Item>
+                          </td>
+                        </>
+                      ) : (
+                        <td style={tdStyle}>
                           <Form.Item
-                            name={["details", index, "restrooms"]}
+                            name={["details", index, "num_desks_trash_cans"]}
                             initialValue={0}
                             style={{ marginBottom: 0 }}
                           >
-                            <InputNumber
+                            <Input
+                              type="number"
                               min={0}
-                              style={{ width: "100%" }}
                               onChange={calculateTotal}
                             />
                           </Form.Item>
                         </td>
-                      </>
-                    ) : (
-                      <td>
+                      )}
+
+                      {/* Flooring */}
+                      <td style={tdStyle}>
                         <Form.Item
-                          name={["details", index, "num_desks_trash_cans"]}
-                          initialValue={0}
+                          name={["details", index, "flooring_type"]}
                           style={{ marginBottom: 0 }}
                         >
-                          <Input
-                            type="number"
-                            min={0}
-                            onChange={calculateTotal}
+                          <Radio.Group
+                            style={{ display: "flex", flexWrap: "nowrap" }}
+                          >
+                            <Radio value="Carpet">Carpet</Radio>
+                            <Radio value="Concrete">Concrete</Radio>
+                            <Radio value="VCT/LVT">VCT/LVT</Radio>
+                            <Radio value="Tile">Tile</Radio>
+                          </Radio.Group>
+                        </Form.Item>
+                      </td>
+
+                      {/* Special Requests */}
+                      <td style={{ ...tdStyle, borderRight: "none" }}>
+                        <Form.Item
+                          name={["details", index, "special_requests"]}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Input.TextArea
+                            rows={2}
+                            placeholder="Enter any special notes"
                           />
                         </Form.Item>
                       </td>
-                    )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                    {/* Flooring */}
-                    <td>
-                      <Form.Item
-                        name={["details", index, "flooring_type"]}
-                        style={{ marginBottom: 0 }}
-                      >
-                        <Radio.Group
-                          style={{
-                            display: "flex",
-                            flexWrap: "nowrap",
-                          }}
-                        >
-                          <Radio value="Carpet">Carpet</Radio>
-
-                          <Radio value="Concrete">Concrete</Radio>
-
-                          <Radio value="VCT/LVT">VCT/LVT</Radio>
-
-                          <Radio value="Tile">Tile</Radio>
-                        </Radio.Group>
-                      </Form.Item>
-                    </td>
-
-                    {/* Special Requests */}
-                    <td>
-                      <Form.Item
-                        name={["details", index, "special_requests"]}
-                        style={{ marginBottom: 0 }}
-                      >
-                        <Input.TextArea
-                          rows={2}
-                          placeholder="Enter any special notes"
-                        />
-                      </Form.Item>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div
-            style={{
-              marginTop: 16,
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
             <div
               style={{
-                background: "#f5f7fa",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                padding: "10px 16px",
-                minWidth: "180px",
-                textAlign: "center",
+                marginTop: 16,
+                display: "flex",
+                justifyContent: "flex-end",
               }}
             >
-              <div style={{ fontSize: 12, color: "#6b7280" }}>Total Count</div>
               <div
                 style={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  color: "#111827",
+                  background: "#f5f7fa",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "10px 16px",
+                  minWidth: "180px",
+                  textAlign: "center",
                 }}
               >
-                {totalCount}
+                <div style={{ fontSize: 12, color: "#6b7280" }}>
+                  Total Count
+                </div>
+                <div
+                  style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}
+                >
+                  {totalCount}
+                </div>
               </div>
             </div>
-          </div>
-        </Form.Item>
-
-        <Form.Item style={{ marginTop: "50px" }}>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Save
-          </Button>
-          <Button style={{ marginLeft: 8 }} onClick={() => navigate("/users")}>
-            Cancel
-          </Button>
-        </Form.Item>
-      </Form>
-
-      <Modal
-        title={editingAddress ? "Edit Address" : "Add New Address"}
-        open={addressModalVisible}
-        onCancel={() => {
-          setAddressModalVisible(false);
-          setEditingAddress(null);
-          addressForm.resetFields();
-          setCities([]);
-          setAddressCoordinates({ lat: null, lng: null });
-        }}
-        onOk={handleSaveAddress}
-        forceRender
-      >
-        <Form
-          form={addressForm}
-          layout="vertical"
-          onValuesChange={(changedValues, allValues) => {
-            if (changedValues.state_id) {
-              addressForm.setFieldsValue({ city_id: undefined }); // reset city
-              fetchCities(changedValues.state_id);
-            }
-            if (changedValues.address) {
-              // Build full address string for geocoding
-              const fullAddress = `${changedValues.address}, ${
-                states.find((s) => s.id === allValues.state_id)?.name || ""
-              }, ${cities.find((c) => c.id === allValues.city_id)?.name || ""}`;
-              fetchCoordinates(fullAddress);
-            }
-          }}
-        >
-          {/* Address Field */}
-          <Form.Item
-            name="address"
-            label="Address"
-            rules={[{ required: true, message: "Please enter the address" }]}
-          >
-            <Input placeholder="Enter address" />
           </Form.Item>
 
-          {/* State Select with Search */}
-          <Form.Item
-            name="state_id"
-            label="State"
-            rules={[{ required: true, message: "Please select a state" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Select State"
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-              filterSort={(optionA, optionB) =>
-                optionA.children
-                  .toLowerCase()
-                  .localeCompare(optionB.children.toLowerCase())
-              }
+          <Form.Item style={{ marginTop: "24px", marginBottom: 0 }}>
+            <AntButton type="primary" htmlType="submit" loading={loading}>
+              Save
+            </AntButton>
+            <AntButton
+              style={{ marginLeft: 8 }}
+              onClick={() => navigate("/users")}
             >
-              {states.map((s) => (
-                <Select.Option key={s.id} value={s.id}>
-                  {s.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* City Select with Search */}
-          <Form.Item
-            name="city_id"
-            label="City"
-            rules={[{ required: true, message: "Please select a city" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Select City"
-              disabled={!addressForm.getFieldValue("state_id")}
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-              filterSort={(optionA, optionB) =>
-                optionA.children
-                  .toLowerCase()
-                  .localeCompare(optionB.children.toLowerCase())
-              }
-            >
-              {cities.map((c) => (
-                <Select.Option key={c.id} value={c.id}>
-                  {c.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          {/* Map Preview */}
-          <Form.Item label="Map Preview">
-            <div
-              style={{ border: "1px solid #ccc", height: 250, borderRadius: 8 }}
-            >
-              {addressCoordinates.lat && addressCoordinates.lng ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: "none" }}
-                  src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
-                  allowFullScreen
-                />
-              ) : (
-                <p
-                  style={{
-                    textAlign: "center",
-                    paddingTop: 80,
-                    color: "#999",
-                  }}
-                >
-                  Enter address to show map
-                </p>
-              )}
-            </div>
+              Cancel
+            </AntButton>
           </Form.Item>
         </Form>
-      </Modal>
-    </Card>
+
+        <Modal
+          title={editingAddress ? "Edit Address" : "Add New Address"}
+          open={addressModalVisible}
+          onCancel={() => {
+            setAddressModalVisible(false);
+            setEditingAddress(null);
+            addressForm.resetFields();
+            setCities([]);
+            setAddressCoordinates({ lat: null, lng: null });
+          }}
+          onOk={handleSaveAddress}
+          forceRender
+        >
+          <Form
+            form={addressForm}
+            layout="vertical"
+            onValuesChange={(changedValues, allValues) => {
+              if (changedValues.state_id) {
+                addressForm.setFieldsValue({ city_id: undefined }); // reset city
+                fetchCities(changedValues.state_id);
+              }
+              if (changedValues.address) {
+                // Build full address string for geocoding
+                const fullAddress = `${changedValues.address}, ${
+                  states.find((s) => s.id === allValues.state_id)?.name || ""
+                }, ${
+                  cities.find((c) => c.id === allValues.city_id)?.name || ""
+                }`;
+                fetchCoordinates(fullAddress);
+              }
+            }}
+          >
+            {/* Address Field */}
+            <Form.Item
+              name="address"
+              label="Address"
+              rules={[{ required: true, message: "Please enter the address" }]}
+            >
+              <Input placeholder="Enter address" />
+            </Form.Item>
+
+            {/* State Select with Search */}
+            <Form.Item
+              name="state_id"
+              label="State"
+              rules={[{ required: true, message: "Please select a state" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select State"
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+                filterSort={(optionA, optionB) =>
+                  optionA.children
+                    .toLowerCase()
+                    .localeCompare(optionB.children.toLowerCase())
+                }
+              >
+                {states.map((s) => (
+                  <Select.Option key={s.id} value={s.id}>
+                    {s.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* City Select with Search */}
+            <Form.Item
+              name="city_id"
+              label="City"
+              rules={[{ required: true, message: "Please select a city" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select City"
+                disabled={!addressForm.getFieldValue("state_id")}
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+                filterSort={(optionA, optionB) =>
+                  optionA.children
+                    .toLowerCase()
+                    .localeCompare(optionB.children.toLowerCase())
+                }
+              >
+                {cities.map((c) => (
+                  <Select.Option key={c.id} value={c.id}>
+                    {c.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* Map Preview */}
+            <Form.Item label="Map Preview">
+              <div
+                style={{
+                  border: "1px solid #ccc",
+                  height: 250,
+                  borderRadius: 8,
+                }}
+              >
+                {addressCoordinates.lat && addressCoordinates.lng ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none" }}
+                    src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
+                    allowFullScreen
+                  />
+                ) : (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 80,
+                      color: "#999",
+                    }}
+                  >
+                    Enter address to show map
+                  </p>
+                )}
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Paper>
+    </Box>
   );
 };
 

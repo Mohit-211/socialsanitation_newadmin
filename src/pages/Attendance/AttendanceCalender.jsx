@@ -4,6 +4,9 @@ import dayjs from "@/lib/dayjs";
 import React, { useEffect, useState } from "react";
 import { Calendar, Badge, Spin, Modal, Button, TimePicker } from "antd";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
 	GetDailyPresenceForMonth,
 	ManualClockInOut,
@@ -122,26 +125,50 @@ const AttendanceCalendar = () => {
 
 	return (
 		<div className="p-4">
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
-			>
-				<div>
-					<h3 className="page-title">ATTENDANCE MANAGEMENT</h3>
-					<p className="page-sub-title">View Monthly Attendance</p>
-				</div>
-				<Box>
-					<Button
-						icon={<i className="pi pi-arrow-left" />}
-						onClick={() => navigate("/attendance")}
-						style={{ borderRadius: "5px", height: "47px" }}
-					>
-						Return to Attendance
-					</Button>
-				</Box>
-			</Box>
+			<Paper
+  variant="outlined"
+  sx={{
+    p: 2.5,
+    mb: 3,
+    borderRadius: "10px",
+    borderColor: "#eef0f2",
+  }}
+>
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 2,
+    }}
+  >
+    <Box>
+      <Typography className="page-title">
+        ATTENDANCE MANAGEMENT
+      </Typography>
+
+      <Typography className="page-sub-title">
+        View Monthly Attendance
+      </Typography>
+    </Box>
+
+    <Button
+      type="primary"
+      icon={<ArrowBackIcon />}
+      onClick={() => navigate("/attendance")}
+      style={{
+        height: 47,
+        borderRadius: 8,
+        padding: "0 20px",
+        background: "#2c3345",
+        borderColor: "#2c3345",
+        fontWeight: 600,
+      }}
+    >
+      Return to Attendance
+    </Button>
+  </Box>
+</Paper>
 			<Spin spinning={loading}>
 				<Calendar
 					fullscreen

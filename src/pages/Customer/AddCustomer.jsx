@@ -7,8 +7,8 @@ import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-
-import { ArrowLeft } from "lucide-react";
+import Button from "@mui/material/Button";
+import { ArrowLeft, Check, X } from "lucide-react";
 
 import {
   Input,
@@ -18,11 +18,37 @@ import {
   Col,
   Form,
   Radio,
-  Button,
   Space,
   InputNumber,
 } from "antd";
 import { debounce } from "lodash";
+
+// ---- table style tokens (kept local so this file is self-contained) ----
+const tableWrapStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: "10px",
+  overflow: "hidden",
+};
+
+const thStyle = {
+  textAlign: "left",
+  padding: "14px 16px",
+  background: "#fafafa",
+  borderBottom: "1px solid #e5e7eb",
+  borderRight: "1px solid #e5e7eb",
+  fontSize: "13px",
+  fontWeight: 600,
+  color: "#374151",
+  verticalAlign: "top",
+};
+
+const tdStyle = {
+  padding: "14px 16px",
+  borderBottom: "1px solid #e5e7eb",
+  borderRight: "1px solid #e5e7eb",
+  verticalAlign: "middle",
+  background: "#fff",
+};
 
 const AddCustomer = () => {
   const [form] = Form.useForm();
@@ -315,9 +341,7 @@ const AddCustomer = () => {
 
       // Commercial
       const stalls = Number(item?.stalls || 0);
-
       const sinks = Number(item?.sinks || 0);
-
       const restrooms = Number(item?.restrooms || 0);
 
       return sum + desks + stalls + sinks + restrooms;
@@ -325,50 +349,58 @@ const AddCustomer = () => {
 
     setTotalCount(total);
   };
+
   return (
     <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          useFlexGap
-          spacing={2}
-          sx={{ width: "100%" }}
-        >
-          <Box>
-            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
+     <Paper
+  variant="outlined"
+  sx={{
+    p: 2.5,
+    mb: 3,
+    borderRadius: "10px",
+    borderColor: "#eef0f2",
+  }}
+>
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 2,
+    }}
+  >
+    <Box>
+      <Typography className="page-title">
+        CLIENT MANAGEMENT
+      </Typography>
+      <Typography className="page-sub-title">
+        Create New Client
+      </Typography>
+    </Box>
 
-            <Typography className="page-sub-title">
-              Create New Client
-            </Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            color="inherit"
-       startIcon={<ArrowLeft size={18} />}  
-            onClick={navigateToUser}
-            sx={{
-              ml: "auto",
-              height: 44,
-              px: 3,
-              borderRadius: "8px",
-              textTransform: "none",
-              fontWeight: 600,
-            }}
-          >
-            Return to Clients
-          </Button>
-        </Stack>
-      </Paper>
+    <Button
+      variant="contained"
+      disableElevation
+      startIcon={<ArrowLeft size={18} />}
+      onClick={navigateToUser}
+      sx={{
+        ml: "auto",
+        height: 47,
+        px: 3,
+        borderRadius: "8px",
+        minWidth: 185,
+        textTransform: "none",
+        fontWeight: 600,
+        backgroundColor: "#2c3345",
+        "&:hover": {
+          backgroundColor: "#1f2433",
+        },
+      }}
+    >
+      Return to Clients
+    </Button>
+  </Box>
+</Paper>
 
       <Paper
         variant="outlined"
@@ -379,22 +411,26 @@ const AddCustomer = () => {
         }}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Col span={6}>
-            <Form.Item
-              label="Client Type"
-              name="userType"
-              initialValue="residential"
-              rules={[{ required: true, message: "Please select user type" }]}
-            >
-              <Radio.Group
-                onChange={(e) => setUserType(e.target.value)}
-                value={userType}
+          {/* Client Type — full width row on its own */}
+          <Row>
+            <Col span={24}>
+              <Form.Item
+                label="Client Type"
+                name="userType"
+                initialValue="residential"
+                rules={[{ required: true, message: "Please select user type" }]}
+                style={{ marginBottom: 24 }}
               >
-                <Radio value="residential">Residential</Radio>
-                <Radio value="commercial">Commercial</Radio>
-              </Radio.Group>
-            </Form.Item>
-          </Col>
+                <Radio.Group
+                  onChange={(e) => setUserType(e.target.value)}
+                  value={userType}
+                >
+                  <Radio value="residential">Residential</Radio>
+                  <Radio value="commercial">Commercial</Radio>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Row gutter={[24, 24]}>
             <Col span={6}>
@@ -449,8 +485,6 @@ const AddCustomer = () => {
                 />
               </Form.Item>
             </Col>
-
-            <Col span={8}></Col>
           </Row>
 
           <Row gutter={[24, 24]}>
@@ -561,7 +595,7 @@ const AddCustomer = () => {
               border: "1px solid #e5e7eb",
               borderRadius: "8px",
               padding: "20px",
-              marginBottom: "20px",
+              marginBottom: "24px",
               background: "#fff",
             }}
           >
@@ -574,15 +608,9 @@ const AddCustomer = () => {
               }}
             >
               <div>
-                <div
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 600,
-                  }}
-                >
+                <div style={{ fontSize: "16px", fontWeight: 600 }}>
                   Overall Building Floor Composition
                 </div>
-
                 <div
                   style={{
                     fontSize: "13px",
@@ -661,15 +689,10 @@ const AddCustomer = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "10px",
+                marginBottom: "16px",
               }}
             >
-              <label
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 500,
-                }}
-              >
+              <label style={{ fontSize: "16px", fontWeight: 600 }}>
                 Initial Client Chart
               </label>
 
@@ -694,34 +717,41 @@ const AddCustomer = () => {
                 </Button>
               )}
             </div>
-            <div className="table-responsive">
-              <table className="table table-bordered">
+
+            <div style={tableWrapStyle}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th>Service Area</th>
+                    <th style={{ ...thStyle, width: "20%" }}>Service Area</th>
 
                     {userType === "commercial" ? (
                       <>
-                        <th>
+                        <th style={{ ...thStyle, width: "18%" }}>
                           # of Trash Cans
                           <br />
-                          <small>or Stalls</small>
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Stalls
+                          </small>
                         </th>
 
-                        <th>
+                        <th style={{ ...thStyle, width: "18%" }}>
                           # of Desks
                           <br />
-                          <small>or Sinks</small>
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Sinks
+                          </small>
                         </th>
 
-                        <th>
+                        <th style={{ ...thStyle, width: "18%" }}>
                           # of Rooms
                           <br />
-                          <small>or Restrooms</small>
+                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            or Restrooms
+                          </small>
                         </th>
                       </>
                     ) : (
-                      <th>
+                      <th style={{ ...thStyle, width: "22%" }}>
                         # of Desks / Trash Cans (Big Buildings)
                         <br />
                         <strong>OR</strong>
@@ -729,18 +759,23 @@ const AddCustomer = () => {
                       </th>
                     )}
 
-                    <th>
-                      Type of Flooring <br />
-                      <small>(Carpet, Hard Floor, VCT)</small>
+                    <th style={{ ...thStyle, width: "26%" }}>
+                      Type of Flooring
+                      <br />
+                      <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                        (Carpet, Hard Floor, VCT)
+                      </small>
                     </th>
 
-                    <th>Special Requests / Hot Spots</th>
+                    <th style={{ ...thStyle, borderRight: "none" }}>
+                      Special Requests / Hot Spots
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {serviceAreas.map((area, index) => (
                     <tr key={index}>
-                      <td>
+                      <td style={tdStyle}>
                         {userType === "commercial" &&
                         commercialAreas[index]?.editable ? (
                           <div
@@ -788,7 +823,7 @@ const AddCustomer = () => {
                       {userType === "commercial" ? (
                         <>
                           {/* Stalls */}
-                          <td>
+                          <td style={tdStyle}>
                             <Form.Item
                               name={["details", index, "stalls"]}
                               initialValue={0}
@@ -803,7 +838,7 @@ const AddCustomer = () => {
                           </td>
 
                           {/* Sinks */}
-                          <td>
+                          <td style={tdStyle}>
                             <Form.Item
                               name={["details", index, "sinks"]}
                               initialValue={0}
@@ -818,7 +853,7 @@ const AddCustomer = () => {
                           </td>
 
                           {/* Restrooms */}
-                          <td>
+                          <td style={tdStyle}>
                             <Form.Item
                               name={["details", index, "restrooms"]}
                               initialValue={0}
@@ -833,7 +868,7 @@ const AddCustomer = () => {
                           </td>
                         </>
                       ) : (
-                        <td>
+                        <td style={tdStyle}>
                           <Form.Item
                             name={["details", index, "num_desks_trash_cans"]}
                             initialValue={0}
@@ -849,31 +884,24 @@ const AddCustomer = () => {
                       )}
 
                       {/* Flooring */}
-                      <td>
+                      <td style={tdStyle}>
                         <Form.Item
                           name={["details", index, "flooring_type"]}
                           style={{ marginBottom: 0 }}
                         >
                           <Radio.Group
-                            style={{
-                              display: "flex",
-                              // gap: "10px",
-                              flexWrap: "nowrap",
-                            }}
+                            style={{ display: "flex", flexWrap: "nowrap" }}
                           >
                             <Radio value="Carpet">Carpet</Radio>
-
                             <Radio value="Concrete">Concrete</Radio>
-
                             <Radio value="VCT/LVT">VCT/LVT</Radio>
-
                             <Radio value="Tile">Tile</Radio>
                           </Radio.Group>
                         </Form.Item>
                       </td>
 
                       {/* Special Requests */}
-                      <td>
+                      <td style={{ ...tdStyle, borderRight: "none" }}>
                         <Form.Item
                           name={["details", index, "special_requests"]}
                           style={{ marginBottom: 0 }}
@@ -911,11 +939,7 @@ const AddCustomer = () => {
                   Total Count
                 </div>
                 <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 600,
-                    color: "#111827",
-                  }}
+                  style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}
                 >
                   {totalCount}
                 </div>
@@ -923,31 +947,23 @@ const AddCustomer = () => {
             </div>
           </Form.Item>
 
-          <Form.Item>
+          <Form.Item style={{ marginBottom: 0 }}>
             <Space size={12}>
               <Button
-                style={{
-                  height: 44,
-                  borderRadius: 8,
-                  paddingInline: 24,
-                }}
+                style={{ height: 44, borderRadius: 8, paddingInline: 24 }}
                 type="primary"
                 htmlType="submit"
                 loading={disable}
-                icon={<i className="pi pi-check" />}
+                icon={<Check size={16} />}
               >
                 {disable ? "Saving..." : "Save"}
               </Button>
 
               <Button
-                style={{
-                  height: 44,
-                  borderRadius: 8,
-                  paddingInline: 24,
-                }}
+                style={{ height: 44, borderRadius: 8, paddingInline: 24 }}
                 type="default"
                 onClick={navigateToUser}
-                icon={<i className="pi pi-times" />}
+                icon={<X size={16} />}
               >
                 Cancel
               </Button>

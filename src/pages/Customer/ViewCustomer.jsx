@@ -5,13 +5,15 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import { Box } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
 import {
   DeleteContractAgreement,
   DeleteServiceEstimate,
   GetUserById,
 } from "../../services/Api/Api";
 import Card from "@mui/material/Card";
-import { Space, Table, Tag, Col, message, Modal, Tabs } from "antd";
+import { Space, Table, Tag, message, Modal, Tabs } from "antd";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
@@ -31,6 +33,7 @@ import {
   IoBusinessOutline,
   IoPersonOutline,
   IoDocumentTextOutline,
+  IoLocationOutline,
 } from "react-icons/io5";
 import "./Customers.css";
 import { DeleteOutlined } from "@mui/icons-material";
@@ -675,6 +678,23 @@ const ViewCustomer = () => {
     padding: "20px",
   };
 
+  // Reusable label style used across the overview info grid
+  const infoLabelStyle = {
+    fontSize: "0.8rem",
+    fontWeight: 700,
+    color: "#6c757d",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    marginBottom: "6px",
+  };
+
+  const infoValueStyle = {
+    fontSize: "0.95rem",
+    fontWeight: 500,
+    color: "#1a1a1a",
+    margin: 0,
+  };
+
   /* ---------------------------------------------------------------- */
   /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
   /* ---------------------------------------------------------------- */
@@ -707,94 +727,77 @@ const ViewCustomer = () => {
           width: "100%",
           marginTop: "20px",
           marginBottom: "40px",
-          padding: "20px",
+          borderRadius: "16px",
+          border: "1px solid #e8e8e8",
+          padding: "28px",
         }}
       >
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "20px",
-            marginBottom: "40px",
+            gap: "32px",
+            paddingBottom: "28px",
+            marginBottom: "28px",
+            borderBottom: "1px solid #f0f0f0",
           }}
         >
           <div>
-            <h5
-              style={{
-                fontSize: "0.9rem",
-                fontFamily: "Cerebri Sans,sans-serif",
-                fontWeight: "700",
-                marginTop: "14px",
-                color: "black",
-              }}
-            >
-              User's Name:
-            </h5>
-            <p>{userData?.user_profile?.name || "---"}</p>
+            <div style={infoLabelStyle}>User's Name</div>
+            <p style={infoValueStyle}>
+              {userData?.user_profile?.name || "---"}
+            </p>
           </div>
           <div>
-            <h5
-              style={{
-                fontSize: "0.9rem",
-                fontFamily: "Cerebri Sans,sans-serif",
-                fontWeight: "700",
-                marginTop: "14px",
-                color: "black",
-              }}
-            >
-              Email
-            </h5>
-            <p>{userData?.email || "---"}</p>
+            <div style={infoLabelStyle}>Email</div>
+            <p style={infoValueStyle}>{userData?.email || "---"}</p>
           </div>
           <div>
-            <h5
-              style={{
-                fontSize: "0.9rem",
-                fontFamily: "Cerebri Sans,sans-serif",
-                fontWeight: "700",
-                marginTop: "14px",
-                color: "black",
-              }}
-            >
-              Mobile:
-            </h5>
-            <p>{userData?.user_profile?.mobile || "---"}</p>
+            <div style={infoLabelStyle}>Mobile</div>
+            <p style={infoValueStyle}>
+              {userData?.user_profile?.mobile || "---"}
+            </p>
           </div>
-          <Col>
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                style={{ fontWeight: "bold", color: "black", display: "block" }}
-              >
-                Client's Addresses:
-              </label>
-              <div>
-                {userData?.user_address?.length > 0 ? (
-                  userData.user_address.map((address, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      <li>
-                        {address.address}, {address.user_city?.name},{" "}
-                        {address.user_state?.name}, {address.user_country?.name}
-                      </li>
-                    </div>
-                  ))
-                ) : (
-                  <div>No address available</div>
-                )}
-              </div>
+        </div>
+
+        <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "14px",
+            }}
+          >
+            <IoLocationOutline style={{ fontSize: 16, color: "#667eea" }} />
+            <span style={infoLabelStyle}>Client's Addresses</span>
+          </div>
+
+          {userData?.user_address?.length > 0 ? (
+            <div style={{ display: "grid", gap: "10px" }}>
+              {userData.user_address.map((address, index) => (
+                <p key={index} style={{ ...infoValueStyle, lineHeight: 1.5 }}>
+                  {address.address}, {address.user_city?.name},{" "}
+                  {address.user_state?.name}, {address.user_country?.name}
+                </p>
+              ))}
             </div>
-          </Col>
+          ) : (
+            <p style={{ ...infoValueStyle, color: "#999" }}>
+              No address available
+            </p>
+          )}
         </div>
       </Card>
 
-      <Card style={{ padding: "20px" }}>
-        <h5 style={{ marginBottom: "20px", marginTop: "20px" }}>
+      <Card
+        style={{
+          borderRadius: "16px",
+          border: "1px solid #e8e8e8",
+          padding: "28px",
+        }}
+      >
+        <h5 style={{ marginBottom: "24px", marginTop: 0, fontWeight: 600 }}>
           View all the bookings associated with {clientName}
         </h5>
         <Tabs
@@ -1491,32 +1494,55 @@ const ViewCustomer = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        width="100%"
-        mb={4}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <Box flex={1}>
-          <h3 className="page-title">CLIENT MANAGEMENT</h3>
-          <p className="page-sub-title">View Information related with Client</p>
-        </Box>
-
-        <Button
-          variant="outlined"
-          color="inherit"
-          startIcon={<ArrowBackIcon />}
-          onClick={navigateToUser}
+        <Box
           sx={{
-            height: 47,
-            borderRadius: "6px",
-            minWidth: 180,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            gap: 2,
           }}
         >
-          Return to Clients
-        </Button>
-      </Box>
+          <Box>
+            <h3 className="page-title">CLIENT MANAGEMENT</h3>
+            <p className="page-sub-title">
+              View Information related with Client
+            </p>
+          </Box>
+
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowBackIcon />}
+            onClick={navigateToUser}
+            sx={{
+              height: 47,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              flexShrink: 0,
+              ml: "auto",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to Clients
+          </Button>
+        </Box>
+      </Paper>
 
       <div className="admin_details_form">
         <Tabs

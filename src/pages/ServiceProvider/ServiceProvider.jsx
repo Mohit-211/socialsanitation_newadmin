@@ -497,15 +497,23 @@ const ServiceProvider = () => {
     <Box>
       <Paper
         variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <Box
-          display="flex"
+        <Stack
+          direction="row"
           justifyContent="space-between"
           alignItems="center"
+          spacing={2}
+          useFlexGap
           flexWrap="wrap"
-          gap={2}
+          sx={{ width: "100%" }}
         >
+          {/* Left */}
           <Box>
             <Typography className="page-title">EMPLOYEE MANAGEMENT</Typography>
             <Typography className="page-sub-title">
@@ -513,18 +521,24 @@ const ServiceProvider = () => {
             </Typography>
           </Box>
 
+          {/* Right */}
           <Stack
             direction="row"
             spacing={1.5}
-            alignItems="center"
-            flexWrap="wrap"
             useFlexGap
+            sx={{
+              ml: "auto",
+              alignItems: "center",
+            }}
           >
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}
               placeholder="Search by name or email..."
-              style={{ width: 240, height: 44 }}
+              style={{
+                width: 260,
+                height: 44,
+              }}
               onChange={(e) => onSearch(e.target.value)}
             />
 
@@ -533,9 +547,9 @@ const ServiceProvider = () => {
                 variant="contained"
                 color="success"
                 sx={{
-                  minWidth: 44,
-                  width: 44,
-                  height: 44,
+                  minWidth: 46,
+                  width: 46,
+                  height: 46,
                   borderRadius: "8px",
                 }}
                 onClick={exportToCSV}
@@ -549,14 +563,14 @@ const ServiceProvider = () => {
                 <Button
                   variant="contained"
                   color="error"
+                  disabled={!selectedRowKeys.length}
+                  onClick={() => handleDelete(selectedRowKeys)}
                   sx={{
-                    minWidth: 44,
-                    width: 44,
-                    height: 44,
+                    minWidth: 46,
+                    width: 46,
+                    height: 46,
                     borderRadius: "8px",
                   }}
-                  onClick={() => handleDelete(selectedRowKeys)}
-                  disabled={!selectedRowKeys.length}
                 >
                   <Trash2 size={18} />
                 </Button>
@@ -567,19 +581,19 @@ const ServiceProvider = () => {
               <Button
                 variant="contained"
                 color="primary"
+                onClick={navigateToAddUser}
                 sx={{
-                  minWidth: 44,
-                  width: 44,
-                  height: 44,
+                  minWidth: 46,
+                  width: 46,
+                  height: 46,
                   borderRadius: "8px",
                 }}
-                onClick={navigateToAddUser}
               >
                 <Plus size={18} />
               </Button>
             </Tooltip>
           </Stack>
-        </Box>
+        </Stack>
       </Paper>
 
       <Table
