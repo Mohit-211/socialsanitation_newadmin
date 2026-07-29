@@ -319,20 +319,20 @@ const User = () => {
     {
       title: "S.No.",
       dataIndex: "index",
-      width: 20,
+      width: 50,
       sorter: (a, b) => a.index - b.index,
     },
     {
       title: "Name",
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
-      width: 100,
+      width: 130,
       render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
     },
     {
       title: "Email",
       dataIndex: "email",
-      width: 150,
+      width: 210,
       render: (email, record) => (
         <Space size={6} align="center">
           <span>{email}</span>
@@ -351,7 +351,7 @@ const User = () => {
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: 160,
+      width: 150,
       render: (assigned_to, record) => {
         return (
           <Select
@@ -376,7 +376,7 @@ const User = () => {
     {
       title: "Action",
       dataIndex: "action",
-      width: 380,
+      width: 260,
       render: (_, record) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title="View Nearby Employees">
@@ -712,7 +712,7 @@ const User = () => {
         loading={loading}
         onChange={handleTableChange}
         rowSelection={rowSelection}
-        scroll={{ x: 1450 }}
+        scroll={{ x: 1000 }}
         size="middle"
       />
 

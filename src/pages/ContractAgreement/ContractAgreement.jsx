@@ -4,6 +4,10 @@ import React, { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { Plus } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import {
   DeleteContractAgreement,
@@ -186,24 +190,60 @@ const ContractAgreement = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      {/* HEADER */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <div>
-          <h3 className="page-title">Contract Agreement Management</h3>
-          <p className="page-sub-title">View & Manage Contract Agreements</p>
-        </div>
-
-        <Button
-          type="primary"
-          onClick={() => navigate("/create-contract-agreement")}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
         >
-          Generate Contract
-        </Button>
-      </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              CONTRACT AGREEMENT MANAGEMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View &amp; manage contract agreements
+            </Typography>
+          </Box>
+
+          <MuiButton
+            variant="contained"
+            disableElevation
+            startIcon={<Plus size={18} />}
+            onClick={() => navigate("/create-contract-agreement")}
+            sx={{
+              height: 44,
+              px: 2.5,
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            Generate Contract
+          </MuiButton>
+        </Box>
+      </Paper>
 
       <Table
         // rowSelection={rowSelection}
@@ -213,6 +253,8 @@ const ContractAgreement = () => {
         pagination={tableParams.pagination}
         loading={loading}
         onChange={handleTableChange}
+        bordered
+        size="middle"
       />
     </Box>
   );

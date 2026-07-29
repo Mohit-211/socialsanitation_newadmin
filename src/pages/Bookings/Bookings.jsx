@@ -1,613 +1,664 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Tabs, Tab } from "react-bootstrap";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import { useNavigate } from "react-router-dom";
+
 import {
-	Tag,
-	Table,
-	Space,
-	Tooltip,
-	message,
-	Dropdown,
-	Spin,
-	Image,
-	Modal,
+  Tag,
+  Table,
+  Space,
+  Tooltip,
+  message,
+  Dropdown,
+  Spin,
+  Image,
+  Modal,
+  Tabs,
+  Input,
 } from "antd";
-import "./Bookings.css";
-import TextField from "@mui/material/TextField";
 import { BASE_URL_IMAGE } from "../../services/Host";
 import {
-	GetBookingRequestCount,
-	GetUserBooking,
-	DeleteBooking,
-	GetBookingById,
+  GetBookingRequestCount,
+  GetUserBooking,
+  DeleteBooking,
+  GetBookingById,
 } from "../../services/Api/BookingApi";
-import { Badge } from "antd";
-import { DeleteOutlined, PictureOutlined } from "@ant-design/icons";
+import {
+  Search,
+  Plus,
+  CalendarDays,
+  Images,
+  Eye,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import "./Bookings.css";
 import dayjs from "@/lib/dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
+
+const actionIconBtn = (color) => ({
+  width: 32,
+  height: 32,
+  border: "1px solid",
+  borderColor: color,
+  color,
+  "&:hover": {
+    backgroundColor: `${color}14`,
+    borderColor: color,
+  },
+});
 
 const Bookings = () => {
-	const navigate = useNavigate();
-	const [bookingData, setBookingData] = useState([]);
-	const [allBookingData, setAllBookingData] = useState([]); // ALL bookings
-	const [searchText, setSearchText] = useState(""); // for tracking current search
+  const navigate = useNavigate();
+  const [bookingData, setBookingData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
+  const [searchText, setSearchText] = useState("");
 
-	const [loading, setLoading] = useState(false);
-	const [activeTab, setActiveTab] = useState("PENDING");
-	const [nestedTab, setNestedTab] = useState("all");
-	// const [bookingRequestCount, setBookingRequestCount] = useState(0);
-	const [tableParams, setTableParams] = useState({
-		pagination: {
-			current: 1,
-			pageSize: 100,
-		},
-		sortField: null,
-		sortOrder: null,
-	});
-	const [galleryVisible, setGalleryVisible] = useState(false);
-	const [galleryLoading, setGalleryLoading] = useState(false);
-	const [beforeServiceImages, setBeforeServiceImages] = useState([]);
-	const [afterServiceImages, setAfterServiceImages] = useState([]);
-	const [originalData, setOriginalData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("PENDING");
+  const [nestedTab, setNestedTab] = useState("all");
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 100,
+    },
+    sortField: null,
+    sortOrder: null,
+  });
 
-	const handleOpenGallery = async (bookingId) => {
-		setGalleryVisible(true);
-		setGalleryLoading(true);
-		try {
-			const res = await GetBookingById(bookingId);
-			const booking = res.data.data;
-			const attachments = booking.booking_attachment || [];
+  const [galleryVisible, setGalleryVisible] = useState(false);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [beforeServiceImages, setBeforeServiceImages] = useState([]);
+  const [afterServiceImages, setAfterServiceImages] = useState([]);
 
-			const beforeImgs = attachments.filter(
-				(a) => a.title === "BEFORE SERVICE",
-			);
-			const afterImgs = attachments.filter((a) => a.title === "AFTER SERVICE");
+  const handleOpenGallery = async (bookingId) => {
+    setGalleryVisible(true);
+    setGalleryLoading(true);
+    try {
+      const res = await GetBookingById(bookingId);
+      const booking = res.data.data;
+      const attachments = booking.booking_attachment || [];
 
-			setBeforeServiceImages(beforeImgs);
-			setAfterServiceImages(afterImgs);
-		} catch (err) {
-			console.error("Failed to fetch booking gallery:", err);
-			message.error("Failed to load images");
-		} finally {
-			setGalleryLoading(false);
-		}
-	};
+      const beforeImgs = attachments.filter(
+        (a) => a.title === "BEFORE SERVICE",
+      );
+      const afterImgs = attachments.filter((a) => a.title === "AFTER SERVICE");
 
-	const getData = async (booking_status, period) => {
-		try {
-			setLoading(true);
-			const result = await GetUserBooking(
-				localStorage.getItem("adminToken"),
-				booking_status,
-				period, // Pass the period parameter only if needed
-			);
-			const newData = result.data.data.map((item, index) => ({
-				...item,
-				index: index + 1,
-			}));
-			setBookingData(newData);
-			setOriginalData(newData);
-		} catch (e) {
-			console.error(e);
-			if (e.response && e.response.status === 401) {
-				navigate("/error401");
-			} else {
-				console.error("Error loading data. Please try again later.");
-			}
-		} finally {
-			setLoading(false);
-		}
-	};
+      setBeforeServiceImages(beforeImgs);
+      setAfterServiceImages(afterImgs);
+    } catch (err) {
+      console.error("Failed to fetch booking gallery:", err);
+      message.error("Failed to load images");
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
 
-	// const fetchBookingRequestCount = async () => {
-	// 	try {
-	// 		const result = await GetBookingRequestCount(
-	// 			localStorage.getItem("adminToken")
-	// 		);
-	// 		const count = result.data.data.count;
-	// 		setBookingRequestCount(count > 0 ? count : null); // Set count or null
-	// 	} catch (e) {
-	// 		console.log(e);
-	// 	}
-	// };
+  const getData = async (booking_status, period) => {
+    try {
+      setLoading(true);
+      const result = await GetUserBooking(
+        localStorage.getItem("adminToken"),
+        booking_status,
+        period,
+      );
+      const newData = result.data.data.map((item, index) => ({
+        ...item,
+        index: index + 1,
+      }));
+      setBookingData(newData);
+      setOriginalData(newData);
+      // Re-apply any active search term to the freshly loaded tab data
+      if (searchText.trim()) {
+        applySearch(searchText, newData);
+      }
+    } catch (e) {
+      console.error(e);
+      if (e.response && e.response.status === 401) {
+        navigate("/error401");
+      } else {
+        console.error("Error loading data. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	// const fetchAllBookings = async () => {
-	// 	try {
-	// 		const statuses = [
-	// 			"PENDING",
-	// 			"UPCOMING",
-	// 			"ONGOING",
-	// 			"COMPLETED",
-	// 			"CANCELLED",
-	// 		];
-	// 		let all = [];
+  useEffect(() => {
+    getData(activeTab, nestedTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, nestedTab]);
 
-	// 		for (const status of statuses) {
-	// 			const result = await GetUserBooking(
-	// 				localStorage.getItem("adminToken"),
-	// 				status,
-	// 				"all"
-	// 			);
-	// 			const data = result.data.data.map((item, index) => ({
-	// 				...item,
-	// 				index: all.length + index + 1,
-	// 			}));
-	// 			all = [...all, ...data];
-	// 		}
-	// 		setAllBookingData(all);
-	// 	} catch (e) {
-	// 		console.error("Error fetching all bookings:", e);
-	// 	}
-	// };
+  const navigateToViewBooking = (id) => {
+    navigate(`/viewBooking/${id}`);
+  };
 
-	useEffect(() => {
-		getData(activeTab, nestedTab);
-		// fetchBookingRequestCount();
-		// fetchAllBookings(); // fetch once for search
-	}, [activeTab, nestedTab]);
+  const navigateToEditBooking = (id) => {
+    navigate(`/editBooking/${id}`);
+  };
 
-	const navigateToViewBooking = (id) => {
-		navigate(`/viewBooking/${id}`);
-	};
+  const handleTableChange = (pagination, filters, sorter) => {
+    setTableParams({
+      pagination,
+      filters,
+      sortField: sorter.field,
+      sortOrder: sorter.order,
+    });
+  };
 
-	const navigateToEditBooking = (id) => {
-		navigate(`/editBooking/${id}`);
-	};
+  const tabsContent = [
+    { label: "Booking Request", key: "PENDING" },
+    { label: "Upcoming Bookings", key: "UPCOMING" },
+    { label: "Ongoing Bookings", key: "ONGOING" },
+    { label: "Booking History", key: "COMPLETED" },
+    { label: "Cancelled Bookings", key: "CANCELLED" },
+  ];
 
-	const handleTableChange = (pagination, filters, sorter) => {
-		setTableParams({
-			pagination,
-			filters,
-			sortField: sorter.field,
-			sortOrder: sorter.order,
-		});
-	};
+  const nestedTabsContent = {
+    UPCOMING: [
+      { label: "All", key: "all" },
+      { label: "Today", key: "today" },
+      { label: "This Week", key: "current_week" },
+      { label: "This Month", key: "current_month" },
+    ],
+    COMPLETED: [
+      { label: "All", key: "all" },
+      { label: "Past 30 Days", key: "past_30_days" },
+      { label: "Past 90 Days", key: "past_90_days" },
+    ],
+    DELETED: [],
+  };
 
-	const tabsContent = [
-		{
-			label: (
-				<span>
-					Booking Request{" "}
-					{/* {bookingRequestCount !== null && (
-						<Badge count={bookingRequestCount} status="error" size="small" />
-					)} */}
-				</span>
-			),
-			key: "PENDING",
-		},
-		{ label: "Upcoming Bookings", key: "UPCOMING" },
-		{ label: "Ongoing Bookings", key: "ONGOING" },
-		{ label: "Booking History", key: "COMPLETED" },
-		{ label: "Cancelled Bookings", key: "CANCELLED" },
-	];
+  const columns = [
+    {
+      title: "S.No.",
+      dataIndex: "index",
+      width: 60,
+    },
+    {
+      title: "Booking Type",
+      key: "booking_type",
+      width: 110,
+      render: (_, record) => {
+        const isClient = !!record.user_id;
+        const color = isClient ? "green" : "blue";
+        const label = isClient ? "Client Booking" : "Non Client Booking";
+        return <Tag color={color}>{label}</Tag>;
+      },
+    },
+    {
+      title: "Booking Name",
+      dataIndex: "booking_name",
+      width: 130,
+      key: "booking_name",
+      render: (text) => text || "--",
+    },
+    {
+      title: "Client Name",
+      key: "name",
+      width: 130,
+      render: (_, record) => {
+        const name =
+          record.booking_user?.user_profile?.name || record.client_name || "--";
+        return name;
+      },
+    },
+    {
+      title: "Date",
+      dataIndex: "date",
+      key: "date",
+      width: 120,
+      render: (date) =>
+        dayjs(date).utcOffset(0, true).format("ddd, MM/DD/YYYY"),
+    },
+    {
+      title: "Employee Assigned",
+      dataIndex: "booking_employee_details",
+      key: "employee_assigned",
+      width: 170,
+      render: (employees) => {
+        if (!employees || employees.length === 0) {
+          return (
+            <span style={{ color: "#ef4444", fontWeight: 500 }}>
+              Not Assigned
+            </span>
+          );
+        }
+        const employeeNames = employees.map(
+          (employee) => employee.employee_profile?.user_profile?.name,
+        );
+        return <span>{employeeNames.join(", ")}</span>;
+      },
+    },
+    {
+      title: "Type",
+      dataIndex: ["type"],
+      width: 110,
+      key: "type",
+    },
+    {
+      title: "Status",
+      dataIndex: "booking_status",
+      width: 100,
+      key: "status",
+      render: (status) => {
+        let color;
+        let displayStatus = status;
+        switch (status) {
+          case "PENDING":
+            color = "gold";
+            break;
+          case "SUCCESS":
+            color = "green";
+            displayStatus = "COMPLETED";
+            break;
+          case "ACCEPTED":
+            color = "blue";
+            break;
+          case "REJECTED":
+            color = "red";
+            break;
+          case "CANCELLED":
+            color = "red";
+            break;
+          case "DELETED":
+            color = "volcano";
+            break;
+          case "ONGOING":
+            color = "purple";
+            break;
+          default:
+            color = "default";
+        }
+        return (
+          <Tag color={color} key={status}>
+            {displayStatus}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 210,
+      render: (text, record) => {
+        return (
+          <Space size={6}>
+            <Tooltip title="View Image Gallery">
+              <IconButton
+                size="small"
+                sx={actionIconBtn("#8F00FF")}
+                onClick={() => handleOpenGallery(record.id)}
+              >
+                <Images size={15} />
+              </IconButton>
+            </Tooltip>
 
-	const nestedTabsContent = {
-		UPCOMING: [
-			{ label: "All", key: "all" },
-			{ label: "Today", key: "today" },
-			{ label: "This Week", key: "current_week" },
-			{ label: "This Month", key: "current_month" },
-		],
-		COMPLETED: [
-			{ label: "All", key: "all" },
-			{ label: "Past 30 Days", key: "past_30_days" },
-			{ label: "Past 90 Days", key: "past_90_days" },
-		],
-		DELETED: [], // No nested tabs for DELETED
-	};
+            <Tooltip title="View Details">
+              <IconButton
+                size="small"
+                sx={actionIconBtn("#FF9800")}
+                onClick={() => navigateToViewBooking(record.id)}
+              >
+                <Eye size={15} />
+              </IconButton>
+            </Tooltip>
 
-	const columns = [
-		{
-			title: "S.No.",
-			dataIndex: "index",
-			 width: 70,
-			// sorter: (a, b) => a.index - b.index,
-		},
-		{
-			title: "Booking Type",
-			key: "booking_type",
-			 width: 100,
-			render: (_, record) => {
-				const isClient = !!record.user_id;
-				const color = isClient ? "green" : "blue";
-				const label = isClient ? "Client Booking" : "Non Client Booking";
-				return <Tag color={color}>{label}</Tag>;
-			},
-		},
-		{
-			title: "Booking Name",
-			dataIndex: "booking_name",
-			 width: 100,
-			key: "booking_name",
-			render: (text) => text || "--",
-		},
-		{
-			title: "Client Name",
-			key: "name",
-			 width: 100,
-			render: (_, record) => {
-				const name =
-					record.booking_user?.user_profile?.name || record.client_name || "--";
-				return name;
-			},
-		},
-			{
-			title: "Date",
-			dataIndex: "date",
-			key: "date",
-			width: 100,
-			render: (date) => dayjs.parseZone(date).format("ddd,MM/DD/YYYY"),
-		},
+            {(activeTab === "PENDING" || activeTab === "UPCOMING") && (
+              <Tooltip title="Update Details">
+                <IconButton
+                  size="small"
+                  sx={actionIconBtn("#2196F3")}
+                  onClick={() => navigateToEditBooking(record.id)}
+                >
+                  <Pencil size={15} />
+                </IconButton>
+              </Tooltip>
+            )}
 
-		// {
-		// 	title: "Date",
-		// 	dataIndex: "date",
-		// 	key: "date",
-		// 	 width: 100,
-		// 	render: (date) => dayjs.parseZone(date).format("MM/DD/YYYY"),
-		// 	// sorter: (a, b) => dayjs(a.date).unix() - dayjs(b.date).unix(),
-		// },
-		{
-			title: "Employee Assigned",
-			dataIndex: "booking_employee_details",
-			key: "employee_assigned",
-			 width: 150,
-			render: (employees) => {
-				if (!employees || employees.length === 0) {
-					return <span style={{ color: "red" }}>Not Assigned</span>;
-				}
-				const employeeNames = employees.map(
-					(employee) => employee.employee_profile?.user_profile?.name,
-				);
-				return <span>{employeeNames.join(", ")}</span>;
-			},
-		},
+            {record.type === "Recurring Booking" ? (
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: "this",
+                      label: "Delete This Event",
+                      onClick: () => handleDelete(record.id, "this"),
+                    },
+                    {
+                      key: "following",
+                      label: "Delete Following Events",
+                      onClick: () => handleDelete(record.id, "following"),
+                    },
+                    {
+                      key: "all",
+                      label: "Delete All Events",
+                      onClick: () => handleDelete(record.id, "all"),
+                    },
+                  ],
+                }}
+                trigger={["click"]}
+                placement="bottomRight"
+              >
+                <Tooltip title="Delete Options">
+                  <IconButton size="small" sx={actionIconBtn("#EF4444")}>
+                    <Trash2 size={15} />
+                  </IconButton>
+                </Tooltip>
+              </Dropdown>
+            ) : (
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  sx={actionIconBtn("#EF4444")}
+                  onClick={() => handleDelete(record.id, "this")}
+                >
+                  <Trash2 size={15} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
+    },
+  ];
 
-		{
-			title: "Type",
-			dataIndex: ["type"],
-			 width: 100,
-			key: "type",
-		},
-		{
-			title: "Booking Status",
-			dataIndex: "booking_status",
-			 width: 100,
-			key: "status",
-			render: (status) => {
-				let color;
-				let displayStatus = status;
-				switch (status) {
-					case "PENDING":
-						color = "gold";
-						break;
-					case "SUCCESS":
-						color = "green";
-						displayStatus = "COMPLETED";
-						break;
-					case "ACCEPTED":
-						color = "blue";
-						break;
-					case "REJECTED":
-						color = "red";
-						break;
-					case "CANCELLED":
-						color = "red";
-						break;
-					case "DELETED":
-						color = "volcano";
-						break;
-					case "ONGOING":
-						color = "purple";
-						break;
-					default:
-						color = "black";
-				}
-				return (
-					<Tag color={color} key={status}>
-						{displayStatus}
-					</Tag>
-				);
-			},
-		},
-		{
-			title: "Actions",
-			key: "actions",
-			 width: 100,
-			render: (text, record) => {
-				return (
-					<Space size="middle">
-						<Tooltip title="View Image Gallery" placement="top">
-							<Button
-								icon={<PictureOutlined />}
-								rounded
-								outlined
-								severity="help"
-								style={{ borderRadius: "25px" }}
-								onClick={() => handleOpenGallery(record.id)}
-							/>
-						</Tooltip>
+  const handleDelete = (id, delete_mode = "this") => {
+    Modal.confirm({
+      title: "Confirm Deletion",
+      content: "Are you sure you want to delete this booking?",
+      okText: "Yes, Delete",
+      okType: "danger",
+      cancelText: "No",
+      onOk: async () => {
+        const formData = new FormData();
+        formData.append("booking_id", id);
+        formData.append("delete_mode", delete_mode);
 
-						<Tooltip title="View Details" placement="top">
-							<Button
-								icon="pi pi-eye"
-								rounded
-								outlined
-								severity="warning"
-								style={{ borderRadius: "25px" }}
-								onClick={() => navigateToViewBooking(record.id)}
-							/>
-						</Tooltip>
+        try {
+          const res = await DeleteBooking(formData);
+          if (res?.status === 200 && res?.data?.success) {
+            message.success(
+              res?.data?.message || "Booking deleted successfully",
+            );
+            getData(activeTab, nestedTab);
+          } else {
+            message.warning(res?.data?.message || "Unexpected response");
+          }
+        } catch (error) {
+          console.error("Delete Booking Error:", error);
+          message.error("Failed to delete booking");
+        }
+      },
+    });
+  };
 
-						{(activeTab === "PENDING" || activeTab === "UPCOMING") && (
-							<Tooltip title="Update Details" placement="top">
-								<Button
-									icon="pi pi-pencil"
-									rounded
-									outlined
-									style={{ borderRadius: "25px" }}
-									onClick={() => navigateToEditBooking(record.id)}
-								/>
-							</Tooltip>
-						)}
+  const navigateToCreateAppointment = () => {
+    navigate("/create-client-booking");
+  };
 
-						{record.type === "Recurring Booking" ? (
-							<Dropdown.Button
-								icon={<DeleteOutlined />}
-								placement="bottomRight"
-								menu={{
-									items: [
-										{
-											key: "this",
-											label: "Delete This Event",
-											onClick: () => handleDelete(record.id, "this"),
-										},
-										{
-											key: "following",
-											label: "Delete Following Events",
-											onClick: () => handleDelete(record.id, "following"),
-										},
-										{
-											key: "all",
-											label: "Delete All Events",
-											onClick: () => handleDelete(record.id, "all"),
-										},
-									],
-								}}
-							>
-								Delete
-							</Dropdown.Button>
-						) : (
-							<Tooltip title="Delete" placement="top">
-								<Button
-									icon="pi pi-trash"
-									rounded
-									outlined
-									severity="danger"
-									style={{ borderRadius: "25px" }}
-									onClick={() => handleDelete(record.id, "this")}
-								></Button>
-							</Tooltip>
-						)}
-					</Space>
-				);
-			},
-		},
-	];
+  const navigateToMonthlyCalendar = () => {
+    navigate("/monthlyCalendar");
+  };
 
-	const handleDelete = (id, delete_mode = "this") => {
-		const formData = new FormData();
-		formData.append("booking_id", id);
-		formData.append("delete_mode", delete_mode); // always pass delete_mode
+  const applySearch = (value, sourceData = originalData) => {
+    if (!value.trim()) {
+      setBookingData(sourceData);
+      return;
+    }
 
-		DeleteBooking(formData)
-			.then((res) => {
-				if (res?.status === 200 && res?.data?.success) {
-					message.success(res?.data?.message || "Booking deleted successfully");
-					getData(activeTab, nestedTab); // refresh list
-				} else {
-					message.warning(res?.data?.message || "Unexpected response");
-				}
-			})
-			.catch((error) => {
-				console.error("❌ Delete Booking Error:", error);
-				message.error("Failed to delete booking");
-			});
-	};
+    const search = value.toLowerCase();
 
-	const navigateToCreateAppointment = () => {
-		navigate("/create-client-booking");
-	};
+    const filtered = sourceData.filter((item) => {
+      return (
+        item.booking_name?.toLowerCase().includes(search) ||
+        item.client_name?.toLowerCase().includes(search) ||
+        item.booking_user?.user_profile?.name?.toLowerCase().includes(search)
+      );
+    });
 
-	const navigateToMonthlyCalendar = () => {
-		navigate("/monthlyCalendar");
-	};
+    setBookingData(filtered);
+  };
 
-	const onSearch = (value) => {
-		setSearchText(value);
+  const onSearch = (value) => {
+    setSearchText(value);
+    applySearch(value);
+  };
 
-		if (!value.trim()) {
-			setBookingData(originalData);
-			return;
-		}
+  return (
+    <Box>
+      {/* Header */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Box>
+            <Typography className="page-title">BOOKING MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              View and manage user bookings
+            </Typography>
+          </Box>
 
-		const search = value.toLowerCase();
+          <Stack
+            direction="row"
+            spacing={1.5}
+            useFlexGap
+            sx={{ ml: "auto", alignItems: "center", flexWrap: "wrap" }}
+          >
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search bookings..."
+              style={{ width: 240, height: 44 }}
+              value={searchText}
+              onChange={(e) => onSearch(e.target.value)}
+            />
 
-		const filtered = originalData.filter((item) => {
-			return (
-				item.booking_name?.toLowerCase().includes(search) ||
-				item.client_name?.toLowerCase().includes(search) ||
-				item.booking_user?.user_profile?.name?.toLowerCase().includes(search)
-			);
-		});
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<CalendarDays size={17} />}
+              onClick={navigateToMonthlyCalendar}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                backgroundColor: "#6b7280",
+                "&:hover": { backgroundColor: "#4b5563" },
+              }}
+            >
+              Monthly Calendar
+            </Button>
 
-		setBookingData(filtered);
-	};
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<Plus size={18} />}
+              onClick={navigateToCreateAppointment}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Create Appointment
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
 
-	return (
-		<Box>
-			{/* Heading and tabs */}
-			<div className="booking_container">
-				<div>
-					<h3 className="page-title">BOOKING MANAGEMENT</h3>
-					<p className="page-sub-title">View User's Bookings</p>
-				</div>
-				<div
-					className="button-group"
-					style={{ display: "flex", gap: "10px", alignItems: "center" }}
-				>
-					<span className="p-input-icon-left">
-						<i className="pi pi-search" />
-						<InputText
-							type="search"
-							value={searchText}
-							onChange={(e) => onSearch(e.target.value)}
-							placeholder="Search..."
-						/>
-					</span>
+      {/* Main Tabs */}
+      <Paper
+        variant="outlined"
+        sx={{
+          px: 1,
+          pt: 0.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => {
+            setActiveTab(key);
+            setNestedTab("all");
+          }}
+          items={tabsContent.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+          }))}
+        />
+      </Paper>
 
-					<Button
-						label="Create Appointment"
-						icon="pi pi-plus"
-						severity="success"
-						onClick={navigateToCreateAppointment}
-					/>
-					<Button
-						label="View Monthly Calendar"
-						icon="pi pi-calendar"
-						severity="info"
-						onClick={navigateToMonthlyCalendar}
-					/>
-				</div>
-			</div>
+      {/* Nested Tabs */}
+      {nestedTabsContent[activeTab] &&
+        nestedTabsContent[activeTab].length > 0 && (
+          <Paper
+            variant="outlined"
+            sx={{
+              px: 1,
+              pt: 0.5,
+              mb: 2.5,
+              borderRadius: "10px",
+              borderColor: "#eef0f2",
+            }}
+          >
+            <Tabs
+              activeKey={nestedTab}
+              onChange={(key) => setNestedTab(key)}
+              size="small"
+              items={nestedTabsContent[activeTab].map((tab) => ({
+                key: tab.key,
+                label: tab.label,
+              }))}
+            />
+          </Paper>
+        )}
 
-			<div className="tabs-container">
-				<Tabs
-					defaultActiveKey="all"
-					onSelect={(key) => {
-						setActiveTab(key);
-						setNestedTab("all"); // Reset nested tab to "all" when main tab changes
-					}}
-					activeKey={activeTab}
-				>
-					{tabsContent.map((tab) => (
-						<Tab eventKey={tab.key} title={tab.label} key={tab.key} />
-					))}
-				</Tabs>
-			</div>
+      {/* Table with loading overlay so tab switches don't feel glitchy */}
+      <Spin spinning={loading} tip="Loading bookings...">
+        <div className="table-scroll-wrapper">
+          <Table
+            columns={columns}
+            rowKey={(record) => record.id}
+            dataSource={bookingData}
+            pagination={tableParams.pagination}
+            onChange={handleTableChange}
+            bordered
+            size="middle"
+            scroll={{ x: 1240, y: 640 }}
+          />
+        </div>
+      </Spin>
 
-			{/* Nested Tabs */}
-			{nestedTabsContent[activeTab] &&
-				nestedTabsContent[activeTab].length > 0 && (
-					<div className="nested-tabs">
-						<Tabs
-							defaultActiveKey="all"
-							onSelect={(key) => setNestedTab(key)}
-							activeKey={nestedTab}
-						>
-							{nestedTabsContent[activeTab].map((tab) => (
-								<Tab eventKey={tab.key} title={tab.label} key={tab.key} />
-							))}
-						</Tabs>
-					</div>
-				)}
+      <Modal
+        title="Service Image Gallery"
+        open={galleryVisible}
+        onCancel={() => setGalleryVisible(false)}
+        footer={null}
+        width={800}
+      >
+        {galleryLoading ? (
+          <div style={{ textAlign: "center", padding: "50px 0" }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          <div>
+            <h4 style={{ marginTop: 10 }}>Before Service</h4>
+            {beforeServiceImages?.length > 0 ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                  marginTop: "10px",
+                }}
+              >
+                <Image.PreviewGroup>
+                  {beforeServiceImages.map((img) => (
+                    <Image
+                      key={img.id}
+                      src={`${BASE_URL_IMAGE}${img.file_name}`}
+                      alt="Before Service"
+                      width={120}
+                      style={{
+                        borderRadius: "10px",
+                        objectFit: "cover",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                  ))}
+                </Image.PreviewGroup>
+              </div>
+            ) : (
+              <p style={{ color: "#9ca3af" }}>No images uploaded</p>
+            )}
 
-			{/* Table component */}
-			<div className="table-scroll-wrapper">
-				<Table
-					columns={columns}
-					rowKey={(record) => record.id}
-					dataSource={bookingData}
-					pagination={tableParams.pagination}
-					loading={loading}
-					onChange={handleTableChange}
-					scroll={{ x: 'max-content', y: 840 }}
-					// scroll={{ x: 1500 }} // set a min width threshold if you prefer
-				/>
-			</div>
-
-			<Modal
-				title="Service Image Gallery"
-				open={galleryVisible}
-				onCancel={() => setGalleryVisible(false)}
-				footer={null}
-				width={800}
-			>
-				{galleryLoading ? (
-					<div style={{ textAlign: "center", padding: "50px 0" }}>
-						<Spin size="large" />
-					</div>
-				) : (
-					<div>
-						<h4 style={{ marginTop: 10 }}>Before Service</h4>
-						{beforeServiceImages?.length > 0 ? (
-							<div
-								style={{
-									display: "flex",
-									flexWrap: "wrap",
-									gap: "12px", // ← space between images
-									marginTop: "10px",
-								}}
-							>
-								<Image.PreviewGroup>
-									{beforeServiceImages.map((img) => (
-										<Image
-											key={img.id}
-											src={`${BASE_URL_IMAGE}${img.file_name}`}
-											alt="Before Service"
-											width={120}
-											style={{
-												borderRadius: "10px",
-												objectFit: "cover",
-												boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-											}}
-											crossOrigin="anonymous"
-										/>
-									))}
-								</Image.PreviewGroup>
-							</div>
-						) : (
-							<p style={{ color: "red" }}>No images uploaded</p>
-						)}
-
-						<h4 style={{ marginTop: 20 }}>After Service</h4>
-						{afterServiceImages?.length > 0 ? (
-							<div
-								style={{
-									display: "flex",
-									flexWrap: "wrap",
-									gap: "12px",
-									marginTop: "10px",
-								}}
-							>
-								<Image.PreviewGroup>
-									{afterServiceImages.map((img) => (
-										<Image
-											key={img.id}
-											src={`${BASE_URL_IMAGE}${img.file_name}`}
-											alt="After Service"
-											width={120}
-											style={{
-												borderRadius: "10px",
-												objectFit: "cover",
-												boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-											}}
-											crossOrigin="anonymous"
-										/>
-									))}
-								</Image.PreviewGroup>
-							</div>
-						) : (
-							<p style={{ color: "red" }}>No images uploaded</p>
-						)}
-					</div>
-				)}
-			</Modal>
-		</Box>
-	);
+            <h4 style={{ marginTop: 20 }}>After Service</h4>
+            {afterServiceImages?.length > 0 ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                  marginTop: "10px",
+                }}
+              >
+                <Image.PreviewGroup>
+                  {afterServiceImages.map((img) => (
+                    <Image
+                      key={img.id}
+                      src={`${BASE_URL_IMAGE}${img.file_name}`}
+                      alt="After Service"
+                      width={120}
+                      style={{
+                        borderRadius: "10px",
+                        objectFit: "cover",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                  ))}
+                </Image.PreviewGroup>
+              </div>
+            ) : (
+              <p style={{ color: "#9ca3af" }}>No images uploaded</p>
+            )}
+          </div>
+        )}
+      </Modal>
+    </Box>
+  );
 };
 
 export default Bookings;

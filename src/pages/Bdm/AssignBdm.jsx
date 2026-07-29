@@ -8,25 +8,20 @@ import {
 } from "../../services/Api/bdm";
 import { useNavigate, useParams } from "react-router";
 import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
+import Paper from "@mui/material/Paper";
+import MuiButton from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
 import {
   Select,
   Button,
   Form,
   message,
-  Typography,
   Space,
   Divider,
 } from "antd";
-import {
-  IoArrowBackOutline,
-  IoPersonAddOutline,
-  IoPeopleOutline,
-  IoCheckmarkDoneCircleOutline,
-} from "react-icons/io5";
+import { ArrowLeft, Users, CheckCircle2 } from "lucide-react";
 
 const { Option } = Select;
-const { Title, Text } = Typography;
 
 const AssignBdm = () => {
   const { id } = useParams();
@@ -95,155 +90,206 @@ const AssignBdm = () => {
   };
 
   return (
-    <Box p={3} style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
+    <Box>
       {/* Header Section */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-      >
-        <div>
-          <Title level={3} style={{ margin: 0, fontWeight: 700 }}>
-            Assign Users to BDM
-          </Title>
-          <Text type="secondary">
-            Select one or multiple users to link with this Manager
-          </Text>
-        </div>
-        <Button
-          type="text"
-          icon={<IoArrowBackOutline />}
-          onClick={() => navigate("/bdm-list")}
-          style={{
-            fontSize: "14px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          Back to List
-        </Button>
-      </Box>
-
-      <Card
-        elevation={0}
-        style={{
-          borderRadius: "12px",
-          border: "1px solid #f0f0f0",
-          overflow: "visible",
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        <div style={{ padding: "30px" }}>
-          <Box display="flex" alignItems="center" mb={3}>
-            <div
-              style={{
-                backgroundColor: "#e6f7ff",
-                padding: "10px",
-                borderRadius: "10px",
-                marginRight: "15px",
-                display: "flex",
-                alignItems: "center",
-                color: "#1890ff",
-              }}
-            >
-              <IoPeopleOutline size={24} />
-            </div>
-            <div>
-              <Text strong style={{ fontSize: "16px" }}>
-                Selection Menu
-              </Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                Users currently selected: <b>{selectedUsers.length}</b>
-              </Text>
-            </div>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography className="page-title">BDM MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              Select one or multiple clients to link with this manager
+            </Typography>
           </Box>
 
-          <Divider />
+          <MuiButton
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowLeft size={18} />}
+            onClick={() => navigate("/bdm-list")}
+            sx={{
+              ml: "auto",
+              height: 46,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to BDM List
+          </MuiButton>
+        </Box>
+      </Paper>
 
-          <Form layout="vertical" form={form} onFinish={handleAssignUsers}>
-            <Form.Item
-              label={<span style={{ fontWeight: 600 }}>Available Users</span>}
-              name="user_id"
+      <Paper
+        variant="outlined"
+        sx={{
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+          p: 3,
+        }}
+      >
+        {/* Intro banner */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            background: "#eef2ff",
+            border: "1px solid #e0e7ff",
+            borderRadius: "10px",
+            padding: "12px 16px",
+            marginBottom: "20px",
+          }}
+        >
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#4f46e5",
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            <Users size={18} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#1e1b4b",
+                lineHeight: 1.3,
+              }}
             >
-              <Select
-                mode="multiple"
-                placeholder="Search and select users..."
-                labelInValue
-                value={selectedUsers}
-                onChange={handleSelectionChange}
-                style={{ width: "100%" }}
-                size="large"
-                allowClear
-                // Custom styling for the dropdown selection
-                dropdownStyle={{ borderRadius: "8px" }}
-              >
-                {userData.map((user) => (
-                  <Option key={user.id} value={user.id}>
+              Selection Menu
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                color: "#4338ca",
+                lineHeight: 1.4,
+                mt: 0.25,
+              }}
+            >
+              Users currently selected: <strong>{selectedUsers.length}</strong>
+            </Typography>
+          </Box>
+        </Box>
+
+        <Form layout="vertical" form={form} onFinish={handleAssignUsers}>
+          <Form.Item
+            label={
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>
+                Available Users
+              </span>
+            }
+            name="user_id"
+          >
+            <Select
+              mode="multiple"
+              placeholder="Search and select users..."
+              labelInValue
+              value={selectedUsers}
+              onChange={handleSelectionChange}
+              style={{ width: "100%" }}
+              size="large"
+              allowClear
+              dropdownStyle={{ borderRadius: "8px" }}
+            >
+              {userData.map((user) => (
+                <Option key={user.id} value={user.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
                     <div
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        backgroundColor: "#f0f2f5",
+                        textAlign: "center",
+                        fontSize: "11px",
+                        lineHeight: "24px",
                       }}
                     >
-                      <div
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "50%",
-                          backgroundColor: "#f0f2f5",
-                          textAlign: "center",
-                          fontSize: "11px",
-                          lineHeight: "24px",
-                        }}
-                      >
-                        {user.name.charAt(0)}
-                      </div>
-                      {user.name}
+                      {user.name.charAt(0)}
                     </div>
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+                    {user.name}
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Box mt={5} display="flex" justifyContent="flex-end">
-              <Space size="middle">
-                <Button
-                  size="large"
-                  onClick={() => navigate("/bdm-list")}
-                  style={{ borderRadius: "8px", width: "120px" }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  size="large"
-                  loading={loading}
-                  icon={
-                    <IoCheckmarkDoneCircleOutline
-                      style={{ fontSize: "18px" }}
-                    />
-                  }
-                  style={{
-                    borderRadius: "8px",
-                    backgroundColor: "#1890ff",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    minWidth: "180px",
-                    justifyContent: "center",
-                  }}
-                >
-                  Save Assignments
-                </Button>
-              </Space>
-            </Box>
-          </Form>
-        </div>
-      </Card>
+          <Divider sx={{ mt: 2.5, mb: 2 }} />
+
+          <Box display="flex" justifyContent="flex-end">
+            <Space size="middle">
+              <Button
+                size="large"
+                onClick={() => navigate("/bdm-list")}
+                style={{
+                  borderRadius: "8px",
+                  width: "120px",
+                  backgroundColor: "#6b7280",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                loading={loading}
+                icon={<CheckCircle2 size={16} style={{ marginBottom: -2 }} />}
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#3b82f6",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  minWidth: "180px",
+                  justifyContent: "center",
+                  fontWeight: 600,
+                }}
+              >
+                Save Assignments
+              </Button>
+            </Space>
+          </Box>
+        </Form>
+      </Paper>
     </Box>
   );
 };

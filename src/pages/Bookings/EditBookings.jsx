@@ -2,8 +2,10 @@
 
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import Card from "@mui/material/Card";
+import Paper from "@mui/material/Paper";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./Bookings.css";
 import {
 	message,
@@ -476,34 +478,69 @@ const EditBookings = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">BOOKING MANAGEMENT</h3>
-					<p style={{ color: "green" }} className="page-sub-title">
-						Edit user's booking details by assigning employees or updating the
-						status.
-					</p>
-				</div>
-				<div>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						width: "100%",
+						gap: 2,
+					}}
+				>
+					<Box>
+						<Typography className="page-title">
+							BOOKING MANAGEMENT
+						</Typography>
+						<Typography className="page-sub-title">
+							Edit user's booking details by assigning employees or updating the
+							status.
+						</Typography>
+					</Box>
+
 					<Button
-						icon="pi pi-arrow-left"
-						severity="secondary"
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowBackIcon />}
 						onClick={navigateToBooking}
-						style={{ borderRadius: "5px", height: "47px" }}
+						sx={{
+							height: 47,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							ml: "auto",
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
 					>
-						<span style={{ marginLeft: "5px" }}>Return to Bookings</span>
+						Return to Bookings
 					</Button>
-				</div>
-			</Box>
+				</Box>
+			</Paper>
 			<Spin spinning={isSubmitting} tip="Updating..." size="large">
 				<Form form={form} layout="vertical">
 					<div style={{ display: "flex", flexDirection: "row" }}>
-						<Card style={{ width: "30%", marginRight: "20px" }}>
+						<Card
+							style={{
+								width: "30%",
+								marginRight: "20px",
+								padding: "24px",
+								borderRadius: "10px",
+							}}
+						>
 							<div
 								style={{
 									margin: "0 0 7px 0px",
@@ -712,7 +749,7 @@ const EditBookings = () => {
 								></Button>
 							</div>
 						</Card>
-						<Card style={{ width: "70%" }}>
+						<Card style={{ width: "70%", padding: "24px", borderRadius: "10px" }}>
 							<h4
 								style={{
 									fontSize: "1.2rem",
@@ -1083,6 +1120,8 @@ const EditBookings = () => {
 												marginTop: 20,
 												border: "1px solid #e6f4ff",
 												background: "#f9fbff",
+												padding: "20px",
+												borderRadius: "10px",
 											}}
 										>
 											<h4 style={{ color: "#1677ff", marginBottom: "16px" }}>
@@ -1312,6 +1351,7 @@ const EditBookings = () => {
 									<Form.Item
 										label="Enter Google Map Link"
 										name="google_map_link"
+										style={{ marginTop: "24px", marginBottom: "24px" }}
 									>
 										<Input
 											placeholder="Enter Google Map Link"
@@ -1323,13 +1363,21 @@ const EditBookings = () => {
 
 									<Form.Item>
 										<Button
-											type="primary"
-											htmlType="button"
+											variant="contained"
+											disableElevation
 											onClick={handleSave}
-											style={{
+											sx={{
 												width: "100%",
-												marginTop: "80px",
+												height: 47,
+												marginTop: "32px",
 												justifyContent: "center",
+												borderRadius: "8px",
+												textTransform: "none",
+												fontWeight: 600,
+												backgroundColor: "#1677ff",
+												"&:hover": {
+													backgroundColor: "#0f5fd6",
+												},
 											}}
 										>
 											Save Changes

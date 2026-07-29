@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Tabs, message } from "antd";
 import { EditOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 
 import {
   GetCostCalculationSettings,
@@ -45,14 +48,25 @@ const CostCalculationSettings = () => {
 
   return (
     <div className="cc-settings-page">
-      <div className="cc-page-header">
-        <div>
-          <h1 className="cc-page-title">Cost Calculation Settings</h1>
-          <p className="cc-page-sub">
+      {/* ── Standard shared header ── */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Box>
+          <Typography className="page-title">
+            COST CALCULATION SETTINGS
+          </Typography>
+          <Typography className="page-sub-title">
             Configure calculation minutes by client type
-          </p>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+      </Paper>
 
       <div className="cc-card">
         <Tabs

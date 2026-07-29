@@ -15,10 +15,15 @@ import {
   Card,
   message,
   Space,
-  Typography,
+  Typography as AntTypography,
   Alert,
   Tooltip,
 } from "antd";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { Download, Plus } from "lucide-react";
 import {
   PlusOutlined,
   DownloadOutlined,
@@ -40,7 +45,7 @@ import {
   UpdateAssignment,
 } from "../../../services/Api/equipmentApi";
 
-const { Title, Text } = Typography;
+const { Text } = AntTypography;
 const { Option } = Select;
 
 const ROLE_LABELS = {
@@ -388,29 +393,71 @@ const AssignmentPage = () => {
 
   return (
     <div className="assignment-page">
-      <div className="assignment-page__header">
-        <div>
-          <Title level={3} className="assignment-page__heading">
-            Equipment Assignments
-          </Title>
-          <Text type="secondary" className="assignment-page__subheading">
-            Track who has what equipment, expected returns, and current stock
-            levels.
-          </Text>
-        </div>
-        <Space>
-          <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
-            Export CSV
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openAssignModal}
-          >
-            Assign Equipment
-          </Button>
-        </Space>
-      </div>
+      {/* ── Standard shared header ── */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Box>
+            <Typography className="page-title">
+              EQUIPMENT ASSIGNMENTS
+            </Typography>
+            <Typography className="page-sub-title">
+              Track who has what equipment, expected returns, and current
+              stock levels.
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+            <MuiButton
+              variant="outlined"
+              startIcon={<Download size={17} />}
+              onClick={handleExportCSV}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Export CSV
+            </MuiButton>
+
+            <MuiButton
+              variant="contained"
+              disableElevation
+              startIcon={<Plus size={18} />}
+              onClick={openAssignModal}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Assign Equipment
+            </MuiButton>
+          </Box>
+        </Box>
+      </Paper>
 
       {overview && (
         <Row gutter={12} className="assignment-page__overview">

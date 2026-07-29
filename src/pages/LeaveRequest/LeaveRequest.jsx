@@ -1,19 +1,21 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Select, Tag } from "antd";
-import { Box } from "@mui/material";
+import { Table, Space, message, Select, Tag, Input } from "antd";
+import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 import {
   GetAllLeaveRequest,
   UpdateLeaveStatus,
 } from "../../services/Api/leaveRequestApi";
 import dayjs from "@/lib/dayjs";
+import { Search } from "lucide-react";
 
 const LeaveRequest = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -33,12 +35,14 @@ const LeaveRequest = () => {
     },
     {
       title: "User's Name",
-      dataIndex: ["attendance_user", "user_profile", "name"],
+      dataIndex: ["attendence_user", "user_profile", "name"],
       sorter: (a, b) =>
-        a.attendance_user?.user_profile?.name.localeCompare(
-          b.attendance_user?.user_profile?.name
+        a.attendence_user?.user_profile?.name?.localeCompare(
+          b.attendence_user?.user_profile?.name
         ),
       width: "15%",
+      render: (_, record) =>
+        record.attendence_user?.user_profile?.name || "---",
     },
     {
       title: "Start Date",
@@ -144,25 +148,54 @@ const LeaveRequest = () => {
     }
   };
 
+  const filteredData = data.filter((item) =>
+    item.attendence_user?.user_profile?.name
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Paper
+        variant="outlined"
+        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
-        <div>
-          <h3 className="page-title">Leave Requests</h3>
-          <p className="page-sub-title">
-            View and manage employee leave requests
-          </p>
-        </div>
-      </Box>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+          }}
+        >
+          <Box>
+            <Typography className="page-title">LEAVE REQUESTS</Typography>
+            <Typography className="page-sub-title">
+              View and manage employee leave requests
+            </Typography>
+          </Box>
+
+          <Box sx={{ width: 320 }}>
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search by employee name..."
+              style={{
+                width: "100%",
+                height: 44,
+              }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </Box>
+        </Stack>
+      </Paper>
+
       <Table
         columns={columns}
         rowKey={(record) => record.id}
-        dataSource={data}
+        dataSource={filteredData}
         pagination={tableParams.pagination}
         loading={loading}
         onChange={handleTableChange}

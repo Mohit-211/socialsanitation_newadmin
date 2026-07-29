@@ -10,16 +10,19 @@ import {
   Upload,
   message,
   Space,
-  Typography,
+  Typography as AntTypography,
   List,
 } from "antd";
 import {
-  PlusOutlined,
-  SearchOutlined,
-  UploadOutlined,
   InboxOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import MuiButton from "@mui/material/Button";
+import { Search, Upload as UploadIcon, Plus } from "lucide-react";
 import "./EquipmentPage.scss";
 import {
   GetAllEquipments,
@@ -28,7 +31,7 @@ import {
   DeleteEquipment,
 } from "../../../services/Api/equipmentApi";
 
-const { Title, Text } = Typography;
+const { Text } = AntTypography;
 const { Dragger } = Upload;
 
 // Parses a simple CSV string with a header row into an array of
@@ -281,32 +284,90 @@ const EquipmentPage = () => {
 
   return (
     <div className="equipment-page">
-      <div className="equipment-page__header">
-        <div>
-          <Title level={3} className="equipment-page__heading">
-            Equipment
-          </Title>
-          <Text type="secondary" className="equipment-page__subheading">
-            Manage the equipment your team can be assigned, and keep stock counts up to date.
-          </Text>
-        </div>
-        <div className="equipment-page__actions">
-          <Input
-            className="equipment-page__search"
-            placeholder="Search equipment by name"
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => handleSearch(e.target.value)}
-            allowClear
-          />
-          <Button icon={<UploadOutlined />} onClick={openImportModal}>
-            Import
-          </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>
-            Add Equipment
-          </Button>
-        </div>
-      </div>
+      {/* ── Standard shared header ── */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              EQUIPMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Manage the equipment your team can be assigned.
+            </Typography>
+          </Box>
+
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ alignItems: "center", flexShrink: 0 }}
+          >
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search equipment by name"
+              style={{ width: 220, height: 44 }}
+              value={searchText}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+
+            <MuiButton
+              variant="outlined"
+              startIcon={<UploadIcon size={17} />}
+              onClick={openImportModal}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Import
+            </MuiButton>
+
+            <MuiButton
+              variant="contained"
+              disableElevation
+              startIcon={<Plus size={18} />}
+              onClick={openAddModal}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Add Equipment
+            </MuiButton>
+          </Stack>
+        </Stack>
+      </Paper>
 
       <Table
         rowKey="id"
@@ -314,6 +375,8 @@ const EquipmentPage = () => {
         dataSource={filteredEquipments}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        bordered
+        size="middle"
       />
 
       <Modal

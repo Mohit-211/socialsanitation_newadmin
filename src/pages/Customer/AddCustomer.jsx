@@ -8,7 +8,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import {
   Input,
@@ -18,8 +18,8 @@ import {
   Col,
   Form,
   Radio,
-  Space,
   InputNumber,
+  Button as AntButton,
 } from "antd";
 import { debounce } from "lodash";
 
@@ -947,27 +947,13 @@ const AddCustomer = () => {
             </div>
           </Form.Item>
 
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Space size={12}>
-              <Button
-                style={{ height: 44, borderRadius: 8, paddingInline: 24 }}
-                type="primary"
-                htmlType="submit"
-                loading={disable}
-                icon={<Check size={16} />}
-              >
-                {disable ? "Saving..." : "Save"}
-              </Button>
-
-              <Button
-                style={{ height: 44, borderRadius: 8, paddingInline: 24 }}
-                type="default"
-                onClick={navigateToUser}
-                icon={<X size={16} />}
-              >
-                Cancel
-              </Button>
-            </Space>
+          <Form.Item style={{ marginTop: "24px", marginBottom: 0 }}>
+            <AntButton type="primary" htmlType="submit" loading={disable}>
+              Save
+            </AntButton>
+            <AntButton style={{ marginLeft: 8 }} onClick={navigateToUser}>
+              Cancel
+            </AntButton>
           </Form.Item>
         </Form>
       </Paper>

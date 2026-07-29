@@ -22,7 +22,11 @@ import {
   Radio,
   Tabs,
 } from "antd";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
   GetAllUserNameByAdmin,
@@ -69,92 +73,73 @@ const CreateBooking = () => {
     GetAllUserNameByAdmin().then((res) => setUsers(res.data.data || []));
     GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
   }, []);
-const [clientType, setClientType] =
-  useState("residential");
+  const [clientType, setClientType] = useState("residential");
 
-const handleUserChange = async (userId) => {
-  // Clear previous checklist data
-  form.setFieldsValue({ details: [] });
-
-  setClientChecklist([]);
-  setAddresses([]);
-  setSelectedUser(null);
-
-  if (!userId) return;
-
-  setSelectedUser(
-    users.find((u) => u.id === userId)
-  );
-
-  form.setFieldsValue({
-    user_id: userId,
-  });
-
-  try {
-    setLoadingChecklist(true);
-
-    /*
-      ADDRESSES
-    */
-
-    const addrRes =
-      await GetUserAddressByUserId(userId);
-
-    setAddresses(addrRes.data.data || []);
-
-    /*
-      CHECKLIST
-    */
-
-    const checklistRes =
-      await GetClientChecklistByUserId(userId);
-
-    console.log(
-      "Checklist response:",
-      checklistRes
-    );
-
-    const checklistData =
-      checklistRes?.data?.data?.data?.[0] || {};
-
-    /*
-      CLIENT TYPE
-    */
-
-    setClientType(
-      checklistData?.client_type ||
-        "residential"
-    );
-
-    /*
-      CHECKLIST DETAILS
-    */
-
-    const list =
-      checklistData?.user_client_checklist_details ||
-      [];
-
-    setClientChecklist(list);
-
-    /*
-      READ ONLY
-    */
-  } catch (error) {
-    console.error(
-      "Error fetching checklist:",
-      error
-    );
+  const handleUserChange = async (userId) => {
+    // Clear previous checklist data
+    form.setFieldsValue({ details: [] });
 
     setClientChecklist([]);
-    setClientType("residential");
+    setAddresses([]);
+    setSelectedUser(null);
 
-    message.error(
-      "Failed to fetch client checklist"
-    );
-  } finally {
-    setLoadingChecklist(false);
-  }
-};
+    if (!userId) return;
+
+    setSelectedUser(users.find((u) => u.id === userId));
+
+    form.setFieldsValue({
+      user_id: userId,
+    });
+
+    try {
+      setLoadingChecklist(true);
+
+      /*
+        ADDRESSES
+      */
+
+      const addrRes = await GetUserAddressByUserId(userId);
+
+      setAddresses(addrRes.data.data || []);
+
+      /*
+        CHECKLIST
+      */
+
+      const checklistRes = await GetClientChecklistByUserId(userId);
+
+      console.log("Checklist response:", checklistRes);
+
+      const checklistData = checklistRes?.data?.data?.data?.[0] || {};
+
+      /*
+        CLIENT TYPE
+      */
+
+      setClientType(checklistData?.client_type || "residential");
+
+      /*
+        CHECKLIST DETAILS
+      */
+
+      const list = checklistData?.user_client_checklist_details || [];
+
+      setClientChecklist(list);
+
+      /*
+        READ ONLY
+      */
+    } catch (error) {
+      console.error("Error fetching checklist:", error);
+
+      setClientChecklist([]);
+      setClientType("residential");
+
+      message.error("Failed to fetch client checklist");
+    } finally {
+      setLoadingChecklist(false);
+    }
+  };
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -253,44 +238,86 @@ const handleUserChange = async (userId) => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="30px"
-      >
-        <div>
-          <h3 className="page-title">BOOKING MANAGEMENT</h3>
-        </div>
-        <Button
-          icon={<i className="pi pi-arrow-left" />}
-          onClick={() => navigate("/bookings")}
-          style={{ borderRadius: "5px", height: "47px" }}
-        >
-          Return to Bookings
-        </Button>
-      </Box>
-
-      <Tabs
-        defaultActiveKey="client"
-        onChange={(key) => {
-          if (key === "guest") {
-            navigate("/create-non-client-booking");
-          }
+      {/* Header Section */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
-        items={[
-          {
-            key: "client",
-            label: "Client Booking",
-            children: null, // we’ll render the form below anyway
-          },
-          {
-            key: "guest",
-            label: "Non-Client Booking",
-            children: null, // navigation will handle this
-          },
-        ]}
-      />
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography className="page-title">BOOKING MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              Create a new client booking
+            </Typography>
+          </Box>
+
+          <MuiButton
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowLeft size={18} />}
+            onClick={() => navigate("/bookings")}
+            sx={{
+              ml: "auto",
+              height: 46,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to Bookings
+          </MuiButton>
+        </Box>
+      </Paper>
+
+      <Paper
+        variant="outlined"
+        sx={{
+          px: 1,
+          pt: 0.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Tabs
+          defaultActiveKey="client"
+          onChange={(key) => {
+            if (key === "guest") {
+              navigate("/create-non-client-booking");
+            }
+          }}
+          items={[
+            {
+              key: "client",
+              label: "Client Booking",
+              children: null, // we’ll render the form below anyway
+            },
+            {
+              key: "guest",
+              label: "Non-Client Booking",
+              children: null, // navigation will handle this
+            },
+          ]}
+        />
+      </Paper>
 
       <Card title="Create New Booking">
         <Form
@@ -350,94 +377,80 @@ const handleUserChange = async (userId) => {
             <Input type="hidden" />
           </Form.Item>
 
-         <Form.Item label="Initial Client Chart">
-  {loadingChecklist ? (
-    <p>Loading checklist...</p>
-  ) : clientChecklist.length > 0 ? (
-    <div className="table-responsive">
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>Service Area</th>
+          <Form.Item label="Initial Client Chart">
+            {loadingChecklist ? (
+              <p>Loading checklist...</p>
+            ) : clientChecklist.length > 0 ? (
+              <div className="table-responsive">
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Service Area</th>
 
-            {clientType === "commercial" ? (
-              <>
-                <th># of Stalls</th>
-                <th># of Sinks</th>
-                <th># of Restrooms</th>
-              </>
+                      {clientType === "commercial" ? (
+                        <>
+                          <th># of Stalls</th>
+                          <th># of Sinks</th>
+                          <th># of Restrooms</th>
+                        </>
+                      ) : (
+                        <th>
+                          # of Desks / Trash Cans
+                          <br />
+                          <small>
+                            (Big Buildings)
+                            <br />
+                            OR
+                            <br />
+                            # of Restrooms
+                          </small>
+                        </th>
+                      )}
+
+                      <th>
+                        Type of Flooring
+                        <br />
+                        <small>(Carpet, Hard Floor, VCT)</small>
+                      </th>
+
+                      <th>Special Requests / Hot Spots</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {clientChecklist.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.service_area}</td>
+
+                        {clientType === "commercial" ? (
+                          <>
+                            <td>{item.stalls || 0}</td>
+                            <td>{item.sinks || 0}</td>
+                            <td>{item.restrooms || 0}</td>
+                          </>
+                        ) : (
+                          <td>{item.num_desks_trash_cans || 0}</td>
+                        )}
+
+                        <td>{item.flooring_type || "-"}</td>
+
+                        <td>{item.special_requests || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <th>
-                # of Desks / Trash Cans
-                <br />
-                <small>
-                  (Big Buildings)
-                  <br />
-                  OR
-                  <br />
-                  # of Restrooms
-                </small>
-              </th>
+              <p
+                style={{
+                  color: "gray",
+                  fontStyle: "italic",
+                }}
+              >
+                No checklist available
+              </p>
             )}
-
-            <th>
-              Type of Flooring
-              <br />
-              <small>
-                (Carpet, Hard Floor, VCT)
-              </small>
-            </th>
-
-            <th>
-              Special Requests / Hot Spots
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {clientChecklist.map((item) => (
-            <tr key={item.id}>
-              <td>{item.service_area}</td>
-
-              {clientType ===
-              "commercial" ? (
-                <>
-                  <td>{item.stalls || 0}</td>
-                  <td>{item.sinks || 0}</td>
-                  <td>
-                    {item.restrooms || 0}
-                  </td>
-                </>
-              ) : (
-                <td>
-                  {item.num_desks_trash_cans ||
-                    0}
-                </td>
-              )}
-
-              <td>
-                {item.flooring_type || "-"}
-              </td>
-
-              <td>
-                {item.special_requests || "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <p
-      style={{
-        color: "gray",
-        fontStyle: "italic",
-      }}
-    >
-      No checklist available
-    </p>
-  )}
-</Form.Item>
+          </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
@@ -528,20 +541,6 @@ const handleUserChange = async (userId) => {
                   />
                 </Form.Item>
               </Col>
-
-              {/* <Col span={8}>
-								<Form.Item
-									name="timezone"
-									label="Time Zone"
-									rules={[{ required: true }]}
-								>
-									<Select>
-										<Option value="Asia/Kolkata">Asia/Kolkata</Option>
-										<Option value="America/New_York">America/New_York</Option>
-										<Option value="UTC">UTC</Option>
-									</Select>
-								</Form.Item>
-							</Col> */}
             </Row>
           )}
 
@@ -601,19 +600,6 @@ const handleUserChange = async (userId) => {
                     />
                   </Form.Item>
                 </Col>
-                {/* <Col span={8}>
-									<Form.Item
-										name="timezone"
-										label="Time zone"
-										rules={[{ required: true }]}
-									>
-										<Select placeholder="Select timezone">
-											<Option value="Asia/Kolkata">Asia/Kolkata</Option>
-											<Option value="America/New_York">America/New_York</Option>
-											<Option value="UTC">UTC</Option>
-										</Select>
-									</Form.Item>
-								</Col> */}
               </Row>
 
               <Row gutter={8}>
@@ -621,7 +607,6 @@ const handleUserChange = async (userId) => {
                   <Form.Item
                     name="recurring_every"
                     label="Repeat every"
-                    // initialValues={1}
                     rules={[{ required: true }]}
                   >
                     <InputNumber
@@ -636,9 +621,7 @@ const handleUserChange = async (userId) => {
                 </Col>
                 <Col span={12}>
                   <Form.Item
-                    // label="Select Unit"
                     name="recurring_type"
-                    // initialValue="week"
                     rules={[{ required: true }]}
                     style={{ marginTop: 33 }}
                   >
@@ -670,28 +653,9 @@ const handleUserChange = async (userId) => {
                       <Option value="day">Daily</Option>
                       <Option value="week">Weekly</Option>
                       <Option value="bi-weekly">Bi-weekly</Option>
-                      {/* ✅ NEW */}
                       <Option value="month">Monthly</Option>
                       <Option value="year">Yearly</Option>
                     </Select>
-                    {/* <Select
-                      onChange={(val) => {
-                        setRecurringType(val);
-                        form.setFieldValue("recurring_type", val);
-                        if (val !== "week") {
-                          setRepeatOnDays([]);
-                          form.setFieldValue("repeat_on_days", []);
-                        } else {
-                          setRepeatOnDays(["Mon", "Tue"]); // reapply default
-                          form.setFieldValue("repeat_on_days", ["Mon", "Tue"]);
-                        }
-                      }}
-                    >
-                      <Option value="day">day</Option>
-                      <Option value="week">week</Option>
-                      <Option value="month">month</Option>
-                      <Option value="year">year</Option>
-                    </Select> */}
                   </Form.Item>
                 </Col>
               </Row>

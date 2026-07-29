@@ -100,7 +100,7 @@ const AddServiceProvider = () => {
     };
 
     return (
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Box>
             {/* Kept header intact */}
             <Paper
                 variant="outlined"
@@ -109,7 +109,6 @@ const AddServiceProvider = () => {
                     mb: 3,
                     borderRadius: "10px",
                     borderColor: "#eef0f2",
-                    backgroundColor: "#ffffff",
                 }}
             >
                 <Box
@@ -121,10 +120,10 @@ const AddServiceProvider = () => {
                     }}
                 >
                     <Box>
-                        <Typography className="page-title" sx={{ fontWeight: 700, fontSize: "1.25rem" }}>
+                        <Typography className="page-title">
                             EMPLOYEE MANAGEMENT
                         </Typography>
-                        <Typography className="page-sub-title" color="text.secondary" sx={{ fontSize: "0.875rem" }}>
+                        <Typography className="page-sub-title">
                             Create New Employee
                         </Typography>
                     </Box>
@@ -136,36 +135,35 @@ const AddServiceProvider = () => {
                         onClick={navigateToUser}
                         sx={{
                             ml: "auto",
-                            height: 44,
+                            height: 46,
                             px: 3,
-                            borderRadius: "6px",
-                            minWidth: 185,
+                            borderRadius: "8px",
+                            minWidth: 180,
                             textTransform: "none",
                             fontWeight: 600,
-                            backgroundColor: "#5a6a85",
+                            backgroundColor: "#2c3345",
                             "&:hover": {
-                                backgroundColor: "#48556d",
+                                backgroundColor: "#1f2433",
                             },
                         }}
                     >
-                        Return to Employee
+                        Return to Employees
                     </Button>
                 </Box>
             </Paper>
 
             {/* Pure MUI Form Container */}
-            <Card
+            <Paper
                 variant="outlined"
                 sx={{
                     borderRadius: "10px",
                     borderColor: "#eef0f2",
-                    p: { xs: 3, sm: 4 },
-                    backgroundColor: "#ffffff",
+                    p: 3,
                 }}
             >
                 <form onSubmit={handleSubmit}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                        
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+
                         {/* Full Name */}
                         <FormControl fullWidth>
                             <FormLabel sx={{ fontWeight: 600, color: "#374151", mb: 1, fontSize: "0.95rem" }}>
@@ -260,7 +258,7 @@ const AddServiceProvider = () => {
                         </FormControl>
 
                         {/* Action Buttons */}
-                        <Box sx={{ display: "flex", gap: 1.5, mt: 2 }}>
+                        <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
                             <Button
                                 variant="contained"
                                 disableElevation
@@ -305,7 +303,7 @@ const AddServiceProvider = () => {
                         </Box>
                     </Box>
                 </form>
-            </Card>
+            </Paper>
         </Box>
     );
 };

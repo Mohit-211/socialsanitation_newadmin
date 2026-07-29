@@ -4,6 +4,9 @@ import React, { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 import dayjs from "@/lib/dayjs";
 import {
@@ -179,32 +182,62 @@ const PdfGeneration = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <div>
-          <h3 className="page-title">Service Estimate Management</h3>
-          <p className="page-sub-title">View & Generate PDFs</p>
-        </div>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={2}
+          useFlexGap
+          flexWrap="wrap"
+          sx={{ width: "100%" }}
+        >
+          {/* Left */}
+          <Box>
+            <Typography className="page-title">
+              Service Estimate Management
+            </Typography>
+            <Typography className="page-sub-title">
+              View & Generate PDFs
+            </Typography>
+          </Box>
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Button
-            onClick={() => navigate("/universal-scope-of-work")}
-            style={{
-              borderRadius: "6px",
-            }}
+          {/* Right */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ ml: "auto", alignItems: "center" }}
           >
-            Universal Scope Of Work
-          </Button>
+            <Button
+              onClick={() => navigate("/universal-scope-of-work")}
+              style={{
+                borderRadius: "6px",
+                height: 44,
+              }}
+            >
+              Universal Scope Of Work
+            </Button>
 
-          <Button type="primary" onClick={() => navigate("/generate-estimate")}>
-            Generate PDF
-          </Button>
-        </div>
-      </Box>
+            <Button
+              type="primary"
+              onClick={() => navigate("/generate-estimate")}
+              style={{ height: 44 }}
+            >
+              Generate PDF
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
 
       <Table
         // rowSelection={rowSelection}

@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Input } from "antd";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
+import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router";
@@ -203,14 +202,14 @@ const BDM = () => {
   };
 
   return (
-    <Box className="bdm-page" p={{ xs: 1.5, sm: 3 }}>
-      <Card
-        elevation={0}
-        className="bdm-card"
+    <Box className="bdm-page">
+      <Paper
+        variant="outlined"
         sx={{
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: "12px",
-          border: "1px solid #f0f0f0",
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
         <Stack
@@ -218,9 +217,8 @@ const BDM = () => {
           spacing={2}
           sx={{
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
             flexWrap: "wrap",
-            mb: 3,
           }}
         >
           <Box>
@@ -234,13 +232,13 @@ const BDM = () => {
             direction="row"
             spacing={1.5}
             useFlexGap
-            sx={{ alignItems: "center", flexWrap: "wrap" }}
+            sx={{ ml: "auto", alignItems: "center", flexWrap: "wrap" }}
           >
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}
               placeholder="Search name or email..."
-              style={{ width: 260, height: 44, borderRadius: 8 }}
+              style={{ width: 260, height: 44 }}
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)}
             />
@@ -279,23 +277,25 @@ const BDM = () => {
             </Button>
           </Stack>
         </Stack>
+      </Paper>
 
-        <div style={{ overflowX: "auto" }}>
-          <Table
-            columns={columns}
-            rowKey={(record) => record.id}
-            dataSource={data}
-            pagination={{ ...tableParams.pagination, showSizeChanger: true }}
-            loading={loading}
-            //   rowSelection={{
-            //     selectedRowKeys,
-            //     onChange: onSelectChange,
-            //   }}
-            className="custom-table"
-            scroll={{ x: "max-content" }}
-          />
-        </div>
-      </Card>
+      <div style={{ overflowX: "auto" }}>
+        <Table
+          columns={columns}
+          rowKey={(record) => record.id}
+          dataSource={data}
+          pagination={{ ...tableParams.pagination, showSizeChanger: true }}
+          loading={loading}
+          //   rowSelection={{
+          //     selectedRowKeys,
+          //     onChange: onSelectChange,
+          //   }}
+          className="custom-table"
+          bordered
+          size="middle"
+          scroll={{ x: "max-content" }}
+        />
+      </div>
 
       <Modal
         centered

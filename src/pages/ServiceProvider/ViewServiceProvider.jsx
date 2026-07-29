@@ -160,7 +160,7 @@ const ViewCustomer = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box>
       {/* Page Header */}
       <Paper
         variant="outlined"
@@ -169,7 +169,6 @@ const ViewCustomer = () => {
           mb: 3,
           borderRadius: "10px",
           borderColor: "#eef0f2",
-          backgroundColor: "#ffffff",
         }}
       >
         <Box
@@ -181,10 +180,10 @@ const ViewCustomer = () => {
           }}
         >
           <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: "1.25rem", color: "#1f2937" }}>
+            <Typography className="page-title">
               EMPLOYEE MANAGEMENT
             </Typography>
-            <Typography color="text.secondary" sx={{ fontSize: "0.875rem", mt: 0.5 }}>
+            <Typography className="page-sub-title">
               View Information related with Employee
             </Typography>
           </Box>
@@ -196,25 +195,26 @@ const ViewCustomer = () => {
             onClick={navigateToUser}
             sx={{
               ml: "auto",
-              height: 44,
+              height: 46,
               px: 3,
-              borderRadius: "6px",
+              borderRadius: "8px",
+              minWidth: 180,
               textTransform: "none",
               fontWeight: 600,
-              backgroundColor: "#5a6a85",
+              backgroundColor: "#2c3345",
               "&:hover": {
-                backgroundColor: "#48556d",
+                backgroundColor: "#1f2433",
               },
             }}
           >
-            Return to Employee List
+            Return to Employees
           </Button>
         </Box>
       </Paper>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         {/* Employee Details Header Card */}
-        <Box sx={{ display: "flex", gap: 3, alignItems: "stretch" }}>
+        <Box sx={{ display: "flex", gap: 2.5, alignItems: "stretch" }}>
           {/* Optional Profile Image Preview */}
           {userData?.user_attachments?.length > 0 &&
             userData.user_attachments[0].file_type === "Image" && (
@@ -228,6 +228,7 @@ const ViewCustomer = () => {
                   justifyContent: "center",
                   borderRadius: "10px",
                   borderColor: "#eef0f2",
+                  boxShadow: "none",
                 }}
               >
                 <Image
@@ -250,7 +251,7 @@ const ViewCustomer = () => {
             variant="outlined"
             sx={{
               width: "100%",
-              p: 3,
+              p: 2.5,
               borderRadius: "10px",
               borderColor: "#eef0f2",
               boxShadow: "none",
@@ -297,7 +298,7 @@ const ViewCustomer = () => {
         <Card
           variant="outlined"
           sx={{
-            p: 3,
+            p: 2.5,
             borderRadius: "10px",
             borderColor: "#eef0f2",
             boxShadow: "none",
@@ -331,7 +332,7 @@ const ViewCustomer = () => {
         <Card
           variant="outlined"
           sx={{
-            p: 3,
+            p: 2.5,
             borderRadius: "10px",
             borderColor: "#eef0f2",
             boxShadow: "none",

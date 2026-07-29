@@ -606,7 +606,7 @@ const ServiceProvider = () => {
         rowSelection={rowSelection}
         bordered
         size="middle"
-        scroll={{ x: 1200 }}
+        scroll={{ x: 950 }}
       />
 
       {mapVisible && (

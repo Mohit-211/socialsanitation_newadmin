@@ -194,31 +194,41 @@ const Break = () => {
           </Box>
 
           <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{ alignItems: "center", flexWrap: "wrap" }}
+            spacing={2}
+            sx={{
+              width: 470,
+            }}
           >
-            <DatePicker
-              format="MM/DD/YYYY"
-              value={selectedDate}
-              onChange={(date) => date && setSelectedDate(date)}
-              allowClear={false}
-              style={{ width: 180 }}
+            {/* Top Row */}
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="flex-end"
+              gap={2}
+            >
+              <DatePicker
+                format="MM/DD/YYYY"
+                value={selectedDate}
+                onChange={(date) => date && setSelectedDate(date)}
+                allowClear={false}
+                style={{ width: 180 }}
+              />
+            </Box>
+
+            {/* Search */}
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search by employee name..."
+              style={{
+                width: "100%",
+                height: 44,
+              }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </Stack>
         </Stack>
-
-        <Box sx={{ mt: 2.5 }}>
-          <Input
-            allowClear
-            prefix={<Search size={18} color="#9CA3AF" />}
-            placeholder="Search by employee name..."
-            style={{ width: "100%", maxWidth: 420, height: 44 }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Box>
       </Paper>
 
       <div style={{ overflowX: "auto" }}>

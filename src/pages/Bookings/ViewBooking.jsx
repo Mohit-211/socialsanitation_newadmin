@@ -5,6 +5,7 @@ import React, { useLayoutEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
 	Box,
+	Paper,
 	Card,
 	CardContent,
 	Typography,
@@ -13,6 +14,7 @@ import {
 } from "@mui/material";
 import { Row, Col, Table } from "antd";
 import { UserOutlined } from "@ant-design/icons";
+import { ArrowLeft } from "lucide-react";
 
 import {
 	GetBookingById,
@@ -83,30 +85,55 @@ const ViewBooking = () => {
 	);
 
 	return (
-		<Box sx={{ padding: 3 }}>
-			{/* Header */}
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				mb={3}
+		<Box>
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<Box>
-					<Typography variant="h5" fontWeight="bold">
-						Booking Management
-					</Typography>
-					<Typography variant="body1" color="green">
-						View Booking Details
-					</Typography>
-				</Box>
-				<Button
-					variant="contained"
-					onClick={() => navigate("/bookings")}
-					sx={{ borderRadius: "5px", height: "40px" }}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+					}}
 				>
-					← Return to Bookings
-				</Button>
-			</Box>
+					<Box>
+						<Typography className="page-title">BOOKING MANAGEMENT</Typography>
+						<Typography className="page-sub-title">
+							View Booking Details
+						</Typography>
+					</Box>
+
+					<Button
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/bookings")}
+						sx={{
+							ml: "auto",
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Bookings
+					</Button>
+				</Box>
+			</Paper>
 
 			{/* Booking Information Card */}
 			<Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>

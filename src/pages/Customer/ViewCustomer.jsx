@@ -3,7 +3,7 @@
 import dayjs from "@/lib/dayjs";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import Button from "@mui/material/Button";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -1513,10 +1513,12 @@ const ViewCustomer = () => {
           }}
         >
           <Box>
-            <h3 className="page-title">CLIENT MANAGEMENT</h3>
-            <p className="page-sub-title">
+            <Typography className="page-title">
+              CLIENT MANAGEMENT
+            </Typography>
+            <Typography className="page-sub-title">
               View Information related with Client
-            </p>
+            </Typography>
           </Box>
 
           <Button

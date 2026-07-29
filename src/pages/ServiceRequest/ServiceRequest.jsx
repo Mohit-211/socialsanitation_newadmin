@@ -3,12 +3,16 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, message, Input, Select, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import MuiButton from "@mui/material/Button";
+import { Plus, Search } from "lucide-react";
 import {
   DeleteServiceRequest,
   GetAllServiceRequests,
 } from "../../services/Api/ServiceRequestApi";
-
-const { Search } = Input;
 
 const ServiceRequest = () => {
   const navigate = useNavigate();
@@ -184,75 +188,114 @@ const ServiceRequest = () => {
   return (
     <>
       {/* HEADER */}
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        <div>
-          <h3 className="page-title">SERVICE REQUEST MANAGEMENT</h3>
-          <p className="page-sub-title">View all generated service requests</p>
-        </div>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              SERVICE REQUEST MANAGEMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View all generated service requests
+            </Typography>
+          </Box>
 
-        <Space>
-          <Search
-            placeholder="Search by ref, client, amount"
-            allowClear
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 260 }}
-          />
-
-          <Select
-            value={selectedMonth}
-            style={{ width: 120 }}
-            onChange={(m) => {
-              setSelectedMonth(m);
-
-              const date = dayjs().year(selectedYear).month(m).startOf("month");
-
-              fetchInvoices(date);
-            }}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ alignItems: "center", flexShrink: 0 }}
           >
-            {months.map((m, i) => (
-              <Select.Option key={i} value={i}>
-                {m}
-              </Select.Option>
-            ))}
-          </Select>
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search by ref, client, amount"
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 240, height: 44 }}
+            />
 
-          <Select
-            value={selectedYear}
-            style={{ width: 100 }}
-            onChange={(y) => {
-              setSelectedYear(y);
+            <Select
+              value={selectedMonth}
+              style={{ width: 120, height: 44 }}
+              onChange={(m) => {
+                setSelectedMonth(m);
 
-              const date = dayjs()
-                .year(y)
-                .month(selectedMonth)
-                .startOf("month");
+                const date = dayjs()
+                  .year(selectedYear)
+                  .month(m)
+                  .startOf("month");
 
-              fetchInvoices(date);
-            }}
-          >
-            {years.map((y) => (
-              <Select.Option key={y} value={y}>
-                {y}
-              </Select.Option>
-            ))}
-          </Select>
+                fetchInvoices(date);
+              }}
+            >
+              {months.map((m, i) => (
+                <Select.Option key={i} value={i}>
+                  {m}
+                </Select.Option>
+              ))}
+            </Select>
 
-          <Button
-            type="primary"
-            onClick={() => navigate("/generate-service-request")}
-          >
-            New Service Request
-          </Button>
-        </Space>
-      </div>
+            <Select
+              value={selectedYear}
+              style={{ width: 100, height: 44 }}
+              onChange={(y) => {
+                setSelectedYear(y);
+
+                const date = dayjs()
+                  .year(y)
+                  .month(selectedMonth)
+                  .startOf("month");
+
+                fetchInvoices(date);
+              }}
+            >
+              {years.map((y) => (
+                <Select.Option key={y} value={y}>
+                  {y}
+                </Select.Option>
+              ))}
+            </Select>
+
+            <MuiButton
+              variant="contained"
+              disableElevation
+              startIcon={<Plus size={18} />}
+              onClick={() => navigate("/generate-service-request")}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              New Service Request
+            </MuiButton>
+          </Stack>
+        </Stack>
+      </Paper>
 
       {/* TABLE */}
 
@@ -261,6 +304,8 @@ const ServiceRequest = () => {
         columns={columns}
         dataSource={filteredData}
         loading={loading}
+        bordered
+        size="middle"
       />
     </>
   );

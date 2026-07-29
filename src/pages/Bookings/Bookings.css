@@ -1,70 +1,12 @@
-.booking_container {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-  margin-bottom: 20px;
-  margin-top: 40px;
+/* 🔹 Tighter cell padding = denser rows = less horizontal scroll,
+   consistent with other list pages */
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td {
+  padding: 10px 12px !important;
 }
-
-.page-title {
-  /* font-family: open sans; */
-  margin: 0;
-  color: #1a1a1a;
-  font-size: 25px;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.page-sub-title {
-  color: #888;
-  font-size: 15px;
-  text-transform: none;
-  font-weight: 400;
-}
-
-.saving_buttons {
-  text-align: right;
-  width: 100%;
-}
-
-.ant-col-4 {
-  max-width: none !important;
-}
-
-.view_booking_heading {
-  width: 500px !important;
-  margin-right: 17px;
-}
-
-
-.ant-form-item-label{
-  margin-top: 4px !important;
-  /* font-size: 16px !important; */
-}
-
-.label{
-  /* margin-top: 4px !important; */
-  font-size: 16px !important;
-}
-
-.save_buttons{
-  margin-top: 300px;
-  margin-left: 500px;
-}
-
-
-.tabs-container{
-  margin-bottom: 20px;
-  justify-items: right;
-}
-
-
-/* .ant-radio-group ant-radio-group-outline ant-picker-calendar-mode-switch css-dev-only-do-not-override-2q8sxy{
-  visibility:hidden
-} */
 
 .table-scroll-wrapper {
-  overflow-x: scroll; /* always show */
+  overflow-x: auto;
 }
 
 .table-scroll-wrapper::-webkit-scrollbar {

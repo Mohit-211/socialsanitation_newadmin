@@ -15,6 +15,8 @@ import {
   Radio,
   InputNumber,
 } from "antd";
+import { Box, Paper, Button as MuiButton, Typography as MuiTypography } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   GetUserById,
@@ -44,6 +46,10 @@ const UpdateServiceProvider = () => {
     lat: null,
     lng: null,
   });
+
+  const navigateToEmployees = () => {
+    navigate("/employees");
+  };
 
   useEffect(() => {
     StateAPI(233).then((res) => {
@@ -128,7 +134,6 @@ const UpdateServiceProvider = () => {
 
     console.log("Submitting payload", JSON.stringify(payload, null, 2));
 
-  
     try {
       await EditUserById(id, payload);
       message.success("Employee updated successfully");
@@ -183,279 +188,346 @@ const UpdateServiceProvider = () => {
   };
 
   return (
-    <Card>
-      <Title level={4}>Update Employee Details</Title>
-      <Form
-        layout="vertical"
-        form={form}
-        onFinish={handleSave}
-        onValuesChange={(changed) => {
-          if (changed.address) fetchCoordinates(changed.address);
-          if (changed.state_id) fetchCities(changed.state_id);
+    <Box>
+      {/* ---- Shared header (matches UpdateCustomer / ServiceProvider / User) ---- */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        <Row gutter={24}>
-          <Col span={8}>
-            <Form.Item
-              name="name"
-              label="Full Name"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="email" label="Email">
-              <Input disabled />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item
-              name="employee_type"
-              label="Employee Type"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select employee type",
-                },
-              ]}
-            >
-              <Select placeholder="Select Employee Type">
-                <Select.Option value="W2_BI_WEEKLY">W2 Bi-Weekly</Select.Option>
-
-                <Select.Option value="1099">1099 Contractor</Select.Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Card style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Title level={5} style={{ margin: 0 }}>
-              User Addresses
-            </Title>
-            <Button
-              type="primary"
-              onClick={() => {
-                setEditingAddress(null);
-                addressForm.resetFields();
-                setCoordinates({ lat: null, lng: null });
-                setAddressModalVisible(true);
-              }}
-            >
-              + Add Address
-            </Button>
-          </div>
-
-          {userAddresses.length === 0 ? (
-            <Typography.Text type="secondary">No address found</Typography.Text>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {userAddresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "12px 16px",
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 8,
-                    backgroundColor: "#fff",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <div style={{ fontSize: 14, color: "#333" }}>
-                    {addr.address}, {addr.user_city?.name},{" "}
-                    {addr.user_state?.name}, {addr.user_country?.name}
-                  </div>
-                  <Button
-                    type="link"
-                    onClick={() => {
-                      console.log("Editing Address:", addr);
-                      setEditingAddress(addr);
-                      setAddressModalVisible(true);
-
-                      // Wait for modal to open
-                      setTimeout(() => {
-                        addressForm.resetFields();
-
-                        // ✅ Optional debug log for individual fields
-                        console.log("Setting address:", addr.address);
-                        console.log("Setting state_id:", addr.state_id);
-                        console.log("Setting city_id:", addr.city_id);
-
-                        addressForm.setFieldsValue({
-                          address: addr.address,
-                          state_id: addr.state_id,
-                        });
-                        console.log(addressForm, "addressForm");
-
-                        setAddressCoordinates({
-                          lat: addr.address_lat,
-                          lng: addr.address_long,
-                        });
-
-                        fetchCities(addr.state_id).then(() => {
-                          addressForm.setFieldsValue({
-                            city_id: addr.city_id,
-                          });
-                        });
-
-                        console.log(addr.address, "addres");
-
-                        setTimeout(() => fetchCoordinates(addr.address), 200);
-                      }, 100); // Delay ensures modal and form are mounted
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Form.Item style={{ marginTop: "50px" }}>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Save
-          </Button>
-          <Button style={{ marginLeft: 8 }} onClick={() => navigate("/users")}>
-            Cancel
-          </Button>
-        </Form.Item>
-      </Form>
-
-      <Modal
-        title={editingAddress ? "Edit Address" : "Add New Address"}
-        open={addressModalVisible}
-        onCancel={() => {
-          setAddressModalVisible(false);
-          setEditingAddress(null);
-          addressForm.resetFields();
-          setCities([]);
-          setAddressCoordinates({ lat: null, lng: null });
-        }}
-        onOk={handleSaveAddress}
-        forceRender
-      >
-        <Form
-          form={addressForm}
-          layout="vertical"
-          onValuesChange={(changedValues, allValues) => {
-            if (changedValues.state_id) {
-              addressForm.setFieldsValue({ city_id: undefined }); // reset city
-              fetchCities(changedValues.state_id);
-            }
-            if (changedValues.address) {
-              // Build full address string for geocoding
-              const fullAddress = `${changedValues.address}, ${
-                states.find((s) => s.id === allValues.state_id)?.name || ""
-              }, ${cities.find((c) => c.id === allValues.city_id)?.name || ""}`;
-              fetchCoordinates(fullAddress);
-            }
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            gap: 2,
           }}
         >
-          {/* Address Field */}
-          <Form.Item
-            name="address"
-            label="Address"
-            rules={[{ required: true, message: "Please enter the address" }]}
-          >
-            <Input placeholder="Enter address" />
-          </Form.Item>
+          <Box>
+            <MuiTypography className="page-title">
+              EMPLOYEE MANAGEMENT
+            </MuiTypography>
+            <MuiTypography className="page-sub-title">
+              Update Employee Details
+            </MuiTypography>
+          </Box>
 
-          {/* State Select with Search */}
-          <Form.Item
-            name="state_id"
-            label="State"
-            rules={[{ required: true, message: "Please select a state" }]}
+          <MuiButton
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowBackIcon />}
+            onClick={navigateToEmployees}
+            sx={{
+              height: 47,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              flexShrink: 0,
+              ml: "auto",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
           >
-            <Select
-              showSearch
-              placeholder="Select State"
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-              filterSort={(optionA, optionB) =>
-                optionA.children
-                  .toLowerCase()
-                  .localeCompare(optionB.children.toLowerCase())
-              }
-            >
-              {states.map((s) => (
-                <Select.Option key={s.id} value={s.id}>
-                  {s.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+            Return to Employees
+          </MuiButton>
+        </Box>
+      </Paper>
 
-          {/* City Select with Search */}
-          <Form.Item
-            name="city_id"
-            label="City"
-            rules={[{ required: true, message: "Please select a city" }]}
-          >
-            <Select
-              showSearch
-              placeholder="Select City"
-              disabled={!addressForm.getFieldValue("state_id")}
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-              filterSort={(optionA, optionB) =>
-                optionA.children
-                  .toLowerCase()
-                  .localeCompare(optionB.children.toLowerCase())
-              }
-            >
-              {cities.map((c) => (
-                <Select.Option key={c.id} value={c.id}>
-                  {c.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+      <Card>
+        <Form
+          layout="vertical"
+          form={form}
+          onFinish={handleSave}
+          onValuesChange={(changed) => {
+            if (changed.address) fetchCoordinates(changed.address);
+            if (changed.state_id) fetchCities(changed.state_id);
+          }}
+        >
+          <Row gutter={24}>
+            <Col span={8}>
+              <Form.Item
+                name="name"
+                label="Full Name"
+                rules={[{ required: true }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="email" label="Email">
+                <Input disabled />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="employee_type"
+                label="Employee Type"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please select employee type",
+                  },
+                ]}
+              >
+                <Select placeholder="Select Employee Type">
+                  <Select.Option value="W2_BI_WEEKLY">
+                    W2 Bi-Weekly
+                  </Select.Option>
 
-          {/* Map Preview */}
-          <Form.Item label="Map Preview">
+                  <Select.Option value="1099">1099 Contractor</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Card style={{ marginBottom: 24 }}>
             <div
-              style={{ border: "1px solid #ccc", height: 250, borderRadius: 8 }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
             >
-              {addressCoordinates.lat && addressCoordinates.lng ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: "none" }}
-                  src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
-                  allowFullScreen
-                />
-              ) : (
-                <p
-                  style={{
-                    textAlign: "center",
-                    paddingTop: 80,
-                    color: "#999",
-                  }}
-                >
-                  Enter address to show map
-                </p>
-              )}
+              <Title level={5} style={{ margin: 0 }}>
+                User Addresses
+              </Title>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setEditingAddress(null);
+                  addressForm.resetFields();
+                  setCoordinates({ lat: null, lng: null });
+                  setAddressModalVisible(true);
+                }}
+              >
+                + Add Address
+              </Button>
             </div>
+
+            {userAddresses.length === 0 ? (
+              <Typography.Text type="secondary">
+                No address found
+              </Typography.Text>
+            ) : (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {userAddresses.map((addr) => (
+                  <div
+                    key={addr.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px 16px",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: 8,
+                      backgroundColor: "#fff",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, color: "#333" }}>
+                      {addr.address}, {addr.user_city?.name},{" "}
+                      {addr.user_state?.name}, {addr.user_country?.name}
+                    </div>
+                    <Button
+                      type="link"
+                      onClick={() => {
+                        console.log("Editing Address:", addr);
+                        setEditingAddress(addr);
+                        setAddressModalVisible(true);
+
+                        // Wait for modal to open
+                        setTimeout(() => {
+                          addressForm.resetFields();
+
+                          // ✅ Optional debug log for individual fields
+                          console.log("Setting address:", addr.address);
+                          console.log("Setting state_id:", addr.state_id);
+                          console.log("Setting city_id:", addr.city_id);
+
+                          addressForm.setFieldsValue({
+                            address: addr.address,
+                            state_id: addr.state_id,
+                          });
+                          console.log(addressForm, "addressForm");
+
+                          setAddressCoordinates({
+                            lat: addr.address_lat,
+                            lng: addr.address_long,
+                          });
+
+                          fetchCities(addr.state_id).then(() => {
+                            addressForm.setFieldsValue({
+                              city_id: addr.city_id,
+                            });
+                          });
+
+                          console.log(addr.address, "addres");
+
+                          setTimeout(() => fetchCoordinates(addr.address), 200);
+                        }, 100); // Delay ensures modal and form are mounted
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Form.Item style={{ marginTop: "50px" }}>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Save
+            </Button>
+            <Button
+              style={{ marginLeft: 8 }}
+              onClick={() => navigate("/users")}
+            >
+              Cancel
+            </Button>
           </Form.Item>
         </Form>
-      </Modal>
-    </Card>
+
+        <Modal
+          title={editingAddress ? "Edit Address" : "Add New Address"}
+          open={addressModalVisible}
+          onCancel={() => {
+            setAddressModalVisible(false);
+            setEditingAddress(null);
+            addressForm.resetFields();
+            setCities([]);
+            setAddressCoordinates({ lat: null, lng: null });
+          }}
+          onOk={handleSaveAddress}
+          forceRender
+        >
+          <Form
+            form={addressForm}
+            layout="vertical"
+            onValuesChange={(changedValues, allValues) => {
+              if (changedValues.state_id) {
+                addressForm.setFieldsValue({ city_id: undefined }); // reset city
+                fetchCities(changedValues.state_id);
+              }
+              if (changedValues.address) {
+                // Build full address string for geocoding
+                const fullAddress = `${changedValues.address}, ${
+                  states.find((s) => s.id === allValues.state_id)?.name || ""
+                }, ${cities.find((c) => c.id === allValues.city_id)?.name || ""}`;
+                fetchCoordinates(fullAddress);
+              }
+            }}
+          >
+            {/* Address Field */}
+            <Form.Item
+              name="address"
+              label="Address"
+              rules={[{ required: true, message: "Please enter the address" }]}
+            >
+              <Input placeholder="Enter address" />
+            </Form.Item>
+
+            {/* State Select with Search */}
+            <Form.Item
+              name="state_id"
+              label="State"
+              rules={[{ required: true, message: "Please select a state" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select State"
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+                filterSort={(optionA, optionB) =>
+                  optionA.children
+                    .toLowerCase()
+                    .localeCompare(optionB.children.toLowerCase())
+                }
+              >
+                {states.map((s) => (
+                  <Select.Option key={s.id} value={s.id}>
+                    {s.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* City Select with Search */}
+            <Form.Item
+              name="city_id"
+              label="City"
+              rules={[{ required: true, message: "Please select a city" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select City"
+                disabled={!addressForm.getFieldValue("state_id")}
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+                filterSort={(optionA, optionB) =>
+                  optionA.children
+                    .toLowerCase()
+                    .localeCompare(optionB.children.toLowerCase())
+                }
+              >
+                {cities.map((c) => (
+                  <Select.Option key={c.id} value={c.id}>
+                    {c.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* Map Preview */}
+            <Form.Item label="Map Preview">
+              <div
+                style={{
+                  border: "1px solid #ccc",
+                  height: 250,
+                  borderRadius: 8,
+                }}
+              >
+                {addressCoordinates.lat && addressCoordinates.lng ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none" }}
+                    src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
+                    allowFullScreen
+                  />
+                ) : (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 80,
+                      color: "#999",
+                    }}
+                  >
+                    Enter address to show map
+                  </p>
+                )}
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Card>
+    </Box>
   );
 };
 

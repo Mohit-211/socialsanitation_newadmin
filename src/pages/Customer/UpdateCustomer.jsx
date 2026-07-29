@@ -14,7 +14,13 @@ import {
   Radio,
   InputNumber,
 } from "antd";
-import { Box, Paper, Button, Card } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Button,
+  Card,
+  Typography as MuiTypography,
+} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -360,8 +366,12 @@ const UpdateCustomer = () => {
           }}
         >
           <Box>
-            <h3 className="page-title">CLIENT MANAGEMENT</h3>
-            <p className="page-sub-title">Update Client Details</p>
+            <MuiTypography className="page-title">
+              CLIENT MANAGEMENT
+            </MuiTypography>
+            <MuiTypography className="page-sub-title">
+              Update Client Details
+            </MuiTypography>
           </Box>
 
           <Button
@@ -549,10 +559,7 @@ const UpdateCustomer = () => {
 
                           console.log(addr.address, "addres");
 
-                          setTimeout(
-                            () => fetchCoordinates(addr.address),
-                            200,
-                          );
+                          setTimeout(() => fetchCoordinates(addr.address), 200);
                         }, 100); // Delay ensures modal and form are mounted
                       }}
                     >
@@ -1198,7 +1205,7 @@ const UpdateCustomer = () => {
                       color: "#999",
                     }}
                   >
-                    Enter address to show map
+                    Enter address to show ma
                   </p>
                 )}
               </div>

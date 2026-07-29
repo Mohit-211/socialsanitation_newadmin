@@ -18,7 +18,11 @@ import {
 	Col,
 	Radio,
 } from "antd";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
 	GetAllServiceNameByAdmin,
@@ -238,44 +242,86 @@ const GuestBooking = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="30px"
-			>
-				<div>
-					<h3 className="page-title">BOOKING MANAGEMENT</h3>
-					{/* <p className="page-sub-title">Create New Checklist</p> */}
-				</div>
-				<Button
-					icon={<i className="pi pi-arrow-left" />}
-					onClick={() => navigate("/bookings")}
-					style={{ borderRadius: "5px", height: "47px" }}
-				>
-					Return to Bookings
-				</Button>
-			</Box>
-			<Tabs
-				defaultActiveKey="guest"
-				onChange={(key) => {
-					if (key === "client") {
-						navigate("/create-client-booking"); // adjust route if needed
-					}
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
 				}}
-				items={[
-					{
-						key: "client",
-						label: "Client Booking",
-						children: null,
-					},
-					{
-						key: "guest",
-						label: "Non-Client Booking",
-						children: null,
-					},
-				]}
-			/>
+			>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+					}}
+				>
+					<Box>
+						<Typography className="page-title">BOOKING MANAGEMENT</Typography>
+						<Typography className="page-sub-title">
+							Create a new non-client booking
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/bookings")}
+						sx={{
+							ml: "auto",
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Bookings
+					</MuiButton>
+				</Box>
+			</Paper>
+
+			<Paper
+				variant="outlined"
+				sx={{
+					px: 1,
+					pt: 0.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
+			>
+				<Tabs
+					defaultActiveKey="guest"
+					onChange={(key) => {
+						if (key === "client") {
+							navigate("/create-client-booking"); // adjust route if needed
+						}
+					}}
+					items={[
+						{
+							key: "client",
+							label: "Client Booking",
+							children: null,
+						},
+						{
+							key: "guest",
+							label: "Non-Client Booking",
+							children: null,
+						},
+					]}
+				/>
+			</Paper>
 
 			<Card title="Create New Booking">
 				<Form
