@@ -1,17 +1,23 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Form, Input, Button, Card } from "antd";
+import { Table, Space, message, Modal, Input } from "antd";
 import { useNavigate } from "react-router";
-import { PlusOutlined, DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import TextField from "@mui/material/TextField";
+import { Eye, Pencil, Trash2, Plus, Search } from "lucide-react";
 import {
 	DeleteChecklist,
 	GetAllChecklist,
 	GetChecklistMainTitle,
 	CreateOrUpdateChecklistMainTitle,
 } from "../../services/Api/DailyChecklistApi";
-
-const { Search } = Input;
 
 const DailyChecklist = () => {
 	const navigate = useNavigate();
@@ -23,6 +29,19 @@ const DailyChecklist = () => {
 	const [oldChecklist, setOldChecklist] = useState("");
 	const [newChecklist, setNewChecklist] = useState("");
 	const [checklistLoading, setChecklistLoading] = useState(false);
+	const [searchTerm, setSearchTerm] = useState("");
+
+	const actionIconBtn = (color) => ({
+		width: 34,
+		height: 34,
+		border: "1px solid",
+		borderColor: color,
+		color,
+		"&:hover": {
+			backgroundColor: `${color}14`,
+			borderColor: color,
+		},
+	});
 
 	useEffect(() => {
 		getData();
@@ -57,41 +76,52 @@ const DailyChecklist = () => {
 			width: "40%",
 		},
 		{
-		title: "Role",
-		dataIndex: "role_id",
-		width: "20%",
-		render: (role_id) => {
-			const roleMap = {
-				10: "Cleaner",
-				11: "Housekeeping",
-			};
-			return roleMap[role_id] || "-";
+			title: "Role",
+			dataIndex: "role_id",
+			width: "20%",
+			render: (role_id) => {
+				const roleMap = {
+					10: "Cleaner",
+					11: "Housekeeping",
+				};
+				return roleMap[role_id] || "-";
+			},
 		},
-	},
 		{
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Space size="middle">
-					<Button
-						shape="circle"
-						icon={<EyeOutlined />}
-						size="large"
-						onClick={(event) => navigateToView(event, record.id)}
-					/>
-					<Button
-						shape="circle"
-						icon={<EditOutlined />}
-						size="large"
-						onClick={(event) => navigateToEdit(event, record.id)}
-					/>
-					<Button
-						shape="circle"
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete([record.id])}
-					/>
-				</Space>
+				<Stack direction="row" spacing={0.5}>
+					<Tooltip title="View Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#F59E0B")}
+							onClick={(event) => navigateToView(event, record.id)}
+						>
+							<Eye size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Edit Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#6366F1")}
+							onClick={(event) => navigateToEdit(event, record.id)}
+						>
+							<Pencil size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Delete Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#EF4444")}
+							onClick={() => handleDelete([record.id])}
+						>
+							<Trash2 size={16} />
+						</IconButton>
+					</Tooltip>
+				</Stack>
 			),
 		},
 	];
@@ -104,7 +134,7 @@ const DailyChecklist = () => {
 	const navigateToEdit = (event, id) => {
 		navigate(`/edit-daily-checklist/${id}`);
 	};
-	
+
 	const navigateToView = (event, id) => {
 		navigate(`/view-daily-checklist/${id}`);
 	};
@@ -114,6 +144,7 @@ const DailyChecklist = () => {
 	};
 
 	const onSearch = (searchField) => {
+		setSearchTerm(searchField);
 		if (!searchField) {
 			setData(userBackupData);
 			return;
@@ -131,6 +162,9 @@ const DailyChecklist = () => {
 			content: `Are you sure you want to delete ${
 				brandIds.length > 1 ? "these checklist" : "this checklist"
 			}?`,
+			okText: "Yes, Delete",
+			okType: "danger",
+			cancelText: "No",
 			onOk: async () => {
 				try {
 					await DeleteChecklist(brandIds, localStorage.getItem("adminToken"));
@@ -181,101 +215,204 @@ const DailyChecklist = () => {
 	};
 
 	return (
-		<div>
+		<Box>
 			{/* HEADER */}
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					marginBottom: "40px",
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
 				}}
 			>
-				<div>
-					<h3 className="page-title">HOUSEKEEPING CHECKLIST MANAGEMENT</h3>
-					<p className="page-sub-title">View all Checklist</p>
-				</div>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "row",
-						alignItems: "flex-start",
-						gap: "10px",
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
 					}}
 				>
-					<span
-						className="p-input-icon-left"
-						style={{ display: "inline-block" }}
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							HOUSEKEEPING CHECKLIST MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							View all checklists
+						</Typography>
+					</Box>
+
+					<Stack
+						direction="row"
+						spacing={1.5}
+						sx={{ alignItems: "center", flexShrink: 0 }}
 					>
-						<Search
-							size="large"
+						<Input
+							allowClear
+							prefix={<Search size={18} color="#9CA3AF" />}
 							placeholder="Search..."
-							onSearch={onSearch}
+							style={{ width: 240, height: 44 }}
+							value={searchTerm}
 							onChange={(e) => onSearch(e.target.value)}
-							enterButton
 						/>
-					</span>
 
-					<Button
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete(selectedRowKeys)}
-						disabled={!selectedRowKeys.length}
-						danger
-					/>
-					<Button
-						icon={<PlusOutlined />}
-						size="large"
-						onClick={navigateToAddUser}
-					/>
-				</div>
-			</div>
+						{selectedRowKeys.length > 0 && (
+							<Button
+								variant="contained"
+								disableElevation
+								startIcon={<Trash2 size={16} />}
+								onClick={() => handleDelete(selectedRowKeys)}
+								sx={{
+									height: 44,
+									px: 2.5,
+									borderRadius: "8px",
+									textTransform: "none",
+									fontWeight: 600,
+									whiteSpace: "nowrap",
+									backgroundColor: "#ef4444",
+									"&:hover": { backgroundColor: "#dc2626" },
+								}}
+							>
+								Delete Selected ({selectedRowKeys.length})
+							</Button>
+						)}
 
-			<Card className="p-4 mb-4">
-				<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-					<div>
-						<label>
-							<strong>Title:</strong>
-						</label>
-						<div style={{ marginTop: "4px" }}>
-							{oldChecklist || "Loading..."}
-						</div>
-					</div>
+						<Button
+							variant="contained"
+							disableElevation
+							startIcon={<Plus size={18} />}
+							onClick={navigateToAddUser}
+							sx={{
+								height: 44,
+								px: 2.5,
+								borderRadius: "8px",
+								textTransform: "none",
+								fontWeight: 600,
+								whiteSpace: "nowrap",
+							}}
+						>
+							Add Checklist
+						</Button>
+					</Stack>
+				</Stack>
+			</Paper>
 
-					<div style={{ flexGrow: 1 }}>
-						<label>
-							<strong>New Title</strong>
-						</label>
-						<input
-							
-							className="p-inputtext"
-							style={{ width: "100%", padding: "8px" }}
-							value={newChecklist}
-							onChange={(e) => setNewChecklist(e.target.value)}
-							placeholder="Enter new Title"
-						/>
-					</div>
+			{/* MAIN TITLE UPDATE CARD */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
+			>
+				<Stack
+	direction="row"
+	spacing={2.5}
+	alignItems="flex-end"
+	flexWrap="wrap"
+>
+	<Box>
+		<Typography
+			sx={{
+				fontSize: "11.5px",
+				fontWeight: 700,
+				color: "#6b7280",
+				letterSpacing: "0.04em",
+				textTransform: "uppercase",
+				mb: 0.5,
+			}}
+		>
+			Current Title
+		</Typography>
+		<Typography sx={{ fontSize: "14.5px", fontWeight: 600, color: "#111827", height: "42px", display: "flex", alignItems: "center" }}>
+			{oldChecklist || "Loading..."}
+		</Typography>
+	</Box>
 
-					<Button
-						style={{ marginTop: "19px", height: "39px", borderRadius: "5px" }}
-						disabled={checklistLoading || !newChecklist}
-						type="primary"
-						onClick={handleUpdatePrice}
-					>
-						Update Title
-					</Button>
-				</div>
-			</Card>
+	<Box sx={{ flexGrow: 1, minWidth: 220 }}>
+		<Typography
+			sx={{
+				fontSize: "11.5px",
+				fontWeight: 700,
+				color: "#6b7280",
+				letterSpacing: "0.04em",
+				textTransform: "uppercase",
+				mb: 0.5,
+			}}
+		>
+			New Title
+		</Typography>
+		<TextField
+			fullWidth
+			size="small"
+			value={newChecklist}
+			onChange={(e) => setNewChecklist(e.target.value)}
+			placeholder="Enter new title"
+			sx={{
+				"& .MuiOutlinedInput-root": {
+					height: "42px",
+					borderRadius: "6px",
+				},
+			}}
+		/>
+	</Box>
 
-			{/* BRAND TABLE */}
+	<Box>
+		<Typography
+			sx={{
+				fontSize: "11.5px",
+				fontWeight: 700,
+				color: "transparent",
+				letterSpacing: "0.04em",
+				textTransform: "uppercase",
+				mb: 0.5,
+				userSelect: "none",
+			}}
+		>
+			.
+		</Typography>
+		<Button
+			variant="contained"
+			disableElevation
+			disabled={checklistLoading || !newChecklist}
+			onClick={handleUpdatePrice}
+			sx={{
+				height: 42,
+				px: 2.5,
+				borderRadius: "8px",
+				textTransform: "none",
+				fontWeight: 600,
+				whiteSpace: "nowrap",
+			}}
+		>
+			Update Title
+		</Button>
+	</Box>
+</Stack>
+			</Paper>
+
+			{/* CHECKLIST TABLE */}
 			<Table
 				columns={columns}
 				rowKey={(record) => record.id}
 				dataSource={data}
 				loading={loading}
 				rowSelection={rowSelection}
+				bordered
+				size="middle"
 			/>
-		</div>
+		</Box>
 	);
 };
 

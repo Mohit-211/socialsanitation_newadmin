@@ -1,11 +1,12 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Input } from "antd";
+import { Table, Space, message, Input, Modal } from "antd";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
@@ -29,8 +30,8 @@ const Service = () => {
   });
 
   const actionIconBtn = (color) => ({
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     border: "1px solid",
     borderColor: color,
     color,
@@ -44,29 +45,29 @@ const Service = () => {
     {
       title: "S.No.",
       dataIndex: "index",
-      width: 70,
+      width: 60,
       sorter: (a, b) => a.index - b.index,
     },
     {
       title: "Name",
       dataIndex: "name",
-      width: 220,
+      width: 170,
     },
     {
       title: "Abbreviation",
       dataIndex: "abbreviation",
-      width: 150,
+      width: 120,
     },
     {
       title: "Price",
       dataIndex: "price",
-      width: 160,
+      width: 140,
       render: (value) => `Starting Price: $${value}`,
     },
     {
       title: "Description",
       dataIndex: "description",
-      width: 260,
+      width: 220,
       render: (text) => {
         const words = text?.split(" ");
         const truncatedText =
@@ -78,7 +79,7 @@ const Service = () => {
     {
       title: "Action",
       dataIndex: "action",
-      width: 190,
+      width: 150,
       render: (_, record) => (
         <Stack direction="row" spacing={0.5}>
           <Tooltip title="View Service">
@@ -158,22 +159,26 @@ const Service = () => {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableParams]);
-const handleDelete = (id) => {
-  Modal.confirm({
-    title: "Confirm",
-    content: "Are you sure you want to delete this service?",
-    onOk: async () => {
-      try {
-        const res = await DeleteService(id);
-        message.success(res?.data?.message || "Service deleted successfully");
-        getData();
-      } catch (error) {
-        console.error(error);
-        message.error("Failed to delete service");
-      }
-    },
-  });
-};
+
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: "Confirm",
+      content: "Are you sure you want to delete this service?",
+      okText: "Yes, Delete",
+      okType: "danger",
+      cancelText: "No",
+      onOk: async () => {
+        try {
+          const res = await DeleteService(id);
+          message.success(res?.data?.message || "Service deleted successfully");
+          getData();
+        } catch (error) {
+          console.error(error);
+          message.error("Failed to delete service");
+        }
+      },
+    });
+  };
 
   const navigateToAddService = () => {
     navigate("/addService");
@@ -199,67 +204,83 @@ const handleDelete = (id) => {
 
   return (
     <Box className="service-page">
-      <Stack
-        direction="row"
-        spacing={2}
+      <Paper
+        variant="outlined"
         sx={{
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          mb: 3,
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        <Box>
-          <Typography className="page-title">SERVICE MANAGEMENT</Typography>
-          <Typography className="page-sub-title">
-            View, delete, edit and add Service
-          </Typography>
-        </Box>
-
         <Stack
           direction="row"
-          spacing={1.5}
-          useFlexGap
-          sx={{ alignItems: "center", flexWrap: "wrap" }}
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
         >
-          <Input
-            allowClear
-            prefix={<Search size={18} color="#9CA3AF" />}
-            placeholder="Search..."
-            style={{ width: 260, height: 44 }}
-            value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
-          />
-          <Button
-            variant="contained"
-            startIcon={<Plus size={18} />}
-            sx={{
-              borderRadius: "8px",
-              height: 44,
-              whiteSpace: "nowrap",
-              textTransform: "none",
-              fontWeight: 600,
-            }}
-            onClick={navigateToAddService}
-          >
-            Add Service
-          </Button>
-        </Stack>
-      </Stack>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              SERVICE MANAGEMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View, delete, edit and add Service
+            </Typography>
+          </Box>
 
-      <div style={{ overflowX: "auto" }}>
-        <Table
-          className="service-table"
-          columns={columns}
-          rowKey={(record) => record.id}
-          dataSource={filteredData} // Use filtered data
-          pagination={tableParams.pagination}
-          loading={loading}
-          onChange={handleTableChange}
-          size="middle"
-          scroll={{ x: 1200 }}
-        />
-      </div>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ alignItems: "center", flexShrink: 0 }}
+          >
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search..."
+              style={{ width: 240, height: 44 }}
+              value={searchTerm}
+              onChange={(e) => onSearch(e.target.value)}
+            />
+            <Button
+              variant="contained"
+              startIcon={<Plus size={18} />}
+              sx={{
+                borderRadius: "8px",
+                height: 44,
+                whiteSpace: "nowrap",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+              onClick={navigateToAddService}
+            >
+              Add Service
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      <Table
+        className="service-table"
+        columns={columns}
+        rowKey={(record) => record.id}
+        dataSource={filteredData}
+        pagination={tableParams.pagination}
+        loading={loading}
+        onChange={handleTableChange}
+        bordered
+        size="middle"
+        scroll={{ x: 860 }}
+      />
     </Box>
   );
 };

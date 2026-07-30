@@ -1,14 +1,17 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Form, Input, Button } from "antd";
+import { Table, Space, message, Modal, Input } from "antd";
 import { useNavigate } from "react-router";
-import { PlusOutlined, DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { Eye, Pencil, Trash2, Plus, Search } from "lucide-react";
 import { DeleteChecklist, GetAllChecklist } from "../../services/Api/checklistApi";
-
-
-
-const { Search } = Input;
 
 const ServiceChecklist = () => {
 	const navigate = useNavigate();
@@ -16,6 +19,19 @@ const ServiceChecklist = () => {
 	const [userBackupData, setUserBackupData] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+	const [searchTerm, setSearchTerm] = useState("");
+
+	const actionIconBtn = (color) => ({
+		width: 34,
+		height: 34,
+		border: "1px solid",
+		borderColor: color,
+		color,
+		"&:hover": {
+			backgroundColor: `${color}14`,
+			borderColor: color,
+		},
+	});
 
 	useEffect(() => {
 		getData();
@@ -50,41 +66,52 @@ const ServiceChecklist = () => {
 			width: "40%",
 		},
 		{
-		title: "Role",
-		dataIndex: "role_id",
-		width: "20%",
-		render: (role_id) => {
-			const roleMap = {
-				7: "Inspector/ Supervisor",
-				8: "Quality Assurance Technician",
-			};
-			return roleMap[role_id] || "-";
+			title: "Role",
+			dataIndex: "role_id",
+			width: "20%",
+			render: (role_id) => {
+				const roleMap = {
+					7: "Inspector/ Supervisor",
+					8: "Quality Assurance Technician",
+				};
+				return roleMap[role_id] || "-";
+			},
 		},
-	},
 		{
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Space size="middle">
-					<Button
-						shape="circle"
-						icon={<EyeOutlined />}
-						size="large"
-						onClick={(event) => navigateToView(event, record.id)}
-					/>
-					<Button
-						shape="circle"
-						icon={<EditOutlined />}
-						size="large"
-						onClick={(event) => navigateToEdit(event, record.id)}
-					/>
-					<Button
-						shape="circle"
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete([record.id])}
-					/>
-				</Space>
+				<Stack direction="row" spacing={0.5}>
+					<Tooltip title="View Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#F59E0B")}
+							onClick={(event) => navigateToView(event, record.id)}
+						>
+							<Eye size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Edit Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#6366F1")}
+							onClick={(event) => navigateToEdit(event, record.id)}
+						>
+							<Pencil size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Delete Checklist">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#EF4444")}
+							onClick={() => handleDelete([record.id])}
+						>
+							<Trash2 size={16} />
+						</IconButton>
+					</Tooltip>
+				</Stack>
 			),
 		},
 	];
@@ -107,6 +134,7 @@ const ServiceChecklist = () => {
 	};
 
 	const onSearch = (searchField) => {
+		setSearchTerm(searchField);
 		if (!searchField) {
 			setData(userBackupData);
 			return;
@@ -124,6 +152,9 @@ const ServiceChecklist = () => {
 			content: `Are you sure you want to delete ${
 				brandIds.length > 1 ? "these checklist" : "this checklist"
 			}?`,
+			okText: "Yes, Delete",
+			okType: "danger",
+			cancelText: "No",
 			onOk: async () => {
 				try {
 					await DeleteChecklist(brandIds, localStorage.getItem("adminToken"));
@@ -137,65 +168,108 @@ const ServiceChecklist = () => {
 	};
 
 	return (
-		<div>
+		<Box>
 			{/* HEADER */}
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					marginBottom: "40px",
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
 				}}
 			>
-				<div>
-					<h3 className="page-title">SERVICE CHECKLIST MANAGEMENT</h3>
-					<p className="page-sub-title">View all Checklist</p>
-				</div>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "row",
-						alignItems: "flex-start",
-						gap: "10px",
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
 					}}
 				>
-					<span
-						className="p-input-icon-left"
-						style={{ display: "inline-block" }}
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							SERVICE CHECKLIST MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							View all checklists
+						</Typography>
+					</Box>
+
+					<Stack
+						direction="row"
+						spacing={1.5}
+						sx={{ alignItems: "center", flexShrink: 0 }}
 					>
-						<Search
-							size="large"
+						<Input
+							allowClear
+							prefix={<Search size={18} color="#9CA3AF" />}
 							placeholder="Search..."
-							onSearch={onSearch}
+							style={{ width: 240, height: 44 }}
+							value={searchTerm}
 							onChange={(e) => onSearch(e.target.value)}
-							enterButton
 						/>
-					</span>
 
-					<Button
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete(selectedRowKeys)}
-						disabled={!selectedRowKeys.length}
-						danger
-					/>
-					<Button
-						icon={<PlusOutlined />}
-						size="large"
-						onClick={navigateToAddUser}
-					/>
-				</div>
-			</div>
+						{selectedRowKeys.length > 0 && (
+							<Button
+								variant="contained"
+								disableElevation
+								startIcon={<Trash2 size={16} />}
+								onClick={() => handleDelete(selectedRowKeys)}
+								sx={{
+									height: 44,
+									px: 2.5,
+									borderRadius: "8px",
+									textTransform: "none",
+									fontWeight: 600,
+									whiteSpace: "nowrap",
+									backgroundColor: "#ef4444",
+									"&:hover": { backgroundColor: "#dc2626" },
+								}}
+							>
+								Delete Selected ({selectedRowKeys.length})
+							</Button>
+						)}
 
-			{/* BRAND TABLE */}
+						<Button
+							variant="contained"
+							disableElevation
+							startIcon={<Plus size={18} />}
+							onClick={navigateToAddUser}
+							sx={{
+								height: 44,
+								px: 2.5,
+								borderRadius: "8px",
+								textTransform: "none",
+								fontWeight: 600,
+								whiteSpace: "nowrap",
+							}}
+						>
+							Add Checklist
+						</Button>
+					</Stack>
+				</Stack>
+			</Paper>
+
+			{/* CHECKLIST TABLE */}
 			<Table
 				columns={columns}
 				rowKey={(record) => record.id}
 				dataSource={data}
 				loading={loading}
 				rowSelection={rowSelection}
+				bordered
+				size="middle"
 			/>
-		</div>
+		</Box>
 	);
 };
 

@@ -3,6 +3,12 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, message, Input, Select, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import MuiButton from "@mui/material/Button";
+import { Search as SearchIcon, Download, Plus } from "lucide-react";
 import {
   DeleteInvoice,
   GetAllInvoices,
@@ -11,8 +17,6 @@ import {
 } from "../../services/Api/InvoiceApi";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-
-const { Search } = Input;
 
 const AllInvoices = () => {
   const navigate = useNavigate();
@@ -513,66 +517,104 @@ const AllInvoices = () => {
   return (
     <>
       {/* HEADER */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Stack spacing={2}>
+          {/* TOP ROW: Title + primary actions */}
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography className="page-title" noWrap>
+                INVOICES
+              </Typography>
+              <Typography
+                className="page-sub-title"
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                View and manage all generated invoices
+              </Typography>
+            </Box>
 
-      <div style={{ marginBottom: 20 }}>
-        {/* 🔹 TOP ROW */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          {/* LEFT */}
-          <div>
-            <h3 className="page-title">Invoices</h3>
-            <p className="page-sub-title">
-              View and manage all generated invoices
-            </p>
-          </div>
-
-          {/* RIGHT ACTIONS */}
-          <Space>
-            <Button type="primary" onClick={handleDownloadExcel}>
-              Download ({dayjs().month(selectedMonth).format("MMM")}{" "}
-              {selectedYear})
-            </Button>
-
-            <Button
-              type="default"
-              onClick={() => navigate("/generate-invoice")}
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}
             >
-              + New Invoice
-            </Button>
-          </Space>
-        </div>
+              <MuiButton
+                variant="outlined"
+                startIcon={<Download size={17} />}
+                onClick={handleDownloadExcel}
+                sx={{
+                  height: 44,
+                  px: 2.5,
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Download ({dayjs().month(selectedMonth).format("MMM")}{" "}
+                {selectedYear})
+              </MuiButton>
 
-        {/* 🔹 SECOND ROW (Filters + Search) */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          {/* SEARCH */}
-          <Search
-            placeholder="Search by ref, client, amount"
-            allowClear
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 280 }}
-          />
+              <MuiButton
+                variant="contained"
+                disableElevation
+                startIcon={<Plus size={18} />}
+                onClick={() => navigate("/generate-invoice")}
+                sx={{
+                  height: 44,
+                  px: 2.5,
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                New Invoice
+              </MuiButton>
+            </Stack>
+          </Stack>
 
-          {/* FILTERS */}
-          <Space>
+          {/* SECOND ROW: Search + filters */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              justifyContent: "flex-end",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <Input
+              allowClear
+              prefix={<SearchIcon size={18} color="#9CA3AF" />}
+              placeholder="Search by ref, client, amount"
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 260, height: 44 }}
+            />
+
             <Select
               value={selectedMonth}
-              style={{ width: 130 }}
+              style={{ width: 130, height: 44 }}
               onChange={(m) => {
                 setSelectedMonth(m);
                 const date = dayjs()
@@ -591,7 +633,7 @@ const AllInvoices = () => {
 
             <Select
               value={selectedYear}
-              style={{ width: 110 }}
+              style={{ width: 110, height: 44 }}
               onChange={(y) => {
                 setSelectedYear(y);
                 const date = dayjs()
@@ -607,9 +649,9 @@ const AllInvoices = () => {
                 </Select.Option>
               ))}
             </Select>
-          </Space>
-        </div>
-      </div>
+          </Stack>
+        </Stack>
+      </Paper>
 
       {/* TABLE */}
 
@@ -622,6 +664,8 @@ const AllInvoices = () => {
           pageSize: 100,
           showSizeChanger: false,
         }}
+        bordered
+        size="middle"
       />
     </>
   );

@@ -2,285 +2,408 @@
 
 import React, { useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
-import { List, Row as AntRow, Col as AntCol } from "antd";
-import Form from "react-bootstrap/Form";
-// import "./Service.css";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
 import Button from "@mui/material/Button";
-import "./Rating.scss"
+import { Row, Col, Tabs } from "antd";
+import { CheckCircleOutlined, StarFilled } from "@ant-design/icons";
+import { ArrowLeft } from "lucide-react";
 import { BASE_URL_IMAGE } from "../../services/Host";
 import {
-	GetServiceById,
-	GetReviewsByProductId,
+  GetServiceById,
+  GetReviewsByProductId,
 } from "../../services/Api/ServiceApi";
-import { CheckCircleOutlined } from "@ant-design/icons";
-import { FaStar } from "react-icons/fa";
-import { Row, Col, Tabs, Tab, Container, Card } from "react-bootstrap";
+import "./Rating.scss";
 
 const ViewService = () => {
-	const { id } = useParams();
-	const navigate = useNavigate();
-	const [serviceData, setServiceData] = useState(null);
-	const [reviewData, setReviewData] = useState([]);
-	const [key, setKey] = useState("details");
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [serviceData, setServiceData] = useState(null);
+  const [reviewData, setReviewData] = useState([]);
 
-	useLayoutEffect(() => {
-		GetServiceById(id)
-			.then((res) => {
-				setServiceData(res.data.data);
-			})
-			.catch((err) => {
-				console.log(err, "error");
-			});
-	}, [id]);
+  useLayoutEffect(() => {
+    GetServiceById(id)
+      .then((res) => {
+        setServiceData(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err, "error");
+      });
+  }, [id]);
 
-	useLayoutEffect(() => {
-		GetReviewsByProductId(id)
-			.then((res) => {
-				setReviewData(res.data.data);
-			})
-			.catch((err) => {
-				console.log(err, "error");
-			});
-	}, [id]);
+  useLayoutEffect(() => {
+    GetReviewsByProductId(id)
+      .then((res) => {
+        setReviewData(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err, "error");
+      });
+  }, [id]);
 
-	const navigateToService = () => {
-		navigate("/services");
-	};
+  const navigateToService = () => {
+    navigate("/services");
+  };
 
-	const renderStars = (rating) => {
-		const validRating = parseFloat(rating); // Ensure rating is a valid number
-		if (isNaN(validRating) || validRating < 0) return null; // Return null if the rating is invalid
+  const renderStars = (rating) => {
+    const validRating = parseFloat(rating);
+    if (isNaN(validRating) || validRating < 0) return null;
 
-		const fullStars = Math.floor(validRating); // Full stars
-		const halfStar = validRating % 1 >= 0.5; // Half star check
-		const emptyStars = 5 - fullStars - (halfStar ? 1 : 0); // Empty stars
+    const fullStars = Math.floor(validRating);
+    const halfStar = validRating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
-		return (
-			<div style={{ display: "flex", alignItems: "center" }}>
-				{/* Full Stars */}
-				{[...Array(fullStars)].map((_, i) => (
-					<FaStar
-						key={`full-${i}`}
-						color="#ffc107"
-						style={{ marginRight: "2px" }}
-					/>
-				))}
-				{/* Half Star */}
-				{halfStar && (
-					<FaStar
-						key="half"
-						color="#ffc107"
-						style={{ marginRight: "2px", opacity: 0.5 }}
-					/>
-				)}
-				{/* Empty Stars */}
-				{[...Array(emptyStars)].map((_, i) => (
-					<FaStar
-						key={`empty-${i}`}
-						color="#e4e5e9"
-						style={{ marginRight: "2px" }}
-					/>
-				))}
-			</div>
-		);
-	};
+    return (
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {[...Array(fullStars)].map((_, i) => (
+          <StarFilled
+            key={`full-${i}`}
+            style={{ color: "#ffc107", marginRight: 2, fontSize: 14 }}
+          />
+        ))}
+        {halfStar && (
+          <StarFilled
+            key="half"
+            style={{ color: "#ffc107", marginRight: 2, opacity: 0.5, fontSize: 14 }}
+          />
+        )}
+        {[...Array(emptyStars)].map((_, i) => (
+          <StarFilled
+            key={`empty-${i}`}
+            style={{ color: "#e4e5e9", marginRight: 2, fontSize: 14 }}
+          />
+        ))}
+      </div>
+    );
+  };
 
-	return (
-		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="30px"
-			>
-				<div>
-					<h3 className="page-title">Service Details</h3>
-					<p className="page-sub-title">View complete details of the service</p>
-				</div>
-				<div>
-					<Button
-						icon="pi pi-arrow-left"
-						severity="secondary"
-						onClick={navigateToService}
-						style={{ borderRadius: "5px", height: "40px" }}
-					>
-						<span style={{ marginLeft: "5px" }}>Return to Services</span>
-					</Button>
-				</div>
-			</Box>
+  const fieldLabelSx = {
+    fontSize: "11.5px",
+    fontWeight: 700,
+    color: "#6b7280",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    mb: 0.5,
+  };
 
-			<Tabs
-				id="product-tabs"
-				activeKey={key}
-				onSelect={(k) => setKey(k)}
-				className="mb-3"
-			>
-				<Tab eventKey="details" title="Details">
-					<Card
-						style={{ width: "100%", padding: "20px", borderRadius: "10px" }}
-					>
-						<Form>
-							{/* Service Details */}
-							<AntRow gutter={[16, 16]}>
-								<AntCol span={12}>
-									<Form.Group className="mb-3">
-										<Form.Label>Service Name:</Form.Label>
-										<Form.Control value={serviceData?.name} disabled />
-									</Form.Group>
-								</AntCol>
-								<AntCol span={6}>
-									<Form.Group className="mb-3">
-										<Form.Label>Abbreviation:</Form.Label>
-										<Form.Control value={serviceData?.abbreviation} disabled />
-									</Form.Group>
-								</AntCol>
-								<AntCol span={6}>
-									<Form.Group className="mb-3">
-										<Form.Label>Price:</Form.Label>
-										<Form.Control value={`$${serviceData?.price}`} disabled />
-									</Form.Group>
-								</AntCol>
-							</AntRow>
+  const fieldValueSx = {
+    fontSize: "14.5px",
+    color: "#111827",
+    fontWeight: 500,
+  };
 
-							{/* Description */}
-							<Form.Group className="mb-3">
-								<Form.Label>Description:</Form.Label>
-								<div
-									style={{
-										backgroundColor: "#f5f5f5",
-										borderRadius: "8px",
-										padding: "15px",
-										border: "1px solid #ddd",
-									}}
-									dangerouslySetInnerHTML={{ __html: serviceData?.description }}
-								/>
-							</Form.Group>
+  return (
+    <Box>
+      {/* Header Section */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              SERVICE MANAGEMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View complete details of the service
+            </Typography>
+          </Box>
 
-							{/* Checklist Section */}
-							<Form.Group className="mb-3">
-								<Form.Label>Service Checklist:</Form.Label>
-								<div
-									style={{
-										padding: "15px",
-										backgroundColor: "#fafafa",
-										borderRadius: "10px",
-										border: "1px solid #eee",
-									}}
-								>
-									{serviceData?.checklists?.map((checklist, index) => (
-										<div key={index} style={{ marginBottom: "20px" }}>
-											<div
-												style={{
-													fontWeight: "bold",
-													fontSize: "16px",
-													marginBottom: "10px",
-													color: "#333",
-												}}
-											>
-												{checklist.heading_title}
-											</div>
-											<ul style={{ paddingLeft: "20px", marginBottom: 0 }}>
-												{checklist.tasks?.map((taskItem) => (
-													<li
-														key={taskItem.id}
-														style={{
-															listStyleType: "none",
-															marginBottom: "8px",
-															display: "flex",
-															alignItems: "center",
-															color: "#555",
-														}}
-													>
-														<CheckCircleOutlined
-															style={{ color: "green", marginRight: "8px" }}
-														/>
-														{taskItem.task}
-													</li>
-												))}
-											</ul>
-										</div>
-									))}
-								</div>
-							</Form.Group>
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowLeft size={18} />}
+            onClick={navigateToService}
+            sx={{
+              height: 46,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              flexShrink: 0,
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to Services
+          </Button>
+        </Box>
+      </Paper>
 
-							{/* Images Section */}
-							<Form.Group className="mb-3">
-								<Form.Label>Service Images:</Form.Label>
-								<AntRow gutter={[16, 16]} style={{ marginTop: "10px" }}>
-									{serviceData?.service_attachments.map((attachment, index) => (
-										<AntCol key={index} xs={12} sm={8} md={6} lg={4} xl={3}>
-											<img
-												src={`${BASE_URL_IMAGE}${attachment.file_name}`}
-												alt={`Service graphic ${index + 1}`}
-												crossOrigin="anonymous"
-												style={{
-													width: "100%",
-													height: "150px",
-													objectFit: "cover",
-													borderRadius: "10px",
-													boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-												}}
-											/>
-										</AntCol>
-									))}
-								</AntRow>
-							</Form.Group>
-						</Form>
-					</Card>
-				</Tab>
-				<Tab eventKey="reviews" title="Reviews">
-					<Container className="reviews-container">
-						{reviewData?.length === 0 && (
-							<Card className="no-reviews-card">
-								<Card.Body>
-									<p>No reviews available for this product.</p>
-								</Card.Body>
-							</Card>
-						)}
+      <Tabs
+        defaultActiveKey="details"
+        items={[
+          {
+            key: "details",
+            label: "Details",
+            children: (
+              <Card
+                variant="outlined"
+                sx={{
+                  p: 3,
+                  borderRadius: "10px",
+                  borderColor: "#eef0f2",
+                  boxShadow: "none",
+                }}
+              >
+                {/* Top fields */}
+                <Row gutter={[24, 20]}>
+                  <Col span={12}>
+                    <Typography sx={fieldLabelSx}>Service Name</Typography>
+                    <Typography sx={fieldValueSx}>
+                      {serviceData?.name || "--"}
+                    </Typography>
+                  </Col>
+                  <Col span={6}>
+                    <Typography sx={fieldLabelSx}>Abbreviation</Typography>
+                    <Typography sx={fieldValueSx}>
+                      {serviceData?.abbreviation || "--"}
+                    </Typography>
+                  </Col>
+                  <Col span={6}>
+                    <Typography sx={fieldLabelSx}>Price</Typography>
+                    <Typography sx={fieldValueSx}>
+                      ${serviceData?.price ?? "--"}
+                    </Typography>
+                  </Col>
+                </Row>
 
-						{reviewData?.map((review) => (
-							<Card key={review.id} className="review-card">
-								<Card.Body>
-									<Row>
-										<Col md={1} className="user-icon">
-											<div className="user-circle">
-												{review.reviews_user?.user_profile?.name.charAt(0)}
-											</div>
-										</Col>
-										<Col md={11}>
-											<div className="review-header">
-												<div style={{ display: "flex", flexDirection: "row" }}>
-													<div>
-														<div className="review-name">
-															{review.reviews_user?.user_profile?.name}
-														</div>
-														<div className="review-rating">
-															{renderStars(parseFloat(review.rating))}{" "}
-															{/* Individual rating stars */}
-															<div className="rating-number">
-																{review.rating}
-															</div>
-														</div>
-													</div>
-													<div className="review-date">
-														{new Date(review.created_at).toLocaleDateString()}
-													</div>
-												</div>
-											</div>
-											<Card.Text className="review-comment">
-												{review.review}
-											</Card.Text>
-										</Col>
-									</Row>
-								</Card.Body>
-							</Card>
-						))}
-					</Container>
-				</Tab>
-			</Tabs>
-		</Box>
-	);
+                {/* Description */}
+                <Box sx={{ mt: 3 }}>
+                  <Typography sx={fieldLabelSx}>Description</Typography>
+                  <Box
+                    sx={{
+                      backgroundColor: "#f9fafb",
+                      borderRadius: "10px",
+                      p: 2,
+                      border: "1px solid #eef0f2",
+                      fontSize: "14px",
+                      color: "#374151",
+                      lineHeight: 1.6,
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: serviceData?.description || "--",
+                    }}
+                  />
+                </Box>
+
+                {/* Checklist */}
+                <Box sx={{ mt: 3 }}>
+                  <Typography sx={fieldLabelSx}>Service Checklist</Typography>
+                  <Box
+                    sx={{
+                      p: 2,
+                      backgroundColor: "#f9fafb",
+                      borderRadius: "10px",
+                      border: "1px solid #eef0f2",
+                    }}
+                  >
+                    {serviceData?.checklists?.length > 0 ? (
+                      serviceData.checklists.map((checklist, index) => (
+                        <Box key={index} sx={{ mb: 2.5, "&:last-child": { mb: 0 } }}>
+                          <Typography
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "14.5px",
+                              color: "#1a1a1a",
+                              mb: 1,
+                            }}
+                          >
+                            {checklist.heading_title}
+                          </Typography>
+                          <Box component="ul" sx={{ pl: 0, m: 0, listStyle: "none" }}>
+                            {checklist.tasks?.map((taskItem) => (
+                              <Box
+                                component="li"
+                                key={taskItem.id}
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  color: "#4b5563",
+                                  fontSize: "13.5px",
+                                  mb: 1,
+                                }}
+                              >
+                                <CheckCircleOutlined
+                                  style={{ color: "#16a34a", fontSize: 14 }}
+                                />
+                                {taskItem.task}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography sx={{ color: "#9ca3af", fontSize: "13.5px" }}>
+                        No checklist has been assigned to this service.
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* Images */}
+                <Box sx={{ mt: 3 }}>
+                  <Typography sx={fieldLabelSx}>Service Images</Typography>
+                  {serviceData?.service_attachments?.length > 0 ? (
+                    <Row gutter={[16, 16]} style={{ marginTop: 4 }}>
+                      {serviceData.service_attachments.map((attachment, index) => (
+                        <Col key={index} xs={12} sm={8} md={6} lg={4} xl={3}>
+                          <Box
+                            component="img"
+                            src={`${BASE_URL_IMAGE}${attachment.file_name}`}
+                            alt={`Service graphic ${index + 1}`}
+                            crossOrigin="anonymous"
+                            sx={{
+                              width: "100%",
+                              height: "150px",
+                              objectFit: "cover",
+                              borderRadius: "10px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                            }}
+                          />
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : (
+                    <Typography sx={{ color: "#9ca3af", fontSize: "13.5px", mt: 1 }}>
+                      No images uploaded for this service.
+                    </Typography>
+                  )}
+                </Box>
+              </Card>
+            ),
+          },
+          {
+            key: "reviews",
+            label: "Reviews",
+            children: (
+              <Box>
+                {reviewData?.length === 0 && (
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      p: 3,
+                      borderRadius: "10px",
+                      borderColor: "#eef0f2",
+                      boxShadow: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography sx={{ color: "#9ca3af" }}>
+                      No reviews available for this service.
+                    </Typography>
+                  </Card>
+                )}
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {reviewData?.map((review) => (
+                    <Card
+                      key={review.id}
+                      variant="outlined"
+                      sx={{
+                        p: 2.5,
+                        borderRadius: "10px",
+                        borderColor: "#eef0f2",
+                        boxShadow: "none",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "#eef2ff",
+                            color: "#4f46e5",
+                            fontWeight: 700,
+                            fontSize: "16px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {review.reviews_user?.user_profile?.name
+                            ?.charAt(0)
+                            ?.toUpperCase() || "?"}
+                        </Box>
+
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                              flexWrap: "wrap",
+                              gap: 1,
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                sx={{ fontWeight: 600, fontSize: "14.5px", color: "#111827" }}
+                              >
+                                {review.reviews_user?.user_profile?.name || "Anonymous"}
+                              </Typography>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                                {renderStars(parseFloat(review.rating))}
+                                <Typography sx={{ fontSize: "12.5px", color: "#6b7280" }}>
+                                  {review.rating}
+                                </Typography>
+                              </Box>
+                            </Box>
+                            <Typography sx={{ fontSize: "12.5px", color: "#9ca3af" }}>
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+
+                          <Typography
+                            sx={{
+                              mt: 1.5,
+                              fontSize: "13.5px",
+                              color: "#374151",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {review.review}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Card>
+                  ))}
+                </Box>
+              </Box>
+            ),
+          },
+        ]}
+      />
+    </Box>
+  );
 };
 
 export default ViewService;

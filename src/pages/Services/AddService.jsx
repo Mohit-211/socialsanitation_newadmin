@@ -1,17 +1,17 @@
 /** @format */
 import React, { useLayoutEffect, useState } from "react";
 import { Form, Input, Button, Upload, message, Card, Select } from "antd";
-import {
-	PlusOutlined,
-	DeleteOutlined,
-	ArrowLeftOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { useNavigate } from "react-router-dom";
 import imageCompression from "browser-image-compression";
 import { CreateSerice } from "../../services/Api/ServiceApi";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { ArrowLeft } from "lucide-react";
 import { GetAllChecklist } from "../../services/Api/checklistApi";
 
 const { Option } = Select;
@@ -110,115 +110,156 @@ const AddService = () => {
 	};
 
 	return (
-		<Card bordered={false}>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="30px"
+		<Box>
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">CREATE SERVICE</h3>
-					<p className="page-sub-title">Add a new service</p>
-				</div>
-				<div>
-					<Button
-						style={{ marginLeft: "10px", backgroundColor: "lightgray" }}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							SERVICE MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Add a new service
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
 						onClick={() => navigate("/services")}
-						icon={<ArrowLeftOutlined />}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
 					>
 						Return to Services
-					</Button>
-				</div>
-			</Box>
-			<Form layout="vertical" form={form} onFinish={handleSubmit}>
-				<Form.Item
-					label="Service Name"
-					name="name"
-					rules={[{ required: true, message: "Please enter service name" }]}
-				>
-					<Input placeholder="Enter Service Name" />
-				</Form.Item>
+					</MuiButton>
+				</Box>
+			</Paper>
 
-				<Form.Item
-					label="Abbreviation"
-					name="abbreviation"
-					rules={[{ required: true, message: "Please enter abbreviation" }]}
-				>
-					<Input placeholder="Enter Abbreviation" />
-				</Form.Item>
-
-				<Form.Item
-					label="Price"
-					name="price"
-					rules={[{ required: true, message: "Please enter price" }]}
-				>
-					<Input type="number" placeholder="Enter Price" />
-				</Form.Item>
-
-				<Form.Item label="Image">
-					<Upload
-						customRequest={handleImageUpload}
-						listType="picture-card"
-						onRemove={handleRemoveImage}
-						multiple
+			<Card bordered={false}>
+				<Form layout="vertical" form={form} onFinish={handleSubmit}>
+					<Form.Item
+						label="Service Name"
+						name="name"
+						rules={[{ required: true, message: "Please enter service name" }]}
 					>
-						{images.length < 5 && <PlusOutlined />}
-					</Upload>
-				</Form.Item>
+						<Input placeholder="Enter Service Name" />
+					</Form.Item>
 
-				{/* <Form.Item
-					label="Checklist"
-					name="productCategoryId"
-					// rules={[
-					// 	{
-					// 		required: true,
-					// 		message: "Please select category!",
-					// 	},
-					// ]}
-				>
-					<Select
-						mode="multiple"
-						placeholder="Select Checklist"
-						value={productCategoryId}
-						onChange={(value) => setProductCategoryId(value)}
+					<Form.Item
+						label="Abbreviation"
+						name="abbreviation"
+						rules={[{ required: true, message: "Please enter abbreviation" }]}
 					>
-						{categoryNameData?.map((category) => (
-							<Option key={category.id} value={category.id}>
-								{category?.task}
-							</Option>
-						))}
-					</Select>
-				</Form.Item> */}
+						<Input placeholder="Enter Abbreviation" />
+					</Form.Item>
 
-				<Form.Item label="Description" name="description">
-					<CKEditor
-						editor={ClassicEditor}
-						onChange={(event, editor) =>
-							form.setFieldsValue({ description: editor.getData() })
-						}
-					/>
-				</Form.Item>
+					<Form.Item
+						label="Price"
+						name="price"
+						rules={[{ required: true, message: "Please enter price" }]}
+					>
+						<Input type="number" placeholder="Enter Price" />
+					</Form.Item>
 
-				<Form.Item>
-					<Button
-						type="primary"
-						htmlType="submit"
-						loading={disable}
-						icon={<PlusOutlined />}
+					<Form.Item label="Image">
+						<Upload
+							customRequest={handleImageUpload}
+							listType="picture-card"
+							onRemove={handleRemoveImage}
+							multiple
+						>
+							{images.length < 5 && <PlusOutlined />}
+						</Upload>
+					</Form.Item>
+
+					{/* <Form.Item
+						label="Checklist"
+						name="productCategoryId"
+						// rules={[
+						// 	{
+						// 		required: true,
+						// 		message: "Please select category!",
+						// 	},
+						// ]}
 					>
-						{disable ? "Saving..." : "Save"}
-					</Button>
-					<Button
-						style={{ marginLeft: "10px" }}
-						onClick={() => navigate("/services")}
-						icon={<DeleteOutlined />}
-					>
-						Cancel
-					</Button>
-				</Form.Item>
-			</Form>
-		</Card>
+						<Select
+							mode="multiple"
+							placeholder="Select Checklist"
+							value={productCategoryId}
+							onChange={(value) => setProductCategoryId(value)}
+						>
+							{categoryNameData?.map((category) => (
+								<Option key={category.id} value={category.id}>
+									{category?.task}
+								</Option>
+							))}
+						</Select>
+					</Form.Item> */}
+
+					<Form.Item label="Description" name="description">
+						<CKEditor
+							editor={ClassicEditor}
+							onChange={(event, editor) =>
+								form.setFieldsValue({ description: editor.getData() })
+							}
+						/>
+					</Form.Item>
+
+					<Form.Item>
+						<Button
+							type="primary"
+							htmlType="submit"
+							loading={disable}
+							icon={<PlusOutlined />}
+						>
+							{disable ? "Saving..." : "Save"}
+						</Button>
+						<Button
+							style={{ marginLeft: "10px" }}
+							onClick={() => navigate("/services")}
+							icon={<DeleteOutlined />}
+						>
+							Cancel
+						</Button>
+					</Form.Item>
+				</Form>
+			</Card>
+		</Box>
 	);
 };
 

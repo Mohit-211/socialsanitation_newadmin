@@ -1,9 +1,13 @@
 /** @format */
 
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
 import React, { useState } from "react";
 import { Button, Card, Form, Input, Space, message, Select } from "antd";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Trash2, Plus, Check, X } from "lucide-react";
 import { CreateChecklist } from "../../services/Api/checklistApi";
 
 const AddServiceChecklist = () => {
@@ -81,24 +85,64 @@ const AddServiceChecklist = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="30px"
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">SERVICE CHECKLIST MANAGEMENT</h3>
-					<p className="page-sub-title">Create New Checklist</p>
-				</div>
-				<Button
-					icon={<i className="pi pi-arrow-left" />}
-					onClick={() => navigate("/checklist")}
-					style={{ borderRadius: "5px", height: "47px" }}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
 				>
-					Return to Checklist
-				</Button>
-			</Box>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							SERVICE CHECKLIST MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Create a new checklist
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/checklist")}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Checklist
+					</MuiButton>
+				</Box>
+			</Paper>
 
 			<Card>
 				<Form layout="vertical" onFinish={handleSubmit}>
@@ -137,7 +181,7 @@ const AddServiceChecklist = () => {
 									<Button
 										danger
 										type="primary"
-										icon={<i className="pi pi-trash" />}
+										icon={<Trash2 size={15} />}
 										onClick={() => removeTaskField(index)}
 									/>
 								)}
@@ -146,7 +190,7 @@ const AddServiceChecklist = () => {
 
 						<Button
 							onClick={addTaskField}
-							icon={<i className="pi pi-plus" />}
+							icon={<Plus size={15} />}
 							style={{ marginTop: "10px" }}
 						>
 							Add Task
@@ -159,14 +203,14 @@ const AddServiceChecklist = () => {
 								type="primary"
 								htmlType="submit"
 								loading={disable}
-								icon={<i className="pi pi-check" />}
+								icon={<Check size={15} />}
 							>
 								Save
 							</Button>
 							<Button
 								type="default"
 								onClick={() => navigate("/checklist")}
-								icon={<i className="pi pi-times" />}
+								icon={<X size={15} />}
 							>
 								Cancel
 							</Button>

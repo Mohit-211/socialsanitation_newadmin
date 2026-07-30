@@ -2,17 +2,17 @@
 
 import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
+import { ArrowLeft } from "lucide-react";
 import { Card, Form, Input, Select, Button, message } from "antd";
 import { GetServiceById, UpdateService } from "../../services/Api/ServiceApi";
 import { GetAllChecklist } from "../../services/Api/checklistApi";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import {
-	ArrowLeftOutlined,
-	DeleteOutlined,
-	PlusOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { BASE_URL_IMAGE } from "../../services/Host";
 
 const { Option } = Select;
@@ -173,24 +173,64 @@ const EditService = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">Update Service</h3>
-					<p className="page-sub-title">Edit Details of Service</p>
-				</div>
-				<Button
-					style={{ marginLeft: "10px", backgroundColor: "lightgray" }}
-					onClick={() => navigate("/services")}
-					icon={<ArrowLeftOutlined />}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
 				>
-					Return to Services
-				</Button>
-			</Box>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							SERVICE MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Edit details of this service
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/services")}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Services
+					</MuiButton>
+				</Box>
+			</Paper>
 
 			<Card style={{ width: "100%" }}>
 				<Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -257,24 +297,6 @@ const EditService = () => {
 								</Option>
 							))}
 						</Select>
-
-						{/* <Select
-							mode="multiple"
-							placeholder="Select Checklist"
-							value={serviceData.service_checklist_ids}
-							onChange={(value) =>
-								setServiceData((prev) => ({
-									...prev,
-									service_checklist_ids: value,
-								}))
-							}
-						>
-							{checklistData.map((item) => (
-								<Option key={item.id} value={item.id}>
-									{item?.title}
-								</Option>
-							))}
-						</Select> */}
 					</Form.Item>
 
 					<Form.Item label="Description:" name="description">

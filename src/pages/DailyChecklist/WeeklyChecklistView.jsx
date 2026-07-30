@@ -1,12 +1,16 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Card, Select, Spin, Table, Tag, Row, Col, message } from "antd";
+import { Select, Spin, Table, message } from "antd";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import {
 	GetWeeklyChecklistWithStatus,
 	GetJanitor,
 } from "../../services/Api/DailyChecklistApi";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -27,18 +31,17 @@ const WeeklyChecklistView = () => {
 	};
 
 	const fetchChecklist = async (userId) => {
-  setLoading(true);
-  try {
-    const res = await GetWeeklyChecklistWithStatus({ user_id: userId });
+		setLoading(true);
+		try {
+			const res = await GetWeeklyChecklistWithStatus({ user_id: userId });
 
-    setChecklistData(res.data.data.data);
-  } catch (err) {
-    console.error(err);
-    message.error("Something went wrong while fetching checklist");
-  }
-  setLoading(false);
-};
-
+			setChecklistData(res.data.data.data);
+		} catch (err) {
+			console.error(err);
+			message.error("Something went wrong while fetching checklist");
+		}
+		setLoading(false);
+	};
 
 	useEffect(() => {
 		fetchUsers();
@@ -66,8 +69,7 @@ const WeeklyChecklistView = () => {
 		const headingsMap = {};
 
 		Object.entries(checklistData).forEach(([date, groups]) => {
-
-      console.log("Checklist data breakdown:", checklistData);
+			console.log("Checklist data breakdown:", checklistData);
 
 			if (!Array.isArray(groups)) return; // ✅ skip non-array values
 
@@ -139,12 +141,45 @@ const WeeklyChecklistView = () => {
 	};
 
 	return (
-		<Card title="Weekly Checklist View" style={{ minHeight: "80vh" }}>
-			<Row style={{ marginBottom: 20 }}>
-				<Col>
+		<Box>
+			{/* HEADER */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
+			>
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							WEEKLY CHECKLIST VIEW
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Track weekly task completion by employee
+						</Typography>
+					</Box>
+
 					<Select
 						placeholder="Select Cleaner or Housekeeping User"
-						style={{ width: 350 }}
+						style={{ width: 350, flexShrink: 0 }}
 						onChange={(val) => setSelectedUser(val)}
 						value={selectedUser}
 						loading={users.length === 0}
@@ -156,11 +191,13 @@ const WeeklyChecklistView = () => {
 							</Option>
 						))}
 					</Select>
-				</Col>
-			</Row>
+				</Stack>
+			</Paper>
 
 			{loading ? (
-				<Spin />
+				<Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+					<Spin size="large" />
+				</Box>
 			) : (
 				Object.keys(checklistData).length > 0 && (
 					<Table
@@ -169,10 +206,11 @@ const WeeklyChecklistView = () => {
 						scroll={{ x: "max-content" }}
 						pagination={false}
 						bordered
+						size="middle"
 					/>
 				)
 			)}
-		</Card>
+		</Box>
 	);
 };
 

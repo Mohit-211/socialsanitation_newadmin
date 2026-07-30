@@ -1,9 +1,13 @@
 /** @format */
 
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
 import React, { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Form, Card, Button, Input, Space, Select } from "antd";
+import { Form, Card, Input, Select } from "antd";
+import { ArrowLeft } from "lucide-react";
 import { GetDailyChecklistById } from "../../services/Api/checklistApi";
 import { CheckCircleOutlined } from "@ant-design/icons";
 
@@ -30,24 +34,64 @@ const ViewServiceChecklist = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">SERVICE CHECKLIST MANAGEMENT</h3>
-					<p className="page-sub-title">View Checklist</p>
-				</div>
-				<Button
-					icon={<i className="pi pi-arrow-left" />}
-					onClick={() => navigate("/checklist")}
-					style={{ borderRadius: "5px", height: "47px" }}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
 				>
-					Return to Checklist
-				</Button>
-			</Box>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							SERVICE CHECKLIST MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							View checklist details
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/checklist")}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Checklist
+					</MuiButton>
+				</Box>
+			</Paper>
 
 			<Card>
 				<Form layout="vertical">
