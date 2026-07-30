@@ -22,15 +22,6 @@ import AddService from "./pages/Services/AddService";
 import EditService from "./pages/Services/EditService";
 import ViewService from "./pages/Services/ViewService";
 import Bookings from "./pages/Bookings/Bookings";
-import TermsAndConditions from "./pages/Content/TermsConditions/TermsAndConditions";
-import AddTermsAndConditions from "./pages/Content/TermsConditions/AddTermsAndConditions";
-import EditTermsAndConditions from "./pages/Content/TermsConditions/EditTermsAndConditions";
-import Support from "./pages/Content/Support/Support";
-import EditSupport from "./pages/Content/Support/EditSupport";
-import AddSupport from "./pages/Content/Support/AddSupport";
-import AboutUs from "./pages/Content/AboutUs/AboutUs";
-import AddAboutUs from "./pages/Content/AboutUs/AddAboutUs";
-import EditAboutUs from "./pages/Content/AboutUs/EditAboutUs";
 import EditBookings from "./pages/Bookings/EditBookings";
 import ViewBooking from "./pages/Bookings/ViewBooking";
 
@@ -39,9 +30,6 @@ import User from "./pages/Customer/User";
 import ServiceProvider from "./pages/ServiceProvider/ServiceProvider";
 import AddServiceProvider from "./pages/ServiceProvider/AddServiceProvider";
 import ViewServiceProvider from "./pages/ServiceProvider/ViewServiceProvider";
-import BannerContent from "./pages/Content/BannerContent/BannerContent";
-import AddBanner from "./pages/Content/BannerContent/AddBanner";
-import EditBanner from "./pages/Content/BannerContent/EditBanner";
 import AuthorizationSuccess from "./pages/Login/AuthorizationSuccess";
 import AuthrizationFailure from "./pages/Login/AuthrizationFailure";
 import ChatUI from "./pages/Chat/ChatUI";
@@ -157,25 +145,8 @@ function App() {
           <Route path="/editBooking/:id" element={<EditBookings />} />
           <Route path="/viewBooking/:id" element={<ViewBooking />} />
 
-          <Route path="/termsAndConditions" element={<TermsAndConditions />} />
-          <Route
-            path="/addTermsAndConditions"
-            element={<AddTermsAndConditions />}
-          />
-          <Route
-            path="/editTermsAndConditions"
-            element={<EditTermsAndConditions />}
-          />
-          <Route path="/support" element={<Support />} />
-          <Route path="/editSupport/:id" element={<EditSupport />} />
-          <Route path="/addSupport" element={<AddSupport />} />
-          <Route path="/aboutUs" element={<AboutUs />} />
-          <Route path="/addAboutUs" element={<AddAboutUs />} />
-          <Route path="/editAboutUs" element={<EditAboutUs />} />
           <Route path="/users" element={<User />} />
-          <Route path="/banner" element={<BannerContent />} />
-          <Route path="/addBanner" element={<AddBanner />} />
-          <Route path="/editBanner/:id" element={<EditBanner />} />
+
           <Route path="/SyncCalendar" element={<SyncCalendar />} />
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/hiring-form" element={<HiringForm />} />
