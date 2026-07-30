@@ -2,6 +2,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Table, Tag, Button, Space, message, Modal, Input, Select } from "antd";
 import dayjs from "@/lib/dayjs";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import MuiButton from "@mui/material/Button";
+import { Search as SearchIcon, Download } from "lucide-react";
 import InvoiceViewModal from "./InvoiceViewModal";
 import {
   GetInvoices,
@@ -12,7 +18,6 @@ import {
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { DeleteServiceQuote } from "../../services/Api/BookingApi";
-const { Search } = Input;
 
 const jobStatusConfig = {
   NOT_BOOKED: { label: "NOT BOOKED", color: "gold" },
@@ -41,9 +46,6 @@ const paymentStatusConfig = {
     color: "green",
   },
 };
-const months = Array.from({ length: 12 }, (_, i) =>
-  dayjs().month(i).format("MMMM")
-);
 
 const Invoices = () => {
   const adminToken = localStorage.getItem("adminToken");
@@ -54,7 +56,14 @@ const Invoices = () => {
 
   // 🔍 filters
   const [searchText, setSearchText] = useState("");
-  const [month, setMonth] = useState(dayjs());
+
+  const [selectedMonth, setSelectedMonth] = useState(dayjs().month());
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
+
+  const months = Array.from({ length: 12 }, (_, i) =>
+    dayjs().month(i).format("MMMM")
+  );
+  const years = Array.from({ length: 10 }, (_, i) => dayjs().year() - 5 + i);
 
   // 🔁 Fetch invoices
   const fetchInvoices = async (m = selectedMonth, y = selectedYear) => {
@@ -74,6 +83,7 @@ const Invoices = () => {
 
   useEffect(() => {
     fetchInvoices(selectedMonth, selectedYear);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 🟡 Mark booked
@@ -192,14 +202,6 @@ const Invoices = () => {
       ),
     },
   ];
-
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().month());
-  const [selectedYear, setSelectedYear] = useState(dayjs().year());
-
-  const months = Array.from({ length: 12 }, (_, i) =>
-    dayjs().month(i).format("MMMM")
-  );
-  const years = Array.from({ length: 10 }, (_, i) => dayjs().year() - 5 + i);
 
   const handleDownloadExcel = async () => {
     try {
@@ -460,46 +462,89 @@ const Invoices = () => {
   };
 
   return (
-    <>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-          gap: 16,
-          flexWrap: "wrap",
+    <Box>
+      {/* HEADER */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
         }}
       >
-        {/* LEFT: TITLE */}
-        <div>
-          <h3 className="page-title">SERVICE QUOTE MANAGEMENT</h3>
-          <p className="page-sub-title">View & manage service quote</p>
-        </div>
+        <Stack spacing={2}>
+          {/* TOP ROW: Title + download */}
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography className="page-title" noWrap>
+                SERVICE QUOTE MANAGEMENT
+              </Typography>
+              <Typography
+                className="page-sub-title"
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                View &amp; manage service quotes
+              </Typography>
+            </Box>
 
-        {/* RIGHT SIDE */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          {/* 📅 FILTERS */}
-          <Space>
+            <MuiButton
+              variant="contained"
+              disableElevation
+              startIcon={<Download size={17} />}
+              onClick={handleDownloadExcel}
+              disabled={selectedMonth === null || selectedYear === null}
+              sx={{
+                height: 44,
+                px: 2.5,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              Download Excel ({dayjs().month(selectedMonth).format("MMM")}{" "}
+              {selectedYear})
+            </MuiButton>
+          </Stack>
+
+          {/* SECOND ROW: Search + filters */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              justifyContent: "flex-end",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <Input
+              allowClear
+              prefix={<SearchIcon size={18} color="#9CA3AF" />}
+              placeholder="Search invoices..."
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 240, height: 44 }}
+            />
+
             <Select
               value={selectedMonth}
-              style={{ width: 120 }}
+              style={{ width: 120, height: 44 }}
               onChange={(m) => {
                 setSelectedMonth(m);
                 fetchInvoices(m, selectedYear);
-                const date = dayjs()
-                  .year(selectedYear)
-                  .month(m)
-                  .startOf("month");
-                fetchInvoices(date);
               }}
             >
               {months.map((m, i) => (
@@ -511,15 +556,10 @@ const Invoices = () => {
 
             <Select
               value={selectedYear}
-              style={{ width: 100 }}
+              style={{ width: 100, height: 44 }}
               onChange={(y) => {
                 setSelectedYear(y);
                 fetchInvoices(selectedMonth, y);
-                const date = dayjs()
-                  .year(y)
-                  .month(selectedMonth)
-                  .startOf("month");
-                fetchInvoices(date);
               }}
             >
               {years.map((y) => (
@@ -528,27 +568,9 @@ const Invoices = () => {
                 </Select.Option>
               ))}
             </Select>
-          </Space>
-
-          {/* 📥 DOWNLOAD */}
-          <Button
-            type="primary"
-            onClick={handleDownloadExcel}
-            disabled={selectedMonth === null || selectedYear === null}
-          >
-            Download Excel ({dayjs().month(selectedMonth).format("MMM")}{" "}
-            {selectedYear})
-          </Button>
-
-          {/* 🔎 SEARCH */}
-          <Search
-            placeholder="Search invoices..."
-            allowClear
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 240 }}
-          />
-        </div>
-      </div>
+          </Stack>
+        </Stack>
+      </Paper>
 
       {/* Table */}
       <Table
@@ -556,6 +578,8 @@ const Invoices = () => {
         columns={columns}
         dataSource={filteredData}
         loading={loading}
+        bordered
+        size="middle"
       />
 
       {/* View modal */}
@@ -565,7 +589,7 @@ const Invoices = () => {
           onClose={() => setSelectedInvoice(null)}
         />
       )}
-    </>
+    </Box>
   );
 };
 

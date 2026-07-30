@@ -1,12 +1,16 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Select, message, Divider, Drawer, Tag, Modal, Spin } from "antd";
-import TextField from "@mui/material/TextField";
+import { Table, Select, message, Divider, Drawer, Tag, Modal, Spin, Input } from "antd";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import dayjs from "@/lib/dayjs";
-import Button from "@mui/material/Button";
-import { SearchOutlined, EyeOutlined, UserOutlined, ClockCircleOutlined, ShoppingCartOutlined, FileImageOutlined } from "@ant-design/icons"; // Import relevant icons
+import { Eye, Search, User, Clock, ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { UserOutlined, ClockCircleOutlined, ShoppingCartOutlined, FileImageOutlined } from "@ant-design/icons";
 
 import {
     GetAllRequestsByAdmin,
@@ -15,12 +19,25 @@ import {
 
 const IMAGE_BASE_URL = "https://node.socialsanitation.com:3000"; // Define the base URL once
 
+const actionIconBtn = (color) => ({
+    width: 34,
+    height: 34,
+    border: "1px solid",
+    borderColor: color,
+    color,
+    "&:hover": {
+        backgroundColor: `${color}14`,
+        borderColor: color,
+    },
+});
+
 const InventoryRequest = () => {
     const [data, setData] = useState([]);
     const [userBackupData, setUserBackupData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [openDrawer, setOpenDrawer] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     // State for Modal/Lightbox
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -137,16 +154,18 @@ const InventoryRequest = () => {
             dataIndex: "action",
             width: "10%",
             render: (_, record) => (
-                <Button
-                    icon={<EyeOutlined />}
-                    // label="View"
-                    className="p-button-outlined p-button-sm p-button-info"
-                    						style={{ margin: 0, borderRadius: "25px" }}
-                    onClick={() => {
-                        setSelectedRequest(record);
-                        setOpenDrawer(true);
-                    }}
-                />
+                <Tooltip title="View Request">
+                    <IconButton
+                        size="small"
+                        sx={actionIconBtn("#1890ff")}
+                        onClick={() => {
+                            setSelectedRequest(record);
+                            setOpenDrawer(true);
+                        }}
+                    >
+                        <Eye size={16} />
+                    </IconButton>
+                </Tooltip>
             ),
         },
     ].filter(col => !col.responsive || col.responsive.includes('md')); // Basic responsive filter for simplicity
@@ -174,6 +193,7 @@ const InventoryRequest = () => {
     }, []);
 
     const onSearch = (text) => {
+        setSearchTerm(text);
         const lower = text.toLowerCase();
         if (!lower) {
             setData(userBackupData);
@@ -193,31 +213,52 @@ const InventoryRequest = () => {
     };
 
     return (
-        <Box className="inventory-request-container" >
-
-            <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                marginBottom="24px"
-                flexWrap="wrap"
-                gap="16px"
+        <Box className="inventory-request-container">
+            {/* HEADER */}
+            <Paper
+                variant="outlined"
+                sx={{
+                    p: 2.5,
+                    mb: 2.5,
+                    borderRadius: "10px",
+                    borderColor: "#eef0f2",
+                }}
             >
-                <div>
-                    <h1 style={{ margin: 0, fontSize: "24px", fontWeight: 700 }}>INVENTORY REQUESTS</h1>
-                    <p style={{ margin: "4px 0 0", color: "#606060" }}>Manage product restock requests and status updates.</p>
-                </div>
+                <Stack
+                    direction="row"
+                    spacing={2}
+                    sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: { xs: "wrap", md: "nowrap" },
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography className="page-title" noWrap>
+                            INVENTORY REQUESTS
+                        </Typography>
+                        <Typography
+                            className="page-sub-title"
+                            sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            Manage product restock requests and status updates
+                        </Typography>
+                    </Box>
 
-                <span className="p-input-icon-left">
-                    <SearchOutlined style={{ position: 'absolute', top: '50%', left: '10px', transform: 'translateY(-50%)', color: '#999' }} />
-                    <InputText
-                        type="search"
-                        onChange={(e) => onSearch(e.target.value)}
+                    <Input
+                        allowClear
+                        prefix={<Search size={18} color="#9CA3AF" />}
                         placeholder="Search by Employee, Product, or ID"
-                        style={{ paddingLeft: '35px', borderRadius: '6px', minWidth: '250px' }}
+                        style={{ width: 280, height: 44, flexShrink: 0 }}
+                        value={searchTerm}
+                        onChange={(e) => onSearch(e.target.value)}
                     />
-                </span>
-            </Box>
+                </Stack>
+            </Paper>
 
             {/* --- Main Table --- */}
             <Table

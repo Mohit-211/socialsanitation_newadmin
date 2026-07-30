@@ -1,17 +1,20 @@
 /** @format */
 
-import { Box } from "@mui/material";
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import Form from "react-bootstrap/Form";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Card from "@mui/material/Card";
 import { CreateAdmin } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
-import Card from "@mui/material/Card";
-import { message } from "antd";
+import { message, Steps } from "antd";
 import { SolutionOutlined } from "@ant-design/icons";
-import { Steps } from "antd";
+import { ArrowLeft, Check, X } from "lucide-react";
 
 const AddAdmin = () => {
 	const [name, setName] = useState("");
@@ -76,114 +79,200 @@ const AddAdmin = () => {
 		navigate("/adminList");
 	};
 
+	const fieldSx = {
+		"& .MuiOutlinedInput-root": {
+			height: "45px",
+			borderRadius: "6px",
+		},
+	};
+
+	const labelSx = {
+		fontSize: "13px",
+		fontWeight: 600,
+		color: "#374151",
+		mb: 1,
+	};
+
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="30px"
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">Create New Admin</h3>
-					<p className="page-sub-title">Create New Admin</p>
-				</div>
-				<div>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							ADMIN MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Create a new admin
+						</Typography>
+					</Box>
+
 					<Button
-						icon="pi pi-arrow-left"
-						severity="secondary"
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
 						onClick={navigateToAdmin}
-						style={{ borderRadius: "5px", height: "47px" }}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
 					>
-						<span style={{ marginLeft: "5px" }}>Return to Admin</span>
+						Return to Admin
 					</Button>
-				</div>
-			</Box>
-			<div style={{ display: "flex", flexDirection: "row", width: "100%" }}>
-				<Card style={{ width: "70%" }}>
-					<div>
-						<Form>
-							<Form.Group className="mb-3">
-								<Form.Label> Name</Form.Label>
-								<Form.Control
-									type="text"
-									required
+				</Box>
+			</Paper>
+
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: { xs: "column", md: "row" },
+					gap: 2.5,
+				}}
+			>
+				<Paper
+					variant="outlined"
+					sx={{
+						flex: { md: "0 0 70%" },
+						p: 3,
+						borderRadius: "10px",
+						borderColor: "#eef0f2",
+					}}
+				>
+					<form onSubmit={handleSubmit}>
+						<Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+							<Box>
+								<Typography sx={labelSx}>Name</Typography>
+								<TextField
+									fullWidth
+									size="small"
 									placeholder="Enter name"
 									value={name}
 									onChange={(e) => setName(e.target.value)}
-									className="new_form_control"
+									sx={fieldSx}
 								/>
-							</Form.Group>
+							</Box>
 
-							<Form.Group className="mb-3">
-								<Form.Label>Email</Form.Label>
-								<Form.Control
+							<Box>
+								<Typography sx={labelSx}>Email</Typography>
+								<TextField
+									fullWidth
+									size="small"
 									type="email"
 									placeholder="Enter email"
 									value={email}
-									required
 									onChange={(e) => setEmail(e.target.value)}
-									className="new_form_control"
+									sx={fieldSx}
 								/>
-							</Form.Group>
+							</Box>
 
-							<Form.Group className="mb-3">
-								<Form.Label>Select Role :</Form.Label>
-
-								<Form.Select
-									aria-label="Default select example"
+							<Box>
+								<Typography sx={labelSx}>Select Role</Typography>
+								<Select
+									fullWidth
+									size="small"
+									displayEmpty
 									value={roleId}
 									onChange={(e) => setRoleId(e.target.value)}
-									className="new_form_control"
-								>
-									<option>Select Role</option>
-									<option value="5">BDM</option>
-									<option value="3">SALES EXECUTIVE</option>
-									<option value="1">SUPER ADMIN</option>
-									
-								
-									{/* <option value="2">ADMIN LEVEL 1</option>
-									<option value="3">ADMIN LEVEL 2</option> */}
-								</Form.Select>
-							</Form.Group>
-
-							<div style={{ marginTop: "50px" }}>
-								<Button
-									icon="pi pi-check"
-									severity="success"
-									htmlType="submit"
-									type="primary"
-									onClick={handleSubmit}
-									style={{
-										borderRadius: "5px",
-										margin: "0px 0px",
-										height: "40px",
+									sx={{
+										height: "45px",
+										borderRadius: "6px",
 									}}
 								>
-									Save
+									<MenuItem value="" disabled>
+										Select Role
+									</MenuItem>
+									<MenuItem value="5">BDM</MenuItem>
+									<MenuItem value="3">SALES EXECUTIVE</MenuItem>
+									<MenuItem value="1">SUPER ADMIN</MenuItem>
+								</Select>
+							</Box>
+
+							<Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
+								<Button
+									variant="contained"
+									disableElevation
+									type="submit"
+									disabled={disable}
+									startIcon={!disable ? <Check size={18} /> : null}
+									sx={{
+										height: 42,
+										px: 3,
+										borderRadius: "6px",
+										textTransform: "none",
+										fontWeight: 600,
+										backgroundColor: "#16a34a",
+										"&:hover": {
+											backgroundColor: "#15803d",
+										},
+									}}
+								>
+									{disable ? "Saving..." : "Save"}
 								</Button>
 
 								<Button
-									icon="pi pi-times"
-									severity="secondary"
-									onClick={(e) => {
-										navigateToAdmin();
-									}}
-									style={{
-										borderRadius: "5px",
-										marginLeft: "10px",
-										height: "40px",
+									variant="contained"
+									disableElevation
+									startIcon={<X size={18} />}
+									onClick={navigateToAdmin}
+									sx={{
+										height: 42,
+										px: 3,
+										borderRadius: "6px",
+										textTransform: "none",
+										fontWeight: 600,
+										backgroundColor: "#6b7280",
+										"&:hover": {
+											backgroundColor: "#4b5563",
+										},
 									}}
 								>
 									Cancel
 								</Button>
-							</div>
-						</Form>
-					</div>
-				</Card>
-				<Card
-					className="admin_description"
-					style={{ width: "30%", marginLeft: "10px" }}
+							</Box>
+						</Box>
+					</form>
+				</Paper>
+
+				<Paper
+					variant="outlined"
+					sx={{
+						flex: { md: "0 0 30%" },
+						p: 3,
+						borderRadius: "10px",
+						borderColor: "#eef0f2",
+					}}
 				>
 					<Steps
 						direction="vertical"
@@ -209,26 +298,11 @@ const AddAdmin = () => {
 								icon: <SolutionOutlined />,
 								description:
 									"This role is responsible for managing client checklists and preparing the initial client information chart to support onboarding and service planning.",
-							}
-							
-							// {
-							// 	title: "ADMIN LEVEL 1",
-							// 	status: "finish",
-							// 	icon: <SolutionOutlined />,
-							// 	description:
-							// 		"This role is more focused, allowing admins to view, edit, and delete content specifically in the Services,Bookings and Contact Us.",
-							// },
-							// {
-							// 	title: "ADMIN LEVEL 2",
-							// 	status: "finish",
-							// 	icon: <SolutionOutlined />,
-							// 	description:
-							// 		"This role is more focused, allowing admins to view, edit, and delete content specifically only in Booking.",
-							// },
+							},
 						]}
 					/>
-				</Card>
-			</div>
+				</Paper>
+			</Box>
 		</Box>
 	);
 };

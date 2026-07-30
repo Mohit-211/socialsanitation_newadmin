@@ -1,19 +1,23 @@
 /** @format */
 
-import { Box } from "@mui/material";
 import React, { useLayoutEffect, useState } from "react";
-import { Form } from "react-bootstrap";
 import { useParams, useNavigate } from "react-router-dom";
 import { GetAdminById, UpdateAdmin } from "../../services/Api/Api.jsx";
 import { message } from "antd";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import { Select } from "antd";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import { ArrowLeft, Check, X } from "lucide-react";
 
 const EditAdmin = () => {
 	const { id } = useParams();
-	const [idData, setIdData] = React.useState("");
-  const [disable, setDisable] = useState(false);
+	const [idData, setIdData] = useState("");
+	const [disable, setDisable] = useState(false);
+	const navigate = useNavigate();
 
 	//get role By ID
 	useLayoutEffect(() => {
@@ -25,22 +29,21 @@ const EditAdmin = () => {
 				console.log(err, "error");
 			});
 	}, [id]);
-	console.log("isdata---->", idData);
 
 	//update role api implementation
 	const handleNameChange = (e) => {
-		console.log("Selected value:", e.target.value);
 		setIdData({ ...idData, [e.target?.name]: e.target?.value });
 	};
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
+		setDisable(true);
+
 		const formData = new FormData();
 		formData.append("admin_id", id);
 		formData.append("name", idData?.name ? idData?.name : "");
-		// formData.append("email", idData?.email ? idData?.email : "");
 		formData.append("role_id", idData?.role_id ? idData?.role_id : "");
-		console.log("formData", formData);
+
 		UpdateAdmin(formData)
 			.then((res) => {
 				if (res.status === 200) {
@@ -58,134 +61,205 @@ const EditAdmin = () => {
 				} else {
 					message.error("Something went wrong");
 				}
+			})
+			.finally(() => {
+				setDisable(false);
 			});
 	};
 
-	const navigate = useNavigate();
 	const navigateToRole = () => {
 		navigate("/adminList");
 	};
+
+	const fieldSx = {
+		"& .MuiOutlinedInput-root": {
+			height: "45px",
+			borderRadius: "6px",
+		},
+	};
+
+	const labelSx = {
+		fontSize: "13px",
+		fontWeight: 600,
+		color: "#374151",
+		mb: 1,
+	};
+
+	const disabledLabelSx = {
+		...labelSx,
+		color: "#9ca3af",
+	};
+
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* Header Section */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">Edit Admin</h3>
-					<p className="page-sub-title">Update Admin</p>
-				</div>
-				<div>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							ADMIN MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Update this admin
+						</Typography>
+					</Box>
+
 					<Button
-						icon="pi pi-arrow-left"
-						severity="secondary"
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
 						onClick={navigateToRole}
-						style={{ borderRadius: "5px", height: "47px" }}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
 					>
-						<span style={{ marginLeft: "5px" }}>Return to Admin</span>
+						Return to Admin
 					</Button>
-				</div>
-			</Box>
-			<Card>
-				<Form>
-					<Form.Group className="mb-3">
-						<Form.Label>Name</Form.Label>
-						<Form.Control
-							type="text"
-							defaultValue={idData?.name}
-							name="name"
-							onChange={(e) => handleNameChange(e)}
-						/>
-					</Form.Group>
+				</Box>
+			</Paper>
 
-					<Form.Group className="mb-3">
-						<Form.Label>Email</Form.Label>
-						<Form.Control
-							type="text"
-							disabled
-							defaultValue={idData?.email}
-							name="email"
-							onChange={(e) => handleNameChange(e)}
-						/>
-					</Form.Group>
-
-					<Form.Group className="mb-3">
-						<Form.Label>Select Role :</Form.Label>
-						{idData && (
-							<Select
-								defaultValue={idData?.admin_role?.name || ""}
-								style={{
-									width: "100%",
-									color: "black",
-									height: "40px",
-								}}
-								onChange={(value) =>
-									handleNameChange({ target: { name: "role_id", value } })
-								}
-								options={[
-									{
-										value: "5",
-										label: "BDM",
-									},
-									{
-										value: "3",
-										label: "SALES EXECUTIVE",
-									},
-									{
-										value: "1",
-										label: "SUPER ADMIN",
-									},
-									
-
-									// {
-									// 	value: "2",
-									// 	label: "ADMIN LEVEL 1",
-									// },
-									// {
-									// 	value: "3",
-									// 	label: "ADMIN LEVEL 2",
-									// },
-								]}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
+			>
+				<form onSubmit={handleSubmit}>
+					<Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+						<Box>
+							<Typography sx={labelSx}>Name</Typography>
+							<TextField
+								fullWidth
+								size="small"
+								name="name"
+								value={idData?.name || ""}
+								onChange={handleNameChange}
+								sx={fieldSx}
 							/>
-						)}
-					</Form.Group>
-				</Form>
-				<div style={{ marginTop: "40px" }}>
-					<Button
-						icon="pi pi-check"
-						severity="info"
-						type="submit"
-						onClick={handleSubmit}
-						disabled={disable}
-						style={{
-							height: "45px",
-							padding: "20px",
-							borderRadius: "5px",
-						}}
-					>
-						{disable ? "Saving...." : "Save"}
-					</Button>
+						</Box>
 
-					<Button
-						icon="pi pi-times"
-						severity="secondary"
-						onClick={(e) => {
-							navigateToRole();
-						}}
-						style={{
-							marginLeft: "10px",
-							marginTop: "10px",
-							height: "45px",
-							padding: "20px",
-							borderRadius: "5px",
-						}}
-					>
-						Cancel
-					</Button>
-				</div>
-			</Card>
+						<Box>
+							<Typography sx={disabledLabelSx}>Email</Typography>
+							<TextField
+								fullWidth
+								size="small"
+								disabled
+								name="email"
+								value={idData?.email || ""}
+								sx={{
+									...fieldSx,
+									"& .MuiOutlinedInput-root": {
+										...fieldSx["& .MuiOutlinedInput-root"],
+										backgroundColor: "#f5f5f5",
+									},
+								}}
+							/>
+						</Box>
+
+						<Box>
+							<Typography sx={labelSx}>Select Role</Typography>
+							{idData && (
+								<Select
+									fullWidth
+									size="small"
+									defaultValue={idData?.role_id || ""}
+									onChange={(e) =>
+										handleNameChange({
+											target: { name: "role_id", value: e.target.value },
+										})
+									}
+									sx={{
+										height: "45px",
+										borderRadius: "6px",
+									}}
+								>
+									<MenuItem value="5">BDM</MenuItem>
+									<MenuItem value="3">SALES EXECUTIVE</MenuItem>
+									<MenuItem value="1">SUPER ADMIN</MenuItem>
+								</Select>
+							)}
+						</Box>
+
+						<Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
+							<Button
+								variant="contained"
+								disableElevation
+								type="submit"
+								disabled={disable}
+								startIcon={!disable ? <Check size={18} /> : null}
+								sx={{
+									height: 42,
+									px: 3,
+									borderRadius: "6px",
+									textTransform: "none",
+									fontWeight: 600,
+									backgroundColor: "#3b82f6",
+									"&:hover": {
+										backgroundColor: "#2563eb",
+									},
+								}}
+							>
+								{disable ? "Saving..." : "Save"}
+							</Button>
+
+							<Button
+								variant="contained"
+								disableElevation
+								startIcon={<X size={18} />}
+								onClick={navigateToRole}
+								sx={{
+									height: 42,
+									px: 3,
+									borderRadius: "6px",
+									textTransform: "none",
+									fontWeight: 600,
+									backgroundColor: "#6b7280",
+									"&:hover": {
+										backgroundColor: "#4b5563",
+									},
+								}}
+							>
+								Cancel
+							</Button>
+						</Box>
+					</Box>
+				</form>
+			</Paper>
 		</Box>
 	);
 };

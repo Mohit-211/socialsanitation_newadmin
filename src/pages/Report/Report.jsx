@@ -3,11 +3,27 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
-import { Select, Tooltip, message, Table, Drawer } from "antd";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { Select, message, Table, Drawer } from "antd";
 import { GetAllReports, UpdateReport } from "../../services/Api/ReportApi";
 import dayjs from "@/lib/dayjs";
-import Button from "@mui/material/Button";
+import { Eye } from "lucide-react";
 import { BASE_URL_IMAGE } from "../../services/Host";
+
+const actionIconBtn = (color) => ({
+	width: 34,
+	height: 34,
+	border: "1px solid",
+	borderColor: color,
+	color,
+	"&:hover": {
+		backgroundColor: `${color}14`,
+		borderColor: color,
+	},
+});
 
 const Report = () => {
 	const navigate = useNavigate();
@@ -147,17 +163,18 @@ const Report = () => {
 			dataIndex: "action",
 			width: "10%",
 			render: (_, record) => (
-				<Button
-					icon="pi pi-eye"
-					rounded
-					outlined
-					severity="warning"
-					style={{ borderRadius: "25px" }}
-					onClick={() => {
-						setSelectedReport(record);
-						setDrawerVisible(true);
-					}}
-				></Button>
+				<Tooltip title="View Report">
+					<IconButton
+						size="small"
+						sx={actionIconBtn("#F59E0B")}
+						onClick={() => {
+							setSelectedReport(record);
+							setDrawerVisible(true);
+						}}
+					>
+						<Eye size={16} />
+					</IconButton>
+				</Tooltip>
 			),
 		},
 	];
@@ -242,17 +259,24 @@ const Report = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* HEADER */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">REPORT Management</h3>
-					<p className="page-sub-title">View All Reports</p>
-				</div>
-			</Box>
+				<Box>
+					<Typography className="page-title">REPORT MANAGEMENT</Typography>
+					<Typography className="page-sub-title">
+						View all reports
+					</Typography>
+				</Box>
+			</Paper>
+
 			<Table
 				columns={columns}
 				rowKey={(record) => record.id}
@@ -260,14 +284,16 @@ const Report = () => {
 				pagination={tableParams.pagination}
 				loading={loading}
 				onChange={handleTableChange}
+				bordered
+				size="middle"
 			/>
 
 			<Drawer
-				width={400}
-				visible={drawerVisible}
-				onClose={() => setDrawerVisible(false)}
-				title="Report Details"
-			>
+	width={400}
+	open={drawerVisible}
+	onClose={() => setDrawerVisible(false)}
+	title="Report Details"
+>
 				<Box padding={2}>
 					{selectedReport && (
 						<>

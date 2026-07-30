@@ -24,7 +24,7 @@ import {
   FaUserTie,
   FaRegCalendar,
 } from "react-icons/fa6";
-import { Layout, theme, Menu, Spin, Badge, Modal, Button, message } from "antd";
+import { Layout, theme, Menu, Spin, Badge, Modal, message } from "antd";
 import { FaFileInvoiceDollar, FaCalculator } from "react-icons/fa";
 import { BiSolidCategoryAlt } from "react-icons/bi";
 import {
@@ -48,6 +48,22 @@ import { TbBrandBooking, TbBrandCashapp } from "react-icons/tb";
 import { VscChecklist } from "react-icons/vsc";
 import { FaRegCalendarAlt } from "react-icons/fa";
 import { IoInformationCircle } from "react-icons/io5";
+import Box from "@mui/material/Box";
+import MuiButton from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import InputAdornment from "@mui/material/InputAdornment";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
+import {
+  Star,
+  MessageSquare,
+  Link2,
+  User as UserIcon,
+  Settings,
+  Activity,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 import logo from "../assets/image.png";
 import smallLogo from "../assets/WhatsApp Image 2024-11-20 at 9.55.51 AM (1) 1.png";
 import "./MainLayout.scss";
@@ -167,6 +183,20 @@ const MainLayout = () => {
   };
 
   const token = localStorage.getItem("adminToken");
+
+  const fieldSx = {
+    "& .MuiOutlinedInput-root": {
+      height: "45px",
+      borderRadius: "8px",
+    },
+  };
+
+  const fieldLabelSx = {
+    fontSize: "12.5px",
+    fontWeight: 600,
+    color: "#374151",
+    mb: 0.75,
+  };
 
   return (
     <>
@@ -481,98 +511,214 @@ const MainLayout = () => {
               )}
               <Layout className="site-layout">
                 <Header
-                  className="d-flex justify-content-between"
                   style={{
                     padding: "0 24px",
-                    background: colorBgContainer,
+                    background: "#ffffff",
+                    borderBottom: "1px solid #eef0f2",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    height: 68,
                   }}
                 >
                   {React.createElement(
                     collapsed ? MenuUnfoldOutlined : MenuFoldOutlined,
                     {
-                      className: "trigger",
+                      style: {
+                        fontSize: 18,
+                        color: "#6b7280",
+                        cursor: "pointer",
+                      },
                       onClick: () => setCollapsed(!collapsed),
                     }
                   )}
-                  <div className="d-flex gap-4 align-items-center">
-                    <Button
-                      type="primary"
-                      style={{ marginLeft: "20px" }}
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
+                    <MuiButton
+                      variant="contained"
+                      disableElevation
+                      startIcon={<Star size={16} />}
                       onClick={() => {
                         getReviewLinks();
                         setReviewModalVisible(true);
                       }}
+                      sx={{
+                        height: 42,
+                        px: 2.5,
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       Set Review Links
-                    </Button>
-                    <div className="vertical-line"></div>
+                    </MuiButton>
 
-                    <div className="position-relative">
-                      <div className="d-flex align-items-center">
-                        <div
-                          role="button"
-                          id="dropdownMenuLink"
-                          aria-expanded={profileOpen}
-                          onClick={() => setProfileOpen((prev) => !prev)}
-                          className="d-flex align-items-center"
+                    <Box
+                      sx={{
+                        width: "1px",
+                        height: 32,
+                        backgroundColor: "#eef0f2",
+                      }}
+                    />
+
+                    <Box sx={{ position: "relative" }}>
+                      <Box
+                        role="button"
+                        id="dropdownMenuLink"
+                        aria-expanded={profileOpen}
+                        onClick={() => setProfileOpen((prev) => !prev)}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.25,
+                          cursor: "pointer",
+                          padding: "6px 10px",
+                          borderRadius: "10px",
+                          transition: "background-color 0.15s",
+                          "&:hover": {
+                            backgroundColor: "#f9fafb",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "#eef2ff",
+                            color: "#4f46e5",
+                            fontWeight: 700,
+                            fontSize: "15px",
+                            flexShrink: 0,
+                          }}
                         >
-                          <FaRegCircleUser className="fs-3 me-2" />
-                          <div className="profile-info">
-                            <p>{idData?.name}</p>
-                            <p>{idData?.admin_role?.name}</p>
-                          </div>
-                        </div>
+                          {idData?.name?.charAt(0)?.toUpperCase() || (
+                            <FaRegCircleUser size={18} />
+                          )}
+                        </Box>
+                        <Box sx={{ textAlign: "left", lineHeight: 1.3 }}>
+                          <Typography
+                            sx={{
+                              fontSize: "13.5px",
+                              fontWeight: 600,
+                              color: "#111827",
+                            }}
+                          >
+                            {idData?.name || "Admin"}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: "11.5px",
+                              color: "#9ca3af",
+                            }}
+                          >
+                            {idData?.admin_role?.name || "Admin"}
+                          </Typography>
+                        </Box>
+                        <ChevronDown
+                          size={16}
+                          color="#9ca3af"
+                          style={{
+                            transform: profileOpen
+                              ? "rotate(180deg)"
+                              : "rotate(0deg)",
+                            transition: "transform 0.15s",
+                          }}
+                        />
+                      </Box>
+
+                      <div
+                        className={`dropdown-menu admin${
+                          profileOpen ? " show" : ""
+                        }`}
+                        aria-labelledby="dropdownMenuLink"
+                        style={{
+                          borderRadius: "10px",
+                          padding: "8px",
+                          border: "1px solid #eef0f2",
+                          boxShadow: "0 8px 24px rgba(16,24,40,0.08)",
+                        }}
+                      >
+                        <li>
+                          <Link
+                            className="dropdown-item py-1 mb-1"
+                            style={{
+                              height: "auto",
+                              lineHeight: "34px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              fontSize: "13.5px",
+                            }}
+                            to="/viewAdmin"
+                          >
+                            <UserIcon size={16} style={{ marginRight: "10px" }} />
+                            View Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            className="dropdown-item py-1 mb-1"
+                            style={{
+                              height: "auto",
+                              lineHeight: "34px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              fontSize: "13.5px",
+                            }}
+                            to="/reset-password"
+                          >
+                            <Settings size={16} style={{ marginRight: "10px" }} />
+                            Change Password
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            className="dropdown-item py-1 mb-1"
+                            style={{
+                              height: "auto",
+                              lineHeight: "34px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              fontSize: "13.5px",
+                            }}
+                            to="/loginLogs"
+                          >
+                            <Activity size={16} style={{ marginRight: "10px" }} />
+                            User Login Activity
+                          </Link>
+                        </li>
                         <div
-                          className={`dropdown-menu admin${
-                            profileOpen ? " show" : ""
-                          }`}
-                          aria-labelledby="dropdownMenuLink"
-                        >
-                          <li>
-                            <Link
-                              className="dropdown-item py-1 mb-1"
-                              style={{ height: "auto", lineHeight: "30px" }}
-                              to="/viewAdmin"
-                            >
-                              <FiUser style={{ marginRight: "10px" }} />
-                              View Profile
-                            </Link>
-                          </li>
-                          <li>
-                            <Link
-                              className="dropdown-item py-1 mb-1"
-                              style={{ height: "auto", lineHeight: "30px" }}
-                              to="/reset-password"
-                            >
-                              <LuSettings style={{ marginRight: "10px" }} />
-                              Change Password
-                            </Link>
-                          </li>
-                          <li>
-                            <Link
-                              className="dropdown-item py-1 mb-1"
-                              style={{ height: "auto", lineHeight: "30px" }}
-                              to="/loginLogs"
-                            >
-                              <FiActivity style={{ marginRight: "10px" }} />
-                              User Login Activity
-                            </Link>
-                          </li>
-                          <div className="dropdown-divider"></div>
-                          <li>
-                            <Link
-                              className="dropdown-item py-1 mb-1"
-                              style={{ height: "auto", lineHeight: "30px" }}
-                              onClick={() => logout()}
-                            >
-                              <CiLogin style={{ marginRight: "10px" }} />
-                              Sign Out
-                            </Link>
-                          </li>
-                        </div>
+                          className="dropdown-divider"
+                          style={{ margin: "6px 4px" }}
+                        ></div>
+                        <li>
+                          <Link
+                            className="dropdown-item py-1 mb-1"
+                            style={{
+                              height: "auto",
+                              lineHeight: "34px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              fontSize: "13.5px",
+                              color: "#ef4444",
+                            }}
+                            onClick={() => logout()}
+                          >
+                            <LogOut size={16} style={{ marginRight: "10px" }} />
+                            Sign Out
+                          </Link>
+                        </li>
                       </div>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 </Header>
                 <Content
                   style={{
@@ -599,58 +745,128 @@ const MainLayout = () => {
                   </>
                 </Content>
                 <Modal
-                  title="Configure Review Links"
+                  title={
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                      <Box
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "#eef2ff",
+                          color: "#4f46e5",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Star size={17} />
+                      </Box>
+                      <span style={{ fontWeight: 600 }}>
+                        Configure Review Links
+                      </span>
+                    </Box>
+                  }
                   open={reviewModalVisible}
                   onCancel={() => setReviewModalVisible(false)}
                   onOk={saveReviewLinks}
                   confirmLoading={reviewLoading}
+                  okText="Save Links"
+                  width={480}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "15px",
+                  <Divider sx={{ mt: 1, mb: 2.5 }} />
+
+                  <Typography
+                    sx={{
+                      fontSize: "12.5px",
+                      color: "#6b7280",
+                      mb: 2.5,
+                      lineHeight: 1.5,
                     }}
                   >
-                    <label>Google Review Link</label>
-                    <input
-                      type="text"
-                      value={reviewLinks.google_review_link}
-                      onChange={(e) =>
-                        setReviewLinks({
-                          ...reviewLinks,
-                          google_review_link: e.target.value,
-                        })
-                      }
-                      className="ant-input"
-                    />
+                    These links are shown to clients when asking for reviews
+                    after a completed booking.
+                  </Typography>
 
-                    <label>Apple Review Link</label>
-                    <input
-                      type="text"
-                      value={reviewLinks.apple_review_link}
-                      onChange={(e) =>
-                        setReviewLinks({
-                          ...reviewLinks,
-                          apple_review_link: e.target.value,
-                        })
-                      }
-                      className="ant-input"
-                    />
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}>
+                    <Box>
+                      <Typography sx={fieldLabelSx}>
+                        Google Review Link
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="https://g.page/r/..."
+                        value={reviewLinks.google_review_link}
+                        onChange={(e) =>
+                          setReviewLinks({
+                            ...reviewLinks,
+                            google_review_link: e.target.value,
+                          })
+                        }
+                        sx={fieldSx}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <MessageSquare size={16} color="#9ca3af" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
 
-                    <label>Booking Review Link</label>
-                    <input
-                      type="text"
-                      value={reviewLinks.booking_review_link}
-                      onChange={(e) =>
-                        setReviewLinks({
-                          ...reviewLinks,
-                          booking_review_link: e.target.value,
-                        })
-                      }
-                      className="ant-input"
-                    />
-                  </div>
+                    <Box>
+                      <Typography sx={fieldLabelSx}>
+                        Apple Review Link
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="https://apps.apple.com/..."
+                        value={reviewLinks.apple_review_link}
+                        onChange={(e) =>
+                          setReviewLinks({
+                            ...reviewLinks,
+                            apple_review_link: e.target.value,
+                          })
+                        }
+                        sx={fieldSx}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Star size={16} color="#9ca3af" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+
+                    <Box>
+                      <Typography sx={fieldLabelSx}>
+                        Booking Review Link
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="https://..."
+                        value={reviewLinks.booking_review_link}
+                        onChange={(e) =>
+                          setReviewLinks({
+                            ...reviewLinks,
+                            booking_review_link: e.target.value,
+                          })
+                        }
+                        sx={fieldSx}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Link2 size={16} color="#9ca3af" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Box>
+                  </Box>
                 </Modal>
               </Layout>
             </Layout>

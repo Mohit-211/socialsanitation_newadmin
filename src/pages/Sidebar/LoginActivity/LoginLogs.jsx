@@ -15,14 +15,15 @@ import {
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import { message } from "antd";
 import PropTypes from "prop-types";
 import CircularProgress from "@mui/material/CircularProgress";
+import { Trash2 } from "lucide-react";
 import {
   getUserLoginTimings,
   clearUserLoginTimings,
 } from "../../../services/Api/Api";
-
 
 function Row(props) {
   const { row } = props;
@@ -31,28 +32,53 @@ function Row(props) {
     return null; // or handle the case where login_user is undefined
   }
 
- 
-
   return (
     <React.Fragment>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
+      <TableRow
+        sx={{
+          "& > *": { borderBottom: "unset" },
+          "&:hover": { backgroundColor: "#f9fafb" },
+        }}
+      >
         <TableCell>
           <IconButton
             aria-label="expand row"
             size="small"
             onClick={() => setOpen(!open)}
+            sx={{
+              border: "1px solid #eef0f2",
+              borderRadius: "8px",
+              width: 30,
+              height: 30,
+            }}
           >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            {open ? (
+              <KeyboardArrowUpIcon fontSize="small" />
+            ) : (
+              <KeyboardArrowDownIcon fontSize="small" />
+            )}
           </IconButton>
         </TableCell>
         <TableCell component="th" scope="row">
-          {row[0].login_user?.user_profile?.name}
+          <Typography sx={{ fontWeight: 600, fontSize: "14px", color: "#111827" }}>
+            {row[0].login_user?.user_profile?.name}
+          </Typography>
         </TableCell>
-        <TableCell align="right">{row[0].login_user.email}</TableCell>
         <TableCell align="right">
-          {row[0].role_id === 6 ? "User" : row[0].role_id === 7 ? "Driver" : ""}
+          <Typography sx={{ fontSize: "13.5px", color: "#6b7280" }}>
+            {row[0].login_user.email}
+          </Typography>
         </TableCell>
-        <TableCell align="right">{row[0].user_id}</TableCell>
+        <TableCell align="right">
+          <Typography sx={{ fontSize: "13.5px", color: "#6b7280" }}>
+            {row[0].role_id === 6 ? "User" : row[0].role_id === 7 ? "Driver" : ""}
+          </Typography>
+        </TableCell>
+        <TableCell align="right">
+          <Typography sx={{ fontSize: "13.5px", color: "#6b7280" }}>
+            {row[0].user_id}
+          </Typography>
+        </TableCell>
       </TableRow>
       <TableRow>
         <TableCell
@@ -60,45 +86,72 @@ function Row(props) {
           colSpan={8}
         >
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography variant="h6" gutterBottom component="div">
-               Login History
+            <Box
+              sx={{
+                m: 1.5,
+                p: 2,
+                backgroundColor: "#f9fafb",
+                borderRadius: "10px",
+                border: "1px solid #eef0f2",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#6b7280",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  mb: 1.5,
+                }}
+              >
+                Login History
               </Typography>
               <Table size="small" aria-label="purchases">
                 <TableHead>
                   <TableRow>
-                    {/* <TableCell>User user_id</TableCell> */}
-                    <TableCell >Ip address</TableCell>
-                    <TableCell align="right">Login Time</TableCell>
-                    <TableCell align="right">Logout Time</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: "12.5px", color: "#374151" }}>
+                      IP Address
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600, fontSize: "12.5px", color: "#374151" }}>
+                      Login Time
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600, fontSize: "12.5px", color: "#374151" }}>
+                      Logout Time
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {row.map((historyRow) => (
                     <TableRow key={historyRow.id}>
-                      {/* <TableCell align="right">{row[0].user_id}</TableCell> */}
-                      <TableCell >
+                      <TableCell sx={{ fontSize: "13px", color: "#374151" }}>
                         {row[0].ip_address.split(":").pop()}
                       </TableCell>
 
-                      <TableCell align="right" component="th" scope="row">
-                      {new Date(historyRow.login_time_utc).toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-
+                      <TableCell align="right" component="th" scope="row" sx={{ fontSize: "13px", color: "#374151" }}>
+                        {new Date(historyRow.login_time_utc).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          hour12: false,
+                        })}
                       </TableCell>
-                      <TableCell align="right">
-  {historyRow.logout_time_utc
-    ? new Date(historyRow.logout_time_utc).toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      })
-    : "----"}
-</TableCell>
-
+                      <TableCell align="right" sx={{ fontSize: "13px", color: "#374151" }}>
+                        {historyRow.logout_time_utc
+                          ? new Date(historyRow.logout_time_utc).toLocaleString("en-US", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                              hour12: false,
+                            })
+                          : "----"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -113,7 +166,7 @@ function Row(props) {
 
 Row.propTypes = {
   row: PropTypes.shape({
-    id: PropTypes.number, 
+    id: PropTypes.number,
     user_id: PropTypes.number.isRequired,
     role_id: PropTypes.number.isRequired,
     login_user: PropTypes.object.isRequired,
@@ -126,7 +179,7 @@ Row.propTypes = {
 const LoginLogs = () => {
   const [userLoginTimingData, setUserLoginTimingData] = useState([]);
   const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [clearLoading, setClearLoading] = useState(false);
 
   useEffect(() => {
@@ -134,12 +187,10 @@ const LoginLogs = () => {
       try {
         let data = await getUserLoginTimings();
         setUserLoginTimingData(data.data.data);
-        console.log("logs", data.data);
       } catch (error) {
-        setError(error.message)
-      }
-      finally {
-        setLoading(false)
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -160,65 +211,121 @@ const LoginLogs = () => {
   };
 
   return (
-    <Box m="20px">
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          flexDirection="column"
+    <Box>
+      {/* HEADER */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 2.5,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
         >
-          <h3 className="dashboard_title"> User Login Activity:</h3>
-          <p className="page-sub-title" style={{ color: "green" }}>
-            Login track record of all users
-          </p>
-        </Box>
-        <Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              USER LOGIN ACTIVITY
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Login track record of all users
+            </Typography>
+          </Box>
+
           <Button
-            label="Clear Logs"
-            severity="danger"
+            variant="contained"
+            disableElevation
+            startIcon={<Trash2 size={16} />}
             onClick={handleClearButtonClick}
             disabled={clearLoading}
-            style={{
-              margin: "0px 0px",
-              borderRadius: "5px",
-              height: "40px",
+            sx={{
+              height: 42,
+              px: 2.5,
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              backgroundColor: "#ef4444",
+              "&:hover": { backgroundColor: "#dc2626" },
             }}
-          />
-        </Box>
-      </Box>
+          >
+            {clearLoading ? "Clearing..." : "Clear Logs"}
+          </Button>
+        </Stack>
+      </Paper>
+
       {loading ? (
-        <CircularProgress />
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress size={32} />
+        </Box>
+      ) : userLoginTimingData && userLoginTimingData.length !== 0 ? (
+        <TableContainer
+          component={Paper}
+          variant="outlined"
+          sx={{
+            borderRadius: "10px",
+            borderColor: "#eef0f2",
+            maxHeight: "64.5vh",
+          }}
+        >
+          <Table aria-label="collapsible table" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, fontSize: "12.5px", color: "#374151" }} />
+                <TableCell sx={{ fontWeight: 700, fontSize: "12.5px", color: "#374151" }}>
+                  Name
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "12.5px", color: "#374151" }}>
+                  Email
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "12.5px", color: "#374151" }}>
+                  Role
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, fontSize: "12.5px", color: "#374151" }}>
+                  User ID
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Object.keys(userLoginTimingData).map((userId) => (
+                <Row key={userId} row={userLoginTimingData[userId]} />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       ) : (
-        userLoginTimingData &&
-        userLoginTimingData.length !== 0 && (
-          <Box m="40px 0 0 0" height="64.5vh" overflow="auto">
-            <TableContainer component={Paper}>
-              <Table aria-label="collapsible table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell />
-                    <TableCell>Name</TableCell>
-                    <TableCell align="right">Email</TableCell>
-                    <TableCell align="right">Role</TableCell>
-                    <TableCell align="right">User Id</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.keys(userLoginTimingData).map((userId) => (
-                    <Row key={userId} row={userLoginTimingData[userId]} />
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 4,
+            borderRadius: "10px",
+            borderColor: "#eef0f2",
+            textAlign: "center",
+          }}
+        >
+          <Typography sx={{ color: "#9ca3af" }}>
+            No login activity recorded yet.
+          </Typography>
+        </Paper>
       )}
     </Box>
   );
 };
 
 export default LoginLogs;
-
-
-
-

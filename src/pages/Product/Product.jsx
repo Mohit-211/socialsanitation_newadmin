@@ -1,13 +1,29 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Tooltip } from "antd";
+import { Table, Space, message, Modal, Tooltip, Input } from "antd";
 import Button from "@mui/material/Button";
-import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import { useNavigate } from "react-router";
+import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { DeleteProduct, GetProduct } from "../../services/Api/Product";
+
+const actionIconBtn = (color) => ({
+	width: 34,
+	height: 34,
+	border: "1px solid",
+	borderColor: color,
+	color,
+	"&:hover": {
+		backgroundColor: `${color}14`,
+		borderColor: color,
+	},
+});
 
 const Product = () => {
 	const navigate = useNavigate();
@@ -15,6 +31,7 @@ const Product = () => {
 	const [userBackupData, setUserBackupData] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+	const [searchTerm, setSearchTerm] = useState("");
 	const [tableParams, setTableParams] = useState({
 		pagination: {
 			current: 1,
@@ -78,22 +95,25 @@ const Product = () => {
 			dataIndex: "action",
 			render: (_, record) => (
 				<Space size="middle">
-					<Button
-						icon="pi pi-pencil"
-						rounded
-						outlined
-						className="mr-2"
-						style={{ margin: 0, borderRadius: "25px" }}
-						onClick={() => navigate(`/editProduct/${record.id}`)}
-					/>
-					<Button
-						icon="pi pi-trash"
-						rounded
-						outlined
-						severity="danger"
-						style={{ borderRadius: "25px", color: "red", borderColor: "red" }}
-						onClick={() => handleDelete([record.id])}
-					/>
+					<Tooltip title="Edit Product">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#6366F1")}
+							onClick={() => navigate(`/editProduct/${record.id}`)}
+						>
+							<Pencil size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Delete Product">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#EF4444")}
+							onClick={() => handleDelete([record.id])}
+						>
+							<Trash2 size={16} />
+						</IconButton>
+					</Tooltip>
 				</Space>
 			),
 		},
@@ -105,6 +125,9 @@ const Product = () => {
 			content: `Are you sure you want to delete ${
 				userIds.length > 1 ? "these products" : "this product"
 			}?`,
+			okText: "Yes, Delete",
+			okType: "danger",
+			cancelText: "No",
 			onOk: async () => {
 				try {
 					await DeleteProduct(userIds);
@@ -161,6 +184,7 @@ const Product = () => {
 	};
 
 	const onSearch = (searchField) => {
+		setSearchTerm(searchField);
 		if (!searchField) {
 			setData(userBackupData); // reset when empty search
 			return;
@@ -181,7 +205,6 @@ const Product = () => {
 	};
 
 	const onSelectChange = (newSelectedRowKeys) => {
-		console.log("selectedRowKeys changed: ", newSelectedRowKeys);
 		setSelectedRowKeys(newSelectedRowKeys);
 	};
 
@@ -225,54 +248,96 @@ const Product = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* HEADER */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">PRODUCT MANAGEMENT</h3>
-					<p className="page-sub-title">View, delete, and add Product</p>
-				</div>
-				<Box display="flex" justifyContent="space-between" alignItems="center">
-					<Box>
-						<span className="p-input-icon-left">
-							<i className="pi pi-search" />
-							<InputText
-								type="search"
-								onChange={(e) => {
-									onSearch(e.target.value);
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
+				>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							PRODUCT MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							View, delete, and add Product
+						</Typography>
+					</Box>
+
+					<Stack
+						direction="row"
+						spacing={1.5}
+						sx={{ alignItems: "center", flexShrink: 0 }}
+					>
+						<Input
+							allowClear
+							prefix={<Search size={18} color="#9CA3AF" />}
+							placeholder="Search..."
+							style={{ width: 240, height: 44 }}
+							value={searchTerm}
+							onChange={(e) => onSearch(e.target.value)}
+						/>
+
+						{selectedRowKeys.length > 0 && (
+							<Button
+								variant="contained"
+								disableElevation
+								startIcon={<Trash2 size={16} />}
+								onClick={() => handleDelete(selectedRowKeys)}
+								sx={{
+									height: 44,
+									px: 2.5,
+									borderRadius: "8px",
+									textTransform: "none",
+									fontWeight: 600,
+									whiteSpace: "nowrap",
+									backgroundColor: "#ef4444",
+									"&:hover": { backgroundColor: "#dc2626" },
 								}}
-								placeholder="Search..."
-							/>
-						</span>
+							>
+								Delete Selected ({selectedRowKeys.length})
+							</Button>
+						)}
 
 						<Button
-							icon="pi pi-trash"
-							severity="danger"
-							style={{
-								marginLeft: "10px",
-								borderRadius: "5px",
-								height: "47px",
-								cursor: "pointer",
-							}}
-							onClick={() => handleDelete(selectedRowKeys)}
-							disabled={!selectedRowKeys.length}
-						/>
-						<Button
-							icon="pi pi-plus"
-							severity="info"
-							style={{
-								margin: "0px 10px",
-								borderRadius: "5px",
-								height: "47px",
-							}}
+							variant="contained"
+							disableElevation
+							startIcon={<Plus size={18} />}
 							onClick={navigateToAddProduct}
-						/>
-					</Box>
-				</Box>
-			</Box>
+							sx={{
+								height: 44,
+								px: 2.5,
+								borderRadius: "8px",
+								textTransform: "none",
+								fontWeight: 600,
+								whiteSpace: "nowrap",
+							}}
+						>
+							Add Product
+						</Button>
+					</Stack>
+				</Stack>
+			</Paper>
+
 			<Table
 				columns={columns}
 				rowKey={(record) => record.id}
@@ -281,6 +346,8 @@ const Product = () => {
 				loading={loading}
 				onChange={handleTableChange}
 				rowSelection={rowSelection}
+				bordered
+				size="middle"
 			/>
 		</Box>
 	);

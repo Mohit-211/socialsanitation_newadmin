@@ -3,6 +3,9 @@ import dayjs from "@/lib/dayjs";
 import React, { useEffect, useState } from "react";
 import { Table, Button, Space, Tag, message } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import QuoteDetailsModal from "./QuoteDetailsModal";
 import {
 	getQuoteRequests,
@@ -96,26 +99,32 @@ const QuoteRequests = () => {
 	];
 
 	return (
-		<>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
+		<Box>
+			{/* HEADER */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
 				}}
 			>
-				<div>
-					<h3 className="page-title">QUOTE REQUESTS</h3>
-					<p className="page-sub-title">View and manage submitted quotes</p>
-				</div>
-			</div>
+				<Box>
+					<Typography className="page-title">QUOTE REQUESTS</Typography>
+					<Typography className="page-sub-title">
+						View and manage submitted quotes
+					</Typography>
+				</Box>
+			</Paper>
 
 			<Table
 				rowKey="id"
 				columns={columns}
 				dataSource={data}
 				loading={loading}
+				bordered
+				size="middle"
 			/>
 
 			<QuoteDetailsModal
@@ -124,7 +133,7 @@ const QuoteRequests = () => {
 				quote={selectedQuote}
 				onUpdateStatus={handleUpdateStatus}
 			/>
-		</>
+		</Box>
 	);
 };
 

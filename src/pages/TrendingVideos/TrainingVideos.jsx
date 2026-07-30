@@ -1,12 +1,30 @@
 /** @format */
 
 import React, { useEffect, useState } from "react";
-import { Button, Table, Modal, message, Space } from "antd";
-import { Box } from "@mui/material";
+import { Table, Modal, message, Space } from "antd";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import { useNavigate } from "react-router";
 import { DeleteVideos, GetVideos } from "../../services/Api/Api";
 import dayjs from "@/lib/dayjs";
-import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { Pencil, Trash2, Plus } from "lucide-react";
+
+const actionIconBtn = (color) => ({
+	width: 34,
+	height: 34,
+	border: "1px solid",
+	borderColor: color,
+	color,
+	"&:hover": {
+		backgroundColor: `${color}14`,
+		borderColor: color,
+	},
+});
 
 const TrainingVideos = () => {
 	const navigate = useNavigate();
@@ -60,20 +78,27 @@ const TrainingVideos = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Space size="middle">
-					<Button
-						shape="circle"
-						icon={<EditOutlined />}
-						size="large"
-						onClick={(event) => navigateToEdit(event, record.id)}
-					/>
-					<Button
-						shape="circle"
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete([record.id])}
-					/>
-				</Space>
+				<Stack direction="row" spacing={0.5}>
+					<Tooltip title="Edit Video">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#6366F1")}
+							onClick={(event) => navigateToEdit(event, record.id)}
+						>
+							<Pencil size={16} />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Delete Video">
+						<IconButton
+							size="small"
+							sx={actionIconBtn("#EF4444")}
+							onClick={() => handleDelete([record.id])}
+						>
+							<Trash2 size={16} />
+						</IconButton>
+					</Tooltip>
+				</Stack>
 			),
 		},
 	];
@@ -117,6 +142,9 @@ const TrainingVideos = () => {
 			content: `Are you sure you want to delete ${
 				brandIds.length > 1 ? "these videos" : "this video"
 			}?`,
+			okText: "Yes, Delete",
+			okType: "danger",
+			cancelText: "No",
 			onOk: async () => {
 				try {
 					await DeleteVideos(brandIds, localStorage.getItem("adminToken"));
@@ -139,38 +167,87 @@ const TrainingVideos = () => {
 
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			{/* HEADER */}
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 2.5,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">Training Videos</h3>
-					<p className="page-sub-title">View and manage training videos</p>
-				</div>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "row",
-						alignItems: "flex-start",
-						gap: "10px",
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: { xs: "wrap", md: "nowrap" },
 					}}
 				>
-					<Button
-						icon={<DeleteOutlined />}
-						size="large"
-						onClick={() => handleDelete(selectedRowKeys)}
-						disabled={!selectedRowKeys.length}
-						danger
-					/>
-					<Button
-						icon={<PlusOutlined />}
-						size="large"
-						onClick={navigateToAddUser}
-					/>
-				</div>
-			</Box>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							TRAINING VIDEOS
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							View and manage training videos
+						</Typography>
+					</Box>
+
+					<Stack
+						direction="row"
+						spacing={1.5}
+						sx={{ alignItems: "center", flexShrink: 0 }}
+					>
+						{selectedRowKeys.length > 0 && (
+							<Button
+								variant="contained"
+								disableElevation
+								startIcon={<Trash2 size={16} />}
+								onClick={() => handleDelete(selectedRowKeys)}
+								sx={{
+									height: 44,
+									px: 2.5,
+									borderRadius: "8px",
+									textTransform: "none",
+									fontWeight: 600,
+									whiteSpace: "nowrap",
+									backgroundColor: "#ef4444",
+									"&:hover": { backgroundColor: "#dc2626" },
+								}}
+							>
+								Delete Selected ({selectedRowKeys.length})
+							</Button>
+						)}
+
+						<Button
+							variant="contained"
+							disableElevation
+							startIcon={<Plus size={18} />}
+							onClick={navigateToAddUser}
+							sx={{
+								height: 44,
+								px: 2.5,
+								borderRadius: "8px",
+								textTransform: "none",
+								fontWeight: 600,
+								whiteSpace: "nowrap",
+							}}
+						>
+							Add Video
+						</Button>
+					</Stack>
+				</Stack>
+			</Paper>
+
 			<Table
 				columns={columns}
 				rowKey={(record) => record.id}
@@ -179,6 +256,8 @@ const TrainingVideos = () => {
 				loading={loading}
 				onChange={handleTableChange}
 				rowSelection={rowSelection}
+				bordered
+				size="middle"
 			/>
 		</Box>
 	);

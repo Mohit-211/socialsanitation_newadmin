@@ -2,11 +2,15 @@
 
 import React, { useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
 import { Card, Form, Input, Button, message } from "antd";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { ArrowLeftOutlined, DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined } from "@ant-design/icons";
+import { ArrowLeft } from "lucide-react";
 import { GetProductById, UpdateProduct } from "../../services/Api/Product";
 
 const EditProduct = () => {
@@ -76,25 +80,63 @@ const EditProduct = () => {
 	return (
 		<Box>
 			{/* Header Section */}
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			<Paper
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
 			>
-				<div>
-					<h3 className="page-title">UPDATE PRODUCT</h3>
-					<p className="page-sub-title">Edit product details</p>
-				</div>
-
-				<Button
-					style={{ backgroundColor: "lightgray" }}
-					onClick={() => navigate("/supplies/list")}
-					icon={<ArrowLeftOutlined />}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 2,
+						flexWrap: { xs: "wrap", md: "nowrap" },
+					}}
 				>
-					Return to Product List
-				</Button>
-			</Box>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography className="page-title" noWrap>
+							PRODUCT MANAGEMENT
+						</Typography>
+						<Typography
+							className="page-sub-title"
+							sx={{
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								whiteSpace: "nowrap",
+							}}
+						>
+							Edit product details
+						</Typography>
+					</Box>
+
+					<MuiButton
+						variant="contained"
+						disableElevation
+						startIcon={<ArrowLeft size={18} />}
+						onClick={() => navigate("/supplies/list")}
+						sx={{
+							height: 46,
+							px: 3,
+							borderRadius: "8px",
+							minWidth: 180,
+							textTransform: "none",
+							fontWeight: 600,
+							backgroundColor: "#2c3345",
+							flexShrink: 0,
+							"&:hover": {
+								backgroundColor: "#1f2433",
+							},
+						}}
+					>
+						Return to Product List
+					</MuiButton>
+				</Box>
+			</Paper>
 
 			<Card style={{ width: "100%" }}>
 				<Form form={form} layout="vertical" onFinish={handleSubmit}>

@@ -1,9 +1,13 @@
 /** @format */
 
-import { Box } from "@mui/material";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import MuiButton from "@mui/material/Button";
 import React, { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Button, Input, Space, message } from "antd";
+import { ArrowLeft, Check, X } from "lucide-react";
 import { GetVideoById, UpdateVideo } from "../../services/Api/Api";
 
 const EditTrainingVideos = () => {
@@ -54,24 +58,64 @@ const EditTrainingVideos = () => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      {/* Header Section */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
       >
-        <div>
-          <h3 className="page-title">TRAINING VIDEO MANAGEMENT</h3>
-          <p className="page-sub-title">Update Training Video</p>
-        </div>
-        <Button
-          icon={<i className="pi pi-arrow-left" />}
-          onClick={() => navigate("/training-videos")}
-          style={{ borderRadius: "5px", height: "47px" }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            flexWrap: { xs: "wrap", md: "nowrap" },
+          }}
         >
-          Return to Training Videos
-        </Button>
-      </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography className="page-title" noWrap>
+              TRAINING VIDEO MANAGEMENT
+            </Typography>
+            <Typography
+              className="page-sub-title"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Update this training video
+            </Typography>
+          </Box>
+
+          <MuiButton
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowLeft size={18} />}
+            onClick={() => navigate("/training-videos")}
+            sx={{
+              height: 46,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 180,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              flexShrink: 0,
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to Training Videos
+          </MuiButton>
+        </Box>
+      </Paper>
 
       <Card>
         <Form layout="vertical" onFinish={handleSubmit}>
@@ -101,14 +145,14 @@ const EditTrainingVideos = () => {
                 type="primary"
                 htmlType="submit"
                 loading={disable}
-                icon={<i className="pi pi-check" />}
+                icon={<Check size={15} />}
               >
                 Save
               </Button>
               <Button
                 type="default"
                 onClick={() => navigate("/training-videos")}
-                icon={<i className="pi pi-times" />}
+                icon={<X size={15} />}
               >
                 Cancel
               </Button>

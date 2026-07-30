@@ -224,3 +224,50 @@
     color: #555;
   }
 }
+
+.sidebar {
+  .ant-menu {
+    // Space between each group cluster
+    .ant-menu-item-group {
+      margin-bottom: 4px;
+    }
+
+    // Group labels (CORE, PEOPLE MANAGEMENT, etc.)
+    .ant-menu-item-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.35);
+      text-transform: uppercase;
+      padding: 14px 16px 6px;
+    }
+
+    // Subtle divider line between groups (skip the very first one)
+    .ant-menu-item-group:not(:first-child) {
+      position: relative;
+      margin-top: 6px;
+
+      &::before {
+        content: "";
+        display: block;
+        height: 1px;
+        margin: 0 16px 6px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+    }
+
+    // Tighten spacing between items within the same group
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+      margin-block: 1px !important;
+      border-radius: 8px;
+      margin-inline: 8px !important;
+      width: calc(100% - 16px) !important;
+    }
+
+    // Slightly bolder/clearer selected state
+    .ant-menu-item-selected {
+      font-weight: 600;
+    }
+  }
+}
