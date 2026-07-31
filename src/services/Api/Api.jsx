@@ -123,6 +123,18 @@ export const GetUserById = async (id) => {
   return await axios.get(BASE_URL + "admin/user/getUserById?id=" + id);
 };
 
+export const GetClosestEmployeesByAddress = async (addressId) => {
+  return await axios.get(
+    BASE_URL + "admin/user/get-closest-employees-by-address/" + addressId
+  );
+};
+
+export const DeleteUserAddress = async (addressId) => {
+  return await axios.delete(
+    BASE_URL + "admin/user/delete-user-address/" + addressId
+  );
+};
+
 // export const GetAllDriver = async (id) => {
 //   return await axios.get(BASE_URL + "admin/user/getAllDrivers");
 // };

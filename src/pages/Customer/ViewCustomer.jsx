@@ -1,21 +1,41 @@
 /** @format */
 
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Button from "@mui/material/Button";
 import { Box, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Divider from "@mui/material/Divider";
 import {
   DeleteContractAgreement,
   DeleteServiceEstimate,
   GetUserById,
+  StateAPI,
+  CityAPI,
+  AddNewUserAddress,
+  EditAddress,
+  GetClosestEmployeesByAddress,
+  DeleteUserAddress,
 } from "../../services/Api/Api";
 import Card from "@mui/material/Card";
-import { Space, Table, Tag, message, Modal, Tabs } from "antd";
+import {
+  Space,
+  Table,
+  Tag,
+  message,
+  Modal,
+  Tabs,
+  Input,
+  Select,
+  Form,
+} from "antd";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 
 import {
   DeleteServiceQuote,
@@ -34,7 +54,10 @@ import {
   IoPersonOutline,
   IoDocumentTextOutline,
   IoLocationOutline,
+  IoNavigateOutline,
+  IoRefreshOutline,
 } from "react-icons/io5";
+import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import "./Customers.css";
 import { DeleteOutlined } from "@mui/icons-material";
 import { DeleteInvoice } from "../../services/Api/InvoiceApi";
@@ -119,10 +142,6 @@ const CardIconButton = ({ color, onClick, children }) => (
 /**
  * Generic "document" card used for Monthly Invoices, Contract Agreements
  * and Service Estimates so all three share one clean, consistent look.
- *
- * statusTags: [{ label, color }]
- * details: [{ icon, label, value }]
- * actions: [{ label, href, icon, background }] OR [{ disabledMessage, bg, color }]
  */
 const DocumentCard = ({
   statusTags = [],
@@ -368,6 +387,15 @@ const DocumentCard = ({
 
 const IoCardOutlineFallback = () => <span>💰</span>;
 
+const NEARBY_ROLE_LABELS = {
+  7: "INSPECTOR/SUPERVISOR",
+  8: "QUALITY ASSURANCE TECHNICIAN",
+  9: "CLEANER",
+};
+const NEARBY_CLIENT_COLOR = "#667eea";
+const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
+const NEARBY_SELECTED_COLOR = "#FB8C00";
+
 /* -------------------------------------------------------------------------- */
 
 const ViewCustomer = () => {
@@ -384,6 +412,36 @@ const ViewCustomer = () => {
   const [serviceEstimates, setServiceEstimates] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
 
+  /* ---------------------------------------------------------------- */
+  /* Address: edit modal state                                          */
+  /* ---------------------------------------------------------------- */
+  const [addressModalVisible, setAddressModalVisible] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [addressForm] = Form.useForm();
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [addressCoordinates, setAddressCoordinates] = useState({
+    lat: null,
+    lng: null,
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* Address: nearest-employees modal state                             */
+  /* ---------------------------------------------------------------- */
+  const [nearbyModalVisible, setNearbyModalVisible] = useState(false);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyEmployees, setNearbyEmployees] = useState([]);
+  const [nearbyClientLocation, setNearbyClientLocation] = useState(null);
+  const [nearbyAddress, setNearbyAddress] = useState(null);
+  const [selectedNearbyId, setSelectedNearbyId] = useState(null);
+  const nearbyMapRef = useRef(null);
+  const NEARBY_CLUSTER_THRESHOLD_MI = 2;
+
+  const { isLoaded: isNearbyMapLoaded } = useJsApiLoader({
+    googleMapsApiKey: "AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o",
+    libraries: ["maps"],
+  });
+
   const fetchServiceRequests = async () => {
     try {
       const res = await GetServiceRequestsByUserId(id);
@@ -394,6 +452,228 @@ const ViewCustomer = () => {
   };
 
   const clientName = userData?.user_profile?.name || "Client";
+
+  /* ---------------------------------------------------------------- */
+  /* Refresh client (used after address add/edit/delete)                */
+  /* ---------------------------------------------------------------- */
+  const refreshUser = async () => {
+    try {
+      const res = await GetUserById(id);
+      setUserData(res.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Address: fetch states / cities                                     */
+  /* ---------------------------------------------------------------- */
+  useEffect(() => {
+    StateAPI(233)
+      .then((res) => setStates(res?.data?.data?.all_state || []))
+      .catch((err) => console.log(err));
+  }, []);
+
+  const fetchCities = (stateId) => {
+    return CityAPI(stateId).then((res) => {
+      const citiesList = res?.data?.data?.all_city || [];
+      setCities(citiesList);
+      return citiesList;
+    });
+  };
+
+  const fetchAddressCoordinates = async (address) => {
+    if (!address) return;
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          address,
+        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
+      );
+      const data = await res.json();
+      if (data.status === "OK") {
+        const location = data.results[0].geometry.location;
+        setAddressCoordinates({ lat: location.lat, lng: location.lng });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const openAddAddress = () => {
+    setEditingAddress(null);
+    addressForm.resetFields();
+    setAddressCoordinates({ lat: null, lng: null });
+    setAddressModalVisible(true);
+  };
+
+  const openEditAddress = (addr) => {
+    setEditingAddress(addr);
+    setAddressModalVisible(true);
+
+    setTimeout(() => {
+      addressForm.resetFields();
+      addressForm.setFieldsValue({
+        address: addr.address,
+        state_id: addr.state_id,
+      });
+      setAddressCoordinates({
+        lat: addr.address_lat,
+        lng: addr.address_long,
+      });
+      fetchCities(addr.state_id).then(() => {
+        addressForm.setFieldsValue({ city_id: addr.city_id });
+      });
+      if (addr.address) fetchAddressCoordinates(addr.address);
+    }, 100);
+  };
+
+  const handleSaveAddress = async () => {
+    const values = await addressForm.validateFields();
+
+    const basePayload = {
+      address: values.address,
+      state_id: values.state_id,
+      city_id: values.city_id,
+      country_id: 233,
+      address_lat: addressCoordinates.lat,
+      address_long: addressCoordinates.lng,
+    };
+
+    try {
+      if (editingAddress) {
+        await EditAddress({
+          user_address_id: editingAddress.id,
+          ...basePayload,
+        });
+        message.success("Address updated");
+      } else {
+        await AddNewUserAddress({ user_id: id, ...basePayload });
+        message.success("Address added");
+      }
+
+      await refreshUser();
+      setAddressModalVisible(false);
+      setEditingAddress(null);
+      addressForm.resetFields();
+      setAddressCoordinates({ lat: null, lng: null });
+    } catch (err) {
+      message.error("Failed to save address");
+    }
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Address: delete                                                    */
+  /* ---------------------------------------------------------------- */
+  const handleDeleteAddress = (addressId) => {
+    Modal.confirm({
+      title: "Delete Address",
+      content: "Are you sure you want to delete this address?",
+      okText: "Delete",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          await DeleteUserAddress(addressId);
+          message.success("Address deleted successfully");
+          refreshUser();
+        } catch (error) {
+          console.error(error);
+          message.error("Failed to delete address");
+        }
+      },
+    });
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Address: nearest employees                                         */
+  /* ---------------------------------------------------------------- */
+  const capZoom = (max) => {
+    window.google.maps.event.addListenerOnce(
+      nearbyMapRef.current,
+      "idle",
+      () => {
+        if (nearbyMapRef.current.getZoom() > max) {
+          nearbyMapRef.current.setZoom(max);
+        }
+      },
+    );
+  };
+
+  const fitDefaultView = () => {
+    if (!nearbyMapRef.current || !nearbyClientLocation) return;
+
+    const closeEmployees = nearbyEmployees.filter(
+      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI,
+    );
+    const employeesToShow =
+      closeEmployees.length > 0 ? closeEmployees : nearbyEmployees.slice(0, 1);
+
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend({
+      lat: nearbyClientLocation.address_lat,
+      lng: nearbyClientLocation.address_long,
+    });
+    employeesToShow.forEach((emp) => {
+      bounds.extend({ lat: emp.address_lat, lng: emp.address_long });
+    });
+
+    nearbyMapRef.current.fitBounds(bounds, 60);
+    capZoom(18);
+  };
+
+  const focusOnEmployee = (emp) => {
+    if (!nearbyMapRef.current || !nearbyClientLocation || !emp) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend({
+      lat: nearbyClientLocation.address_lat,
+      lng: nearbyClientLocation.address_long,
+    });
+    bounds.extend({ lat: emp.address_lat, lng: emp.address_long });
+
+    nearbyMapRef.current.fitBounds(bounds, 80);
+    capZoom(18);
+  };
+
+  const handleSelectNearbyEmployee = (emp) => {
+    setSelectedNearbyId(emp.id);
+    focusOnEmployee(emp);
+  };
+
+  const handleResetMapView = () => {
+    setSelectedNearbyId(null);
+    fitDefaultView();
+  };
+
+  useEffect(() => {
+    if (!isNearbyMapLoaded || !nearbyClientLocation) return;
+    fitDefaultView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNearbyMapLoaded, nearbyClientLocation, nearbyEmployees]);
+
+  const openNearestEmployeesModal = async (addr) => {
+    setNearbyAddress(addr);
+    setNearbyModalVisible(true);
+    setNearbyLoading(true);
+    setSelectedNearbyId(null);
+    try {
+      const res = await GetClosestEmployeesByAddress(addr.id);
+      const payload = res.data.data || {};
+      setNearbyClientLocation(payload.selected_address || null);
+      setNearbyEmployees(payload.employees || []);
+    } catch (error) {
+      console.error("Error fetching nearest employees:", error);
+      message.error("Failed to fetch nearest employees");
+    } finally {
+      setNearbyLoading(false);
+    }
+  };
+
+  const selectedNearbyEmployee = nearbyEmployees.find(
+    (emp) => emp.id === selectedNearbyId,
+  );
+
+  /* ---------------------------------------------------------------- */
 
   const handleDeleteServiceEstimate = (estimateId) => {
     Modal.confirm({
@@ -726,7 +1006,7 @@ const ViewCustomer = () => {
         style={{
           width: "100%",
           marginTop: "20px",
-          marginBottom: "40px",
+          marginBottom: "24px",
           borderRadius: "16px",
           border: "1px solid #e8e8e8",
           padding: "28px",
@@ -737,9 +1017,6 @@ const ViewCustomer = () => {
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
             gap: "32px",
-            paddingBottom: "28px",
-            marginBottom: "28px",
-            borderBottom: "1px solid #f0f0f0",
           }}
         >
           <div>
@@ -759,35 +1036,148 @@ const ViewCustomer = () => {
             </p>
           </div>
         </div>
+      </Card>
 
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "14px",
+      {/* ---------------- Client Addresses ---------------- */}
+      <Card
+        style={{
+          borderRadius: "16px",
+          border: "1px solid #e8e8e8",
+          padding: "28px",
+          marginBottom: "24px",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2.5,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IoLocationOutline style={{ fontSize: 18, color: "#667eea" }} />
+            <span style={{ ...infoLabelStyle, marginBottom: 0 }}>
+              Client's Addresses
+            </span>
+          </Box>
+
+          <Button
+            variant="contained"
+            disableElevation
+            size="small"
+            startIcon={<Plus size={16} />}
+            onClick={openAddAddress}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              height: 36,
             }}
           >
-            <IoLocationOutline style={{ fontSize: 16, color: "#667eea" }} />
-            <span style={infoLabelStyle}>Client's Addresses</span>
-          </div>
+            Add Address
+          </Button>
+        </Box>
 
-          {userData?.user_address?.length > 0 ? (
-            <div style={{ display: "grid", gap: "10px" }}>
-              {userData.user_address.map((address, index) => (
-                <p key={index} style={{ ...infoValueStyle, lineHeight: 1.5 }}>
-                  {address.address}, {address.user_city?.name},{" "}
-                  {address.user_state?.name}, {address.user_country?.name}
-                </p>
-              ))}
-            </div>
-          ) : (
-            <p style={{ ...infoValueStyle, color: "#999" }}>
-              No address available
-            </p>
-          )}
-        </div>
+        {userData?.user_address?.length > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {userData.user_address.map((address) => (
+              <Box
+                key={address.id}
+                sx={{
+                  border: "1px solid #eef0f2",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  background: "#fafbfc",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.25,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                  <MapPin
+                    size={16}
+                    color="#667eea"
+                    style={{ marginTop: 2, flexShrink: 0 }}
+                  />
+                  <Typography
+                    sx={{
+                      fontSize: "13.5px",
+                      color: "#2c3e50",
+                      fontWeight: 500,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {address.address}, {address.user_city?.name},{" "}
+                    {address.user_state?.name}, {address.user_country?.name}
+                  </Typography>
+                </Box>
+
+                <Divider sx={{ my: 0.5 }} />
+
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Edit Address">
+                    <IconButton
+                      size="small"
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        border: "1px solid #6366F1",
+                        color: "#6366F1",
+                        "&:hover": { backgroundColor: "#6366F114" },
+                      }}
+                      onClick={() => openEditAddress(address)}
+                    >
+                      <Pencil size={14} />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Delete Address">
+                    <IconButton
+                      size="small"
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        border: "1px solid #EF4444",
+                        color: "#EF4444",
+                        "&:hover": { backgroundColor: "#EF444414" },
+                      }}
+                      onClick={() => handleDeleteAddress(address.id)}
+                    >
+                      <Trash2 size={14} />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="View Nearest Employees">
+                    <IconButton
+                      size="small"
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        border: "1px solid #667eea",
+                        color: "#667eea",
+                        "&:hover": { backgroundColor: "#667eea14" },
+                      }}
+                      onClick={() => openNearestEmployeesModal(address)}
+                    >
+                      <IoNavigateOutline size={15} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </Box>
+            ))}
+          </div>
+        ) : (
+          <p style={{ ...infoValueStyle, color: "#999" }}>
+            No address available
+          </p>
+        )}
       </Card>
 
       <Card
@@ -1554,6 +1944,444 @@ const ViewCustomer = () => {
           items={mainTabItems}
         />
       </div>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Add / Edit Address modal                                           */}
+      {/* ---------------------------------------------------------------- */}
+      {addressModalVisible && (
+        <Modal
+          title={
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#eef2ff",
+                  color: "#667eea",
+                  flexShrink: 0,
+                }}
+              >
+                <MapPin size={17} />
+              </Box>
+              <span style={{ fontWeight: 600 }}>
+                {editingAddress ? "Edit Address" : "Add New Address"}
+              </span>
+            </Stack>
+          }
+          open={addressModalVisible}
+          onCancel={() => {
+            setAddressModalVisible(false);
+            setEditingAddress(null);
+            addressForm.resetFields();
+            setCities([]);
+            setAddressCoordinates({ lat: null, lng: null });
+          }}
+          onOk={handleSaveAddress}
+          okText={editingAddress ? "Save Changes" : "Add Address"}
+          forceRender
+        >
+          <Divider sx={{ mt: 1, mb: 2 }} />
+          <Form
+            form={addressForm}
+            layout="vertical"
+            onValuesChange={(changedValues, allValues) => {
+              if (changedValues.state_id) {
+                addressForm.setFieldsValue({ city_id: undefined });
+                fetchCities(changedValues.state_id);
+              }
+              if (changedValues.address) {
+                const fullAddress = `${changedValues.address}, ${
+                  states.find((s) => s.id === allValues.state_id)?.name || ""
+                }, ${
+                  cities.find((c) => c.id === allValues.city_id)?.name || ""
+                }`;
+                fetchAddressCoordinates(fullAddress);
+              }
+            }}
+          >
+            <Form.Item
+              name="address"
+              label="Address"
+              rules={[{ required: true, message: "Please enter the address" }]}
+            >
+              <Input placeholder="Enter address" />
+            </Form.Item>
+
+            <Form.Item
+              name="state_id"
+              label="State"
+              rules={[{ required: true, message: "Please select a state" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select State"
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {states.map((s) => (
+                  <Select.Option key={s.id} value={s.id}>
+                    {s.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="city_id"
+              label="City"
+              rules={[{ required: true, message: "Please select a city" }]}
+            >
+              <Select
+                showSearch
+                placeholder="Select City"
+                disabled={!addressForm.getFieldValue("state_id")}
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {cities.map((c) => (
+                  <Select.Option key={c.id} value={c.id}>
+                    {c.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item label="Map Preview">
+              <div
+                style={{
+                  border: "1px solid #eef0f2",
+                  height: 220,
+                  borderRadius: 8,
+                }}
+              >
+                {addressCoordinates.lat && addressCoordinates.lng ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: "none", borderRadius: 8 }}
+                    src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
+                    allowFullScreen
+                  />
+                ) : (
+                  <p
+                    style={{
+                      textAlign: "center",
+                      paddingTop: 80,
+                      color: "#999",
+                    }}
+                  >
+                    Enter address to show map
+                  </p>
+                )}
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Nearest Employees modal (map + list)                               */}
+      {/* ---------------------------------------------------------------- */}
+      {nearbyModalVisible && (
+        <Modal
+          title={
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#F3F4F6",
+                  color: "#6B7280",
+                  flexShrink: 0,
+                }}
+              >
+                <MapPin size={17} />
+              </Box>
+              <Box>
+                <div style={{ fontWeight: 600, lineHeight: 1.3 }}>
+                  Nearest Employees
+                </div>
+                {nearbyAddress?.address && (
+                  <div
+                    style={{
+                      fontSize: "12.5px",
+                      fontWeight: 400,
+                      color: "#9ca3af",
+                    }}
+                  >
+                    For {nearbyAddress.address}
+                  </div>
+                )}
+              </Box>
+            </Stack>
+          }
+          open={nearbyModalVisible}
+          onCancel={() => setNearbyModalVisible(false)}
+          footer={null}
+          width={900}
+        >
+          <Divider sx={{ mt: 1, mb: 2 }} />
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              alignItems: "center",
+              marginBottom: "10px",
+            }}
+          >
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <IoNavigateOutline size={14} color="#9ca3af" />
+                <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+                  Address & closest employees
+                </Typography>
+              </Stack>
+              <Tooltip title="Zoom back out to all nearby employees">
+                <Button
+                  startIcon={<IoRefreshOutline size={14} />}
+                  size="small"
+                  onClick={handleResetMapView}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    p: 0,
+                  }}
+                >
+                  Reset View
+                </Button>
+              </Tooltip>
+            </Box>
+
+            <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+              {nearbyEmployees.length > 0
+                ? `${nearbyEmployees.length} employee${
+                    nearbyEmployees.length > 1 ? "s" : ""
+                  } found`
+                : "Closest employees"}
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+              alignItems: "stretch",
+              width: "100%",
+            }}
+          >
+            {/* Map Panel */}
+            <Box
+              sx={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: "380px",
+              }}
+            >
+              {nearbyLoading || !isNearbyMapLoaded ? (
+                <Box
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#9ca3af",
+                  }}
+                >
+                  Loading map...
+                </Box>
+              ) : (
+                <GoogleMap
+                  mapContainerStyle={{ width: "100%", height: "100%" }}
+                  center={
+                    nearbyClientLocation
+                      ? {
+                          lat: nearbyClientLocation.address_lat,
+                          lng: nearbyClientLocation.address_long,
+                        }
+                      : { lat: 0, lng: 0 }
+                  }
+                  zoom={nearbyClientLocation ? 15 : 2}
+                  onLoad={(map) => {
+                    nearbyMapRef.current = map;
+                    fitDefaultView();
+                  }}
+                >
+                  {nearbyClientLocation && (
+                    <Marker
+                      position={{
+                        lat: nearbyClientLocation.address_lat,
+                        lng: nearbyClientLocation.address_long,
+                      }}
+                      icon={{
+                        path: window.google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: NEARBY_CLIENT_COLOR,
+                        fillOpacity: 1,
+                        strokeColor: "#ffffff",
+                        strokeWeight: 2,
+                      }}
+                      label={{
+                        text: "A",
+                        color: "#ffffff",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                      }}
+                      title={`Address — ${nearbyClientLocation.address || ""}`}
+                      onClick={() => setSelectedNearbyId(null)}
+                      zIndex={999}
+                    />
+                  )}
+
+                  {nearbyEmployees.map((emp, index) => {
+                    const isSelected = emp.id === selectedNearbyId;
+                    return (
+                      <Marker
+                        key={emp.id}
+                        position={{
+                          lat: emp.address_lat,
+                          lng: emp.address_long,
+                        }}
+                        icon={{
+                          path: window.google.maps.SymbolPath.CIRCLE,
+                          scale: isSelected ? 14 : 11,
+                          fillColor: isSelected
+                            ? NEARBY_SELECTED_COLOR
+                            : NEARBY_EMPLOYEE_COLOR,
+                          fillOpacity: 1,
+                          strokeColor: "#ffffff",
+                          strokeWeight: 2,
+                        }}
+                        label={{
+                          text: `${index + 1}`,
+                          color: "#ffffff",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                        }}
+                        title={`${emp.name} — ${emp.distance} mi away`}
+                        zIndex={isSelected ? 1000 : index}
+                        onClick={() => handleSelectNearbyEmployee(emp)}
+                      />
+                    );
+                  })}
+
+                  {selectedNearbyEmployee && (
+                    <InfoWindow
+                      position={{
+                        lat: selectedNearbyEmployee.address_lat,
+                        lng: selectedNearbyEmployee.address_long,
+                      }}
+                      onCloseClick={() => setSelectedNearbyId(null)}
+                    >
+                      <div>
+                        <p>
+                          <strong>{selectedNearbyEmployee.name}</strong>
+                        </p>
+                        <p>
+                          {NEARBY_ROLE_LABELS[selectedNearbyEmployee.role_id] ||
+                            "-"}
+                        </p>
+                        <p>{selectedNearbyEmployee.address}</p>
+                        <p>
+                          <strong>{selectedNearbyEmployee.distance} mi</strong>{" "}
+                          away
+                        </p>
+                      </div>
+                    </InfoWindow>
+                  )}
+                </GoogleMap>
+              )}
+            </Box>
+
+            {/* List Panel */}
+            <Box
+              sx={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: "380px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Table
+                columns={[
+                  {
+                    title: "#",
+                    width: 40,
+                    align: "center",
+                    render: (_, __, index) => (
+                      <span style={{ color: "#9ca3af" }}>{index + 1}</span>
+                    ),
+                  },
+                  {
+                    title: "Name",
+                    dataIndex: "name",
+                    render: (name) => (
+                      <span style={{ fontWeight: 500 }}>{name}</span>
+                    ),
+                  },
+                  {
+                    title: "Role",
+                    dataIndex: "role_id",
+                    width: 190,
+                    render: (role_id) => (
+                      <strong style={{ fontSize: "12.5px" }}>
+                        {NEARBY_ROLE_LABELS[role_id] || "-"}
+                      </strong>
+                    ),
+                  },
+                  {
+                    title: "Distance",
+                    dataIndex: "distance",
+                    width: 100,
+                    align: "right",
+                    sorter: (a, b) => a.distance - b.distance,
+                    defaultSortOrder: "ascend",
+                    render: (distance) => (
+                      <span style={{ fontWeight: 500 }}>{distance} mi</span>
+                    ),
+                  },
+                ]}
+                rowKey={(record) => record.id}
+                dataSource={nearbyEmployees}
+                loading={nearbyLoading}
+                pagination={false}
+                size="small"
+                locale={{ emptyText: "No employees found." }}
+                onRow={(record) => ({
+                  onClick: () => handleSelectNearbyEmployee(record),
+                  style: {
+                    cursor: "pointer",
+                    background:
+                      record.id === selectedNearbyId ? "#fff7e6" : undefined,
+                  },
+                })}
+              />
+            </Box>
+          </Box>
+        </Modal>
+      )}
     </Box>
   );
 };

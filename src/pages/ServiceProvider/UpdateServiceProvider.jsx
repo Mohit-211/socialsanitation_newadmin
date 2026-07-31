@@ -6,18 +6,28 @@ import {
   Input,
   Button,
   Select,
-  Card,
   Row,
   Col,
-  Typography,
   message,
   Modal,
   Radio,
   InputNumber,
 } from "antd";
-import { Box, Paper, Button as MuiButton, Typography as MuiTypography } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Card,
+  Stack,
+  IconButton,
+  Tooltip,
+  Divider,
+  Button as MuiButton,
+  Typography as MuiTypography,
+} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
+import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { IoLocationOutline } from "react-icons/io5";
 import {
   GetUserById,
   EditUserById,
@@ -25,9 +35,8 @@ import {
   CityAPI,
   AddNewUserAddress,
   EditAddress,
+  DeleteUserAddress,
 } from "../../services/Api/Api";
-
-const { Title } = Typography;
 
 const UpdateServiceProvider = () => {
   const [form] = Form.useForm();
@@ -46,6 +55,9 @@ const UpdateServiceProvider = () => {
     lat: null,
     lng: null,
   });
+
+  // Employees may only ever have a single address on file.
+  const hasAddress = (userAddresses?.length || 0) >= 1;
 
   const navigateToEmployees = () => {
     navigate("/employees");
@@ -82,6 +94,13 @@ const UpdateServiceProvider = () => {
     } catch (err) {
       console.log(err);
     }
+  };
+
+  const refreshUser = () => {
+    GetUserById(id).then((res) => {
+      const data = res.data.data;
+      setUserAddresses(data?.user_address || []);
+    });
   };
 
   useEffect(() => {
@@ -146,6 +165,41 @@ const UpdateServiceProvider = () => {
     }
   };
 
+  const openAddAddress = () => {
+    if (hasAddress) return; // safety guard alongside the disabled button
+    setEditingAddress(null);
+    addressForm.resetFields();
+    setAddressCoordinates({ lat: null, lng: null });
+    setAddressModalVisible(true);
+  };
+
+  const openEditAddress = (addr) => {
+    setEditingAddress(addr);
+    setAddressModalVisible(true);
+
+    setTimeout(() => {
+      addressForm.resetFields();
+
+      addressForm.setFieldsValue({
+        address: addr.address,
+        state_id: addr.state_id,
+      });
+
+      setAddressCoordinates({
+        lat: addr.address_lat,
+        lng: addr.address_long,
+      });
+
+      fetchCities(addr.state_id).then(() => {
+        addressForm.setFieldsValue({
+          city_id: addr.city_id,
+        });
+      });
+
+      setTimeout(() => fetchCoordinates(addr.address), 200);
+    }, 100); // Delay ensures modal and form are mounted
+  };
+
   const handleSaveAddress = async () => {
     const values = await addressForm.validateFields();
 
@@ -176,8 +230,7 @@ const UpdateServiceProvider = () => {
         message.success("Address added");
       }
 
-      const updated = await GetUserById(id);
-      setUserAddresses(updated.data.data?.user_address || []);
+      refreshUser();
       setAddressModalVisible(false);
       setEditingAddress(null);
       addressForm.resetFields();
@@ -185,6 +238,25 @@ const UpdateServiceProvider = () => {
     } catch (err) {
       message.error("Failed to save address");
     }
+  };
+
+  const handleDeleteAddress = (addressId) => {
+    Modal.confirm({
+      title: "Delete Address",
+      content: "Are you sure you want to delete this address?",
+      okText: "Delete",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          await DeleteUserAddress(addressId);
+          message.success("Address deleted successfully");
+          refreshUser();
+        } catch (error) {
+          console.error(error);
+          message.error("Failed to delete address");
+        }
+      },
+    });
   };
 
   return (
@@ -242,7 +314,14 @@ const UpdateServiceProvider = () => {
         </Box>
       </Paper>
 
-      <Card>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
         <Form
           layout="vertical"
           form={form}
@@ -289,111 +368,174 @@ const UpdateServiceProvider = () => {
             </Col>
           </Row>
 
-          <Card style={{ marginBottom: 24 }}>
-            <div
-              style={{
+          {/* Employee Address Card */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              mb: 3,
+              borderRadius: "10px",
+              borderColor: "#eef0f2",
+            }}
+          >
+            <Box
+              sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: 16,
+                mb: 2.5,
+                flexWrap: "wrap",
+                gap: 1.5,
               }}
             >
-              <Title level={5} style={{ margin: 0 }}>
-                User Addresses
-              </Title>
-              <Button
-                type="primary"
-                onClick={() => {
-                  setEditingAddress(null);
-                  addressForm.resetFields();
-                  setCoordinates({ lat: null, lng: null });
-                  setAddressModalVisible(true);
-                }}
-              >
-                + Add Address
-              </Button>
-            </div>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <IoLocationOutline style={{ fontSize: 18, color: "#667eea" }} />
+                <MuiTypography
+                  sx={{
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    color: "#6c757d",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Employee Address
+                </MuiTypography>
+              </Box>
 
-            {userAddresses.length === 0 ? (
-              <Typography.Text type="secondary">
-                No address found
-              </Typography.Text>
-            ) : (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              <Tooltip
+                title={
+                  hasAddress
+                    ? "An employee can only have one address. Delete the existing address to add a new one."
+                    : ""
+                }
               >
-                {userAddresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "12px 16px",
-                      border: "1px solid #f0f0f0",
-                      borderRadius: 8,
-                      backgroundColor: "#fff",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                <span>
+                  <MuiButton
+                    variant="contained"
+                    disableElevation
+                    size="small"
+                    disabled={hasAddress}
+                    startIcon={<Plus size={16} />}
+                    onClick={openAddAddress}
+                    sx={{
+                      borderRadius: "8px",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      height: 36,
                     }}
                   >
-                    <div style={{ fontSize: 14, color: "#333" }}>
-                      {addr.address}, {addr.user_city?.name},{" "}
-                      {addr.user_state?.name}, {addr.user_country?.name}
-                    </div>
-                    <Button
-                      type="link"
-                      onClick={() => {
-                        console.log("Editing Address:", addr);
-                        setEditingAddress(addr);
-                        setAddressModalVisible(true);
+                    Add Address
+                  </MuiButton>
+                </span>
+              </Tooltip>
+            </Box>
 
-                        // Wait for modal to open
-                        setTimeout(() => {
-                          addressForm.resetFields();
-
-                          // ✅ Optional debug log for individual fields
-                          console.log("Setting address:", addr.address);
-                          console.log("Setting state_id:", addr.state_id);
-                          console.log("Setting city_id:", addr.city_id);
-
-                          addressForm.setFieldsValue({
-                            address: addr.address,
-                            state_id: addr.state_id,
-                          });
-                          console.log(addressForm, "addressForm");
-
-                          setAddressCoordinates({
-                            lat: addr.address_lat,
-                            lng: addr.address_long,
-                          });
-
-                          fetchCities(addr.state_id).then(() => {
-                            addressForm.setFieldsValue({
-                              city_id: addr.city_id,
-                            });
-                          });
-
-                          console.log(addr.address, "addres");
-
-                          setTimeout(() => fetchCoordinates(addr.address), 200);
-                        }, 100); // Delay ensures modal and form are mounted
-                      }}
+            {hasAddress ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: "16px",
+                }}
+              >
+                {userAddresses.map((addr) => (
+                  <Box
+                    key={addr.id}
+                    sx={{
+                      border: "1px solid #eef0f2",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      background: "#fafbfc",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.25,
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
                     >
-                      Edit
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                      <MapPin
+                        size={16}
+                        color="#667eea"
+                        style={{ marginTop: 2, flexShrink: 0 }}
+                      />
+                      <MuiTypography
+                        sx={{
+                          fontSize: "13.5px",
+                          color: "#2c3e50",
+                          fontWeight: 500,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {addr.address}, {addr.user_city?.name},{" "}
+                        {addr.user_state?.name}, {addr.user_country?.name}
+                      </MuiTypography>
+                    </Box>
 
-          <Form.Item style={{ marginTop: "50px" }}>
+                    <Divider sx={{ my: 0.5 }} />
+
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="Edit Address">
+                        <IconButton
+                          size="small"
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            border: "1px solid #6366F1",
+                            color: "#6366F1",
+                            "&:hover": { backgroundColor: "#6366F114" },
+                          }}
+                          onClick={() => openEditAddress(addr)}
+                        >
+                          <Pencil size={14} />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Delete Address">
+                        <IconButton
+                          size="small"
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            border: "1px solid #EF4444",
+                            color: "#EF4444",
+                            "&:hover": { backgroundColor: "#EF444414" },
+                          }}
+                          onClick={() => handleDeleteAddress(addr.id)}
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  border: "1px dashed #e5e7eb",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  textAlign: "center",
+                  background: "#fafbfc",
+                }}
+              >
+                <MapPin size={20} color="#c4c9d4" style={{ marginBottom: 8 }} />
+                <MuiTypography sx={{ color: "#9ca3af", fontSize: "0.9rem" }}>
+                  No address added yet. This employee can have one address.
+                </MuiTypography>
+              </Box>
+            )}
+          </Paper>
+
+          <Form.Item style={{ marginTop: "24px" }}>
             <Button type="primary" htmlType="submit" loading={loading}>
               Save
             </Button>
             <Button
               style={{ marginLeft: 8 }}
-              onClick={() => navigate("/users")}
+              onClick={() => navigate("/employees")}
             >
               Cancel
             </Button>
@@ -411,6 +553,7 @@ const UpdateServiceProvider = () => {
             setAddressCoordinates({ lat: null, lng: null });
           }}
           onOk={handleSaveAddress}
+          okText={editingAddress ? "Save Changes" : "Add Address"}
           forceRender
         >
           <Form
@@ -498,8 +641,8 @@ const UpdateServiceProvider = () => {
             <Form.Item label="Map Preview">
               <div
                 style={{
-                  border: "1px solid #ccc",
-                  height: 250,
+                  border: "1px solid #eef0f2",
+                  height: 220,
                   borderRadius: 8,
                 }}
               >
@@ -507,7 +650,7 @@ const UpdateServiceProvider = () => {
                   <iframe
                     width="100%"
                     height="100%"
-                    style={{ border: "none" }}
+                    style={{ border: "none", borderRadius: 8 }}
                     src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
                     allowFullScreen
                   />
@@ -526,7 +669,7 @@ const UpdateServiceProvider = () => {
             </Form.Item>
           </Form>
         </Modal>
-      </Card>
+      </Paper>
     </Box>
   );
 };
