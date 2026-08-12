@@ -2,39 +2,42 @@ import React, { useEffect, useState } from "react";
 import dayjs from "@/lib/dayjs";
 import {
   Table,
-  Button,
   Modal,
   Form,
   Select,
   InputNumber,
   DatePicker,
   Input,
-  Tag,
   Row,
   Col,
   Card,
   message,
-  Space,
   Typography as AntTypography,
   Alert,
   Tooltip,
 } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
-import { Download, Plus } from "lucide-react";
+import IconButton from "@mui/material/IconButton";
 import {
-  PlusOutlined,
-  DownloadOutlined,
-  AppstoreOutlined,
-  DatabaseOutlined,
-  CheckCircleOutlined,
-  SwapOutlined,
-  RollbackOutlined,
-  WarningOutlined,
-  InfoCircleOutlined,
-} from "@ant-design/icons";
+  Download,
+  Plus,
+  Pencil,
+  History as HistoryIcon,
+  LayoutGrid,
+  Boxes,
+  CheckCircle2,
+  ArrowLeftRight,
+  Undo2,
+  TriangleAlert,
+  Info,
+  PackageCheck,
+  RotateCcw,
+  CircleCheck,
+} from "lucide-react";
 import "./AssignmentPage.scss";
 import {
   AssignEquipment,
@@ -44,6 +47,7 @@ import {
   GetEmployeeDropdown,
   UpdateAssignment,
 } from "../../../services/Api/equipmentApi";
+import AssignmentHistoryModal from "./AssignmentHistory/AssignmentHistoryModal";
 
 const { Text } = AntTypography;
 const { Option } = Select;
@@ -54,43 +58,75 @@ const ROLE_LABELS = {
   9: "CLEANER",
 };
 
-const STATUS_COLORS = {
-  ASSIGNED: "blue",
-  PARTIALLY_RETURNED: "orange",
-  RETURNED: "green",
-  OVERDUE: "red",
+// Shared row-action icon button pattern used across the admin panel:
+// circular 34x34 with a colored border matching the action's intent.
+const actionIconBtn = (color) => ({
+  width: 34,
+  height: 34,
+  borderRadius: "50%",
+  border: `1.5px solid ${color}33`,
+  color,
+  "&:hover": {
+    backgroundColor: `${color}14`,
+    borderColor: color,
+  },
+});
+
+const STATUS_META = {
+  ASSIGNED: {
+    color: "#4338ca",
+    bg: "#eef2ff",
+    icon: PackageCheck,
+    label: "Assigned",
+  },
+  PARTIALLY_RETURNED: {
+    color: "#b45309",
+    bg: "#fef3c7",
+    icon: RotateCcw,
+    label: "Partially Returned",
+  },
+  RETURNED: {
+    color: "#059669",
+    bg: "#ecfdf5",
+    icon: CircleCheck,
+    label: "Returned",
+  },
+  OVERDUE: {
+    color: "#dc2626",
+    bg: "#fee2e2",
+    icon: TriangleAlert,
+    label: "Overdue",
+  },
 };
 
-// NOTE: "assigned_stock" and "returned_stock" from the overview API are not
-// a matched pair — assigned_stock is units currently out (pending, not yet
-// returned) while returned_stock is a cumulative all-time count. Showing
-// them side by side as plain "Assigned" / "Returned" reads like assigned
-// should be >= returned, which isn't true. Labels + tooltips below make the
-// distinction explicit instead of changing what the numbers mean.
+const getStatusMeta = (status) =>
+  STATUS_META[status] || {
+    color: "#4b5f58",
+    bg: "#f1f4f2",
+    icon: PackageCheck,
+    label: status || "—",
+  };
+
 const OVERVIEW_CARDS = [
-  {
-    key: "total_equipment_types",
-    label: "Equipment Types",
-    icon: <AppstoreOutlined />,
-  },
-  { key: "total_stock", label: "Total Stock", icon: <DatabaseOutlined /> },
-  { key: "available_stock", label: "Available", icon: <CheckCircleOutlined /> },
+  { key: "total_equipment_types", label: "Equipment Types", icon: LayoutGrid },
+  { key: "total_stock", label: "Total Stock", icon: Boxes },
+  { key: "available_stock", label: "Available", icon: CheckCircle2 },
   {
     key: "assigned_stock",
     label: "Pending Return",
-    icon: <SwapOutlined />,
+    icon: ArrowLeftRight,
     tooltip: "Units currently out with employees, not yet returned.",
   },
   {
     key: "returned_stock",
     label: "Returned (All-Time)",
-    icon: <RollbackOutlined />,
+    icon: Undo2,
     tooltip: "Total units returned across every assignment, past and present.",
   },
   {
     key: "overdue_assignments",
     label: "Overdue",
-    icon: <WarningOutlined />,
+    icon: TriangleAlert,
     danger: true,
   },
 ];
@@ -110,6 +146,21 @@ const AssignmentPage = () => {
 
   const [assignForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+
+  // state
+  const [historyModal, setHistoryModal] = useState({
+    open: false,
+    assignmentId: null,
+    equipmentName: "",
+  });
+
+  const openHistoryModal = (assignmentId, equipmentName) => {
+    setHistoryModal({ open: true, assignmentId, equipmentName });
+  };
+
+  const closeHistoryModal = () => {
+    setHistoryModal({ open: false, assignmentId: null, equipmentName: "" });
+  };
 
   const fetchAssignments = async () => {
     setLoading(true);
@@ -187,7 +238,6 @@ const AssignmentPage = () => {
   const handleEquipmentChange = (equipmentId) => {
     const eq = equipments.find((item) => item.id === equipmentId);
     setSelectedEquipment(eq || null);
-    // re-validate quantity field against the newly selected equipment's stock
     assignForm.validateFields(["assigned_quantity"]).catch(() => {});
   };
 
@@ -301,7 +351,11 @@ const AssignmentPage = () => {
       title: "Employee",
       key: "employee",
       width: 150,
-      render: (_, record) => <Text ellipsis>{record.employee?.name}</Text>,
+      render: (_, record) => (
+        <Text ellipsis className="cell-strong">
+          {record.employee?.name}
+        </Text>
+      ),
     },
     {
       title: "Equipment",
@@ -312,7 +366,7 @@ const AssignmentPage = () => {
     {
       title: "Quantity",
       key: "quantity",
-      width: 160,
+      width: 170,
       render: (_, record) => (
         <div className="qty-cell">
           <span>
@@ -357,14 +411,20 @@ const AssignmentPage = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 160,
-      render: (status) => (
-        <div className="status-cell">
-          <Tag color={STATUS_COLORS[status] || "default"}>
-            {status?.replace("_", " ")}
-          </Tag>
-        </div>
-      ),
+      width: 150,
+      render: (status) => {
+        const meta = getStatusMeta(status);
+        const Icon = meta.icon;
+        return (
+          <span
+            className="status-badge"
+            style={{ background: meta.bg, color: meta.color }}
+          >
+            <Icon size={12} strokeWidth={2.5} />
+            {meta.label}
+          </span>
+        );
+      },
     },
     {
       title: "Remarks",
@@ -376,17 +436,36 @@ const AssignmentPage = () => {
             {remarks}
           </Text>
         ) : (
-          "-"
+          <span className="remarks-empty">—</span>
         ),
     },
     {
       title: "",
       key: "action",
-      width: 90,
+      width: 130, // was 90 — too narrow for two 34px icon buttons + padding
       render: (_, record) => (
-        <Button size="small" onClick={() => openUpdateModal(record)}>
-          Update
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Update Assignment">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#4F46E5")}
+              onClick={() => openUpdateModal(record)}
+            >
+              <Pencil size={16} strokeWidth={2} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="View History">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#6B7280")}
+              onClick={() =>
+                openHistoryModal(record.id, record.equipment?.name)
+              }
+            >
+              <HistoryIcon size={16} strokeWidth={2} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       ),
     },
   ];
@@ -417,8 +496,8 @@ const AssignmentPage = () => {
               EQUIPMENT ASSIGNMENTS
             </Typography>
             <Typography className="page-sub-title">
-              Track who has what equipment, expected returns, and current
-              stock levels.
+              Track who has what equipment, expected returns, and current stock
+              levels.
             </Typography>
           </Box>
 
@@ -458,45 +537,50 @@ const AssignmentPage = () => {
           </Box>
         </Box>
       </Paper>
-
       {overview && (
         <Row gutter={12} className="assignment-page__overview">
-          {OVERVIEW_CARDS.map((card) => (
-            <Col span={4} key={card.key}>
-              <Card
-                size="small"
-                className={
-                  card.danger && overview[card.key] > 0
-                    ? "overview-card danger"
-                    : "overview-card"
-                }
-              >
-                <div className="overview-card__icon">{card.icon}</div>
-                <div className="overview-card__value">{overview[card.key]}</div>
-                <div className="overview-card__label">
-                  {card.label}
-                  {card.tooltip && (
-                    <Tooltip title={card.tooltip}>
-                      <InfoCircleOutlined className="overview-card__info" />
-                    </Tooltip>
-                  )}
-                </div>
-              </Card>
-            </Col>
-          ))}
+          {OVERVIEW_CARDS.map((card) => {
+            const Icon = card.icon;
+            const isDanger = card.danger && overview[card.key] > 0;
+            return (
+              <Col span={4} key={card.key}>
+                <Card
+                  size="small"
+                  className={
+                    isDanger ? "overview-card danger" : "overview-card"
+                  }
+                >
+                  <div className="overview-card__icon">
+                    <Icon size={17} strokeWidth={2} />
+                  </div>
+                  <div className="overview-card__value">
+                    {overview[card.key]}
+                  </div>
+                  <div className="overview-card__label">
+                    {card.label}
+                    {card.tooltip && (
+                      <Tooltip title={card.tooltip}>
+                        <Info size={11} className="overview-card__info" />
+                      </Tooltip>
+                    )}
+                  </div>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
       )}
-
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={assignments}
-        loading={loading}
-        size="small"
-        pagination={false}
-        tableLayout="fixed"
-      />
-
+      <Paper variant="outlined" className="assignment-page__table-paper">
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={assignments}
+          loading={loading}
+          size="small"
+          pagination={false}
+          tableLayout="fixed"
+        />
+      </Paper>
       <Modal
         title="Assign Equipment"
         open={isAssignModalOpen}
@@ -613,7 +697,6 @@ const AssignmentPage = () => {
           </Form.Item>
         </Form>
       </Modal>
-
       <Modal
         title="Update Assignment"
         open={isUpdateModalOpen}
@@ -678,6 +761,13 @@ const AssignmentPage = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <AssignmentHistoryModal
+        open={historyModal.open}
+        onClose={closeHistoryModal}
+        assignmentId={historyModal.assignmentId}
+        equipmentName={historyModal.equipmentName}
+      />
     </div>
   );
 };

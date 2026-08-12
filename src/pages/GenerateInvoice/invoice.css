@@ -102,3 +102,46 @@
 	line-height: 1.4;
 	color: #333;
 }
+
+.ant-select-suffix{
+	visibility: hidden !important;
+}
+
+.actionIconBtn {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: 1px solid #e0e3e8;
+	background: #ffffff;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: #2c3345;
+	transition: all 0.15s ease;
+}
+
+.actionIconBtn:hover {
+	background: #f4f5f7;
+	border-color: #2c3345;
+}
+
+.actionIconBtnDanger {
+	color: #d32f2f;
+	border-color: #f3d0d0;
+}
+
+.actionIconBtnDanger:hover {
+	background: #fdecec;
+	border-color: #d32f2f;
+}
+
+.actionIconBtnSuccess {
+	color: #2e7d32;
+	border-color: #c8e6c9;
+}
+
+.actionIconBtnSuccess:hover {
+	background: #eaf6ea;
+	border-color: #2e7d32;
+}

@@ -4,6 +4,7 @@ import dayjs from "@/lib/dayjs";
 import React, { useEffect, useState } from "react";
 import "./invoice.css";
 import { useNavigate, useParams } from "react-router";
+import { ChevronDown } from "lucide-react";
 import {
   message,
   Spin,
@@ -13,6 +14,7 @@ import {
   Button,
   Select,
   Popconfirm,
+  Checkbox,
 } from "antd";
 import { DatePicker } from "antd";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
@@ -29,6 +31,14 @@ const EditInvoice = () => {
   const [formData, setFormData] = useState({
     ref: "",
     reference_type: "",
+
+    custom_ref_no: "",
+    useCustomRef: false,
+
+    is_recurring: false,
+    recurring_frequency: "MONTHLY",
+    recurring_end_date: null,
+    recurring_max_occurrences: null,
 
     billing_date: null,
     service_start: null,
@@ -91,10 +101,26 @@ const EditInvoice = () => {
         amount: i.amount,
       }));
 
+      // NEW: derive recurring state from the nested `recurring` object
+      const recurring = inv.recurring;
+      const isRecurringActive = !!recurring && recurring.status !== "CANCELLED";
+
       setFormData((prev) => ({
         ...prev,
         ref: inv.ref_no,
         reference_type: inv.ref_type,
+
+        // NEW
+        custom_ref_no: inv.custom_ref_no || "",
+        useCustomRef: !!inv.custom_ref_no,
+
+        // NEW
+        is_recurring: isRecurringActive,
+        recurring_frequency: recurring?.frequency || "MONTHLY",
+        recurring_end_date: recurring?.end_date
+          ? dayjs(recurring.end_date, "YYYY-MM-DD")
+          : null,
+        recurring_max_occurrences: recurring?.max_occurrences ?? null,
 
         billing_date: inv.billing_date
           ? dayjs(inv.billing_date, "YYYY-MM-DD")
@@ -175,7 +201,7 @@ const EditInvoice = () => {
     setFormData({
       ...formData,
       items,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     });
   };
 
@@ -200,7 +226,7 @@ const EditInvoice = () => {
 
       return {
         ...item,
-        amount: amount.toFixed(2),
+        amount: amount.toFixed(6),
       };
     });
 
@@ -211,8 +237,18 @@ const EditInvoice = () => {
     setFormData({
       ...formData,
       items: updatedItems,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     });
+  };
+
+  const formatAmount = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return "";
+
+    return number.toFixed(6).replace(/\.?0+$/, "");
   };
 
   /* ================= UPDATE ================= */
@@ -227,6 +263,25 @@ const EditInvoice = () => {
         service_start: formData.service_start.format("YYYY-MM-DD"),
         service_end: formData.service_end.format("YYYY-MM-DD"),
         due_date: formData.dueDate.format("YYYY-MM-DD"),
+
+        // NEW
+        custom_ref_no:
+          formData.useCustomRef && formData.custom_ref_no.trim() !== ""
+            ? formData.custom_ref_no.trim()
+            : null,
+
+        // NEW: recurring fields — backend's updateInvoice reads these directly off `body`
+        is_recurring: formData.is_recurring,
+        recurring_frequency: formData.is_recurring
+          ? formData.recurring_frequency
+          : null,
+        recurring_end_date:
+          formData.is_recurring && formData.recurring_end_date
+            ? formData.recurring_end_date.format("YYYY-MM-DD")
+            : null,
+        recurring_max_occurrences: formData.is_recurring
+          ? formData.recurring_max_occurrences
+          : null,
 
         to_company_name: formData.toCompany,
         address_1: formData.address1,
@@ -446,7 +501,7 @@ const EditInvoice = () => {
           onChange={(value) => handleItemChange(index, "unit_price", value)}
           style={{ width: "100%" }}
           placeholder="Unit Price"
-          precision={2}
+          precision={6}
           formatter={(value) => `$ ${value}`}
           parser={(value) => value.replace(/[^\d.]/g, "")}
         />
@@ -456,9 +511,7 @@ const EditInvoice = () => {
       title: "Amount ($)",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => (
-        <Input value={Number(text || 0).toFixed(2)} disabled readOnly />
-      ),
+      render: (text) => <Input value={formatAmount(text)} disabled readOnly />,
     },
     {
       title: "Action",
@@ -491,18 +544,47 @@ const EditInvoice = () => {
 
         <div className="invoice-meta-container">
           {/* ROW 1 — REF TYPE + REF NO */}
-
           <div className="meta-table">
             <div>
               <strong>REF TYPE :</strong>
-
               <Input value={formData.reference_type || undefined} disabled />
             </div>
 
             <div style={{ marginTop: "25px" }}>
               <strong>REF #:</strong>
-
               <Input value={formData.ref} disabled />
+
+              {/* NEW: custom ref toggle */}
+              <div style={{ marginTop: 8 }}>
+                <Checkbox
+                  checked={formData.useCustomRef}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setFormData((prev) => ({
+                      ...prev,
+                      useCustomRef: e.target.checked,
+                      custom_ref_no: e.target.checked ? prev.custom_ref_no : "",
+                    }));
+                  }}
+                >
+                  Use custom reference number
+                </Checkbox>
+
+                {formData.useCustomRef && (
+                  <Input
+                    style={{ marginTop: 8 }}
+                    placeholder="e.g. RHK100"
+                    value={formData.custom_ref_no}
+                    onChange={(e) => {
+                      setIsDirty(true);
+                      setFormData((prev) => ({
+                        ...prev,
+                        custom_ref_no: e.target.value,
+                      }));
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
@@ -563,6 +645,93 @@ const EditInvoice = () => {
               />
             </div>
           </div>
+
+          {/* ROW 3 — RECURRING */}
+          <div className="meta-table">
+            <div>
+              <strong>IS RECURRING INVOICE?</strong>
+              <Select
+                value={formData.is_recurring}
+                style={{ width: "100%", marginTop: 5 }}
+                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                onChange={(value) => {
+                  setIsDirty(true);
+                  setFormData((prev) => ({ ...prev, is_recurring: value }));
+                }}
+              >
+                <Option value={false}>No</Option>
+                <Option value={true}>Yes</Option>
+              </Select>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>RECURRING FREQUENCY</strong>
+              <Select
+                value={formData.recurring_frequency}
+                style={{ width: "100%", marginTop: 5 }}
+                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    recurring_frequency: value,
+                  }))
+                }
+              >
+                <Option value="WEEKLY">Weekly</Option>
+                <Option value="BIWEEKLY">Bi-Weekly</Option>
+                <Option value="MONTHLY">Monthly</Option>
+                <Option value="QUARTERLY">Quarterly</Option>
+                <Option value="YEARLY">Yearly</Option>
+              </Select>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>RECURRING END DATE</strong>
+              <DatePicker
+                value={formData.recurring_end_date}
+                onChange={(d) =>
+                  setFormData((prev) => ({ ...prev, recurring_end_date: d }))
+                }
+                format="MM-DD-YYYY"
+                style={{ width: "100%", marginTop: 5 }}
+              />
+              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                Max 6 months from billing date
+              </div>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>MAX OCCURRENCES (optional)</strong>
+              <InputNumber
+                min={1}
+                max={10}
+                value={formData.recurring_max_occurrences}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    recurring_max_occurrences: value,
+                  }))
+                }
+                style={{ width: "100%", marginTop: 5 }}
+                placeholder="Leave blank for unlimited"
+              />
+              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                Max 10 occurrences
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="address-table" style={{ marginBottom: 24 }}>
@@ -618,7 +787,11 @@ const EditInvoice = () => {
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
-            <Input disabled value={formData.totalAmount} readOnly />
+            <Input
+              disabled
+              value={formatAmount(formData.totalAmount)}
+              readOnly
+            />
           </div>
         </div>
 
@@ -631,7 +804,7 @@ const EditInvoice = () => {
           pagination={false}
           footer={() => (
             <div style={{ textAlign: "right", fontWeight: "bold" }}>
-              Total: $ {Number(formData.totalAmount || 0).toFixed(2)}
+              Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />

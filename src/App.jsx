@@ -99,6 +99,7 @@ import UpdateServiceEstimate from "./pages/PdfGeneration/UpdateServiceEstimate.j
 import EquipmentPage from "./pages/Equipment/Equipment/EquipmentPage.jsx";
 import AssignmentPage from "./pages/Equipment/Assign/Assignmentpage.jsx";
 import UpdateServiceProvider from "./pages/ServiceProvider/UpdateServiceProvider.jsx";
+import EmployeeEquipmentRecordsPage from "./pages/Equipment/EmployeeRecords/EmployeeEquipmentRecordsPage.jsx";
 
 function App() {
   return (
@@ -245,6 +246,7 @@ function App() {
           />
           <Route path="/equipment/list" element={<EquipmentPage />} />
           <Route path="/equipment/assignments" element={<AssignmentPage />} />
+           <Route path="/equipment/employee-records" element={<EmployeeEquipmentRecordsPage />} />
         </Route>
       </Routes>
     </Router>

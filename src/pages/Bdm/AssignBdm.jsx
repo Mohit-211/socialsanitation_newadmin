@@ -209,44 +209,51 @@ const AssignBdm = () => {
             }
             name="user_id"
           >
-            <Select
-              mode="multiple"
-              placeholder="Search and select users..."
-              labelInValue
-              value={selectedUsers}
-              onChange={handleSelectionChange}
-              style={{ width: "100%" }}
-              size="large"
-              allowClear
-              dropdownStyle={{ borderRadius: "8px" }}
-            >
-              {userData.map((user) => (
-                <Option key={user.id} value={user.id}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        backgroundColor: "#f0f2f5",
-                        textAlign: "center",
-                        fontSize: "11px",
-                        lineHeight: "24px",
-                      }}
-                    >
-                      {user.name.charAt(0)}
-                    </div>
-                    {user.name}
-                  </div>
-                </Option>
-              ))}
-            </Select>
+           <Select
+  mode="multiple"
+  placeholder="Search and select users..."
+  labelInValue
+  value={selectedUsers}
+  onChange={handleSelectionChange}
+  style={{ width: "100%" }}
+  size="large"
+  allowClear
+  showSearch
+  optionFilterProp="label"
+  dropdownStyle={{ borderRadius: "8px" }}
+>
+  {userData.map((user) => (
+    <Option
+      key={user.id}
+      value={user.id}
+      label={user.name}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
+        <div
+          style={{
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            backgroundColor: "#f0f2f5",
+            textAlign: "center",
+            fontSize: "11px",
+            lineHeight: "24px",
+          }}
+        >
+          {user.name?.charAt(0)}
+        </div>
+
+        {user.name}
+      </div>
+    </Option>
+  ))}
+</Select>
           </Form.Item>
 
           <Divider sx={{ mt: 2.5, mb: 2 }} />

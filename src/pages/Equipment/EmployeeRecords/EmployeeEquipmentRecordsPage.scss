@@ -1,0 +1,305 @@
+.employee-records-page {
+  padding: 0;
+
+  &__header-paper,
+  &__controls-paper {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border-color: #eef0f2;
+  }
+
+  &__month-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d9dee0;
+    border-radius: 8px;
+    padding: 0 10px;
+  }
+
+  &__month-icon {
+    color: #1b7a43;
+  }
+
+  &__month-input {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
+
+    .ant-picker-input input {
+      font-weight: 600;
+      color: #16324f;
+    }
+  }
+
+  &__search {
+    max-width: 280px;
+  }
+
+  &__month-label {
+    font-size: 12.5px;
+    color: #8a938e;
+    font-weight: 600;
+  }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+  }
+
+  &__empty {
+    padding: 40px;
+    border-radius: 10px;
+    border-color: #eef0f2;
+  }
+
+  &__list-paper {
+    padding: 0;
+    border-radius: 10px;
+    border-color: #eef0f2;
+    overflow: hidden;
+  }
+
+  &__pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+  }
+}
+
+/* ── Collapse header — one compact row per employee ── */
+.employee-records-page__collapse {
+  background: transparent;
+  border: none;
+
+  .ant-collapse-item {
+    border-bottom: 1px solid #eef0f2 !important;
+
+    &:last-child {
+      border-bottom: none !important;
+    }
+  }
+
+  .ant-collapse-header {
+    align-items: center !important;
+    padding: 14px 20px !important;
+  }
+
+  .ant-collapse-content-box {
+    padding: 0 20px 24px !important;
+  }
+}
+
+.employee-record-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2ff;
+    color: #4338ca;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #16324f;
+  }
+
+  &__email {
+    font-size: 11.5px;
+    color: #8a938e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__chips {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  &__chip {
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #f1f4f2;
+    color: #4b5f58;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &--pending {
+      background: #fef3c7;
+      color: #b45309;
+    }
+  }
+}
+
+/* ── Form-style expanded body ── */
+.employee-record-form {
+  &__field-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 20px;
+    padding: 16px 0;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__field-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #8a938e;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__field-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #16324f;
+  }
+
+  &__divider {
+    height: 1px;
+    background: #eef0f2;
+    margin: 4px 0 16px;
+  }
+
+  &__section-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8a938e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+}
+
+.assignment-form-row {
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: #fafcfb;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__equipment {
+    font-size: 14px;
+    font-weight: 700;
+    color: #16324f;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__field-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 16px;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    span {
+      font-size: 10px;
+      color: #8a938e;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    strong {
+      font-size: 12.5px;
+      color: #16324f;
+      font-weight: 700;
+    }
+  }
+
+  &__remarks {
+    font-size: 12px;
+    color: #6b7b76;
+    margin-top: 10px;
+    font-style: italic;
+
+    span {
+      font-weight: 700;
+      font-style: normal;
+      color: #4b5f58;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #eef0f2;
+  }
+}
+
+@media (max-width: 700px) {
+  .employee-record-form__field-grid,
+  .assignment-form-row__field-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .employee-record-summary__chips {
+    display: none; // keep the collapsed row from overflowing on small screens
+  }
+}
+
+@media (max-width: 480px) {
+  .employee-record-form__field-grid,
+  .assignment-form-row__field-grid {
+    grid-template-columns: 1fr;
+  }
+}

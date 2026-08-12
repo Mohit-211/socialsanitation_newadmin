@@ -63,6 +63,7 @@ import {
   Activity,
   LogOut,
   ChevronDown,
+  Users,
 } from "lucide-react";
 import logo from "../assets/image.png";
 import smallLogo from "../assets/WhatsApp Image 2024-11-20 at 9.55.51 AM (1) 1.png";
@@ -353,6 +354,11 @@ const MainLayout = () => {
                                 icon: <FaClipboardList />,
                                 label: "Equipment Assignments",
                               },
+                              {
+                                key: "/equipment/employee-records",
+                                icon: <Users />,
+                                label: "Employee Records",
+                              },
                             ],
                           },
                         ],
@@ -449,7 +455,7 @@ const MainLayout = () => {
                           {
                             key: "/invoices",
                             icon: <FaFileInvoiceDollar />,
-                            label: "Invoices",
+                            label: "Quotes",
                           },
                           {
                             key: "/invoiceAnalytics",
@@ -530,7 +536,7 @@ const MainLayout = () => {
                         cursor: "pointer",
                       },
                       onClick: () => setCollapsed(!collapsed),
-                    }
+                    },
                   )}
 
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2.5 }}>
@@ -656,7 +662,10 @@ const MainLayout = () => {
                             }}
                             to="/viewAdmin"
                           >
-                            <UserIcon size={16} style={{ marginRight: "10px" }} />
+                            <UserIcon
+                              size={16}
+                              style={{ marginRight: "10px" }}
+                            />
                             View Profile
                           </Link>
                         </li>
@@ -673,7 +682,10 @@ const MainLayout = () => {
                             }}
                             to="/reset-password"
                           >
-                            <Settings size={16} style={{ marginRight: "10px" }} />
+                            <Settings
+                              size={16}
+                              style={{ marginRight: "10px" }}
+                            />
                             Change Password
                           </Link>
                         </li>
@@ -690,7 +702,10 @@ const MainLayout = () => {
                             }}
                             to="/loginLogs"
                           >
-                            <Activity size={16} style={{ marginRight: "10px" }} />
+                            <Activity
+                              size={16}
+                              style={{ marginRight: "10px" }}
+                            />
                             User Login Activity
                           </Link>
                         </li>
@@ -746,7 +761,9 @@ const MainLayout = () => {
                 </Content>
                 <Modal
                   title={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.25 }}
+                    >
                       <Box
                         sx={{
                           width: 34,
@@ -788,7 +805,9 @@ const MainLayout = () => {
                     after a completed booking.
                   </Typography>
 
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2.25 }}
+                  >
                     <Box>
                       <Typography sx={fieldLabelSx}>
                         Google Review Link

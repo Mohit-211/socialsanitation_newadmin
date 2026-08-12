@@ -140,6 +140,16 @@ const UpdateServiceQuote = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
+  const formatAmount = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return "";
+
+    return number.toFixed(6).replace(/\.?0+$/, "");
+  };
+
   const addItem = () => {
     setFormData({
       ...formData,
@@ -180,7 +190,7 @@ const UpdateServiceQuote = () => {
 
       return {
         ...item,
-        amount: amount.toFixed(2),
+        amount: amount.toFixed(6),
       };
     });
 
@@ -191,7 +201,7 @@ const UpdateServiceQuote = () => {
     setFormData({
       ...formData,
       items: updatedItems,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     });
   };
 
@@ -213,10 +223,8 @@ const UpdateServiceQuote = () => {
 
     // ✅ Validate total amount before proceeding
     const totalAmount = parseFloat(formData.totalAmount) || 0;
-    if (totalAmount <= 0.01) {
-      message.error(
-        "Total amount must be greater than $0.01 to generate a payment link or send the quote.",
-      );
+    if (totalAmount <= 0) {
+      message.error("Total amount must be greater than $0.");
       return;
     }
 
@@ -441,7 +449,7 @@ const UpdateServiceQuote = () => {
           onChange={(value) => handleItemChange(index, "unit_price", value)}
           style={{ width: "100%" }}
           placeholder="Unit Price"
-          precision={2}
+          precision={6}
           formatter={(value) => `$ ${value}`}
           parser={(value) => value.replace(/[^\d.]/g, "")}
         />
@@ -451,7 +459,7 @@ const UpdateServiceQuote = () => {
       title: "Amount ($)",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => <Input value={text} readOnly />,
+      render: (text) => <Input value={formatAmount(text)} readOnly />,
     },
     {
       title: "Action",
@@ -573,7 +581,7 @@ const UpdateServiceQuote = () => {
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
-            <Input value={formData.totalAmount} readOnly />
+            <Input value={formatAmount(formData.totalAmount)} readOnly />
           </div>
         </div>
 
@@ -586,7 +594,7 @@ const UpdateServiceQuote = () => {
           pagination={false}
           footer={() => (
             <div style={{ textAlign: "right", fontWeight: "bold" }}>
-              Total: ${formData.totalAmount}
+               Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />

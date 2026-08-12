@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import "./invoice.css";
 import { useNavigate, useParams } from "react-router";
-
+import { ChevronDown } from "lucide-react";
 import {
   message,
   Spin,
@@ -13,6 +13,7 @@ import {
   Button,
   Select,
   Popconfirm,
+  Checkbox,
 } from "antd";
 import { DatePicker } from "antd";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
@@ -32,7 +33,14 @@ const ServiceQuoteForm = () => {
   const { id } = useParams();
   const [formData, setFormData] = useState({
     ref: "",
+    custom_ref_no: "",
+    useCustomRef: false,
     reference_type: "",
+
+    is_recurring: false,
+    recurring_frequency: "MONTHLY",
+    recurring_end_date: null,
+    recurring_max_occurrences: null,
 
     billing_date: null,
     service_start: null,
@@ -133,6 +141,16 @@ const ServiceQuoteForm = () => {
     });
   };
 
+  const formatAmount = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return "";
+
+    return number.toFixed(6).replace(/\.?0+$/, "");
+  };
+
   const calculateTotal = () => {
     const updatedItems = formData.items.map((item) => {
       const unitPrice = parseFloat(item.unit_price) || 0;
@@ -154,7 +172,7 @@ const ServiceQuoteForm = () => {
 
       return {
         ...item,
-        amount: amount.toFixed(2),
+        amount: amount.toFixed(6),
       };
     });
 
@@ -165,7 +183,7 @@ const ServiceQuoteForm = () => {
     setFormData({
       ...formData,
       items: updatedItems,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     });
   };
 
@@ -187,10 +205,22 @@ const ServiceQuoteForm = () => {
       return;
     }
 
+    // NEW: mirror backend recurring validation
+    if (
+      formData.is_recurring &&
+      !formData.recurring_end_date &&
+      !formData.recurring_max_occurrences
+    ) {
+      message.error(
+        "Please provide either a Recurring End Date or Max Occurrences.",
+      );
+      return;
+    }
+
     const totalAmount = parseFloat(formData.totalAmount) || 0;
 
-    if (totalAmount <= 0.01) {
-      message.error("Total amount must be greater than $0.01.");
+    if (totalAmount <= 0) {
+      message.error("Total amount must be greater than $0.");
       return;
     }
 
@@ -201,7 +231,13 @@ const ServiceQuoteForm = () => {
         quote_id: selectedDraftId,
         user_id: formData.user_id,
 
-        ref_type: formData.reference_type, // only this is needed
+        ref_type: formData.reference_type, // FIX: backend expects `ref_type`, not `reference_type`
+        ref: formData.ref, // wasn't being sent at all
+
+        custom_ref_no:
+          formData.useCustomRef && formData.custom_ref_no.trim() !== ""
+            ? formData.custom_ref_no.trim()
+            : null,
 
         billing_date: formData.billing_date.format("YYYY-MM-DD"),
         service_start: formData.service_start.format("YYYY-MM-DD"),
@@ -216,21 +252,28 @@ const ServiceQuoteForm = () => {
 
         signature: formData.signature,
 
+        // NEW: recurring fields
+        is_recurring: formData.is_recurring,
+        recurring_frequency: formData.is_recurring
+          ? formData.recurring_frequency
+          : null,
+        recurring_end_date:
+          formData.is_recurring && formData.recurring_end_date
+            ? formData.recurring_end_date.format("YYYY-MM-DD")
+            : null,
+        recurring_max_occurrences: formData.is_recurring
+          ? formData.recurring_max_occurrences
+          : null,
+
         items: formData.items.map((item) => ({
           description: item.description,
           frequency: item.frequency,
-
           quantity: Number(item.quantity || 1),
-
           calculation_type: item.calculation_type,
-
           sqft: item.calculation_type === "sqft" ? item.sqft : null,
-
           hour:
             item.calculation_type === "hour" ? Number(item.hour || 0) : null,
-
           unit_price: Number(item.unit_price || 0),
-
           amount: Number(item.amount || 0),
         })),
       };
@@ -246,7 +289,12 @@ const ServiceQuoteForm = () => {
         message.error("Something went wrong");
       }
     } catch (error) {
-      message.error("Error: " + error.message);
+      // FIX: this was showing the raw JS/axios error, not the backend's ApiError message
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong";
+      message.error(backendMessage);
     } finally {
       setIsLoading(false);
     }
@@ -445,7 +493,7 @@ const ServiceQuoteForm = () => {
           onChange={(value) => handleItemChange(index, "unit_price", value)}
           style={{ width: "100%" }}
           placeholder="Unit Price"
-          precision={2}
+          precision={6}
           formatter={(value) => `$ ${value}`}
           parser={(value) => value.replace(/[^\d.]/g, "")}
         />
@@ -455,7 +503,9 @@ const ServiceQuoteForm = () => {
       title: "Amount ($)",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => <Input disabled={isLocked} value={text} readOnly />,
+      render: (text) => (
+        <Input disabled={isLocked} value={formatAmount(text)} readOnly />
+      ),
     },
     {
       title: "Action",
@@ -499,6 +549,7 @@ const ServiceQuoteForm = () => {
                 value={formData.reference_type || undefined}
                 placeholder="Select Ref Type"
                 style={{ width: "100%", marginTop: 5 }}
+                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
                 onChange={async (value) => {
                   setIsDirty(true);
 
@@ -550,6 +601,38 @@ const ServiceQuoteForm = () => {
                   setFormData({ ...formData, ref: e.target.value });
                 }}
               />
+
+              {/* NEW: custom ref toggle */}
+              <div style={{ marginTop: 8 }}>
+                <Checkbox
+                  checked={formData.useCustomRef}
+                  onChange={(e) => {
+                    setIsDirty(true);
+                    setFormData((prev) => ({
+                      ...prev,
+                      useCustomRef: e.target.checked,
+                      custom_ref_no: e.target.checked ? prev.custom_ref_no : "",
+                    }));
+                  }}
+                >
+                  Use custom reference number
+                </Checkbox>
+
+                {formData.useCustomRef && (
+                  <Input
+                    style={{ marginTop: 8 }}
+                    placeholder="e.g. RHK100"
+                    value={formData.custom_ref_no}
+                    onChange={(e) => {
+                      setIsDirty(true);
+                      setFormData((prev) => ({
+                        ...prev,
+                        custom_ref_no: e.target.value,
+                      }));
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
@@ -608,6 +691,93 @@ const ServiceQuoteForm = () => {
                 onChange={onDueDateChange}
                 style={{ width: "100%", marginTop: 5 }}
               />
+            </div>
+          </div>
+
+          {/* ROW 3 — RECURRING */}
+          <div className="meta-table">
+            <div>
+              <strong>IS RECURRING INVOICE?</strong>
+              <Select
+                value={formData.is_recurring}
+                style={{ width: "100%", marginTop: 5 }}
+                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                onChange={(value) => {
+                  setIsDirty(true);
+                  setFormData((prev) => ({ ...prev, is_recurring: value }));
+                }}
+              >
+                <Option value={false}>No</Option>
+                <Option value={true}>Yes</Option>
+              </Select>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>RECURRING FREQUENCY</strong>
+              <Select
+                value={formData.recurring_frequency}
+                style={{ width: "100%", marginTop: 5 }}
+                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    recurring_frequency: value,
+                  }))
+                }
+              >
+                <Option value="WEEKLY">Weekly</Option>
+                <Option value="BIWEEKLY">Bi-Weekly</Option>
+                <Option value="MONTHLY">Monthly</Option>
+                <Option value="QUARTERLY">Quarterly</Option>
+                <Option value="YEARLY">Yearly</Option>
+              </Select>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>RECURRING END DATE</strong>
+              <DatePicker
+                value={formData.recurring_end_date}
+                onChange={(d) =>
+                  setFormData((prev) => ({ ...prev, recurring_end_date: d }))
+                }
+                format="MM-DD-YYYY"
+                style={{ width: "100%", marginTop: 5 }}
+              />
+              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                Max 6 months from billing date
+              </div>
+            </div>
+
+            <div
+              style={{
+                visibility: formData.is_recurring ? "visible" : "hidden",
+              }}
+            >
+              <strong>MAX OCCURRENCES (optional)</strong>
+              <InputNumber
+                min={1}
+                max={10}
+                value={formData.recurring_max_occurrences}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    recurring_max_occurrences: value,
+                  }))
+                }
+                style={{ width: "100%", marginTop: 5 }}
+                placeholder="Leave blank for unlimited"
+              />
+              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                Max 10 occurrences
+              </div>
             </div>
           </div>
         </div>
@@ -680,7 +850,11 @@ const ServiceQuoteForm = () => {
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
-            <Input disabled={isLocked} value={formData.totalAmount} readOnly />
+            <Input
+              disabled={isLocked}
+              value={formatAmount(formData.totalAmount)}
+              readOnly
+            />
           </div>
         </div>
 
@@ -693,7 +867,7 @@ const ServiceQuoteForm = () => {
           pagination={false}
           footer={() => (
             <div style={{ textAlign: "right", fontWeight: "bold" }}>
-              Total: ${formData.totalAmount}
+               Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />

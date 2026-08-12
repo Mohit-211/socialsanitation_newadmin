@@ -100,7 +100,7 @@ const ServiceRequestPdf = () => {
     const quantity = parseFloat(updatedItems[index].quantity) || 1;
     const price = parseFloat(updatedItems[index].unit_price) || 0;
 
-    updatedItems[index].amount = (quantity * price).toFixed(2);
+    updatedItems[index].amount = formatAmount(quantity * price);
 
     const total = updatedItems.reduce(
       (sum, item) => sum + (parseFloat(item.amount) || 0),
@@ -110,7 +110,7 @@ const ServiceRequestPdf = () => {
     setFormData({
       ...formData,
       items: updatedItems,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     });
   };
 
@@ -141,7 +141,7 @@ const ServiceRequestPdf = () => {
 
       return {
         ...item,
-        amount: amount.toFixed(2),
+        amount: amount.toFixed(6),
       };
     });
 
@@ -153,8 +153,18 @@ const ServiceRequestPdf = () => {
     setFormData((prev) => ({
       ...prev,
       items: updatedItems,
-      totalAmount: total.toFixed(2),
+      totalAmount: total.toFixed(6),
     }));
+  };
+
+  const formatAmount = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return "";
+
+    return number.toFixed(6).replace(/\.?0+$/, "");
   };
 
   const handleSubmit = async () => {
@@ -176,8 +186,8 @@ const ServiceRequestPdf = () => {
 
     const totalAmount = parseFloat(formData.totalAmount) || 0;
 
-    if (totalAmount <= 0.01) {
-      message.error("Total amount must be greater than $0.01.");
+    if (totalAmount <= 0) {
+      message.error("Total amount must be greater than $0.");
       return;
     }
 
@@ -190,7 +200,7 @@ const ServiceRequestPdf = () => {
         ref_type: formData.reference_type,
         ref_no: formData.ref,
 
-    service_days: formData.service_days,
+        service_days: formData.service_days,
         due_date: formData.dueDate.format("YYYY-MM-DD"),
 
         to_company_name: formData.toCompany,
@@ -345,7 +355,7 @@ const ServiceRequestPdf = () => {
           onChange={(value) => handleItemChange(index, "unit_price", value)}
           style={{ width: "100%" }}
           placeholder="Unit Price"
-          precision={2}
+          precision={6}
           formatter={(value) => `$ ${value}`}
           parser={(value) => value.replace(/[^\d.]/g, "")}
         />
@@ -355,7 +365,9 @@ const ServiceRequestPdf = () => {
       title: "Amount ($)",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => <Input disabled={isLocked} value={text} readOnly />,
+      render: (text) => (
+        <Input disabled={isLocked} value={formatAmount(text)} readOnly />
+      ),
     },
     {
       title: "Action",
@@ -557,7 +569,11 @@ const ServiceRequestPdf = () => {
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
-            <Input disabled={isLocked} value={formData.totalAmount} readOnly />
+            <Input
+              disabled={isLocked}
+              value={formatAmount(formData.totalAmount)}
+              readOnly
+            />
           </div>
         </div>
 
@@ -570,7 +586,7 @@ const ServiceRequestPdf = () => {
           pagination={false}
           footer={() => (
             <div style={{ textAlign: "right", fontWeight: "bold" }}>
-              Total: ${formData.totalAmount}
+              Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />

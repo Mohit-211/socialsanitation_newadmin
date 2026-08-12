@@ -60,7 +60,7 @@ import {
 import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import "./Customers.css";
 import { DeleteOutlined } from "@mui/icons-material";
-import { DeleteInvoice } from "../../services/Api/InvoiceApi";
+import { CreateInvoice, DeleteInvoice } from "../../services/Api/InvoiceApi";
 
 /* -------------------------------------------------------------------------- */
 /* Shared presentational helpers for the Invoices / Contracts / Estimates tabs */
@@ -411,6 +411,35 @@ const ViewCustomer = () => {
   const [contractAgreements, setContractAgreements] = useState([]);
   const [serviceEstimates, setServiceEstimates] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
+
+  const [creatingInvoiceId, setCreatingInvoiceId] = useState(null);
+
+const handleCreateInvoiceFromQuote = async (quote) => {
+  setCreatingInvoiceId(quote.id);
+  try {
+    const res = await CreateInvoice({ quote_id: quote.id });
+
+    message.success("Invoice created successfully");
+
+    const newInvoiceId = res?.data?.data?.id;
+
+    // Refresh quotes so invoice_created / invoice_id reflect the new state
+    await fetchQuotes();
+
+    if (newInvoiceId) {
+      navigate(`/edit-invoice/${newInvoiceId}`);
+    }
+  } catch (error) {
+    console.error("Create invoice error:", error);
+    message.error(
+      error?.response?.data?.message || "Failed to create invoice",
+    );
+  } finally {
+    setCreatingInvoiceId(null);
+  }
+};
+
+
 
   /* ---------------------------------------------------------------- */
   /* Address: edit modal state                                          */
@@ -1581,6 +1610,51 @@ const ViewCustomer = () => {
                     </div>
                   )}
                 </div>
+
+                {/* NEW: Create/Edit Invoice button */}
+<div style={{ marginTop: "12px" }}>
+  {quote.invoice_created ? (
+    <Button
+      fullWidth
+      variant="contained"
+      disableElevation
+      startIcon={<Pencil size={15} />}
+      onClick={() => navigate(`/edit-invoice/${quote.invoice_id}`)}
+      sx={{
+        background: "#6366F1",
+        textTransform: "none",
+        fontWeight: 600,
+        borderRadius: "8px",
+        py: 1.2,
+        "&:hover": { background: "#4F46E5" },
+      }}
+    >
+      Edit Invoice
+    </Button>
+  ) : (
+    <Button
+      fullWidth
+      variant="contained"
+      disableElevation
+      startIcon={<Plus size={15} />}
+      loading={creatingInvoiceId === quote.id}
+      disabled={creatingInvoiceId === quote.id}
+      onClick={() => handleCreateInvoiceFromQuote(quote)}
+      sx={{
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        textTransform: "none",
+        fontWeight: 600,
+        borderRadius: "8px",
+        py: 1.2,
+        "&:hover": {
+          background: "linear-gradient(135deg, #5a6fd8 0%, #6a4392 100%)",
+        },
+      }}
+    >
+      {creatingInvoiceId === quote.id ? "Creating..." : "Create Invoice"}
+    </Button>
+  )}
+</div>
               </div>
             </Card>
           ))}

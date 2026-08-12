@@ -237,7 +237,7 @@ const CreateContractAgreement = () => {
                 <InputNumber
                   style={{ width: "100%" }}
                   prefix="$"
-                  precision={2}
+                  precision={6}
                 />
               </Form.Item>
             </Col>

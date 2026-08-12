@@ -48,3 +48,29 @@ export const UpdateAssignment = (id, formData) => {
 export const GetEmployeeDropdown = () => {
   return axios.get(BASE_URL + `admin/user/employee-dropdown`);
 };
+
+
+// employee equipement histroy
+export const GetAssignmentHistory = (assignmentId) => {
+  return axios.get(BASE_URL + `eqipment/assignment/${assignmentId}/history`);
+};
+
+export const GetMonthlyEquipmentRecords = ({
+  month,
+  page = 1,
+  limit = 10,
+  search = "",
+} = {}) => {
+  return axios.get(BASE_URL + "eqipment/employee/equipment-records", {
+    params: {
+      month,
+      page,
+      limit,
+      search: search || undefined,
+    },
+  });
+};
+
+export const SendAssignmentFormEmail = (assignmentId) => {
+  return axios.post(BASE_URL + `eqipment/assignment/${assignmentId}/form/send`);
+};
