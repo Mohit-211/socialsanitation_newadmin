@@ -9,6 +9,7 @@ import {
   GetLateAbsentEmployees,
   GetLiveWorkingEmployees,
   GetUpcomingScheduledBookings,
+  GetUpcomingInvoices,
 } from "../../services/Api/Api";
 import Button from "@mui/material/Button";
 import "./Dashboard.css";
@@ -26,6 +27,23 @@ const toAMPM = (value) => {
 
   // Time only
   return dayjs(value, "HH:mm:ss").format("hh:mm A");
+};
+
+// MM-DD-YYYY formatter for plain dates
+const fmtDate = (value) => {
+  if (!value) return "—";
+  const d = dayjs(value);
+  return d.isValid() ? d.format("MM-DD-YYYY") : String(value);
+};
+
+
+const fmtDateRange = (rangeStr) => {
+  if (!rangeStr) return "—";
+  const parts = String(rangeStr).split(" - ");
+  if (parts.length === 2) {
+    return `${fmtDate(parts[0])} - ${fmtDate(parts[1])}`;
+  }
+  return fmtDate(rangeStr);
 };
 
 const formatDelay = (mins) =>
@@ -60,6 +78,8 @@ const getUrgency = (days) => {
   };
 };
 
+const PAGE_SIZE = 5;
+
 /* ─── pulse dot ─── */
 const PulseDot = ({ color }) => (
   <span
@@ -75,6 +95,39 @@ const PulseDot = ({ color }) => (
     }}
   />
 );
+
+/* ─── load more / show less control ─── */
+const LoadMoreControl = ({ total, visible, onMore, onLess }) => {
+  if (total <= PAGE_SIZE) return null;
+  const hasMore = visible < total;
+  const isExpanded = visible >= total;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        marginTop: 4,
+      }}
+    >
+      {hasMore ? (
+        <button
+          onClick={onMore}
+          className="ss-loadmore-btn"
+        >
+          Load More ({total - visible} more)
+        </button>
+      ) : isExpanded ? (
+        <button
+          onClick={onLess}
+          className="ss-loadmore-btn"
+        >
+          Show Less
+        </button>
+      ) : null}
+    </div>
+  );
+};
 
 /* ─── stat card ─── */
 const StatCard = ({
@@ -109,24 +162,10 @@ const StatCard = ({
       }
     >
       <div>
-        <p
-          style={{
-            margin: "0 0 6px",
-            fontSize: 13,
-            color: "#888",
-            fontWeight: 500,
-          }}
-        >
+        <p className="ss-text-label" style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 500 }}>
           {label}
         </p>
-        <h3
-          style={{
-            margin: "0 0 10px",
-            fontSize: 32,
-            fontWeight: 700,
-            color: "#1a1a2e",
-          }}
-        >
+        <h3 className="ss-text-dark" style={{ margin: "0 0 10px", fontSize: 32, fontWeight: 700 }}>
           {value ?? 0}
         </h3>
         {children}
@@ -136,6 +175,7 @@ const StatCard = ({
           onClick={onClick}
           onMouseEnter={() => setHov(true)}
           onMouseLeave={() => setHov(false)}
+          className="ss-text-dark"
           style={{
             marginTop: 14,
             padding: "9px 16px",
@@ -145,7 +185,6 @@ const StatCard = ({
             cursor: "pointer",
             fontSize: 13,
             fontWeight: 500,
-            color: "#1a1a2e",
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -171,11 +210,11 @@ const SectionHeader = ({ dot, dotColor, title, btnLabel, onClick }) => (
     }}
   >
     <h4
+      className="ss-text-dark"
       style={{
         margin: 0,
         fontSize: 16,
         fontWeight: 700,
-        color: "#1a1a2e",
         display: "flex",
         alignItems: "center",
       }}
@@ -208,6 +247,20 @@ const Dashboard = () => {
   const [lateEmployees, setLateEmployees] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [upcomingInvoices, setUpcomingInvoices] = useState([]);
+
+  // pagination state
+  const [visibleBookings, setVisibleBookings] = useState(PAGE_SIZE);
+  const [visibleInvoices, setVisibleInvoices] = useState(PAGE_SIZE);
+
+  const getUpcomingInvoices = async () => {
+    try {
+      const result = await GetUpcomingInvoices();
+      setUpcomingInvoices(result.data.data || []);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const getUpcomingBookings = async () => {
     try {
@@ -286,6 +339,7 @@ const Dashboard = () => {
           getLiveEmployees(),
           getLateAbsent(),
           getUpcomingBookings(),
+          getUpcomingInvoices(),
         ]);
       } catch (e) {
         console.log(e);
@@ -302,7 +356,10 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div style={{ padding: "24px", background: "#f5f6fa", minHeight: "100vh" }}>
+    <div
+      className="ss-dashboard"
+      style={{ padding: "24px", background: "#f5f6fa", minHeight: "100vh" }}
+    >
       <style>{`
         @keyframes livePulse {
           0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.7); }
@@ -337,7 +394,7 @@ const Dashboard = () => {
         }}
       >
         <div>
-          <h2 style={{ margin: "0 0 6px", fontSize: 26, fontWeight: 700 }}>
+          <h2 style={{ margin: "0 0 6px", fontSize: 26, fontWeight: 700, color: "#fff" }}>
             Welcome Admin 👋🏻
           </h2>
           <p style={{ margin: 0, color: "#a3b8d8", fontSize: 14 }}>
@@ -381,7 +438,7 @@ const Dashboard = () => {
             onClick={() => navigate("/overview")}
           />
           {liveEmployees.length === 0 ? (
-            <p style={{ color: "#999", fontSize: 14, margin: 0 }}>
+            <p className="ss-text-gray" style={{ fontSize: 14, margin: 0 }}>
               No employees currently working.
             </p>
           ) : (
@@ -423,13 +480,7 @@ const Dashboard = () => {
                       >
                         👤
                       </span>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: 14,
-                          color: "#1a1a2e",
-                        }}
-                      >
+                      <span className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
                         {emp.employee_name}
                       </span>
                     </div>
@@ -448,9 +499,9 @@ const Dashboard = () => {
                     </span>
                   </div>
                   <div
+                    className="ss-text-muted"
                     style={{
                       fontSize: 13,
-                      color: "#555",
                       paddingLeft: 42,
                       marginBottom: 5,
                     }}
@@ -521,7 +572,7 @@ const Dashboard = () => {
             onClick={() => navigate("/attendance")}
           />
           {lateEmployees.length === 0 ? (
-            <p style={{ color: "#999", fontSize: 14, margin: 0 }}>
+            <p className="ss-text-gray" style={{ fontSize: 14, margin: 0 }}>
               All employees are on time 🎉
             </p>
           ) : (
@@ -564,13 +615,7 @@ const Dashboard = () => {
                       >
                         👤
                       </span>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: 14,
-                          color: "#1a1a2e",
-                        }}
-                      >
+                      <span className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
                         {emp.employee_name}
                       </span>
                     </div>
@@ -589,9 +634,9 @@ const Dashboard = () => {
                     </span>
                   </div>
                   <div
+                    className="ss-text-muted"
                     style={{
                       fontSize: 13,
-                      color: "#555",
                       paddingLeft: 40,
                       marginBottom: 4,
                     }}
@@ -631,7 +676,7 @@ const Dashboard = () => {
       </div>
 
       {/* ══════════════════════════════════════════
-          UPCOMING BOOKINGS — updated UI
+          UPCOMING BOOKINGS
       ══════════════════════════════════════════ */}
       <div
         style={{
@@ -653,11 +698,11 @@ const Dashboard = () => {
           }}
         >
           <h4
+            className="ss-text-dark"
             style={{
               margin: 0,
               fontSize: 16,
               fontWeight: 700,
-              color: "#1a1a2e",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -675,14 +720,7 @@ const Dashboard = () => {
               }}
             />
             Upcoming Scheduled Bookings
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 400,
-                color: "#888",
-                marginLeft: 2,
-              }}
-            >
+            <span className="ss-text-gray" style={{ fontSize: 13, fontWeight: 400, marginLeft: 2 }}>
               · next 7 days
             </span>
           </h4>
@@ -723,26 +761,271 @@ const Dashboard = () => {
         )}
 
         {upcomingBookings.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "2rem 1rem",
-              color: "#999",
-              fontSize: 14,
-            }}
-          >
+          <div className="ss-text-gray" style={{ textAlign: "center", padding: "2rem 1rem", fontSize: 14 }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
             No upcoming scheduled bookings in the next 7 days.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {upcomingBookings.map((booking, index) => {
-              const days = getDaysUntil(booking.date);
-              const urgency = days !== null ? getUrgency(days) : null;
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {upcomingBookings.slice(0, visibleBookings).map((booking, index) => {
+                const days = getDaysUntil(booking.date);
+                const urgency = days !== null ? getUrgency(days) : null;
 
-              return (
+                return (
+                  <div
+                    key={index}
+                    className="booking-card-hover"
+                    style={{
+                      border: "1px solid #eef2f7",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      background: "#fafcff",
+                      transition: "box-shadow .2s, transform .2s",
+                    }}
+                  >
+                    {/* Urgency colour bar */}
+                    {urgency && (
+                      <div
+                        style={{
+                          height: 4,
+                          width: "100%",
+                          background: urgency.bar,
+                        }}
+                      />
+                    )}
+
+                    <div style={{ padding: "16px 18px" }}>
+                      {/* Top row — name + days badge */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 12,
+                          marginBottom: 12,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div>
+                          <h4 className="ss-text-dark" style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }}>
+                            {booking.booking_name}
+                          </h4>
+                          <p className="ss-text-muted" style={{ margin: 0, fontSize: 13 }}>
+                            👤 {booking.client_name}
+                          </p>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {/* Days-until badge */}
+                          {urgency && (
+                            <span
+                              style={{
+                                background: urgency.badge.bg,
+                                color: urgency.badge.color,
+                                padding: "5px 12px",
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {urgency.label}
+                            </span>
+                          )}
+                          {/* Date pill */}
+                          <span
+                            style={{
+                              background: "#dbeafe",
+                              color: "#1d4ed8",
+                              padding: "5px 12px",
+                              borderRadius: 20,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            📅 {fmtDate(booking.date)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Info grid — Time / Employees / Address */}
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(180px, 1fr))",
+                          gap: 10,
+                        }}
+                      >
+                        {/* Time */}
+                        <div style={{ background: "#f5f6fa", borderRadius: 10, padding: "10px 12px" }}>
+                          <div className="ss-text-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 500 }}>
+                            Booking Time
+                          </div>
+                          <div className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
+                            🕒 {toAMPM(booking.time)}
+                          </div>
+                        </div>
+
+                        {/* Employees */}
+                        <div style={{ background: "#f5f6fa", borderRadius: 10, padding: "10px 12px" }}>
+                          <div className="ss-text-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 500 }}>
+                            Employees Assigned
+                          </div>
+                          <div className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
+                            👥 {booking.employees_assigned}
+                          </div>
+                        </div>
+
+                        {/* Address */}
+                        <div style={{ background: "#f5f6fa", borderRadius: 10, padding: "10px 12px" }}>
+                          <div className="ss-text-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 500 }}>
+                            Service Address
+                          </div>
+                          <div className="ss-text-dark" style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.5 }}>
+                            📍 {booking.address}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Employee name chips */}
+                      {booking.employees?.length > 0 && (
+                        <div style={{ marginTop: 12, display: "flex", gap: 7, flexWrap: "wrap" }}>
+                          {booking.employees.map((emp, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                background: "#eff6ff",
+                                color: "#1d4ed8",
+                                padding: "5px 11px",
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              👤 {emp}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <LoadMoreControl
+              total={upcomingBookings.length}
+              visible={visibleBookings}
+              onMore={() => setVisibleBookings((v) => v + PAGE_SIZE)}
+              onLess={() => setVisibleBookings(PAGE_SIZE)}
+            />
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════
+    UPCOMING / OUTGOING INVOICES
+══════════════════════════════════════════ */}
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          padding: "22px 24px",
+          boxShadow: "0 1px 4px rgba(0,0,0,.08)",
+          borderTop: "4px solid #1b7a43",
+          marginBottom: 24,
+        }}
+      >
+        {/* Section header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 14,
+          }}
+        >
+          <h4
+            className="ss-text-dark"
+            style={{
+              margin: 0,
+              fontSize: 16,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: "#1b7a43",
+                flexShrink: 0,
+                animation: "softPulse 1.8s infinite",
+              }}
+            />
+            Outgoing Invoices
+          </h4>
+          <Button
+            label="All Invoices"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            onClick={() => navigate("/invoices")}
+            className="p-button-sm p-button-outlined"
+          />
+        </div>
+
+        {/* Notification strip */}
+        {upcomingInvoices.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              background: "#eaf3de",
+              border: "1px solid #bcdba0",
+              borderRadius: 10,
+              padding: "10px 14px",
+              marginBottom: 16,
+              fontSize: 13,
+              color: "#3b6d11",
+            }}
+          >
+            <span style={{ fontSize: 16 }}>🧾</span>
+            <span>
+              <strong>
+                {upcomingInvoices.length} invoice
+                {upcomingInvoices.length !== 1 ? "s" : ""}
+              </strong>{" "}
+              going out soon — review before they send.
+            </span>
+          </div>
+        )}
+
+        {upcomingInvoices.length === 0 ? (
+          <div className="ss-text-gray" style={{ textAlign: "center", padding: "2rem 1rem", fontSize: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🧾</div>
+            No upcoming invoices.
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {upcomingInvoices.slice(0, visibleInvoices).map((inv, index) => (
                 <div
-                  key={index}
+                  key={inv.id ?? index}
                   className="booking-card-hover"
                   style={{
                     border: "1px solid #eef2f7",
@@ -752,19 +1035,9 @@ const Dashboard = () => {
                     transition: "box-shadow .2s, transform .2s",
                   }}
                 >
-                  {/* Urgency colour bar */}
-                  {urgency && (
-                    <div
-                      style={{
-                        height: 4,
-                        width: "100%",
-                        background: urgency.bar,
-                      }}
-                    />
-                  )}
+                  <div style={{ height: 4, width: "100%", background: "#1b7a43" }} />
 
                   <div style={{ padding: "16px 18px" }}>
-                    {/* Top row — name + days badge */}
                     <div
                       style={{
                         display: "flex",
@@ -776,192 +1049,91 @@ const Dashboard = () => {
                       }}
                     >
                       <div>
-                        <h4
-                          style={{
-                            margin: "0 0 4px",
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: "#1a1a2e",
-                          }}
-                        >
-                          {booking.booking_name}
+                        <h4 className="ss-text-dark" style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }}>
+                          {inv.to_company_name ||
+                            inv.invoices_user?.user_profile?.name}
                         </h4>
-                        <p style={{ margin: 0, color: "#666", fontSize: 13 }}>
-                          👤 {booking.client_name}
+                        <p className="ss-text-muted" style={{ margin: 0, fontSize: 13 }}>
+                          🧾 {inv.custom_ref_no || inv.ref_no}
                         </p>
                       </div>
 
-                      <div
+                      <span
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          flexWrap: "wrap",
+                          background: "#eaf3de",
+                          color: "#3b6d11",
+                          padding: "5px 12px",
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {/* Days-until badge */}
-                        {urgency && (
-                          <span
-                            style={{
-                              background: urgency.badge.bg,
-                              color: urgency.badge.color,
-                              padding: "5px 12px",
-                              borderRadius: 20,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {urgency.label}
-                          </span>
-                        )}
-                        {/* Date pill */}
-                        <span
-                          style={{
-                            background: "#dbeafe",
-                            color: "#1d4ed8",
-                            padding: "5px 12px",
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          📅 {booking.date}
-                        </span>
-                      </div>
+                        📅 Bills {fmtDate(inv.billing_date)}
+                      </span>
                     </div>
 
-                    {/* Info grid — Time / Employees / Address */}
                     <div
                       style={{
                         display: "grid",
                         gridTemplateColumns:
                           "repeat(auto-fit, minmax(180px, 1fr))",
                         gap: 10,
+                        marginBottom: 14,
                       }}
                     >
-                      {/* Time */}
-                      <div
-                        style={{
-                          background: "#f5f6fa",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#999",
-                            marginBottom: 4,
-                            fontWeight: 500,
-                          }}
-                        >
-                          Booking Time
+                      <div style={{ background: "#f5f6fa", borderRadius: 10, padding: "10px 12px" }}>
+                        <div className="ss-text-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 500 }}>
+                          Service Dates
                         </div>
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            color: "#1a1a2e",
-                            fontSize: 14,
-                          }}
-                        >
-                          🕒 {toAMPM(booking.time)}
+                        <div className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
+                          🗓️ {fmtDateRange(inv.service_dates)}
                         </div>
                       </div>
 
-                      {/* Employees */}
-                      <div
-                        style={{
-                          background: "#f5f6fa",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#999",
-                            marginBottom: 4,
-                            fontWeight: 500,
-                          }}
-                        >
-                          Employees Assigned
+                      <div style={{ background: "#f5f6fa", borderRadius: 10, padding: "10px 12px" }}>
+                        <div className="ss-text-label" style={{ fontSize: 11, marginBottom: 4, fontWeight: 500 }}>
+                          Due Date
                         </div>
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            color: "#1a1a2e",
-                            fontSize: 14,
-                          }}
-                        >
-                          👥 {booking.employees_assigned}
-                        </div>
-                      </div>
-
-                      {/* Address */}
-                      <div
-                        style={{
-                          background: "#f5f6fa",
-                          borderRadius: 10,
-                          padding: "10px 12px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#999",
-                            marginBottom: 4,
-                            fontWeight: 500,
-                          }}
-                        >
-                          Service Address
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "#1a1a2e",
-                            fontSize: 13,
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          📍 {booking.address}
+                        <div className="ss-text-dark" style={{ fontWeight: 700, fontSize: 14 }}>
+                          ⏰ {fmtDate(inv.due_date)}
                         </div>
                       </div>
                     </div>
 
-                    {/* Employee name chips */}
-                    {booking.employees?.length > 0 && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          display: "flex",
-                          gap: 7,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {booking.employees.map((emp, idx) => (
-                          <span
-                            key={idx}
-                            style={{
-                              background: "#eff6ff",
-                              color: "#1d4ed8",
-                              padding: "5px 11px",
-                              borderRadius: 20,
-                              fontSize: 12,
-                              fontWeight: 600,
-                            }}
-                          >
-                            👤 {emp}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <button
+                      onClick={() =>
+                        window.open(inv.pdf_url, "_blank", "noopener,noreferrer")
+                      }
+                      style={{
+                        padding: "9px 16px",
+                        background: "#1b7a43",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      View PDF{" "}
+                      <i className="pi pi-arrow-right" style={{ fontSize: 11 }} />
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+
+            <LoadMoreControl
+              total={upcomingInvoices.length}
+              visible={visibleInvoices}
+              onMore={() => setVisibleInvoices((v) => v + PAGE_SIZE)}
+              onLess={() => setVisibleInvoices(PAGE_SIZE)}
+            />
+          </>
         )}
       </div>
 
@@ -969,11 +1141,11 @@ const Dashboard = () => {
           STATS CARDS
       ══════════════════════════════════════════ */}
       <p
+        className="ss-text-label"
         style={{
           margin: "0 0 12px",
           fontSize: 12,
           fontWeight: 600,
-          color: "#aaa",
           textTransform: "uppercase",
           letterSpacing: "0.08em",
         }}
@@ -1034,24 +1206,10 @@ const Dashboard = () => {
             minWidth: 260,
           }}
         >
-          <p
-            style={{
-              margin: "0 0 4px",
-              fontSize: 13,
-              color: "#888",
-              fontWeight: 500,
-            }}
-          >
+          <p className="ss-text-label" style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 500 }}>
             Total Employees Registered
           </p>
-          <h3
-            style={{
-              margin: "0 0 14px",
-              fontSize: 32,
-              fontWeight: 700,
-              color: "#1a1a2e",
-            }}
-          >
+          <h3 className="ss-text-dark" style={{ margin: "0 0 14px", fontSize: 32, fontWeight: 700 }}>
             {driverData?.total ?? 0}
           </h3>
           <div
@@ -1089,13 +1247,14 @@ const Dashboard = () => {
                 }}
               >
                 <span>{emoji}</span>
-                <span style={{ color: "#555" }}>{label}</span>
-                <strong style={{ color: "#1a1a2e" }}>{val ?? 0}</strong>
+                <span className="ss-text-muted">{label}</span>
+                <strong className="ss-text-dark">{val ?? 0}</strong>
               </div>
             ))}
           </div>
           <button
             onClick={() => navigate("/employees")}
+            className="ss-text-dark"
             style={{
               padding: "9px 16px",
               background: "#EFF5FB",
@@ -1104,7 +1263,6 @@ const Dashboard = () => {
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 500,
-              color: "#1a1a2e",
               display: "flex",
               alignItems: "center",
               gap: 6,

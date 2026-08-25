@@ -251,7 +251,7 @@ const UpdateServiceQuote = () => {
       const response = await EditServiceQuote(payload);
       if (response.status === 200) {
         message.success("Quote updated successfully.");
-        setTimeout(() => navigate(`/viewUser/${userId}`), 1000);
+        setTimeout(() => navigate(`/invoices`), 1000);
       } else {
         message.error("Something went wrong");
       }
@@ -429,8 +429,15 @@ const UpdateServiceQuote = () => {
             placeholder="Sqft"
             onChange={(e) => {
               const val = e.target.value;
-              if (val === "" || /^\d*$/.test(val)) {
-                handleItemChange(index, "sqft", val === "" ? "N/A" : val);
+              // allow empty, digits, and a single decimal point (e.g. "1", "1.", "1.5")
+              if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                handleItemChange(index, "sqft", val);
+              }
+            }}
+            onBlur={(e) => {
+              // only fall back to "N/A" once the user leaves the field empty
+              if (e.target.value === "") {
+                handleItemChange(index, "sqft", "N/A");
               }
             }}
           />
@@ -594,7 +601,7 @@ const UpdateServiceQuote = () => {
           pagination={false}
           footer={() => (
             <div style={{ textAlign: "right", fontWeight: "bold" }}>
-               Total: ${formatAmount(formData.totalAmount)}
+              Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />

@@ -48,6 +48,7 @@ import {
   RefreshCw,
   User as UserIcon,
   Navigation,
+  ClipboardList,
 } from "lucide-react";
 import "./User.scss";
 
@@ -105,6 +106,12 @@ const User = () => {
     setSelectedUser(record);
     setNewEmail(record.email);
     setEditModalVisible(true);
+  };
+
+  const navigateToInspections = (event, record) => {
+    navigate(`/clientInspections/${record.id}`, {
+      state: { clientName: record.user_profile?.name },
+    });
   };
 
   // 🔹 Call API to reset credentials
@@ -386,6 +393,16 @@ const User = () => {
               onClick={() => openNearbyEmployeesModal(record)}
             >
               <MapPin size={18} strokeWidth={2} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Inspections">
+            <IconButton
+              size="small"
+              sx={actionIconBtn("#0D9488")}
+              onClick={(event) => navigateToInspections(event, record)}
+            >
+              <ClipboardList size={16} />
             </IconButton>
           </Tooltip>
 

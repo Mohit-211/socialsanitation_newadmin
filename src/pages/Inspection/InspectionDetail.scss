@@ -1,0 +1,281 @@
+/** @format */
+
+.inspection-detail {
+  // Header row — Back/title on the left, status/score/Complete button on
+  // the right. Same fix as the client list page: MUI Stack's
+  // justifyContent="space-between" doesn't reliably win the cascade here.
+  .detail-header-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  }
+
+  // Small icon-only back control — replaces the oversized navy pill button
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #4b5563;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+  }
+
+  // Complete Inspection button — sized to match the pills beside it
+  // instead of the default oversized MUI button height.
+  .complete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: none;
+    background: #6366f1;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+
+    &:hover {
+      background: #5457e0;
+    }
+  }
+
+  // Status / score pills — replace flat antd Tag boxes with something with
+  // a bit more polish: soft color fill, pill shape, small dot.
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 15px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+
+    &__dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+  }
+
+  // Smaller variant used inline on each item row
+  .item-row .status-pill {
+    height: auto;
+    padding: 4px 11px;
+    font-size: 11px;
+  }
+
+  .score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 15px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  // Frequency pills (D / W / M) — pill-shaped, a little more presence than
+  // the earlier flat squares, filled + colored when true for this item.
+  .freq-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    border: 1px solid #e9eaec;
+    color: #c1c5cb;
+    background: #fafafa;
+  }
+
+  .freq-badge--daily.freq-badge--active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.12);
+  }
+
+  .freq-badge--weekly.freq-badge--active {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #16a34a;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.12);
+  }
+
+  .freq-badge--monthly.freq-badge--active {
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+    color: #7c3aed;
+    box-shadow: 0 1px 2px rgba(124, 58, 237, 0.12);
+  }
+
+  // Section card
+  .section-card {
+    &__header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin-bottom: 4px;
+    }
+
+    &__title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    &__count {
+      font-size: 12px;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+  }
+
+  // Item row
+  .item-row {
+    position: relative;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      border-color: #e2e4e8;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    &--issue {
+      background: #fef8f8;
+      border-color: #fbdada;
+    }
+
+    &--approved {
+      border-color: #d6f2e2;
+    }
+
+    &__top {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      width: 100% !important;
+      gap: 12px;
+    }
+
+    &__left {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    &__name {
+      font-size: 13.5px;
+      color: #1a1a1a;
+      line-height: 1.45;
+    }
+
+    &__freqs {
+      display: flex;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    &__note-block {
+      margin-top: 10px;
+      margin-left: 28px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    &__images {
+      margin-top: 10px;
+      margin-left: 28px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    &__image-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #eef0f2;
+    }
+  }
+
+  // Round pastel icon button used for the "Review" action, matching the
+  // Scope of Work page's edit/delete pill icon buttons.
+  .review-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e7ff;
+    background: #eef2ff;
+    color: #6366f1;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: #e0e7ff;
+    }
+  }
+}

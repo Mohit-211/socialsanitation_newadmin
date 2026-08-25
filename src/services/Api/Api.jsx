@@ -691,3 +691,8 @@ export const GetUpcomingScheduledBookings = async (body) => {
 
   return res;
 };
+
+export const GetUpcomingInvoices = async () => {
+  const res = await axios.get(BASE_URL + "invoice/upcoming");
+  return res;
+};

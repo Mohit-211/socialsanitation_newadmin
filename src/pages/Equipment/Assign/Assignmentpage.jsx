@@ -48,6 +48,7 @@ import {
   UpdateAssignment,
 } from "../../../services/Api/equipmentApi";
 import AssignmentHistoryModal from "./AssignmentHistory/AssignmentHistoryModal";
+import XLSX from "xlsx-js-style";
 
 const { Text } = AntTypography;
 const { Option } = Select;
@@ -248,7 +249,7 @@ const AssignmentPage = () => {
         employee_id: values.employee_id,
         equipment_id: values.equipment_id,
         assigned_quantity: values.assigned_quantity,
-        expected_return_date: values.expected_return_date.format("YYYY-MM-DD"),
+        expected_return_date: values.expected_return_date.format("MM-DD-YYYY"),
       };
 
       setSubmitting(true);
@@ -313,37 +314,75 @@ const AssignmentPage = () => {
       item.assigned_quantity,
       item.returned_quantity,
       item.pending_quantity,
-      item.assigned_date ? dayjs(item.assigned_date).format("YYYY-MM-DD") : "",
+      item.assigned_date ? dayjs(item.assigned_date).format("MM-DD-YYYY") : "",
       item.expected_return_date
-        ? dayjs(item.expected_return_date).format("YYYY-MM-DD")
+        ? dayjs(item.expected_return_date).format("MM-DD-YYYY")
         : "",
       item.actual_return_date
-        ? dayjs(item.actual_return_date).format("YYYY-MM-DD")
+        ? dayjs(item.actual_return_date).format("MM-DD-YYYY")
         : "",
       item.status,
       item.remarks || "",
     ]);
 
-    const csvContent = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
-          .join(","),
-      )
-      .join("\n");
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `equipment-assignments-${dayjs().format("YYYY-MM-DD")}.csv`,
+    // Fixed column widths — Remarks stays a set width; long text wraps
+    // down inside the cell instead of overflowing into columns to the right.
+    worksheet["!cols"] = [
+      { wch: 18 }, // Employee
+      { wch: 18 }, // Equipment
+      { wch: 12 }, // Assigned Qty
+      { wch: 12 }, // Returned Qty
+      { wch: 12 }, // Pending Qty
+      { wch: 14 }, // Assigned Date
+      { wch: 18 }, // Expected Return Date
+      { wch: 16 }, // Actual Return Date
+      { wch: 18 }, // Status
+      { wch: 45 }, // Remarks
+    ];
+
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    const remarksColIndex = 9; // 0-based: Employee=0 ... Remarks=9
+
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "2563EB" } }, // blue instead of green
+      alignment: { vertical: "center", horizontal: "left" },
+    };
+
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const headerCellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (worksheet[headerCellAddress]) {
+        worksheet[headerCellAddress].s = headerStyle;
+      }
+    }
+
+    // Wrap text + top-align every Remarks cell, and set a row height so
+    // wrapped text is actually visible rather than clipped.
+    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+      const cellAddress = XLSX.utils.encode_cell({
+        r: row,
+        c: remarksColIndex,
+      });
+      const cell = worksheet[cellAddress];
+      if (cell) {
+        cell.s = {
+          alignment: { wrapText: true, vertical: "top", horizontal: "left" },
+        };
+      }
+    }
+
+    // Give data rows enough height to show a few wrapped lines
+    worksheet["!rows"] = rows.map(() => ({ hpt: 45 }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Assignments");
+
+    XLSX.writeFile(
+      workbook,
+      `equipment-assignments-${dayjs().format("MM-DD-YYYY")}.xlsx`,
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   const columns = [
@@ -689,7 +728,7 @@ const AssignmentPage = () => {
           >
             <DatePicker
               style={{ width: "100%" }}
-              format="YYYY-MM-DD"
+              format="MM-DD-YYYY"
               disabledDate={(current) =>
                 current && current < dayjs().startOf("day")
               }

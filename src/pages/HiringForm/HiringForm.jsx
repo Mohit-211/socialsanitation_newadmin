@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Table, Input, Modal, message, Space, Button } from "antd";
+import { Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -19,6 +20,7 @@ const HiringForm = () => {
 	const [filteredData, setFilteredData] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [searchText, setSearchText] = useState("");
+	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 	const [tableParams, setTableParams] = useState({
 		pagination: {
 			current: 1,
@@ -59,16 +61,38 @@ const HiringForm = () => {
 		}
 	};
 
-	const handleDelete = (id) => {
+	// Unified delete handler — always sends an array of ids to the API,
+	// e.g. { ids: [12, 15, 18, 21] }. Works for both single-row delete
+	// and bulk delete from the selection toolbar.
+	const handleDelete = (ids) => {
+		const count = ids.length;
 		Modal.confirm({
-			title: "Delete Form",
-			content: "Are you sure you want to delete this form?",
+			title: count > 1 ? "Delete Forms" : "Delete Form",
+			content:
+				count > 1
+					? `Are you sure you want to delete these ${count} forms?`
+					: "Are you sure you want to delete this form?",
+			okText: "Delete",
+			okButtonProps: { danger: true },
 			onOk: async () => {
-				await DeleteHiringForm(id);
-				message.success("Form deleted");
+				await DeleteHiringForm(ids);
+				message.success(count > 1 ? "Forms deleted" : "Form deleted");
+				setSelectedRowKeys((prev) =>
+					prev.filter((key) => !ids.includes(key)),
+				);
 				getData();
 			},
 		});
+	};
+
+	const handleBulkDelete = () => {
+		if (selectedRowKeys.length === 0) return;
+		handleDelete(selectedRowKeys);
+	};
+
+	const rowSelection = {
+		selectedRowKeys,
+		onChange: (keys) => setSelectedRowKeys(keys),
 	};
 
 	const columns = [
@@ -107,7 +131,6 @@ const HiringForm = () => {
 						primary
 						onClick={(event) => navigateToEditService(event, record.id)}
 						size="small"
-						// style={{ height: "30px", padding: "0 12px", whiteSpace: "nowrap" }}
 					>
 						View Form
 					</Button>
@@ -186,45 +209,64 @@ const HiringForm = () => {
 	return (
 		<Box>
 			<Paper
-	variant="outlined"
-	sx={{
-		p: 2.5,
-		mb: 3,
-		borderRadius: "10px",
-		borderColor: "#eef0f2",
-	}}
->
-	<Stack
-		direction="row"
-		spacing={2}
-		sx={{
-			justifyContent: "space-between",
-			alignItems: "center",
-			flexWrap: "wrap",
-		}}
-	>
-		<Box>
-			<Typography className="page-title">
-				EMPLOYEE HIRING FORM MANAGEMENT
-			</Typography>
+				variant="outlined"
+				sx={{
+					p: 2.5,
+					mb: 3,
+					borderRadius: "10px",
+					borderColor: "#eef0f2",
+				}}
+			>
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: "wrap",
+					}}
+				>
+					<Box>
+						<Typography className="page-title">
+							EMPLOYEE HIRING FORM MANAGEMENT
+						</Typography>
 
-			<Typography className="page-sub-title">
-				View Employee Hiring Form
-			</Typography>
-		</Box>
+						<Typography className="page-sub-title">
+							View Employee Hiring Form
+						</Typography>
+					</Box>
 
-		<Input
-			allowClear
-			placeholder="Search by name or email..."
-			value={searchText}
-			onChange={(e) => setSearchText(e.target.value)}
-			style={{
-				width: 270,
-				height: 44,
-			}}
-		/>
-	</Stack>
-</Paper>
+					<Stack direction="row" spacing={1.5} alignItems="center">
+						{selectedRowKeys.length > 0 && (
+							<Button
+								danger
+								type="primary"
+								icon={<Trash2 size={14} />}
+								onClick={handleBulkDelete}
+								style={{
+									height: 44,
+									display: "flex",
+									alignItems: "center",
+									gap: 6,
+								}}
+							>
+								Delete Selected ({selectedRowKeys.length})
+							</Button>
+						)}
+
+						<Input
+							allowClear
+							placeholder="Search by name or email..."
+							value={searchText}
+							onChange={(e) => setSearchText(e.target.value)}
+							style={{
+								width: 270,
+								height: 44,
+							}}
+						/>
+					</Stack>
+				</Stack>
+			</Paper>
 
 			<Table
 				columns={columns}
@@ -233,6 +275,7 @@ const HiringForm = () => {
 				pagination={tableParams.pagination}
 				loading={loading}
 				onChange={handleTableChange}
+				rowSelection={rowSelection}
 			/>
 		</Box>
 	);

@@ -13,10 +13,7 @@ import {
   Typography as AntTypography,
   List,
 } from "antd";
-import {
-  InboxOutlined,
-  DownloadOutlined,
-} from "@ant-design/icons";
+import { InboxOutlined, DownloadOutlined } from "@ant-design/icons";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -422,7 +419,12 @@ const EquipmentPage = () => {
       >
         <Text type="secondary">
           Upload a CSV file with <b>name</b> and <b>quantity</b> columns.{" "}
-          <Button type="link" size="small" icon={<DownloadOutlined />} onClick={handleDownloadSample}>
+          <Button
+            type="link"
+            size="small"
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadSample}
+          >
             Download sample
           </Button>
         </Text>

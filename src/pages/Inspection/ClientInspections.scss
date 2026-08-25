@@ -1,0 +1,62 @@
+/** @format */
+
+.inspection-page {
+  // MUI Stack's justifyContent="space-between" keeps losing the cascade in
+  // this app (same root cause as page-title/page-sub-title needing
+  // !important) — these two classes replace Stack in the spots where that
+  // showed up: the page header row and each card's score/view footer.
+  .inspection-header-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .inspection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .inspection-toolbar__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .inspection-card {
+    position: relative;
+    height: 100%;
+
+    &__top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+    }
+
+    &__footer {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f2f4;
+    }
+
+    &__delete {
+      opacity: 0.5;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    &:hover &__delete {
+      opacity: 1;
+    }
+  }
+}

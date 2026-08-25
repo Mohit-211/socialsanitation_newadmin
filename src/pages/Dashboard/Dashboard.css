@@ -39,4 +39,73 @@
   color: red;
 }
 
+/* ─────────────────────────────────────────────
+   DEFENSIVE TEXT-COLOR OVERRIDES
+   Some global stylesheet (outside this file) appears to
+   force text color via an !important rule on bare tag
+   selectors (h4, p, etc), which wins over inline styles
+   and makes dashboard card text invisible. These class
+   + tag selectors have higher specificity than a bare
+   tag selector, so they win back the intended colors
+   regardless of where the conflicting rule lives.
+   ───────────────────────────────────────────── */
+.ss-dashboard h1.ss-text-dark,
+.ss-dashboard h2.ss-text-dark,
+.ss-dashboard h3.ss-text-dark,
+.ss-dashboard h4.ss-text-dark,
+.ss-dashboard h5.ss-text-dark,
+.ss-dashboard p.ss-text-dark,
+.ss-dashboard span.ss-text-dark,
+.ss-dashboard div.ss-text-dark,
+.ss-dashboard strong.ss-text-dark,
+.ss-dashboard button.ss-text-dark {
+  color: #1a1a2e !important;
+}
 
+.ss-dashboard h1.ss-text-muted,
+.ss-dashboard h2.ss-text-muted,
+.ss-dashboard h3.ss-text-muted,
+.ss-dashboard h4.ss-text-muted,
+.ss-dashboard p.ss-text-muted,
+.ss-dashboard span.ss-text-muted,
+.ss-dashboard div.ss-text-muted {
+  color: #666 !important;
+}
+
+.ss-dashboard h1.ss-text-gray,
+.ss-dashboard h2.ss-text-gray,
+.ss-dashboard h3.ss-text-gray,
+.ss-dashboard h4.ss-text-gray,
+.ss-dashboard p.ss-text-gray,
+.ss-dashboard span.ss-text-gray,
+.ss-dashboard div.ss-text-gray {
+  color: #999 !important;
+}
+
+.ss-dashboard h1.ss-text-label,
+.ss-dashboard h2.ss-text-label,
+.ss-dashboard h3.ss-text-label,
+.ss-dashboard h4.ss-text-label,
+.ss-dashboard p.ss-text-label,
+.ss-dashboard span.ss-text-label,
+.ss-dashboard div.ss-text-label {
+  color: #999 !important;
+}
+
+/* ─── load more / show less button ─── */
+.ss-dashboard .ss-loadmore-btn {
+  padding: 8px 20px;
+  background: #f5f6fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e !important;
+  transition: background .15s, border-color .15s;
+}
+
+.ss-dashboard .ss-loadmore-btn:hover {
+  background: #eef0f5;
+  border-color: #d7dbe3;
+}

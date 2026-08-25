@@ -352,55 +352,53 @@ const AddCustomer = () => {
 
   return (
     <Box>
-     <Paper
-  variant="outlined"
-  sx={{
-    p: 2.5,
-    mb: 3,
-    borderRadius: "10px",
-    borderColor: "#eef0f2",
-  }}
->
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 2,
-    }}
-  >
-    <Box>
-      <Typography className="page-title">
-        CLIENT MANAGEMENT
-      </Typography>
-      <Typography className="page-sub-title">
-        Create New Client
-      </Typography>
-    </Box>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: "10px",
+          borderColor: "#eef0f2",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
+            <Typography className="page-sub-title">
+              Create New Client
+            </Typography>
+          </Box>
 
-    <Button
-      variant="contained"
-      disableElevation
-      startIcon={<ArrowLeft size={18} />}
-      onClick={navigateToUser}
-      sx={{
-        ml: "auto",
-        height: 47,
-        px: 3,
-        borderRadius: "8px",
-        minWidth: 185,
-        textTransform: "none",
-        fontWeight: 600,
-        backgroundColor: "#2c3345",
-        "&:hover": {
-          backgroundColor: "#1f2433",
-        },
-      }}
-    >
-      Return to Clients
-    </Button>
-  </Box>
-</Paper>
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<ArrowLeft size={18} />}
+            onClick={navigateToUser}
+            sx={{
+              ml: "auto",
+              height: 47,
+              px: 3,
+              borderRadius: "8px",
+              minWidth: 185,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#2c3345",
+              "&:hover": {
+                backgroundColor: "#1f2433",
+              },
+            }}
+          >
+            Return to Clients
+          </Button>
+        </Box>
+      </Paper>
 
       <Paper
         variant="outlined"
