@@ -13,7 +13,8 @@ import {
   GetInvoices,
   GetMonthlyInvoicesSummary,
   MarkInvoiceBooked,
-  MarkInvoiceCashPaid,
+  MarkInvoiceCheckPaid,
+  MarkInvoiceACHPaid,
 } from "../../services/Api/InvoiceApi";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -38,25 +39,11 @@ const jobStatusConfig = {
 };
 
 const paymentStatusConfig = {
-  NOT_PAID: {
-    label: "NOT PAID",
-    color: "orange",
-  },
-
-  PAID: {
-    label: "PAID",
-    color: "green",
-  },
-
-  CASH_PAID: {
-    label: "PAID (CASH)",
-    color: "green",
-  },
-
-  CHECK_PAID: {
-    label: "PAID (CHECK)",
-    color: "green",
-  },
+  NOT_PAID: { label: "NOT PAID", color: "orange" },
+  PAID: { label: "PAID", color: "green" },
+  CASH_PAID: { label: "PAID (CASH)", color: "green" },
+  CHECK_PAID: { label: "PAID (CHECK)", color: "green" },
+  ACH_PAID: { label: "PAID (ACH)", color: "green" },
 };
 
 const actionIconBtn = (color) => ({
@@ -75,7 +62,6 @@ const PDF_BASE_URL = "https://node.socialsanitation.com/api/v1/docs";
 
 const getPdfUrl = (record) => {
   if (record.pdf_url) return record.pdf_url;
-  // Fallback for older records created before pdf_url existed
   return `${PDF_BASE_URL}/quote-${record.ref_no}.pdf`;
 };
 
@@ -92,7 +78,6 @@ const Invoices = () => {
   const [loading, setLoading] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  // 🔍 filters
   const [searchText, setSearchText] = useState("");
 
   const [selectedMonth, setSelectedMonth] = useState(dayjs().month());
@@ -103,7 +88,45 @@ const Invoices = () => {
   );
   const years = Array.from({ length: 10 }, (_, i) => dayjs().year() - 5 + i);
 
-  // 🔁 Fetch invoices
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payModalInvoiceId, setPayModalInvoiceId] = useState(null);
+  const [payModalLoading, setPayModalLoading] = useState(null);
+
+  const openPayModal = (id) => {
+    setPayModalInvoiceId(id);
+    setPayModalOpen(true);
+  };
+
+  const closePayModal = () => {
+    setPayModalOpen(false);
+    setPayModalInvoiceId(null);
+    setPayModalLoading(null);
+  };
+
+  const handleConfirmPay = async (method) => {
+    if (!payModalInvoiceId) return;
+
+    setPayModalLoading(method);
+    try {
+      if (method === "check") {
+        await MarkInvoiceCheckPaid(payModalInvoiceId);
+        message.success("Invoice marked as Paid by Check");
+      } else {
+        await MarkInvoiceACHPaid(payModalInvoiceId);
+        message.success("Invoice marked as Paid by ACH");
+      }
+
+      fetchInvoices(selectedMonth, selectedYear);
+      closePayModal();
+    } catch (error) {
+      const backendMessage =
+        error?.response?.data?.message ||
+        "Failed to mark invoice as paid by " + (method === "check" ? "check" : "ACH");
+      message.error(backendMessage);
+      setPayModalLoading(null);
+    }
+  };
+
   const fetchInvoices = async (m = selectedMonth, y = selectedYear) => {
     try {
       setLoading(true);
@@ -124,39 +147,17 @@ const Invoices = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 🟡 Mark booked
   const handleMarkBooked = async (id) => {
     try {
       await MarkInvoiceBooked(id);
       message.success("Invoice marked as BOOKED");
 
-      fetchInvoices(selectedMonth, selectedYear); // ✅ FIXED
+      fetchInvoices(selectedMonth, selectedYear);
     } catch {
       message.error("Failed to mark as booked");
     }
   };
 
-  const handleCheckPaid = async (id) => {
-    Modal.confirm({
-      title: "Mark invoice as Paid by Check/ACH?",
-
-      okText: "Yes, Mark Paid",
-
-      onOk: async () => {
-        try {
-          await MarkInvoiceCashPaid(id);
-
-          message.success("Marked as CHECK PAID");
-
-          fetchInvoices(selectedMonth, selectedYear);
-        } catch {
-          message.error("Failed to mark as check paid");
-        }
-      },
-    });
-  };
-
-  // 🔎 Search filter (client-side)
   const filteredData = useMemo(() => {
     if (!searchText) return data;
 
@@ -174,10 +175,7 @@ const Invoices = () => {
   }, [searchText, data]);
 
   const columns = [
-    {
-      title: "Invoice #",
-      dataIndex: "ref_no",
-    },
+    { title: "Invoice #", dataIndex: "ref_no" },
     {
       title: "Client",
       render: (_, r) => r.payment_user?.user_profile?.name || "-",
@@ -185,7 +183,7 @@ const Invoices = () => {
     {
       title: "Amount",
       dataIndex: "total_due",
-      render: (v) => `$${Number(v).toFixed(2)}`,
+      render: (v) => "$" + Number(v).toFixed(2),
     },
     {
       title: "Job Status",
@@ -226,7 +224,7 @@ const Invoices = () => {
             <IconButton
               size="small"
               sx={actionIconBtn("#6366F1")}
-              onClick={() => navigate(`/edit-service-quote/${record.id}`)}
+              onClick={() => navigate("/edit-service-quote/" + record.id)}
             >
               <Pencil size={16} />
             </IconButton>
@@ -259,7 +257,7 @@ const Invoices = () => {
               <IconButton
                 size="small"
                 sx={actionIconBtn("#16A34A")}
-                onClick={() => handleCheckPaid(record.id)}
+                onClick={() => openPayModal(record.id)}
               >
                 <Banknote size={16} />
               </IconButton>
@@ -280,7 +278,7 @@ const Invoices = () => {
     },
   ];
 
-const handleDownloadExcel = async () => {
+  const handleDownloadExcel = async () => {
     try {
       const formattedMonth = dayjs()
         .year(selectedYear)
@@ -291,9 +289,19 @@ const handleDownloadExcel = async () => {
       const users = res.data.data || [];
 
       const monthName = dayjs(formattedMonth).format("MMMM YYYY");
+      const monthShort = dayjs(formattedMonth).format("MMM");
 
-      // NEW: only build columns for days that actually have quotes,
-      // instead of every day in the month (mirrors the invoices report design)
+      const ordinalSuffix = (n) => {
+        const j = n % 10;
+        const k = n % 100;
+        if (j === 1 && k !== 11) return "st";
+        if (j === 2 && k !== 12) return "nd";
+        if (j === 3 && k !== 13) return "rd";
+        return "th";
+      };
+
+      const formatDayHeader = (d) => "" + d + ordinalSuffix(d) + " " + monthShort;
+
       const allDates = [];
       users.forEach((user) => {
         (user.invoices || []).forEach((inv) => {
@@ -306,50 +314,39 @@ const handleDownloadExcel = async () => {
       const dayNumbers = Array.from(new Set(allDates)).sort((a, b) => a - b);
 
       const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet(`Service Quotes ${monthName}`, {
+      const sheet = workbook.addWorksheet("Service Quotes " + monthName, {
         properties: { defaultRowHeight: 34 },
       });
 
-      /* ================= PRINT SETUP (for clean PDF export) ================= */
       sheet.pageSetup = {
-        paperSize: 9, // A4
+        paperSize: 9,
         orientation: "landscape",
         fitToPage: true,
         fitToWidth: 1,
         fitToHeight: 0,
-        margins: {
-          left: 0.3,
-          right: 0.3,
-          top: 0.4,
-          bottom: 0.4,
-          header: 0.2,
-          footer: 0.2,
-        },
+        horizontalCentered: true,
+        verticalCentered: false, // top-anchored, not centered — content should start at the top, extra space (if any) goes below
       };
-      sheet.pageSetup.printTitlesRow = "5:5"; // repeat header row on every printed page
+      sheet.pageSetup.printTitlesRow = "5:5";
 
-      /* ================= COLORS ================= */
       const colors = {
-        PAID: "FFE8F5E9", // green — paid, cash paid, check paid
-        NOT_PAID: "FFFFF4E5", // orange — not paid + overdue
+        PAID: "FFE8F5E9",
+        NOT_PAID: "FFFFF4E5",
       };
 
-      /* ================= HELPER ================= */
+      const paidStatuses = ["PAID", "CASH_PAID", "CHECK_PAID", "ACH_PAID"];
+
       const getFinalStatus = (inv) => {
-        const paidStatuses = ["PAID", "CASH_PAID", "CHECK_PAID"];
         if (paidStatuses.includes(inv.payment_status)) return "PAID";
         return "NOT_PAID";
       };
 
-      /* ================= SUMMARY ================= */
-      let totalInvoices = 0,
-        totalAmount = 0;
-      let paidCount = 0,
-        paidAmount = 0;
-      let checkPaidCount = 0,
-        checkPaidAmount = 0;
-      let cashPaidCount = 0,
-        cashPaidAmount = 0;
+      let totalInvoices = 0;
+      let totalAmount = 0;
+      let paidCount = 0;
+      let paidAmount = 0;
+      let notPaidCount = 0;
+      let notPaidAmount = 0;
 
       users.forEach((user) => {
         (user.invoices || []).forEach((inv) => {
@@ -357,35 +354,30 @@ const handleDownloadExcel = async () => {
           totalInvoices++;
           totalAmount += amount;
 
-          if (inv.payment_status === "PAID") {
+          if (paidStatuses.includes(inv.payment_status)) {
             paidCount++;
             paidAmount += amount;
-          } else if (inv.payment_status === "CHECK_PAID") {
-            checkPaidCount++;
-            checkPaidAmount += amount;
-          } else if (inv.payment_status === "CASH_PAID") {
-            cashPaidCount++;
-            cashPaidAmount += amount;
+          } else {
+            notPaidCount++;
+            notPaidAmount += amount;
           }
         });
       });
 
-      /* ================= TITLE ================= */
-      const titleRow = sheet.addRow([`Service Quote Invoices - ${monthName}`]);
+      const mergeSpan = Math.max(6, dayNumbers.length + 1);
+
+      const titleRow = sheet.addRow(["Service Quote Invoices - " + monthName]);
       titleRow.getCell(1).font = { bold: true, size: 16 };
       titleRow.getCell(1).alignment = { horizontal: "center" };
-      sheet.mergeCells(1, 1, 1, dayNumbers.length + 1);
+      sheet.mergeCells(1, 1, 1, mergeSpan);
 
-      /* ================= SUMMARY ================= */
       const summaryHeader = sheet.addRow([
         "Total Invoices",
         "Total Amount",
-        "Paid (Card)",
+        "Paid",
         "Paid Amount",
-        "Check Paid",
-        "Check Paid Amount",
-        "Cash Paid",
-        "Cash Paid Amount",
+        "Not Paid",
+        "Not Paid Amount",
       ]);
 
       summaryHeader.eachCell((cell) => {
@@ -403,10 +395,8 @@ const handleDownloadExcel = async () => {
         totalAmount,
         paidCount,
         paidAmount,
-        checkPaidCount,
-        checkPaidAmount,
-        cashPaidCount,
-        cashPaidAmount,
+        notPaidCount,
+        notPaidAmount,
       ]);
 
       summaryRow.eachCell((cell, col) => {
@@ -415,19 +405,13 @@ const handleDownloadExcel = async () => {
         if (col % 2 === 0) cell.numFmt = "$#,##0.00";
       });
 
-      /* ================= LEGEND ================= */
       const legendRow = sheet.addRow([
-        "🟢 Paid (Card / Check / Cash)     🟠 Not Paid",
+        "🟢 Paid (Card / Check / ACH / Cash)     🟠 Not Paid",
       ]);
       legendRow.getCell(1).font = { italic: true, size: 11 };
-      sheet.mergeCells(
-        `A${legendRow.number}:${String.fromCharCode(64 + dayNumbers.length + 1)}${
-          legendRow.number
-        }`,
-      );
+      sheet.mergeCells(legendRow.number, 1, legendRow.number, mergeSpan);
 
-      /* ================= MAIN HEADER ================= */
-      const header = ["Client Name", ...dayNumbers.map((d) => d.toString())];
+      const header = ["Client Name"].concat(dayNumbers.map(formatDayHeader));
 
       const headerRow = sheet.addRow(header);
       headerRow.eachCell((cell) => {
@@ -440,7 +424,6 @@ const handleDownloadExcel = async () => {
         cell.alignment = { horizontal: "center" };
       });
 
-      /* ================= DATA ROWS ================= */
       users.forEach((user) => {
         const rowValues = [user.name || "Unknown"];
 
@@ -454,7 +437,6 @@ const handleDownloadExcel = async () => {
         const row = sheet.addRow(rowValues);
 
         row.eachCell((cell, colIndex) => {
-          /* ================= CLIENT NAME CELL ================= */
           if (colIndex === 1) {
             const userInvoices = user.invoices || [];
             const hasUnpaid = userInvoices.some(
@@ -483,7 +465,6 @@ const handleDownloadExcel = async () => {
             return;
           }
 
-          /* ================= EMPTY CELL ================= */
           const invoices = cell.value;
           if (!invoices || invoices.length === 0) {
             cell.value = "—";
@@ -491,15 +472,14 @@ const handleDownloadExcel = async () => {
             return;
           }
 
-          /* ================= INVOICE CELL — ref no + amount + status only ================= */
           let text = "";
           let cellStatus = "PAID";
 
           invoices.forEach((inv) => {
             const status = getFinalStatus(inv);
             const emoji = status === "PAID" ? "🟢" : "🟠";
-            const amount = `$${Number(inv.total_due || 0).toFixed(2)}`;
-            text += `${inv.ref_no}  ${amount}  ${emoji}\n`;
+            const amount = "$" + Number(inv.total_due || 0).toFixed(2);
+            text += inv.ref_no + "  " + amount + "  " + emoji + "\n";
 
             if (status === "NOT_PAID") cellStatus = "NOT_PAID";
           });
@@ -517,7 +497,6 @@ const handleDownloadExcel = async () => {
           };
         });
 
-        // Row height only needs to fit the max number of quotes in any single day cell
         const maxQuotesInADay = Math.max(
           1,
           ...dayNumbers.map(
@@ -530,24 +509,18 @@ const handleDownloadExcel = async () => {
         row.height = Math.max(34, 20 + maxQuotesInADay * 16);
       });
 
-      /* ================= COLUMN WIDTHS ================= */
       sheet.columns.forEach((col, i) => {
         if (i === 0) col.width = 36;
         else col.width = 20;
       });
 
-      /* ================= FREEZE ================= */
       sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
 
-      /* ================= DOWNLOAD ================= */
       const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(
-        new Blob([buffer]),
-        `Service Quote Invoices - ${monthName}.xlsx`,
-      );
+      saveAs(new Blob([buffer]), "Service Quote Invoices - " + monthName + ".xlsx");
 
       message.success(
-        `Service Quote Invoices - ${monthName} downloaded successfully!`,
+        "Service Quote Invoices - " + monthName + " downloaded successfully!",
       );
     } catch (err) {
       console.error(err);
@@ -558,25 +531,17 @@ const handleDownloadExcel = async () => {
   const handleDelete = (invoiceId) => {
     Modal.confirm({
       title: "Delete Invoice",
-
       content: "Are you sure you want to delete this invoice?",
-
       okText: "Delete",
-
       okType: "danger",
-
       centered: true,
-
       onOk: async () => {
         try {
           await DeleteServiceQuote(invoiceId);
-
           message.success("Invoice deleted successfully");
-
           fetchInvoices(selectedMonth, selectedYear);
         } catch (error) {
           console.error("Delete error:", error);
-
           message.error("Failed to delete invoice");
         }
       },
@@ -585,18 +550,11 @@ const handleDownloadExcel = async () => {
 
   return (
     <Box>
-      {/* HEADER */}
       <Paper
         variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
+        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
         <Stack spacing={2}>
-          {/* TOP ROW: Title + download */}
           <Stack
             direction="row"
             spacing={2}
@@ -643,15 +601,10 @@ const handleDownloadExcel = async () => {
             </MuiButton>
           </Stack>
 
-          {/* SECOND ROW: Search + filters */}
           <Stack
             direction="row"
             spacing={1.5}
-            sx={{
-              justifyContent: "flex-end",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
+            sx={{ justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}
           >
             <Input
               allowClear
@@ -694,7 +647,6 @@ const handleDownloadExcel = async () => {
         </Stack>
       </Paper>
 
-      {/* Table */}
       <Table
         rowKey="id"
         columns={columns}
@@ -704,13 +656,42 @@ const handleDownloadExcel = async () => {
         size="middle"
       />
 
-      {/* View modal */}
       {selectedInvoice && (
         <InvoiceViewModal
           invoice={selectedInvoice}
           onClose={() => setSelectedInvoice(null)}
         />
       )}
+
+      <Modal
+        title="Mark Invoice as Paid"
+        open={payModalOpen}
+        onCancel={closePayModal}
+        footer={[
+          <Button key="cancel" onClick={closePayModal} disabled={!!payModalLoading}>
+            Cancel
+          </Button>,
+          <Button
+            key="check"
+            onClick={() => handleConfirmPay("check")}
+            loading={payModalLoading === "check"}
+            disabled={!!payModalLoading}
+          >
+            Paid by Check
+          </Button>,
+          <Button
+            key="ach"
+            type="primary"
+            onClick={() => handleConfirmPay("ach")}
+            loading={payModalLoading === "ach"}
+            disabled={!!payModalLoading}
+          >
+            Paid by ACH
+          </Button>,
+        ]}
+      >
+        <p>How was this invoice paid?</p>
+      </Modal>
     </Box>
   );
 };

@@ -34,10 +34,22 @@ export const MarkInvoiceBooked = async (id) => {
 /**
  * Mark invoice as PAID BY CASH
  */
-export const MarkInvoiceCashPaid = async (id) => {
+export const MarkInvoiceCheckPaid = async (id) => {
 	try {
 		const res = await axios.put(
-			`${BASE_URL}admin/user/quotes/mark-cash-paid/${id}`,
+			`${BASE_URL}admin/user/quotes/mark-check-paid/${id}`,
+		);
+		return res;
+	} catch (error) {
+		console.error("Error marking invoice as cash paid:", error);
+		throw error;
+	}
+};
+
+export const MarkInvoiceACHPaid = async (id) => {
+	try {
+		const res = await axios.put(
+			`${BASE_URL}admin/user/quotes/mark-ach-paid/${id}`,
 		);
 		return res;
 	} catch (error) {
@@ -115,6 +127,11 @@ export const GetAllUserName = async () => {
 	return res;
 };
 
+export const GetUserAddressesByUserId = async (userId) => {
+  const res = await axios.get(BASE_URL + `admin/user/getUserAddressesByUserId/${userId}`);
+  return res;
+};
+
 
 export const GetMonthlyInvoicesSummary = async (month = null) => {
 	try {
@@ -142,15 +159,14 @@ export const GetMonthlyAllInvoicesSummary = async (month = null) => {
 	}
 };
 
-export const MarkMonthlyInvoiceCheckPaid = async (id) => {
-	try {
-		const res = await axios.patch(
-			`${BASE_URL}invoice/mark-paid-check/${id}`,
-		);
 
-		return res;
-	} catch (error) {
-		console.error("Error marking invoice as check paid:", error);
-		throw error;
-	}
+
+export const MarkInvoicePaidByCheck = async (invoiceId) => {
+  const res = await axios.patch(BASE_URL + `invoice/mark-paid-check/${invoiceId}`);
+  return res;
+};
+
+export const MarkInvoicePaidByACH = async (invoiceId) => {
+  const res = await axios.patch(BASE_URL + `invoice/markInvoicePaidByACH/${invoiceId}`);
+  return res;
 };

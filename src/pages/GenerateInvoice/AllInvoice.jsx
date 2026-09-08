@@ -9,6 +9,7 @@ import {
   Modal,
   Tag,
   Tooltip,
+  Button,
 } from "antd";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -24,7 +25,7 @@ import {
   Pencil,
   Trash2,
   CheckCircle2,
-  Eye
+  Eye,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
@@ -32,7 +33,8 @@ import {
   DeleteInvoice,
   GetAllInvoices,
   GetMonthlyAllInvoicesSummary,
-  MarkMonthlyInvoiceCheckPaid,
+  MarkInvoicePaidByCheck,
+  MarkInvoicePaidByACH,
 } from "../../services/Api/InvoiceApi";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -74,24 +76,45 @@ const AllInvoices = () => {
     }
   };
 
-  const handleCheckPaid = async (id) => {
-    Modal.confirm({
-      title: "Mark invoice as Paid by Check/ACH?",
-      content: "This invoice will be marked as Paid by Check/ACH.",
-      okText: "Yes, Mark Paid",
+  // NEW: single action opens a modal with a real choice — Cancel / Paid by
+  // Check / Paid by ACH — instead of a plain yes/no confirm.
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payModalInvoiceId, setPayModalInvoiceId] = useState(null);
+  const [payModalLoading, setPayModalLoading] = useState(null); // "check" | "ach" | null
 
-      onOk: async () => {
-        try {
-          await MarkMonthlyInvoiceCheckPaid(id);
+  const openPayModal = (id) => {
+    setPayModalInvoiceId(id);
+    setPayModalOpen(true);
+  };
 
-          message.success("Invoice marked as CHECK PAID");
+  const closePayModal = () => {
+    setPayModalOpen(false);
+    setPayModalInvoiceId(null);
+    setPayModalLoading(null);
+  };
 
-          fetchInvoices(getSelectedDate());
-        } catch {
-          message.error("Failed to mark invoice as check paid");
-        }
-      },
-    });
+  const handleConfirmPay = async (method) => {
+    if (!payModalInvoiceId) return;
+
+    setPayModalLoading(method);
+    try {
+      if (method === "check") {
+        await MarkInvoicePaidByCheck(payModalInvoiceId);
+        message.success("Invoice marked as Paid by Check");
+      } else {
+        await MarkInvoicePaidByACH(payModalInvoiceId);
+        message.success("Invoice marked as Paid by ACH");
+      }
+
+      fetchInvoices(getSelectedDate());
+      closePayModal();
+    } catch (error) {
+      const backendMessage =
+        error?.response?.data?.message ||
+        `Failed to mark invoice as paid by ${method === "check" ? "check" : "ACH"}`;
+      message.error(backendMessage);
+      setPayModalLoading(null);
+    }
   };
 
   useEffect(() => {
@@ -105,7 +128,7 @@ const AllInvoices = () => {
 
     return data.filter((item) => {
       const name = item.invoices_user?.user_profile?.name?.toLowerCase() || "";
-      const ref = item.ref_no?.toLowerCase() || "";
+      const ref = (item.custom_ref_no || item.ref_no || "").toLowerCase();
       const amount = String(item.total_due || "");
 
       return (
@@ -166,6 +189,7 @@ const AllInvoices = () => {
     {
       title: "Invoice #",
       dataIndex: "ref_no",
+      render: (_, record) => record.custom_ref_no || record.ref_no,
     },
     {
       title: "Client",
@@ -224,7 +248,8 @@ const AllInvoices = () => {
         const isPaid =
           status === "PAID" ||
           status === "CHECK_PAID" ||
-          status === "CASH_PAID";
+          status === "CASH_PAID" ||
+          status === "ACH_PAID"; // NEW
 
         let label = "Not Paid";
 
@@ -238,6 +263,11 @@ const AllInvoices = () => {
 
         if (status === "CASH_PAID") {
           label = "Cash Paid";
+        }
+
+        if (status === "ACH_PAID") {
+          // NEW
+          label = "ACH Paid";
         }
 
         return (
@@ -291,7 +321,7 @@ const AllInvoices = () => {
               <IconButton
                 size="small"
                 sx={actionIconBtn("#16A34A")}
-                onClick={() => handleCheckPaid(record.id)}
+                onClick={() => openPayModal(record.id)}
               >
                 <CheckCircle2 size={16} />
               </IconButton>
@@ -303,545 +333,308 @@ const AllInvoices = () => {
   ];
 
   const handleDownloadExcel = async () => {
-  try {
-    const formattedMonth = dayjs()
-      .year(selectedYear)
-      .month(selectedMonth)
-      .format("YYYY-MM");
+    try {
+      const formattedMonth = dayjs()
+        .year(selectedYear)
+        .month(selectedMonth)
+        .format("YYYY-MM");
 
-    const res = await GetMonthlyAllInvoicesSummary(formattedMonth);
+      const res = await GetMonthlyAllInvoicesSummary(formattedMonth);
 
-    // NEW: API now returns { billing_dates: [...], employees: [...] }
-    const payload = res.data.data || {};
-    const users = payload.employees || [];
-    const billingDates = payload.billing_dates || [];
+      // API returns { billing_dates: [...], employees: [...] }
+      const payload = res.data.data || {};
+      const users = payload.employees || [];
+      const billingDates = payload.billing_dates || [];
 
-    // NEW: only build columns for days that actually have invoices,
-    // instead of every day in the month
-    const dayNumbers = Array.from(
-      new Set(
-        billingDates.map((d) => dayjs(d, "YYYY-MM-DD").date())
-      )
-    ).sort((a, b) => a - b);
+      // Only build columns for days that actually have invoices, instead
+      // of every day in the month
+      const dayNumbers = Array.from(
+        new Set(billingDates.map((d) => dayjs(d, "YYYY-MM-DD").date())),
+      ).sort((a, b) => a - b);
 
-    const monthName = dayjs(formattedMonth).format("MMMM YYYY");
+      const monthName = dayjs(formattedMonth).format("MMMM YYYY");
+      const monthShort = dayjs(formattedMonth).format("MMM"); // e.g. "Jul"
 
-    const workbook = new ExcelJS.Workbook();
-
-    const sheet = workbook.addWorksheet(`Monthly Invoices ${monthName}`, {
-      properties: { defaultRowHeight: 32 },
-    });
-
-    /* ================= COLORS ================= */
-
-    const colors = {
-      PAID: "FFE8F5E9", // green — paid, cash paid, check paid
-      NOT_PAID: "FFFFF4E5", // orange — not paid + overdue
-    };
-
-    /* ================= STATUS HELPER ================= */
-
-    const getFinalStatus = (inv) => {
-      const paidStatuses = ["PAID", "CHECK_PAID", "CASH_PAID"];
-      const isPaid = paidStatuses.includes(inv.payment_status);
-
-      if (isPaid) return "PAID";
-
-      // overdue and not paid both map to NOT_PAID
-      return "NOT_PAID";
-    };
-
-    /* ================= SUMMARY CALCULATION ================= */
-
-    let totalCount = 0;
-    let totalAmount = 0;
-
-    let paidCount = 0;
-    let paidAmount = 0;
-
-    let checkPaidCount = 0;
-    let checkPaidAmount = 0;
-
-    let notPaidCount = 0;
-    let notPaidAmount = 0;
-
-    users.forEach((user) => {
-      (user.invoices || []).forEach((inv) => {
-        const amount = Number(inv.total_due || 0);
-        const rawStatus = inv.payment_status;
-
-        totalCount++;
-        totalAmount += amount;
-
-        if (rawStatus === "PAID") {
-          paidCount++;
-          paidAmount += amount;
-        } else if (rawStatus === "CHECK_PAID") {
-          checkPaidCount++;
-          checkPaidAmount += amount;
-        } else {
-          // NOT_PAID + OVERDUE both go here
-          notPaidCount++;
-          notPaidAmount += amount;
-        }
-      });
-    });
-
-    /* ================= TITLE ================= */
-
-    const titleRow = sheet.addRow([`Monthly Invoice Report - ${monthName}`]);
-
-    titleRow.getCell(1).font = { bold: true, size: 16 };
-    titleRow.getCell(1).alignment = { horizontal: "center" };
-
-    sheet.mergeCells(1, 1, 1, dayNumbers.length + 1);
-
-    /* ================= SUMMARY ================= */
-
-    const summaryHeader = sheet.addRow([
-      "Total Invoices",
-      "Total Amount",
-      "Paid",
-      "Paid Amount",
-      "Check Paid",
-      "Check Paid Amount",
-      "Not Paid",
-      "Not Paid Amount",
-    ]);
-
-    summaryHeader.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF1F4E79" },
+      // Ordinal suffix helper so headers read "8th Jul" instead of a bare
+      // "8" with no indication of which month it belongs to
+      const ordinalSuffix = (n) => {
+        const j = n % 10;
+        const k = n % 100;
+        if (j === 1 && k !== 11) return "st";
+        if (j === 2 && k !== 12) return "nd";
+        if (j === 3 && k !== 13) return "rd";
+        return "th";
       };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-    });
 
-    const summaryRow = sheet.addRow([
-      totalCount,
-      totalAmount,
-      paidCount,
-      paidAmount,
-      checkPaidCount,
-      checkPaidAmount,
-      notPaidCount,
-      notPaidAmount,
-    ]);
+      const formatDayHeader = (d) => `${d}${ordinalSuffix(d)} ${monthShort}`;
 
-    summaryRow.eachCell((cell, col) => {
-      cell.font = { bold: true };
-      cell.alignment = { horizontal: "center" };
-      if (col % 2 === 0) {
-        cell.numFmt = "$#,##0.00";
-      }
-    });
+      const workbook = new ExcelJS.Workbook();
 
-    /* ================= LEGEND ================= */
-
-    const legendRow = sheet.addRow([
-      "🟢 Paid (Cash / Check / Card)    🟠 Not Paid (including Overdue)",
-    ]);
-
-    legendRow.getCell(1).font = { italic: true, size: 11 };
-
-    sheet.mergeCells(
-      `A${legendRow.number}:${String.fromCharCode(64 + dayNumbers.length + 1)}${
-        legendRow.number
-      }`,
-    );
-
-    /* ================= MAIN HEADER ================= */
-
-    // NEW: header uses only the day numbers that actually have invoices
-    const header = ["Client's Name", ...dayNumbers.map((d) => d.toString())];
-
-    const headerRow = sheet.addRow(header);
-
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF1F4E79" },
-      };
-      cell.alignment = { horizontal: "center" };
-    });
-
-    /* ================= DATA ROWS ================= */
-
-    users.forEach((user) => {
-      const rowValues = [user.name || "Unknown"];
-
-      dayNumbers.forEach((d) => {
-        const dayInvoices = (user.invoices || []).filter((inv) => {
-          const invoiceDate = inv.billing_date;
-
-          if (!invoiceDate) return false;
-
-          return dayjs(invoiceDate, "YYYY-MM-DD").date() === d;
-        });
-        rowValues.push(dayInvoices);
+      const sheet = workbook.addWorksheet(`Monthly Invoices ${monthName}`, {
+        properties: { defaultRowHeight: 32 },
       });
 
-      const row = sheet.addRow(rowValues);
+      // Landscape, fit-to-width page setup, centered on the page. Height is
+      // left unconstrained (fitToHeight not set) so if there are ever more
+      // clients than fit one page tall it paginates normally rather than
+      // shrinking text to an unreadable size.
+      //
+      // NOTE: margins are intentionally NOT set here. Specifying explicit
+      // margin numbers makes Google Sheets import them as "Custom numbers"
+      // in its Print settings — which is exactly the mode that shows four
+      // separate Left/Right/Top/Bottom fields for someone to interpret.
+      // Leaving margins unset lets Sheets fall back to its own default
+      // preset ("Normal"), which centers automatically with no numeric
+      // fields shown at all.
+      sheet.pageSetup = {
+        orientation: "landscape",
+        fitToPage: true,
+        fitToWidth: 1,
+        horizontalCentered: true,
+        verticalCentered: true,
+      };
 
-      row.eachCell((cell, colIndex) => {
-        /* ================= EMPLOYEE NAME CELL ================= */
-        if (colIndex === 1) {
-          const userInvoices = user.invoices || [];
-          const hasUnpaid = userInvoices.some(
-            (inv) => getFinalStatus(inv) === "NOT_PAID",
-          );
+      /* ================= COLORS ================= */
 
-          row.eachCell((entireRowCell) => {
-            entireRowCell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: {
-                argb: hasUnpaid
-                  ? "FFFFCCCC"
-                  : row.number % 2 === 0
-                    ? "FFF9F9F9"
-                    : "FFFFFFFF",
-              },
-            };
-          });
+      const colors = {
+        PAID: "FFE8F5E9", // green — paid, cash paid, check paid, ACH paid
+        NOT_PAID: "FFFFF4E5", // orange — not paid + overdue
+      };
 
-          cell.font = {
-            bold: true,
-            color: { argb: hasUnpaid ? "FF9C0006" : "FF000000" },
-          };
-          cell.alignment = { vertical: "middle" };
-          return;
-        }
+      /* ================= STATUS HELPER ================= */
 
-        /* ================= EMPTY CELL ================= */
+      const getFinalStatus = (inv) => {
+        const paidStatuses = ["PAID", "CHECK_PAID", "CASH_PAID", "ACH_PAID"];
+        const isPaid = paidStatuses.includes(inv.payment_status);
 
-        const invoices = cell.value;
+        if (isPaid) return "PAID";
 
-        if (!invoices || invoices.length === 0) {
-          cell.value = "—";
-          cell.alignment = { horizontal: "center" };
-          return;
-        }
+        // overdue and not paid both map to NOT_PAID
+        return "NOT_PAID";
+      };
 
-        /* ================= INVOICE CELL ================= */
+      /* ================= SUMMARY CALCULATION ================= */
+      // Simplified to just Paid vs. Not Paid — the per-invoice colored dot
+      // in each cell already shows whether it was check/ACH/cash/card, so
+      // a separate breakdown here was redundant and made this table much
+      // wider than the day-grid underneath it.
 
-        let text = invoices.length > 1 ? `${invoices.length} invoices\n` : "";
-        let cellStatus = "PAID"; // default green; flip to NOT_PAID if any unpaid found
+      let totalCount = 0;
+      let totalAmount = 0;
 
-        invoices.forEach((inv) => {
-          const status = getFinalStatus(inv);
-          const emoji = status === "PAID" ? "🟢" : "🟠";
-          const amount = Number(inv.total_due || 0).toFixed(2);
+      let paidCount = 0;
+      let paidAmount = 0;
 
-          text += `${inv.ref_no} $${amount} ${emoji}\n`;
+      let notPaidCount = 0;
+      let notPaidAmount = 0;
 
-          if (status === "NOT_PAID") {
-            cellStatus = "NOT_PAID";
+      const paidStatuses = ["PAID", "CHECK_PAID", "CASH_PAID", "ACH_PAID"];
+
+      users.forEach((user) => {
+        (user.invoices || []).forEach((inv) => {
+          const amount = Number(inv.total_due || 0);
+          const rawStatus = inv.payment_status;
+
+          totalCount++;
+          totalAmount += amount;
+
+          if (paidStatuses.includes(rawStatus)) {
+            paidCount++;
+            paidAmount += amount;
+          } else {
+            // NOT_PAID + OVERDUE both go here
+            notPaidCount++;
+            notPaidAmount += amount;
           }
         });
+      });
 
-        cell.value = text.trim();
+      // Overview table is 6 columns; the main day-grid can be wider or
+      // narrower depending on how many billing days occurred this month —
+      // merge title/legend across whichever is wider so nothing looks cut
+      // off or oddly narrow.
+      const mergeSpan = Math.max(6, dayNumbers.length + 1);
+
+      /* ================= TITLE ================= */
+
+      const titleRow = sheet.addRow([`Monthly Invoice Report - ${monthName}`]);
+
+      titleRow.getCell(1).font = { bold: true, size: 16 };
+      titleRow.getCell(1).alignment = { horizontal: "center" };
+
+      sheet.mergeCells(1, 1, 1, mergeSpan);
+
+      /* ================= SUMMARY ================= */
+
+      const summaryHeader = sheet.addRow([
+        "Total Invoices",
+        "Total Amount",
+        "Paid",
+        "Paid Amount",
+        "Not Paid",
+        "Not Paid Amount",
+      ]);
+
+      summaryHeader.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: colors[cellStatus] },
+          fgColor: { argb: "FF1F4E79" },
         };
-        cell.alignment = { wrapText: true, vertical: "top" };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
       });
-    });
 
-    /* ================= FORMATTING ================= */
+      const summaryRow = sheet.addRow([
+        totalCount,
+        totalAmount,
+        paidCount,
+        paidAmount,
+        notPaidCount,
+        notPaidAmount,
+      ]);
+
+      summaryRow.eachCell((cell, col) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: "center" };
+        if (col % 2 === 0) {
+          cell.numFmt = "$#,##0.00";
+        }
+      });
+
+      /* ================= LEGEND ================= */
+
+      const legendRow = sheet.addRow([
+        "🟢 Paid (Cash / Check / ACH / Card)    🟠 Not Paid (including Overdue)",
+      ]);
+
+      legendRow.getCell(1).font = { italic: true, size: 11 };
+
+      sheet.mergeCells(legendRow.number, 1, legendRow.number, mergeSpan);
+
+      /* ================= MAIN HEADER ================= */
+
+      // Header uses "8th Jul" style labels instead of bare day numbers
+      const header = ["Client's Name", ...dayNumbers.map(formatDayHeader)];
+
+      const headerRow = sheet.addRow(header);
+
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1F4E79" },
+        };
+        cell.alignment = { horizontal: "center" };
+      });
+
+      /* ================= DATA ROWS ================= */
+
+      users.forEach((user) => {
+        const rowValues = [user.name || "Unknown"];
+
+        dayNumbers.forEach((d) => {
+          const dayInvoices = (user.invoices || []).filter((inv) => {
+            const invoiceDate = inv.billing_date;
+
+            if (!invoiceDate) return false;
+
+            return dayjs(invoiceDate, "YYYY-MM-DD").date() === d;
+          });
+          rowValues.push(dayInvoices);
+        });
+
+        const row = sheet.addRow(rowValues);
+
+        row.eachCell((cell, colIndex) => {
+          /* ================= CLIENT NAME CELL ================= */
+          if (colIndex === 1) {
+            const userInvoices = user.invoices || [];
+            const hasUnpaid = userInvoices.some(
+              (inv) => getFinalStatus(inv) === "NOT_PAID",
+            );
+
+            row.eachCell((entireRowCell) => {
+              entireRowCell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: {
+                  argb: hasUnpaid
+                    ? "FFFFCCCC"
+                    : row.number % 2 === 0
+                      ? "FFF9F9F9"
+                      : "FFFFFFFF",
+                },
+              };
+            });
+
+            cell.font = {
+              bold: true,
+              color: { argb: hasUnpaid ? "FF9C0006" : "FF000000" },
+            };
+            cell.alignment = { vertical: "middle" };
+            return;
+          }
+
+          /* ================= EMPTY CELL ================= */
+
+          const invoices = cell.value;
+
+          if (!invoices || invoices.length === 0) {
+            cell.value = "—";
+            cell.alignment = { horizontal: "center" };
+            return;
+          }
 
-    sheet.columns.forEach((col, i) => {
-      col.width = i === 0 ? 34 : 19;
-    });
+          /* ================= INVOICE CELL ================= */
 
-    sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
+          let text = invoices.length > 1 ? `${invoices.length} invoices\n` : "";
+          let cellStatus = "PAID"; // default green; flip to NOT_PAID if any unpaid found
 
-    /* ================= DOWNLOAD ================= */
+          invoices.forEach((inv) => {
+            const status = getFinalStatus(inv);
+            const emoji = status === "PAID" ? "🟢" : "🟠";
+            const amount = Number(inv.total_due || 0).toFixed(2);
 
-    const buffer = await workbook.xlsx.writeBuffer();
+            text += `${inv.ref_no} $${amount} ${emoji}\n`;
 
-    // Clean filename: "Invoice Report - January 2025.xlsx"
-    saveAs(new Blob([buffer]), `Invoice Report - ${monthName}.xlsx`);
+            if (status === "NOT_PAID") {
+              cellStatus = "NOT_PAID";
+            }
+          });
 
-    message.success(`Invoice Report - ${monthName} downloaded successfully!`);
-  } catch (err) {
-    console.error(err);
-    message.error("Excel export failed");
-  }
-};
+          cell.value = text.trim();
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: colors[cellStatus] },
+          };
+          cell.alignment = { wrapText: true, vertical: "top" };
+        });
+      });
 
-  // const handleDownloadExcel = async () => {
-  //   try {
-  //     const formattedMonth = dayjs()
-  //       .year(selectedYear)
-  //       .month(selectedMonth)
-  //       .format("YYYY-MM");
+      /* ================= FORMATTING ================= */
 
-  //     const res = await GetMonthlyAllInvoicesSummary(formattedMonth);
+      sheet.columns.forEach((col, i) => {
+        col.width = i === 0 ? 34 : 19;
+      });
 
-  //     const users = res.data.data || [];
+      sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
 
-  //     const daysInMonth = dayjs(formattedMonth, "YYYY-MM").daysInMonth();
+      /* ================= DOWNLOAD ================= */
 
-  //     const monthName = dayjs(formattedMonth).format("MMMM YYYY");
+      const buffer = await workbook.xlsx.writeBuffer();
 
-  //     const workbook = new ExcelJS.Workbook();
+      // Clean filename: "Invoice Report - January 2025.xlsx"
+      saveAs(new Blob([buffer]), `Invoice Report - ${monthName}.xlsx`);
 
-  //     const sheet = workbook.addWorksheet(`Monthly Invoices ${monthName}`, {
-  //       properties: { defaultRowHeight: 32 },
-  //     });
-
-  //     /* ================= COLORS ================= */
-
-  //     const colors = {
-  //       PAID: "FFE8F5E9", // green — paid, cash paid, check paid
-  //       NOT_PAID: "FFFFF4E5", // orange — not paid + overdue
-  //     };
-
-  //     /* ================= STATUS HELPER ================= */
-
-  //     const getFinalStatus = (inv) => {
-  //       const paidStatuses = ["PAID", "CHECK_PAID", "CASH_PAID"];
-  //       const isPaid = paidStatuses.includes(inv.payment_status);
-
-  //       if (isPaid) return "PAID";
-
-  //       // overdue and not paid both map to NOT_PAID
-  //       return "NOT_PAID";
-  //     };
-
-  //     /* ================= SUMMARY CALCULATION ================= */
-
-  //     let totalCount = 0;
-  //     let totalAmount = 0;
-
-  //     let paidCount = 0;
-  //     let paidAmount = 0;
-
-  //     let checkPaidCount = 0;
-  //     let checkPaidAmount = 0;
-
-  //     let notPaidCount = 0;
-  //     let notPaidAmount = 0;
-
-  //     users.forEach((user) => {
-  //       (user.invoices || []).forEach((inv) => {
-  //         const amount = Number(inv.total_due || 0);
-  //         const rawStatus = inv.payment_status;
-
-  //         totalCount++;
-  //         totalAmount += amount;
-
-  //         if (rawStatus === "PAID") {
-  //           paidCount++;
-  //           paidAmount += amount;
-  //         } else if (rawStatus === "CHECK_PAID") {
-  //           checkPaidCount++;
-  //           checkPaidAmount += amount;
-  //         } else {
-  //           // NOT_PAID + OVERDUE both go here
-  //           notPaidCount++;
-  //           notPaidAmount += amount;
-  //         }
-  //       });
-  //     });
-
-  //     /* ================= TITLE ================= */
-
-  //     const titleRow = sheet.addRow([`Monthly Invoice Report - ${monthName}`]);
-
-  //     titleRow.getCell(1).font = { bold: true, size: 16 };
-  //     titleRow.getCell(1).alignment = { horizontal: "center" };
-
-  //     sheet.mergeCells(1, 1, 1, daysInMonth + 1);
-
-  //     /* ================= SUMMARY ================= */
-
-  //     const summaryHeader = sheet.addRow([
-  //       "Total Invoices",
-  //       "Total Amount",
-  //       "Paid",
-  //       "Paid Amount",
-  //       "Check Paid",
-  //       "Check Paid Amount",
-  //       "Not Paid",
-  //       "Not Paid Amount",
-  //     ]);
-
-  //     summaryHeader.eachCell((cell) => {
-  //       cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  //       cell.fill = {
-  //         type: "pattern",
-  //         pattern: "solid",
-  //         fgColor: { argb: "FF1F4E79" },
-  //       };
-  //       cell.alignment = { horizontal: "center", vertical: "middle" };
-  //     });
-
-  //     const summaryRow = sheet.addRow([
-  //       totalCount,
-  //       totalAmount,
-  //       paidCount,
-  //       paidAmount,
-  //       checkPaidCount,
-  //       checkPaidAmount,
-  //       notPaidCount,
-  //       notPaidAmount,
-  //     ]);
-
-  //     summaryRow.eachCell((cell, col) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = { horizontal: "center" };
-  //       if (col % 2 === 0) {
-  //         cell.numFmt = "$#,##0.00";
-  //       }
-  //     });
-
-  //     /* ================= LEGEND ================= */
-
-  //     const legendRow = sheet.addRow([
-  //       "🟢 Paid (Cash / Check / Card)    🟠 Not Paid (including Overdue)",
-  //     ]);
-
-  //     legendRow.getCell(1).font = { italic: true, size: 11 };
-
-  //     sheet.mergeCells(
-  //       `A${legendRow.number}:${String.fromCharCode(64 + daysInMonth + 1)}${
-  //         legendRow.number
-  //       }`,
-  //     );
-
-  //     /* ================= MAIN HEADER ================= */
-
-  //     const header = ["Employee Name"];
-  //     for (let i = 1; i <= daysInMonth; i++) {
-  //       header.push(i.toString());
-  //     }
-
-  //     const headerRow = sheet.addRow(header);
-
-  //     headerRow.eachCell((cell) => {
-  //       cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  //       cell.fill = {
-  //         type: "pattern",
-  //         pattern: "solid",
-  //         fgColor: { argb: "FF1F4E79" },
-  //       };
-  //       cell.alignment = { horizontal: "center" };
-  //     });
-
-  //     /* ================= DATA ROWS ================= */
-
-  //     users.forEach((user) => {
-  //       const rowValues = [user.name || "Unknown"];
-
-  //       for (let d = 1; d <= daysInMonth; d++) {
-  //         const dayInvoices = (user.invoices || []).filter((inv) => {
-  //           const invoiceDate = inv.billing_date;
-
-  //           if (!invoiceDate) return false;
-
-  //           return dayjs(invoiceDate, "YYYY-MM-DD").date() === d;
-  //         });
-  //         rowValues.push(dayInvoices);
-  //       }
-
-  //       const row = sheet.addRow(rowValues);
-
-  //       row.eachCell((cell, colIndex) => {
-  //         /* ================= EMPLOYEE NAME CELL ================= */
-  //         if (colIndex === 1) {
-  //           const userInvoices = user.invoices || [];
-  //           const hasUnpaid = userInvoices.some(
-  //             (inv) => getFinalStatus(inv) === "NOT_PAID",
-  //           );
-
-  //           row.eachCell((entireRowCell) => {
-  //             entireRowCell.fill = {
-  //               type: "pattern",
-  //               pattern: "solid",
-  //               fgColor: {
-  //                 argb: hasUnpaid
-  //                   ? "FFFFCCCC"
-  //                   : row.number % 2 === 0
-  //                     ? "FFF9F9F9"
-  //                     : "FFFFFFFF",
-  //               },
-  //             };
-  //           });
-
-  //           cell.font = {
-  //             bold: true,
-  //             color: { argb: hasUnpaid ? "FF9C0006" : "FF000000" },
-  //           };
-  //           cell.alignment = { vertical: "middle" };
-  //           return;
-  //         }
-
-  //         /* ================= EMPTY CELL ================= */
-
-  //         const invoices = cell.value;
-
-  //         if (!invoices || invoices.length === 0) {
-  //           cell.value = "—";
-  //           cell.alignment = { horizontal: "center" };
-  //           return;
-  //         }
-
-  //         /* ================= INVOICE CELL ================= */
-
-  //         let text = invoices.length > 1 ? `${invoices.length} invoices\n` : "";
-  //         let cellStatus = "PAID"; // default green; flip to NOT_PAID if any unpaid found
-
-  //         invoices.forEach((inv) => {
-  //           const status = getFinalStatus(inv);
-  //           const emoji = status === "PAID" ? "🟢" : "🟠";
-  //           const amount = Number(inv.total_due || 0).toFixed(2);
-
-  //           text += `${inv.ref_no} $${amount} ${emoji}\n`;
-
-  //           if (status === "NOT_PAID") {
-  //             cellStatus = "NOT_PAID";
-  //           }
-  //         });
-
-  //         cell.value = text.trim();
-  //         cell.fill = {
-  //           type: "pattern",
-  //           pattern: "solid",
-  //           fgColor: { argb: colors[cellStatus] },
-  //         };
-  //         cell.alignment = { wrapText: true, vertical: "top" };
-  //       });
-  //     });
-
-  //     /* ================= FORMATTING ================= */
-
-  //     sheet.columns.forEach((col, i) => {
-  //       col.width = i === 0 ? 34 : 19;
-  //     });
-
-  //     sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
-
-  //     /* ================= DOWNLOAD ================= */
-
-  //     const buffer = await workbook.xlsx.writeBuffer();
-
-  //     // Clean filename: "Invoice Report - January 2025.xlsx"
-  //     saveAs(new Blob([buffer]), `Invoice Report - ${monthName}.xlsx`);
-
-  //     message.success(`Invoice Report - ${monthName} downloaded successfully!`);
-  //   } catch (err) {
-  //     console.error(err);
-  //     message.error("Excel export failed");
-  //   }
-  // };
+      message.success(`Invoice Report - ${monthName} downloaded successfully!`);
+    } catch (err) {
+      console.error(err);
+      message.error("Excel export failed");
+    }
+  };
 
   return (
     <>
@@ -996,6 +789,41 @@ const AllInvoices = () => {
         bordered
         size="middle"
       />
+
+      {/* Payment method choice modal — replaces the old plain yes/no confirm */}
+      <Modal
+        title="Mark Invoice as Paid"
+        open={payModalOpen}
+        onCancel={closePayModal}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={closePayModal}
+            disabled={!!payModalLoading}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="check"
+            onClick={() => handleConfirmPay("check")}
+            loading={payModalLoading === "check"}
+            disabled={!!payModalLoading}
+          >
+            Paid by Check
+          </Button>,
+          <Button
+            key="ach"
+            type="primary"
+            onClick={() => handleConfirmPay("ach")}
+            loading={payModalLoading === "ach"}
+            disabled={!!payModalLoading}
+          >
+            Paid by ACH
+          </Button>,
+        ]}
+      >
+        <p>How was this invoice paid?</p>
+      </Modal>
     </>
   );
 };

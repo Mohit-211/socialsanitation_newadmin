@@ -9,8 +9,7 @@ import {
   Modal,
   Radio,
   Input as AntInput,
-  Upload,
-  InputNumber,
+  Image,
 } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -28,20 +27,33 @@ import {
   Camera,
   Award,
   CheckCheck,
+  Send,
+  Clock,
+  UserRound,
+  ShieldCheck,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-import { GetInspectionById } from "../../services/Api/InspectionApi";
+import {
+  GetInspectionById,
+  ReviewInspectionItem,
+  UploadBDMInspectionItemImage,
+  CompleteInspection,
+  SendInspectionToClient,
+} from "../../services/Api/InspectionApi";
 import { BASE_URL_IMAGE } from "../../services/Host";
 import "./InspectionDetail.scss";
 
 const { TextArea } = AntInput;
 
+const DATE_FORMAT = "MM/DD/YYYY hh:mm A";
+
 const STATUS_CONFIG = {
   ASSIGNED: { color: "#2563EB", bg: "#EFF6FF", label: "Assigned" },
   IN_PROGRESS: { color: "#D97706", bg: "#FFFBEB", label: "In Progress" },
-  EMPLOYEE_SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
-  BDM_REVIEWING: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
+  SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
+  UNDER_REVIEW: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
   COMPLETED: { color: "#16A34A", bg: "#F0FDF4", label: "Completed" },
+  CANCELLED: { color: "#EF4444", bg: "#FEF2F2", label: "Cancelled" },
 };
 
 const BDM_ITEM_STATUS_CONFIG = {
@@ -50,8 +62,6 @@ const BDM_ITEM_STATUS_CONFIG = {
   ISSUE: { color: "#EF4444", bg: "#FEF2F2", label: "Issue Flagged" },
 };
 
-// Small D / W / M frequency pill — filled + colored when true for this
-// item, quiet outline otherwise. Mirrors the Scope of Work page's pills.
 const FreqBadge = ({ label, active, variant }) => (
   <span
     className={`freq-badge freq-badge--${variant}${active ? " freq-badge--active" : ""}`}
@@ -60,6 +70,14 @@ const FreqBadge = ({ label, active, variant }) => (
   </span>
 );
 
+const scoreColor = (score) => {
+  if (score === null || score === undefined)
+    return { color: "#9ca3af", bg: "#f8f9fa", border: "#eef0f2" };
+  if (score >= 8) return { color: "#059669", bg: "#ecfdf5", border: "#a7f3d0" };
+  if (score >= 5) return { color: "#b45309", bg: "#fef3c7", border: "#fde68a" };
+  return { color: "#dc2626", bg: "#fee2e2", border: "#fecaca" };
+};
+
 const InspectionDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -67,28 +85,35 @@ const InspectionDetail = () => {
   const [loading, setLoading] = useState(false);
   const [inspection, setInspection] = useState(null);
 
-  // --- Per-item review modal (Approve / Flag Issue, remark, images) ---
-  // UI + local state only for now — wiring to
-  // POST /inspection/reviewInspectionItem/:itemId and
-  // POST /inspection/reviewItem/:itemId/image comes later.
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [reviewingItem, setReviewingItem] = useState(null);
   const [reviewStatus, setReviewStatus] = useState("APPROVED");
   const [reviewRemark, setReviewRemark] = useState("");
-  const [reviewFileList, setReviewFileList] = useState([]);
+  const [reviewFiles, setReviewFiles] = useState([]);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
-  // --- Complete Inspection modal (score + overall remark) ---
-  // UI + local state only for now — wiring to
-  // POST /inspection/completeInspection/:inspectionId comes later.
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
-  const [completionScore, setCompletionScore] = useState(null);
   const [completionRemark, setCompletionRemark] = useState("");
   const [completeSubmitting, setCompleteSubmitting] = useState(false);
 
-  const fetchInspection = async () => {
+  const [sendingToClient, setSendingToClient] = useState(false);
+
+  // Which "N attachments" groups are expanded to show thumbnails.
+  // Keyed as `emp-${itemId}` / `bdm-${itemId}`.
+  const [expandedImageGroups, setExpandedImageGroups] = useState(new Set());
+
+  const toggleImageGroup = (key) => {
+    setExpandedImageGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const fetchInspection = async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await GetInspectionById(id);
       const raw = res?.data?.data?.data ?? res?.data?.data;
       const record = Array.isArray(raw) ? raw[0] : raw;
@@ -97,7 +122,7 @@ const InspectionDetail = () => {
       console.error("Error fetching inspection:", error);
       message.error("Failed to fetch inspection");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -107,51 +132,82 @@ const InspectionDetail = () => {
   }, [id]);
 
   const openReviewModal = (item) => {
+    if (!item.employee_completed) return;
     setReviewingItem(item);
     setReviewStatus(item.bdm_status === "ISSUE" ? "ISSUE" : "APPROVED");
     setReviewRemark(item.bdm_remark || "");
-    setReviewFileList([]);
+    setReviewFiles([]);
     setReviewModalVisible(true);
   };
 
   const handleSubmitReview = async () => {
+    if (reviewStatus === "ISSUE" && !reviewRemark.trim()) {
+      message.error("A remark is required when flagging an issue.");
+      return;
+    }
+
     try {
       setReviewSubmitting(true);
-      // TODO: wire up once ready —
-      // await ReviewInspectionItem(reviewingItem.id, { bdm_status: reviewStatus, bdm_remark: reviewRemark });
-      // if (reviewFileList.length) await UploadInspectionItemImages(reviewingItem.id, reviewFileList);
-      console.log("Review payload (not yet sent to API):", {
-        itemId: reviewingItem?.id,
+      await ReviewInspectionItem(reviewingItem.id, {
         bdm_status: reviewStatus,
         bdm_remark: reviewRemark,
-        images: reviewFileList.map((f) => f.name),
       });
-      message.success("Review captured — API wiring pending");
+
+      if (reviewFiles.length > 0) {
+        await UploadBDMInspectionItemImage(reviewingItem.id, reviewFiles);
+      }
+
+      message.success("Review saved");
       setReviewModalVisible(false);
+      await fetchInspection({ silent: true });
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      message.error(error?.response?.data?.message || "Failed to save review");
     } finally {
       setReviewSubmitting(false);
     }
   };
 
   const handleCompleteInspection = async () => {
-    if (completionScore === null || completionScore === undefined) {
-      message.error("Please give a score out of 10");
-      return;
-    }
     try {
       setCompleteSubmitting(true);
-      // TODO: wire up once ready —
-      // await CompleteInspection(id, { score: completionScore, overall_remark: completionRemark });
-      console.log("Complete inspection payload (not yet sent to API):", {
-        inspectionId: id,
-        score: completionScore,
-        overall_remark: completionRemark,
-      });
-      message.success("Completion captured — API wiring pending");
+      await CompleteInspection(id, { overall_remark: completionRemark });
+      message.success("Inspection completed");
       setCompleteModalVisible(false);
+      await fetchInspection();
+    } catch (error) {
+      console.error("Error completing inspection:", error);
+      message.error(
+        error?.response?.data?.message || "Failed to complete inspection",
+      );
     } finally {
       setCompleteSubmitting(false);
     }
+  };
+
+  const handleSendToClient = () => {
+    Modal.confirm({
+      title: "Send report to client?",
+      content: `This will email the inspection report to ${
+        inspection?.client?.email || "the client"
+      }.`,
+      okText: "Send",
+      onOk: async () => {
+        try {
+          setSendingToClient(true);
+          await SendInspectionToClient(id);
+          message.success("Report sent to client");
+          await fetchInspection({ silent: true });
+        } catch (error) {
+          console.error("Error sending to client:", error);
+          message.error(
+            error?.response?.data?.message || "Failed to send report",
+          );
+        } finally {
+          setSendingToClient(false);
+        }
+      },
+    });
   };
 
   if (!loading && !inspection) {
@@ -190,11 +246,21 @@ const InspectionDetail = () => {
     }));
 
   const statusCfg = STATUS_CONFIG[inspection?.status] || {
-    color: "default",
+    color: "#6B7280",
+    bg: "#F3F4F6",
     label: inspection?.status,
   };
 
   const isCompleted = inspection?.status === "COMPLETED";
+  const canComplete = inspection?.status === "UNDER_REVIEW";
+  const reviewedCount = items.filter((i) => i.bdm_status !== "PENDING").length;
+
+  const suggestedScore =
+    summary.total_items > 0
+      ? Math.round((summary.completed_items / summary.total_items) * 10)
+      : 0;
+
+  const scoreStyle = scoreColor(isCompleted ? inspection?.score : null);
 
   return (
     <Box className="inspection-detail">
@@ -205,7 +271,11 @@ const InspectionDetail = () => {
         <div className="detail-header-row">
           <div className="detail-header-row__left">
             <Tooltip title="Back">
-              <button type="button" className="back-btn" onClick={() => navigate(-1)}>
+              <button
+                type="button"
+                className="back-btn"
+                onClick={() => navigate(-1)}
+              >
                 <ArrowLeft size={17} />
               </button>
             </Tooltip>
@@ -217,6 +287,7 @@ const InspectionDetail = () => {
                 {inspection?.inspection_date
                   ? dayjs(inspection.inspection_date).format("MM/DD/YYYY")
                   : ""}
+                {inspection?.employee?.name && ` · ${inspection.employee.name}`}
               </Typography>
             </Box>
           </div>
@@ -232,17 +303,19 @@ const InspectionDetail = () => {
 
             <span
               className="score-pill"
-              style={
-                inspection?.score != null
-                  ? { color: "#059669", background: "#ecfdf5", borderColor: "#a7f3d0" }
-                  : { color: "#9ca3af", background: "#f8f9fa", borderColor: "#eef0f2" }
-              }
+              style={{
+                color: scoreStyle.color,
+                background: scoreStyle.bg,
+                borderColor: scoreStyle.border,
+              }}
             >
               <Award size={14} />
-              {inspection?.score != null ? `${inspection.score}/10` : "Not rated"}
+              {isCompleted
+                ? `${inspection.score}/10`
+                : `Suggested: ${suggestedScore}/10`}
             </span>
 
-            {!isCompleted && (
+            {canComplete && (
               <button
                 type="button"
                 className="complete-btn"
@@ -252,12 +325,32 @@ const InspectionDetail = () => {
                 Complete Inspection
               </button>
             )}
+
+            {isCompleted && (
+              <button
+                type="button"
+                className="send-client-btn"
+                disabled={sendingToClient}
+                onClick={handleSendToClient}
+              >
+                <Send size={15} />
+                {inspection?.client_email_sent
+                  ? "Resend to Client"
+                  : "Send to Client"}
+              </button>
+            )}
           </div>
         </div>
 
         <Divider sx={{ my: 2 }} />
 
-        <Stack direction="row" spacing={4} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Stack
+          direction="row"
+          spacing={4}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+        >
           <Box sx={{ minWidth: 260, flex: 1 }}>
             <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
               Completion — {summary.completed_items}/{summary.total_items} items
@@ -268,6 +361,24 @@ const InspectionDetail = () => {
               strokeColor="#6366F1"
             />
           </Box>
+
+          {!isCompleted && (
+            <Box sx={{ minWidth: 220 }}>
+              <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+                Review progress
+              </Typography>
+              <Typography
+                sx={{ fontSize: 13.5, fontWeight: 600, color: "#1a1a1a" }}
+              >
+                {reviewedCount}/{summary.total_items} items reviewed
+              </Typography>
+              <Typography sx={{ fontSize: 11.5, color: "#9ca3af", mt: 0.5 }}>
+                Reviewing items is optional — you can complete anytime once
+                under review.
+              </Typography>
+            </Box>
+          )}
+
           {inspection?.overall_remark && (
             <Box sx={{ flex: 1, minWidth: 260 }}>
               <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
@@ -278,11 +389,32 @@ const InspectionDetail = () => {
               </Typography>
             </Box>
           )}
+
+          {isCompleted && (
+            <Box sx={{ minWidth: 200 }}>
+              <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+                Client report
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: inspection?.client_email_sent ? "#059669" : "#9ca3af",
+                }}
+              >
+                {inspection?.client_email_sent
+                  ? `Sent ${dayjs(inspection.client_email_sent_at).format(DATE_FORMAT)}`
+                  : "Not sent yet"}
+              </Typography>
+            </Box>
+          )}
         </Stack>
       </Paper>
 
       {sections.map((section) => {
-        const sectionCompleted = section.items.filter((i) => i.employee_completed).length;
+        const sectionCompleted = section.items.filter(
+          (i) => i.employee_completed,
+        ).length;
         return (
           <Paper
             key={section.section_name}
@@ -316,8 +448,19 @@ const InspectionDetail = () => {
                   item.bdm_status === "ISSUE"
                     ? "item-row item-row--issue"
                     : item.bdm_status === "APPROVED"
-                    ? "item-row item-row--approved"
-                    : "item-row";
+                      ? "item-row item-row--approved"
+                      : "item-row";
+
+                const employeeImages = (item.images || []).filter(
+                  (img) => img.uploaded_by_role === "EMPLOYEE",
+                );
+                const bdmImages = (item.images || []).filter(
+                  (img) => img.uploaded_by_role === "BDM",
+                );
+
+                const empKey = `emp-${item.id}`;
+                const bdmKey = `bdm-${item.id}`;
+                const reviewDisabled = !item.employee_completed;
 
                 return (
                   <div key={item.id} className={rowClass}>
@@ -341,9 +484,21 @@ const InspectionDetail = () => {
                             {item.item_name}
                           </Typography>
                           <div className="item-row__freqs">
-                            <FreqBadge label="D" variant="daily" active={item.is_daily} />
-                            <FreqBadge label="W" variant="weekly" active={item.is_weekly} />
-                            <FreqBadge label="M" variant="monthly" active={item.is_monthly} />
+                            <FreqBadge
+                              label="D"
+                              variant="daily"
+                              active={item.is_daily}
+                            />
+                            <FreqBadge
+                              label="W"
+                              variant="weekly"
+                              active={item.is_weekly}
+                            />
+                            <FreqBadge
+                              label="M"
+                              variant="monthly"
+                              active={item.is_monthly}
+                            />
                           </div>
                         </Box>
                       </div>
@@ -351,52 +506,202 @@ const InspectionDetail = () => {
                       <div className="item-row__right">
                         <span
                           className="status-pill"
-                          style={{ color: itemStatusCfg.color, background: itemStatusCfg.bg }}
+                          style={{
+                            color: itemStatusCfg.color,
+                            background: itemStatusCfg.bg,
+                          }}
                         >
                           {itemStatusCfg.label}
                         </span>
-                        <Tooltip title="Add remark / image">
-                          <button
-                            type="button"
-                            className="review-btn"
-                            onClick={() => openReviewModal(item)}
+                        {!isCompleted && (
+                          <Tooltip
+                            title={
+                              reviewDisabled
+                                ? "You can give a review once the employee marks this item complete"
+                                : "Review this item"
+                            }
                           >
-                            <Pencil size={14} />
-                          </button>
-                        </Tooltip>
+                            <span>
+                              <button
+                                type="button"
+                                className="review-btn"
+                                disabled={reviewDisabled}
+                                onClick={() => openReviewModal(item)}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            </span>
+                          </Tooltip>
+                        )}
                       </div>
                     </div>
 
-                    {item.employee_note && (
-                      <div className="item-row__note-block">
-                        <StickyNote size={14} color="#9ca3af" style={{ marginTop: 2 }} />
-                        <Typography sx={{ fontSize: 12.5, color: "#6b7280" }}>
-                          {item.employee_note}
-                        </Typography>
-                      </div>
-                    )}
+                    <div className="item-row__timeline">
+                      {item.employee_note && (
+                        <div className="timeline-entry">
+                          <div className="timeline-entry__icon timeline-entry__icon--employee">
+                            <UserRound size={12} />
+                          </div>
+                          <div className="timeline-entry__body">
+                            <div className="timeline-entry__meta">
+                              <span className="timeline-entry__who">
+                                Employee note
+                              </span>
+                              <span className="timeline-entry__time">
+                                <Clock size={10} />
+                                {dayjs(item.updated_at).format(DATE_FORMAT)}
+                              </span>
+                            </div>
+                            <Typography sx={{ fontSize: 12.5, color: "#4b5563" }}>
+                              {item.employee_note}
+                            </Typography>
+                          </div>
+                        </div>
+                      )}
 
-                    {item.bdm_remark && (
-                      <div className="item-row__note-block">
-                        <StickyNote size={14} color="#EF4444" style={{ marginTop: 2 }} />
-                        <Typography sx={{ fontSize: 12.5, color: "#EF4444", fontWeight: 500 }}>
-                          {item.bdm_remark}
-                        </Typography>
-                      </div>
-                    )}
+                      {employeeImages.length > 0 && (
+                        <div className="timeline-entry">
+                          <div className="timeline-entry__icon timeline-entry__icon--employee">
+                            <Camera size={12} />
+                          </div>
+                          <div className="timeline-entry__body">
+                            <button
+                              type="button"
+                              className="timeline-entry__attachment-toggle"
+                              onClick={() => toggleImageGroup(empKey)}
+                            >
+                              <span className="timeline-entry__who">
+                                {employeeImages.length} attachment
+                                {employeeImages.length > 1 ? "s" : ""}
+                              </span>
+                              <span className="timeline-entry__time">
+                                <Clock size={10} />
+                                {dayjs(
+                                  employeeImages[employeeImages.length - 1]
+                                    .created_at,
+                                ).format(DATE_FORMAT)}
+                              </span>
+                            </button>
 
-                    {item.images && item.images.length > 0 && (
-                      <div className="item-row__images">
-                        {item.images.map((img, idx) => (
-                          <img
-                            key={idx}
-                            className="item-row__image-thumb"
-                            src={`${BASE_URL_IMAGE}${img.file_uri}/${img.file_name}`}
-                            alt=""
-                          />
-                        ))}
-                      </div>
-                    )}
+                            {expandedImageGroups.has(empKey) && (
+                              <Image.PreviewGroup>
+                                <div className="timeline-entry__images">
+                                  {employeeImages.map((img) => (
+                                    <div
+                                      key={img.id}
+                                      className="timeline-entry__image-wrap"
+                                    >
+                                      <Image
+                                        src={`${BASE_URL_IMAGE}${img.image}`}
+                                        width={56}
+                                        height={56}
+                                        style={{
+                                          objectFit: "cover",
+                                          borderRadius: 8,
+                                        }}
+                                         crossOrigin="anonymous"
+                                      />
+                                      <span className="timeline-entry__image-time">
+                                        {dayjs(img.created_at).format(
+                                          DATE_FORMAT,
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </Image.PreviewGroup>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {item.bdm_remark && (
+                        <div className="timeline-entry">
+                          <div className="timeline-entry__icon timeline-entry__icon--bdm">
+                            <ShieldCheck size={12} />
+                          </div>
+                          <div className="timeline-entry__body">
+                            <div className="timeline-entry__meta">
+                              <span className="timeline-entry__who">
+                                BDM review
+                              </span>
+                              <span className="timeline-entry__time">
+                                <Clock size={10} />
+                                {item.bdm_reviewed_at
+                                  ? dayjs(item.bdm_reviewed_at).format(
+                                      DATE_FORMAT,
+                                    )
+                                  : ""}
+                              </span>
+                            </div>
+                            <Typography
+                              sx={{
+                                fontSize: 12.5,
+                                color: "#EF4444",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item.bdm_remark}
+                            </Typography>
+                          </div>
+                        </div>
+                      )}
+
+                      {bdmImages.length > 0 && (
+                        <div className="timeline-entry">
+                          <div className="timeline-entry__icon timeline-entry__icon--bdm">
+                            <Camera size={12} />
+                          </div>
+                          <div className="timeline-entry__body">
+                            <button
+                              type="button"
+                              className="timeline-entry__attachment-toggle"
+                              onClick={() => toggleImageGroup(bdmKey)}
+                            >
+                              <span className="timeline-entry__who">
+                                {bdmImages.length} attachment
+                                {bdmImages.length > 1 ? "s" : ""}
+                              </span>
+                              <span className="timeline-entry__time">
+                                <Clock size={10} />
+                                {dayjs(
+                                  bdmImages[bdmImages.length - 1].created_at,
+                                ).format(DATE_FORMAT)}
+                              </span>
+                            </button>
+
+                            {expandedImageGroups.has(bdmKey) && (
+                              <Image.PreviewGroup>
+                                <div className="timeline-entry__images">
+                                  {bdmImages.map((img) => (
+                                    <div
+                                      key={img.id}
+                                      className="timeline-entry__image-wrap"
+                                    >
+                                      <Image
+                                        src={`${BASE_URL_IMAGE}${img.image}`}
+                                        width={56}
+                                        height={56}
+                                        style={{
+                                          objectFit: "cover",
+                                          borderRadius: 8,
+                                        }}
+                                        crossOrigin="anonymous"
+                                      />
+                                      <span className="timeline-entry__image-time">
+                                        {dayjs(img.created_at).format(
+                                          DATE_FORMAT,
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </Image.PreviewGroup>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -412,7 +717,6 @@ const InspectionDetail = () => {
         </Box>
       )}
 
-      {/* Per-item review modal */}
       <Modal
         title={
           <Stack direction="row" alignItems="center" spacing={1.25}>
@@ -447,7 +751,13 @@ const InspectionDetail = () => {
 
         <Typography
           component="label"
-          sx={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", mb: 1 }}
+          sx={{
+            display: "block",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#374151",
+            mb: 1,
+          }}
         >
           Status
         </Typography>
@@ -462,7 +772,13 @@ const InspectionDetail = () => {
 
         <Typography
           component="label"
-          sx={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", mb: 1 }}
+          sx={{
+            display: "block",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#374151",
+            mb: 1,
+          }}
         >
           Remark
         </Typography>
@@ -479,26 +795,30 @@ const InspectionDetail = () => {
 
         <Typography
           component="label"
-          sx={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", mt: 2, mb: 1 }}
+          sx={{
+            display: "block",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#374151",
+            mt: 2,
+            mb: 1,
+          }}
         >
-          Photos
+          Photos (optional)
         </Typography>
-        <Upload
-          listType="picture-card"
-          fileList={reviewFileList}
-          beforeUpload={() => false}
-          onChange={({ fileList }) => setReviewFileList(fileList)}
-        >
-          {reviewFileList.length >= 6 ? null : (
-            <div>
-              <Camera size={16} />
-              <div style={{ marginTop: 4, fontSize: 12 }}>Add</div>
-            </div>
-          )}
-        </Upload>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setReviewFiles(Array.from(e.target.files || []))}
+        />
+        {reviewFiles.length > 0 && (
+          <Typography sx={{ fontSize: 12, color: "#9ca3af", mt: 0.5 }}>
+            {reviewFiles.length} file(s) selected
+          </Typography>
+        )}
       </Modal>
 
-      {/* Complete Inspection modal */}
       <Modal
         title={
           <Stack direction="row" alignItems="center" spacing={1.25}>
@@ -527,24 +847,47 @@ const InspectionDetail = () => {
         okText="Mark Completed"
         width={460}
       >
-        <Typography
-          component="label"
-          sx={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", mt: 2, mb: 1 }}
-        >
-          Score (out of 10)
-        </Typography>
-        <InputNumber
-          min={0}
-          max={10}
-          value={completionScore}
-          onChange={(value) => setCompletionScore(value)}
-          style={{ width: "100%", height: 45 }}
-          placeholder="e.g. 8"
-        />
+        <div className="suggested-score-card">
+          <span className="suggested-score-card__label">
+            Score (auto-calculated)
+          </span>
+          <span className="suggested-score-card__value">
+            {suggestedScore}/10
+          </span>
+          <span className="suggested-score-card__hint">
+            Based on {summary.completed_items} of {summary.total_items} items
+            completed by the employee
+          </span>
+        </div>
+
+        {reviewedCount < summary.total_items && (
+          <Typography
+            sx={{
+              fontSize: 12,
+              color: "#b45309",
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              borderRadius: "8px",
+              padding: "8px 12px",
+              mt: 2,
+            }}
+          >
+            {summary.total_items - reviewedCount} item(s) haven't been
+            reviewed yet — that's fine, review is optional and won't block
+            completion.
+          </Typography>
+        )}
 
         <Typography
           component="label"
-          sx={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", mt: 2.25, mb: 1 }}
+          sx={{
+            display: "block",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#374151",
+            mt: 2.25,
+            mb: 1,
+          }}
         >
           Overall Remark
         </Typography>

@@ -11,7 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import { useNavigate } from "react-router-dom";
 import { ChangeAdminPassword } from "@/services/Api/Api";
 import { message } from "antd";
-import { Eye, EyeOff, Check, X, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Check, X, KeyRound, CheckCircle2, Circle } from "lucide-react";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -26,6 +26,23 @@ const ChangePassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // NEW: live password requirement checks — purely visual guidance,
+  // doesn't block submission (backend remains source of truth for rules).
+  const requirements = [
+    { label: "At least 8 characters", met: newPassword.length >= 8 },
+    { label: "One uppercase letter", met: /[A-Z]/.test(newPassword) },
+    { label: "One number", met: /\d/.test(newPassword) },
+    {
+      label: "One special character",
+      met: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+    },
+  ];
+
+  const passwordsMatch =
+    confirmPassword.length > 0 && newPassword === confirmPassword;
+  const passwordsMismatch =
+    confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -54,6 +71,9 @@ const ChangePassword = () => {
       const res = await ChangeAdminPassword(formData);
       if (res?.status === 200) {
         message.success("Password changed!");
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
       } else {
         message.error(res?.data?.message);
       }
@@ -171,24 +191,31 @@ const ChangePassword = () => {
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 sx={fieldSx}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          setShowCurrentPassword((prev) => !prev)
-                        }
-                        edge="end"
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff size={17} />
-                        ) : (
-                          <Eye size={17} />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setShowCurrentPassword((prev) => !prev)
+                          }
+                          edge="end"
+                          aria-label={
+                            showCurrentPassword
+                              ? "Hide current password"
+                              : "Show current password"
+                          }
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff size={17} />
+                          ) : (
+                            <Eye size={17} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
             </Box>
@@ -204,24 +231,68 @@ const ChangePassword = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 sx={fieldSx}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={() => setShowNewPassword((prev) => !prev)}
-                        edge="end"
-                      >
-                        {showNewPassword ? (
-                          <EyeOff size={17} />
-                        ) : (
-                          <Eye size={17} />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowNewPassword((prev) => !prev)}
+                          edge="end"
+                          aria-label={
+                            showNewPassword
+                              ? "Hide new password"
+                              : "Show new password"
+                          }
+                        >
+                          {showNewPassword ? (
+                            <EyeOff size={17} />
+                          ) : (
+                            <Eye size={17} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
+
+              {/* NEW: live requirement checklist */}
+              {newPassword.length > 0 && (
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "4px 12px",
+                  }}
+                >
+                  {requirements.map((req) => (
+                    <Box
+                      key={req.label}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.75,
+                      }}
+                    >
+                      {req.met ? (
+                        <CheckCircle2 size={14} color="#16a34a" />
+                      ) : (
+                        <Circle size={14} color="#d1d5db" />
+                      )}
+                      <Typography
+                        sx={{
+                          fontSize: "11.5px",
+                          color: req.met ? "#16a34a" : "#9ca3af",
+                        }}
+                      >
+                        {req.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
 
             <Box>
@@ -234,27 +305,63 @@ const ChangePassword = () => {
                 placeholder="Re-enter new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                error={passwordsMismatch}
                 sx={fieldSx}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          setShowConfirmPassword((prev) => !prev)
-                        }
-                        edge="end"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={17} />
-                        ) : (
-                          <Eye size={17} />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setShowConfirmPassword((prev) => !prev)
+                          }
+                          edge="end"
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide confirm password"
+                              : "Show confirm password"
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={17} />
+                          ) : (
+                            <Eye size={17} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
+
+              {/* NEW: live match indicator */}
+              {confirmPassword.length > 0 && (
+                <Box
+                  sx={{
+                    mt: 0.75,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.75,
+                  }}
+                >
+                  {passwordsMatch ? (
+                    <>
+                      <CheckCircle2 size={14} color="#16a34a" />
+                      <Typography sx={{ fontSize: "11.5px", color: "#16a34a" }}>
+                        Passwords match
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Circle size={14} color="#ef4444" />
+                      <Typography sx={{ fontSize: "11.5px", color: "#ef4444" }}>
+                        Passwords do not match
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              )}
             </Box>
 
             <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>

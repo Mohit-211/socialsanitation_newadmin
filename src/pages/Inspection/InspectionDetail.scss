@@ -233,30 +233,6 @@
       gap: 8px;
       flex-shrink: 0;
     }
-
-    &__note-block {
-      margin-top: 10px;
-      margin-left: 28px;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-    }
-
-    &__images {
-      margin-top: 10px;
-      margin-left: 28px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    &__image-thumb {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-      border: 1px solid #eef0f2;
-    }
   }
 
   // Round pastel icon button used for the "Review" action, matching the
@@ -276,6 +252,180 @@
 
     &:hover {
       background: #e0e7ff;
+    }
+
+    &:disabled {
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      color: #cbd5e1;
+      cursor: not-allowed;
+
+      &:hover {
+        background: #f3f4f6;
+      }
+    }
+  }
+
+  .send-client-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: none;
+    background: #16a34a;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
+
+    &:hover {
+      background: #128a3e;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .item-row__timeline {
+    margin-top: 12px;
+    margin-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-left: 14px;
+    border-left: 2px solid #f1f2f4;
+  }
+
+  .timeline-entry {
+    display: flex;
+    gap: 10px;
+
+    &__icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-left: -21px;
+      background: #fff;
+      border: 2px solid #f1f2f4;
+
+      &--employee {
+        color: #4f46e5;
+      }
+
+      &--bdm {
+        color: #16a34a;
+      }
+    }
+
+    &__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    &__who {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #374151;
+    }
+
+    &__time {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10.5px;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    &__images {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+  }
+
+  // Collapsed "N attachments · timestamp" row — click to expand thumbnails
+  .timeline-entry__attachment-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #f8faf9;
+    border: 1px solid #eef0f2;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background: #f1f5f4;
+      border-color: #e2e4e8;
+    }
+  }
+
+  .timeline-entry__image-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .timeline-entry__image-time {
+    font-size: 9px;
+    color: #9ca3af;
+    white-space: nowrap;
+  }
+
+  .suggested-score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: #f8faf9;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 8px;
+
+    &__label {
+      font-size: 12px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+    }
+
+    &__value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #16324f;
+    }
+
+    &__hint {
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
     }
   }
 }

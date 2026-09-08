@@ -73,6 +73,9 @@ const { Header, Sider, Content } = Layout;
 
 const MainLayout = () => {
   const [idData, setIdData] = useState({});
+  // NEW: Operations Administrator (role_id 3) has restricted menu access —
+  // Estimate, Invoice/Quotes, Calculator, and BDM are hidden for this role.
+  const isOperationsAdmin = idData?.role_id === 3;
   const [loading, setLoading] = useState(false);
   const [hasBookings, setHasBookings] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -287,11 +290,16 @@ const MainLayout = () => {
                             icon: <FaRegCalendar />,
                             label: "Leave Requests",
                           },
-                          {
-                            key: "/bdm-list",
-                            icon: <FaUserTie />,
-                            label: "BDM",
-                          },
+                          // NEW: BDM hidden for Operations Administrator
+                          ...(!isOperationsAdmin
+                            ? [
+                                {
+                                  key: "/bdm-list",
+                                  icon: <FaUserTie />,
+                                  label: "BDM",
+                                },
+                              ]
+                            : []),
                         ],
                       },
                       {
@@ -322,23 +330,28 @@ const MainLayout = () => {
                             icon: <GiProgression />,
                             label: "Schedule",
                           },
-                          {
-                            type: "/cost-calculator",
-                            icon: <FaCalculator />,
-                            label: "Calculator",
-                            children: [
-                              {
-                                key: "/cost-calculator",
-                                icon: <FaCalculator />,
-                                label: "Cost Calculator",
-                              },
-                              {
-                                key: "/cost-calculation-settings",
-                                icon: <FaCog />,
-                                label: "Cost Settings",
-                              },
-                            ],
-                          },
+                          // NEW: Calculator hidden for Operations Administrator
+                          ...(!isOperationsAdmin
+                            ? [
+                                {
+                                  type: "/cost-calculator",
+                                  icon: <FaCalculator />,
+                                  label: "Calculator",
+                                  children: [
+                                    {
+                                      key: "/cost-calculator",
+                                      icon: <FaCalculator />,
+                                      label: "Cost Calculator",
+                                    },
+                                    {
+                                      key: "/cost-calculation-settings",
+                                      icon: <FaCog />,
+                                      label: "Cost Settings",
+                                    },
+                                  ],
+                                },
+                              ]
+                            : []),
                           {
                             key: "/equipment",
                             icon: <FaToolbox />,
@@ -367,11 +380,16 @@ const MainLayout = () => {
                         type: "group",
                         label: "DOCUMENTS",
                         children: [
-                          {
-                            key: "/pdf-generation",
-                            icon: <FaFilePdf />,
-                            label: "Service Estimate",
-                          },
+                          // NEW: Service Estimate hidden for Operations Administrator
+                          ...(!isOperationsAdmin
+                            ? [
+                                {
+                                  key: "/pdf-generation",
+                                  icon: <FaFilePdf />,
+                                  label: "Service Estimate",
+                                },
+                              ]
+                            : []),
                           {
                             key: "/service-request",
                             icon: <FaFilePdf />,
@@ -382,11 +400,16 @@ const MainLayout = () => {
                             icon: <FaFilePdf />,
                             label: "Contracts",
                           },
-                          {
-                            key: "/all-invoices",
-                            icon: <FaFileInvoiceDollar />,
-                            label: "Invoices",
-                          },
+                          // NEW: Invoices hidden for Operations Administrator
+                          ...(!isOperationsAdmin
+                            ? [
+                                {
+                                  key: "/all-invoices",
+                                  icon: <FaFileInvoiceDollar />,
+                                  label: "Invoices",
+                                },
+                              ]
+                            : []),
                         ],
                       },
                       {
@@ -448,22 +471,28 @@ const MainLayout = () => {
                           },
                         ],
                       },
-                      {
-                        type: "group",
-                        label: "FINANCE",
-                        children: [
-                          {
-                            key: "/invoices",
-                            icon: <FaFileInvoiceDollar />,
-                            label: "Quotes",
-                          },
-                          {
-                            key: "/invoiceAnalytics",
-                            icon: <TbBrandCashapp />,
-                            label: "Invoice Analytics",
-                          },
-                        ],
-                      },
+                      // NEW: entire FINANCE group (Quotes / Invoice Analytics)
+                      // hidden for Operations Administrator
+                      ...(!isOperationsAdmin
+                        ? [
+                            {
+                              type: "group",
+                              label: "FINANCE",
+                              children: [
+                                {
+                                  key: "/invoices",
+                                  icon: <FaFileInvoiceDollar />,
+                                  label: "Quotes",
+                                },
+                                {
+                                  key: "/invoiceAnalytics",
+                                  icon: <TbBrandCashapp />,
+                                  label: "Invoice Analytics",
+                                },
+                              ],
+                            },
+                          ]
+                        : []),
                       {
                         type: "group",
                         label: "COMMUNICATION",

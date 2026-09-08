@@ -642,7 +642,11 @@ const EditBookings = () => {
 									Date:
 								</h5>
 								<p style={{ marginBottom: "20px" }}>
-									{bookingData.date && bookingData?.date.split("T")[0]}
+									{bookingData?.date &&
+										(() => {
+											const [y, m, d] = bookingData.date.split("T")[0].split("-");
+											return `${m}/${d}/${y}`;
+										})()}
 								</p>
 								<h5
 									style={{
@@ -655,7 +659,16 @@ const EditBookings = () => {
 								>
 									Time:
 								</h5>
-								<p style={{ marginBottom: "20px" }}>{bookingData?.time}</p>
+								<p style={{ marginBottom: "20px" }}>
+									{bookingData?.time &&
+										(() => {
+											let [h, min] = bookingData.time.split(":");
+											h = parseInt(h, 10);
+											const ampm = h >= 12 ? "PM" : "AM";
+											h = h % 12 || 12;
+											return `${h}:${min} ${ampm}`;
+										})()}
+								</p>
 								<h5
 									style={{
 										fontSize: "0.9rem",

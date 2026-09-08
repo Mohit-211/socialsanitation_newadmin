@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import "./invoice.css";
 import { useNavigate, useParams } from "react-router";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Info } from "lucide-react";
 import {
   message,
   Spin,
@@ -14,6 +14,7 @@ import {
   Select,
   Popconfirm,
   Checkbox,
+  Tooltip,
 } from "antd";
 import { DatePicker } from "antd";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
@@ -21,10 +22,73 @@ import {
   CreateInvoice,
   GetAllUserName,
   GetNextInvoiceRef,
+  GetUserAddressesByUserId,
 } from "../../services/Api/InvoiceApi";
 import SignatureField from "../Customer/SignatureField";
 
 const { Option } = Select;
+
+// Converts "2:00 pm", "14:05", "2pm" etc into minutes-since-midnight.
+// Returns null if it can't confidently parse the text.
+const parseClockTimeToMinutes = (raw) => {
+  const cleaned = raw.trim().toLowerCase().replace(/\s*:\s*/g, ":");
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+
+  if (!match) return null;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3];
+
+  if (minutes > 59) return null;
+
+  if (meridiem) {
+    if (hours < 1 || hours > 12) return null;
+    hours =
+      meridiem === "am"
+        ? hours === 12
+          ? 0
+          : hours
+        : hours === 12
+          ? 12
+          : hours + 12;
+  } else if (hours > 23) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+};
+
+// Accepts "2:00 pm to 4:00 pm", "14:05 - 16:00", "2pm-4pm", or a plain
+// number ("2"). Returns a decimal hour count, or null if unparseable.
+const parseHourRangeToDecimal = (rawInput) => {
+  if (!rawInput || typeof rawInput !== "string") return null;
+
+  const normalized = rawInput
+    .trim()
+    .replace(/–|—/g, "-")
+    .replace(/\bto\b/gi, "-");
+
+  const parts = normalized
+    .split("-")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (parts.length !== 2) {
+    const plain = parseFloat(rawInput);
+    return Number.isFinite(plain) ? plain : null;
+  }
+
+  const startMinutes = parseClockTimeToMinutes(parts[0]);
+  const endMinutes = parseClockTimeToMinutes(parts[1]);
+
+  if (startMinutes === null || endMinutes === null) return null;
+
+  let diff = endMinutes - startMinutes;
+  if (diff <= 0) diff += 24 * 60; // handles overnight ranges like 10pm-2am
+
+  return Math.round((diff / 60) * 100) / 100;
+};
 
 const ServiceQuoteForm = () => {
   const navigate = useNavigate();
@@ -62,6 +126,7 @@ const ServiceQuoteForm = () => {
         calculation_type: "sqft",
         sqft: "N/A",
         hour: "",
+        hour_raw: "",
 
         unit_price: "",
         amount: "",
@@ -73,6 +138,15 @@ const ServiceQuoteForm = () => {
   });
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // ─── Client addresses (NEW) ───
+  // Populated via GetUserAddressesByUserId whenever a client is selected.
+  // Defaults to the 0th (first-created) address; if the client has more
+  // than one, a dropdown is shown so the admin can pick a different one.
+  // The To: fields stay freely editable either way, same as before.
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [selectedDraftId, setSelectedDraftId] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -87,26 +161,57 @@ const ServiceQuoteForm = () => {
     });
   }, []);
 
-  const handleUserChange = (userId) => {
+  const applyAddressToForm = (addr) => {
+    setFormData((prev) => ({
+      ...prev,
+      address1: addr?.address_1
+        ? `${addr.address_1}, ${addr.city || ""}`
+        : "",
+      address2: `${addr?.state || ""}${addr?.country ? ", " + addr.country : ""}`,
+    }));
+  };
+
+  const handleUserChange = async (userId) => {
     const user = users.find((u) => u.id === userId);
 
     if (!user) return;
 
     setSelectedUser(user);
-
-    const address = user.address || {};
+    setAddresses([]);
+    setSelectedAddressId(null);
 
     setFormData((prev) => ({
       ...prev,
       user_id: user.id,
       toCompany: user.name || "",
-
-      address1: address.address_1
-        ? `${address.address_1}, ${address.city || ""}`
-        : "",
-
-      address2: `${address.state || ""}${address.country ? ", " + address.country : ""}`,
+      address1: "",
+      address2: "",
     }));
+
+    try {
+      setLoadingAddresses(true);
+
+      const res = await GetUserAddressesByUserId(user.id);
+      const addressList = res?.data?.data || [];
+
+      setAddresses(addressList);
+
+      if (addressList.length > 0) {
+        // Default to the 0th address until the admin picks a different one
+        setSelectedAddressId(addressList[0].id);
+        applyAddressToForm(addressList[0]);
+      }
+    } catch (error) {
+      message.error("Failed to fetch client addresses");
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const handleAddressSelect = (addressId) => {
+    setSelectedAddressId(addressId);
+    const addr = addresses.find((a) => a.id === addressId);
+    applyAddressToForm(addr);
   };
 
   const handleItemChange = (index, field, value) => {
@@ -133,6 +238,7 @@ const ServiceQuoteForm = () => {
           calculation_type: "sqft",
           sqft: "N/A",
           hour: "",
+          hour_raw: "",
 
           unit_price: "",
           amount: "",
@@ -230,6 +336,7 @@ const ServiceQuoteForm = () => {
       const payload = {
         quote_id: selectedDraftId,
         user_id: formData.user_id,
+        address_id: selectedAddressId, // NEW: tells backend which address was actually used
 
         ref_type: formData.reference_type, // FIX: backend expects `ref_type`, not `reference_type`
         ref: formData.ref, // wasn't being sent at all
@@ -430,6 +537,7 @@ const ServiceQuoteForm = () => {
 
             if (value === "hour") {
               handleItemChange(index, "hour", "");
+              handleItemChange(index, "hour_raw", "");
               handleItemChange(index, "sqft", "N/A");
             }
 
@@ -447,8 +555,16 @@ const ServiceQuoteForm = () => {
     },
 
     {
-      title: "Sqft / Hour",
+      title: (
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          Sqft / Hour
+          <Tooltip title='For Hour type, enter a time range like "2:00 PM - 4:00 PM" or "14:00 - 16:00" — we calculate the total hours for you.'>
+            <Info size={14} color="#888" style={{ cursor: "help" }} />
+          </Tooltip>
+        </span>
+      ),
       key: "measurement",
+      width: 190,
       render: (_, record, index) => {
         if (record.calculation_type === "na") {
           return <Input value="N/A" disabled />;
@@ -456,13 +572,35 @@ const ServiceQuoteForm = () => {
 
         if (record.calculation_type === "hour") {
           return (
-            <InputNumber
-              min={1}
-              value={record.hour || undefined}
-              placeholder="Hours"
-              style={{ width: "100%" }}
-              onChange={(value) => handleItemChange(index, "hour", value)}
-            />
+            <div>
+              <Input
+                value={record.hour_raw ?? ""}
+                placeholder="e.g. 2:00 PM - 4:00 PM"
+                style={{ width: "100%", minWidth: 170 }}
+                onChange={(e) =>
+                  handleItemChange(index, "hour_raw", e.target.value)
+                }
+                onBlur={(e) => {
+                  const parsed = parseHourRangeToDecimal(e.target.value);
+
+                  if (parsed === null) {
+                    if (e.target.value.trim() !== "") {
+                      message.warning(
+                        'Could not read that time. Try a format like "2:00 PM - 4:00 PM" or "14:00 - 16:00".',
+                      );
+                    }
+                    return;
+                  }
+
+                  handleItemChange(index, "hour", parsed);
+                }}
+              />
+              {record.hour !== "" && record.hour !== undefined && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                  = {record.hour} hrs
+                </div>
+              )}
+            </div>
           );
         }
 
@@ -819,6 +957,26 @@ const ServiceQuoteForm = () => {
               TO: <span style={{ color: "red" }}>*</span>
             </strong>
             <br />
+
+            {/* NEW: address selector — only shown when the client has more
+                than one address on file. Single-address clients skip
+                straight to the prefilled fields below, since there's
+                nothing to choose between. */}
+            {addresses.length > 1 && (
+              <Select
+                placeholder="Select address"
+                style={{ width: "100%", marginBottom: 8 }}
+                value={selectedAddressId || undefined}
+                loading={loadingAddresses}
+                onChange={handleAddressSelect}
+              >
+                {addresses.map((addr) => (
+                  <Option key={addr.id} value={addr.id}>
+                    {`${addr.address_1 || "—"}${addr.city ? ", " + addr.city : ""}${addr.state ? ", " + addr.state : ""}`}
+                  </Option>
+                ))}
+              </Select>
+            )}
 
             <Input
               placeholder="Company Name"

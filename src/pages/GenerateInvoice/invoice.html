@@ -1,0 +1,330 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Invoice Preview</title>
+
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 0;
+				padding: 30px;
+				color: #000;
+				background: #e5e5e5;
+			}
+
+			.page {
+				background: #fff;
+				max-width: 850px;
+				margin: 0 auto;
+				padding: 30px;
+				box-shadow: 0 0 8px rgba(0,0,0,0.15);
+			}
+
+			/* ===== HEADER: logo ~30% left, dark box ~70% right ===== */
+			.header-row {
+				display: flex;
+				align-items: stretch;
+			}
+
+			.logo-col {
+				width: 30%;
+				display: flex;
+				align-items: flex-start;
+			}
+
+			.logo {
+				width: 150px;
+			}
+
+			.invoice-box {
+				width: 70%;
+				background-color: #4A5058;
+				color: #fff;
+				padding: 14px 20px;
+			}
+
+			.invoice-box .invoice-title {
+				font-size: 24px;
+				font-weight: bold;
+				text-align: right;
+				margin-bottom: 10px;
+			}
+
+			.invoice-box .meta-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: flex-start;
+				padding-top: 8px;
+				border-top: 1px solid rgba(255,255,255,0.35);
+				font-size: 10px;
+			}
+
+			.invoice-box .meta-row .meta-item {
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+
+			.invoice-box .meta-row .meta-item .label {
+				color: #c7cbd0;
+				text-transform: uppercase;
+				letter-spacing: 0.3px;
+				white-space: nowrap;
+			}
+
+			.invoice-box .meta-row .meta-item .value {
+				font-weight: bold;
+				white-space: nowrap;
+			}
+
+			/* ===== FROM / TO / TOTAL DUE bordered row ===== */
+			.info-grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1.4fr;
+				border-top: 1px solid #000;
+				border-bottom: 1px solid #000;
+				margin-top: 0;
+			}
+
+			.info-grid > div {
+				padding: 10px 18px;
+			}
+
+			.info-grid > div:not(:last-child) {
+				border-right: 1px solid #000;
+			}
+
+			.info-grid .info-label {
+				font-size: 10px;
+				color: #555;
+				text-transform: uppercase;
+				letter-spacing: 0.3px;
+				margin-bottom: 4px;
+				font-weight: bold;
+			}
+
+			.info-grid p {
+				margin: 2px 0;
+				font-size: 13px;
+			}
+
+			.info-grid .total-due-cell {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+			}
+
+			.info-grid .total-due-value {
+				font-size: 24px;
+				font-weight: bold;
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				margin: 20px 0;
+			}
+
+			th,
+			td {
+				border: none;
+				padding: 8px;
+				text-align: left;
+				font-size: 13px;
+				line-height: 1.2;
+			}
+
+			th {
+				background-color: #f0f0f0;
+				text-transform: uppercase;
+				font-size: 11px;
+				letter-spacing: 0.3px;
+			}
+
+			tbody tr:nth-child(even) {
+				background-color: #fafafa;
+			}
+
+			.signature-section {
+				display: flex;
+				justify-content: space-between;
+				margin-top: 60px;
+				font-size: 14px;
+			}
+
+			.signature-section .date,
+			.signature-section .signature {
+				width: 48%;
+			}
+
+			.payment-link {
+				margin-top: 40px;
+				text-align: center;
+				font-size: 12px;
+			}
+
+			.terms {
+				margin-top: 30px;
+				font-size: 10px;
+				line-height: 1.4;
+				text-align: justify;
+				padding: 0 30px;
+			}
+
+			.footer {
+				margin-top: 30px;
+				font-size: 10px;
+				text-align: center;
+				border-top: 1px solid #000;
+				padding-top: 5px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="page">
+			<div class="header-row">
+				<div class="logo-col">
+					<img
+						class="logo"
+						src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg"
+					/>
+				</div>
+
+				<div class="invoice-box">
+					<div class="invoice-title">INVOICE</div>
+
+					<div class="meta-row">
+						<span class="meta-item">
+							<span class="label">Invoice Ref No:</span>
+							<span class="value">SS576</span>
+						</span>
+						<span class="meta-item">
+							<span class="label">Billing Date:</span>
+							<span class="value">08/27/2026</span>
+						</span>
+						<span class="meta-item">
+							<span class="label">Date of Service:</span>
+							<span class="value">07/18/2026 - 08/15/2026</span>
+						</span>
+						<span class="meta-item">
+							<span class="label">Due Date:</span>
+							<span class="value">08/28/2026</span>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="info-grid">
+				<div>
+					<p class="info-label">From</p>
+					<p>Social Sanitation Commercial Cleaning Solutions</p>
+					<p>5201 N 44TH St</p>
+					<p>Tampa, FL 33610</p>
+				</div>
+
+				<div>
+					<p class="info-label">To</p>
+					<p>Tampa Garden Club</p>
+					<p>2629 Bayshore Blvd, Tampa</p>
+					<p>FL 33629</p>
+				</div>
+
+				<div class="total-due-cell">
+					<p class="info-label">Total Due</p>
+					<p class="total-due-value">$2,598.53</p>
+				</div>
+			</div>
+
+			<table>
+				<thead>
+					<tr>
+						<th>Description</th>
+						<th>Frequency</th>
+						<th>Quantity</th>
+						<th>Sqft / Hour</th>
+						<th>Amount ($)</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>High Dusting</td>
+						<td>One-Time</td>
+						<td>1</td>
+						<td>2</td>
+						<td>$200</td>
+					</tr>
+					<tr>
+						<td>Day Porter Services</td>
+						<td>Weekly</td>
+						<td>1</td>
+						<td>3</td>
+						<td>$300</td>
+					</tr>
+					<tr>
+						<td>Acid Wash</td>
+						<td>One-Time</td>
+						<td>1</td>
+						<td>1</td>
+						<td>$100</td>
+					</tr>
+					<tr>
+						<td>Tile & Grout Cleaning</td>
+						<td>One-Time</td>
+						<td>1</td>
+						<td>1</td>
+						<td>$100</td>
+					</tr>
+					<tr>
+						<td>High Dusting</td>
+						<td>One-Time</td>
+						<td>1</td>
+						<td>1</td>
+						<td>$100</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<div class="signature-section">
+				<div class="date" style="text-align: left">
+					<p style="margin: 0; font-size: 12px; font-weight: bold">August 27, 2026</p>
+					<div style="border-top: 1px solid #000; width: 220px; margin: 5px 0 0 0"></div>
+					<p style="margin: 0; font-size: 12px; font-weight: bold; text-align: center; width: 220px">Date</p>
+				</div>
+
+				<div class="signature" style="text-align: left">
+					<div style="height: 60px"></div>
+					<div style="border-top: 1px solid #000; width: 280px; margin-top: 5px"></div>
+					<p style="margin: 2px 0 0 0; font-size: 12px; font-weight: bold">Social Sanitation Legal Representative Signature</p>
+				</div>
+			</div>
+
+			<div class="payment-link">
+				<p style="margin: 0">
+					<strong>Square Payment Link:</strong>
+					<a href="#" style="color: #0066cc; text-decoration: underline; font-size: 11px">https://square.link/u/KYv7egQF</a>
+				</p>
+			</div>
+
+			<div class="terms">
+				<p>
+					Invoices are sent on the last business day of each month and are to be
+					paid within 5 business days of due date. All late payments are subject
+					to late fees of $30, every 5-business day period after the service
+					month. If needed, the pay options above can change but it is necessary
+					to change payment arrangements 5 business days before the end of the
+					current service month if check or ACH. Payments made via credit or debit
+					card can be made at any time. All late fees will be added to the invoice
+					of the following service month, to fully satisfy the invoice for the
+					previous service month.
+				</p>
+			</div>
+
+			<div class="footer">
+				SOCIAL SANITATION COMMERCIAL CLEANING SOLUTIONS &nbsp;&nbsp;&nbsp; |
+				&nbsp;&nbsp;&nbsp; INVOICE REF#: SS576
+			</div>
+		</div>
+	</body>
+</html>

@@ -209,7 +209,7 @@ const EditAdmin = () => {
 									}}
 								>
 									<MenuItem value="5">BDM</MenuItem>
-									<MenuItem value="3">SALES EXECUTIVE</MenuItem>
+									<MenuItem value="3">OPERATIONS ADMINISTRATOR</MenuItem>
 									<MenuItem value="1">SUPER ADMIN</MenuItem>
 								</Select>
 							)}
