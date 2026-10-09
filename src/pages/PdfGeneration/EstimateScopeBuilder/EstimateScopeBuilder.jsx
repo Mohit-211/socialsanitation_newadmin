@@ -1,7 +1,5 @@
-/** @format */
-
-import React, { useEffect, useRef, useState } from "react";
-import { Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
+import { useEffect, useRef, useState } from "react";
+import { Switch, message, Empty, Modal, Tooltip } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -14,7 +12,6 @@ import {
 } from "@ant-design/icons";
 import "./EstimateScopeBuilder.scss";
 import {
-  GetEstimateScope,
   CreateEstimateSection,
   UpdateEstimateSection,
   DeleteEstimateSection,
@@ -47,14 +44,6 @@ const EstimateScopeBuilder = ({
   const [loadingChecklist, setLoadingChecklist] = useState(false);
   const [clientType, setClientType] = useState("");
 
-  console.log("STATE sections", sections);
-  console.log("constructor", sections?.constructor?.name);
-  console.log("prototype", Object.getPrototypeOf(sections));
-  console.log("entries", Object.entries(sections));
-  console.log("keys", Object.keys(sections));
-  console.log("Array?", Array.isArray(sections));
-  console.log("typeof", typeof sections);
-
   /* Collapse state */
   const [chartCollapsed, setChartCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -63,7 +52,7 @@ const EstimateScopeBuilder = ({
   const sectionsEndRef = useRef(null);
   const sectionRefs = useRef({});
 
-  /* ───────────────── FETCH CHECKLIST ───────────────── */
+  /* FETCH CHECKLIST */
 
   const fetchChecklist = async () => {
     if (!userId) {
@@ -101,7 +90,7 @@ const EstimateScopeBuilder = ({
     if (onChange) onChange(sections);
   }, [sections]);
 
-  /* ───────────────── COLLAPSE HELPERS ───────────────── */
+  /* COLLAPSE HELPERS */
 
   const toggleSection = (sectionIndex) => {
     setCollapsedSections((prev) => ({
@@ -110,7 +99,7 @@ const EstimateScopeBuilder = ({
     }));
   };
 
-  /* ───────────────── SECTION CHANGE ───────────────── */
+  /* SECTION CHANGE */
 
   const handleSectionChange = (index, field, value) => {
     setSections((prev) =>
@@ -120,7 +109,7 @@ const EstimateScopeBuilder = ({
     );
   };
 
-  /* ───────────────── ITEM CHANGE ───────────────── */
+  /* ITEM CHANGE */
 
   const handleItemChange = (sectionIndex, itemIndex, field, value) => {
     setSections((prev) =>
@@ -136,7 +125,7 @@ const EstimateScopeBuilder = ({
     );
   };
 
-  /* ───────────────── CREATE SECTION ───────────────── */
+  /* CREATE SECTION */
 
   const createSection = async () => {
     try {
@@ -153,12 +142,12 @@ const EstimateScopeBuilder = ({
         sectionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to create section");
     }
   };
 
-  /* ───────────────── SAVE SECTION ───────────────── */
+  /* SAVE SECTION */
 
   const saveSection = async (section, index) => {
     try {
@@ -170,14 +159,14 @@ const EstimateScopeBuilder = ({
       });
       message.success("Section saved");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to save section");
     } finally {
       setSavingSection(null);
     }
   };
 
-  /* ───────────────── DELETE SECTION ───────────────── */
+  /* DELETE SECTION */
 
   const deleteSection = async (sectionIndex) => {
     try {
@@ -196,12 +185,12 @@ const EstimateScopeBuilder = ({
         },
       });
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Delete failed");
     }
   };
 
-  /* ───────────────── ADD ITEM ───────────────── */
+  /* ADD ITEM */
 
   const addItem = (sectionIndex) => {
     /* Expand the section if collapsed */
@@ -228,14 +217,12 @@ const EstimateScopeBuilder = ({
     );
   };
 
-  /* ───────────────── SAVE ITEM ───────────────── */
+  /* SAVE ITEM */
 
   const saveItem = async (item, sectionIndex, itemIndex) => {
     try {
       setSavingItem(`${sectionIndex}-${itemIndex}`);
       const section = sections[sectionIndex];
-      console.log("Section:", section);
-      console.log("Section ID:", section?.id);
 
       if (!item.description?.trim()) {
         return message.warning("Task description is required");
@@ -275,14 +262,14 @@ const EstimateScopeBuilder = ({
         message.success("Task saved");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Save failed");
     } finally {
       setSavingItem(null);
     }
   };
 
-  /* ───────────────── DELETE ITEM ───────────────── */
+  /* DELETE ITEM */
 
   const deleteItem = async (sectionIndex, itemIndex) => {
     try {
@@ -304,12 +291,12 @@ const EstimateScopeBuilder = ({
       );
       message.success("Task deleted");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Delete failed");
     }
   };
 
-  /* ───────────────── EMPTY ───────────────── */
+  /* EMPTY */
 
   if (!userId) {
     return (

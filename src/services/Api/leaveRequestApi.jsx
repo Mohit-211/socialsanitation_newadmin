@@ -2,7 +2,7 @@ import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
 //get all products
-export const GetAllLeaveRequest = async (adminToken, role_id) => {
+export const GetAllLeaveRequest = async () => {
     try {
         const res = await axios.get(BASE_URL + "attendance/getAllLeaveRequest");
         return res;
@@ -30,7 +30,6 @@ export const UpdateLeaveStatus = async (id, formData) => {
     });
   };
 
-
   export const GetAllAttendance = async (formData) => {
     return await axios.post(BASE_URL + `attendance/getAllAttendance`, formData, {
       headers: {
@@ -57,7 +56,6 @@ export const UpdateLeaveStatus = async (id, formData) => {
       },
     });
   };
-
 
   export const GetTodayAttendanceStats = async (formData) => {
     return await axios.post(BASE_URL + `attendance/getTodayAttendanceStats`, formData, {

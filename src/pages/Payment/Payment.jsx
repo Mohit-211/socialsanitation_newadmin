@@ -1,17 +1,9 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import { Card, message, Space, Table, Tooltip } from "antd";
+import { useEffect, useState } from "react";
+import { Input, Table } from "antd";
+import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import {
-  GetPayment,
-  GetServicePrices,
-  UpdateServicePrices,
-} from "../../services/Api/Api";
+import { GetPayment } from "../../services/Api/Api";
 import dayjs from "@/lib/dayjs";
 
 const Payment = () => {
@@ -20,10 +12,6 @@ const Payment = () => {
   const [userBackupData, setUserBackupData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [prices, setPrices] = useState([]);
-  const [oldPrice, setOldPrice] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [priceLoading, setPriceLoading] = useState(false);
 
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -33,65 +21,6 @@ const Payment = () => {
     sortField: null,
     sortOrder: null,
   });
-  const [anchorEl, setAnchorEl] = useState(null); // For managing the menu state
-  const [selectedRecord, setSelectedRecord] = useState(null); // For keeping track of the selected record
-
-  const handleClick = (event, record) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedRecord(record);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleViewReceipt = () => {
-    if (selectedRecord && selectedRecord.receipt_url) {
-      window.open(selectedRecord.receipt_url, "_blank");
-    }
-    handleClose();
-  };
-
-  const navigateToViewBooking = (id) => {
-    navigate(`/viewBooking/${id}`);
-  };
-
-  const getAllPrices = async () => {
-    try {
-      setPriceLoading(true);
-      const res = await GetServicePrices();
-      setPrices(res?.data?.data);
-      setOldPrice(res?.data?.data);
-      console.log(res.data.data, "fwefw");
-    } catch (e) {
-      console.error("Error fetching prices", e);
-    } finally {
-      setPriceLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getAllPrices();
-  }, []);
-
-  const handleUpdatePrice = async () => {
-    if (!oldPrice || !newPrice)
-      return message.error("Both fields are required.");
-
-    try {
-      const response = await UpdateServicePrices(
-        { old_price: oldPrice, new_price: newPrice },
-        localStorage.getItem("adminToken")
-      );
-      if (response.status === 200) {
-        message.success(`Prices updated successfully!`);
-        setNewPrice("");
-        await getAllPrices();
-      }
-    } catch (e) {
-      message.error("Failed to update price.");
-    }
-  };
 
   const columns = [
     {
@@ -117,7 +46,7 @@ const Payment = () => {
       dataIndex: "payment_status",
       width: "20%",
       render: (status) => {
-        let textColor = "#000"; // Default text color
+        let textColor;
 
         switch (status) {
           case "PENDING":
@@ -185,11 +114,6 @@ const Payment = () => {
       },
     },
 
-    // {
-    // 	title: "Payment Mode",
-    // 	dataIndex: "payment_mode",
-    // 	width: "15%",
-    // },
     {
       title: "Transaction Date",
       dataIndex: "created_at",
@@ -197,39 +121,6 @@ const Payment = () => {
       render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
     },
 
-    // {
-    // 	title: "Actions",
-    // 	key: "actions",
-    // 	render: (text, record) => (
-    // 		<Space size="middle">
-    // 			<Tooltip title="View Booking Details">
-    // 				<Button
-    // 					icon="pi pi-eye"
-    // 					rounded
-    // 					outlined
-    // 					severity="warning"
-    // 					style={{ borderRadius: "25px" }}
-    // 					onClick={() => navigateToViewBooking(record.booking_id)}
-    // 				/>
-    // 			</Tooltip>
-    // 		</Space>
-    // 	),
-    // },
-    // {
-    // 	title: "Action",
-    // 	dataIndex: "action",
-    // 	render: (_, record) => (
-    // 		<Space size="middle">
-    // 			<IconButton
-    // 				aria-controls="lecture-menu"
-    // 				aria-haspopup="true"
-    // 				onClick={(event) => handleClick(event, record)}
-    // 			>
-    // 				<MoreVertIcon />
-    // 			</IconButton>
-    // 		</Space>
-    // 	),
-    // },
   ];
 
   // Get all users
@@ -244,14 +135,13 @@ const Payment = () => {
       }));
       setData(newData);
       setUserBackupData(newData);
-      // console.log(newData, "newData");
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 403) {
         navigate("/error401");
-        console.log("Access denied. You do not have the required permissions.");
+        console.error("Access denied. You do not have the required permissions.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -303,93 +193,26 @@ const Payment = () => {
     },
   };
 
-  const exportToCSV = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      "ID,Name,Receipt URL,Payment Mode,Amount,Transaction Date\n" +
-      data
-        .map((row) => {
-          const name =
-            row.user_payment?.user_profile?.name ||
-            row.corporate_payment?.name ||
-            "N/A";
-          const receiptUrl = row.receipt_url || "N/A";
-          const amount = row.amount || "N/A";
-          const paymentMode = row.payment_mode || "N/A";
-          const transactionDate =
-            dayjs(row.created_at).format("YYYY-MM-DD HH:mm:ss") || "N/A";
-          return `${row.id},${name},${receiptUrl},${paymentMode},${amount},${transactionDate}`;
-        })
-        .join("\n");
-
-    const encodedURI = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedURI);
-    link.setAttribute("download", "payments.csv");
-    document.body.appendChild(link);
-    link.click();
-  };
-
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginBottom="20px"
+      <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center", marginBottom: "20px" }}
       >
         <div>
           <h3 className="page-title">PAYMENT MANAGEMENT</h3>
           <p className="page-sub-title">View Payment History</p>
         </div>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}>
           <Box>
-            <span className="p-input-icon-left">
-              <i className="pi pi-search" />
-              <InputText
-                type="search"
-                onChange={(e) => {
-                  onSearch(e.target.value);
-                }}
-                placeholder="Search..."
-              />
-            </span>
+            <Input
+              allowClear
+              prefix={<Search size={18} color="#9CA3AF" />}
+              placeholder="Search..."
+              style={{ width: "100%", height: 44 }}
+              onChange={(e) => onSearch(e.target.value)}
+            />
           </Box>
         </Box>
       </Box>
-      {/* <Card className="p-4 mb-4">
-				<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-					<div>
-						<label>
-							<strong>Current Price:</strong>
-						</label>
-						<div style={{ marginTop: "4px" }}>${oldPrice || "Loading..."}</div>
-					</div>
-
-					<div style={{ flexGrow: 1 }}>
-						<label>
-							<strong>New Price</strong>
-						</label>
-						<input
-							type="number"
-							className="p-inputtext"
-							style={{ width: "100%", padding: "8px" }}
-							value={newPrice}
-							onChange={(e) => setNewPrice(e.target.value)}
-							placeholder="Enter new price"
-						/>
-					</div>
-
-					<Button
-						style={{ marginTop: "19px", height: "39px", borderRadius: "5px" }}
-						label="Update Price"
-						severity="info"
-						icon="pi pi-refresh"
-						onClick={handleUpdatePrice}
-						disabled={priceLoading || !newPrice}
-					/>
-				</div>
-			</Card> */}
 
       <Table
         rowSelection={rowSelection} // Add row selection
@@ -400,15 +223,6 @@ const Payment = () => {
         loading={loading}
         onChange={handleTableChange}
       />
-      <Menu
-        id="lecture-menu"
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleViewReceipt}>View Receipt</MenuItem>
-      </Menu>
     </Box>
   );
 };

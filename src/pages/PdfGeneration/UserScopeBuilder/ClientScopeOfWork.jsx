@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, Paper, Button, Typography as MuiTypography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -36,7 +34,7 @@ const ClientScopeOfWork = () => {
 
       message.success("Scope of Work PDF generated");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to generate Scope of Work PDF");
     } finally {
       hideLoading();
@@ -54,6 +52,7 @@ const ClientScopeOfWork = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -68,7 +67,7 @@ const ClientScopeOfWork = () => {
             </MuiTypography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1.5, flexShrink: 0 }}>
+          <Box sx={{ display: "flex", gap: 1.5, flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}>
             <Button
               variant="outlined"
               disableElevation

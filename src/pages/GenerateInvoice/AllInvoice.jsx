@@ -1,5 +1,4 @@
-/** @format */
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   message,
@@ -42,7 +41,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import "./invoice.css";
 
-/* ================= CONSTANTS ================= */
+/* CONSTANTS */
 
 const CLIENTS_ROUTE = "/users"; // change to your add-client route
 const PENDING_CLIENTS_KEY = "csvPendingClients";
@@ -54,7 +53,7 @@ const HISTORICAL_CSV_SAMPLE = [
   "INV-2609-102,Cleaner A,200 Main St,Suite 100,2026-09-15,2026-09-01,2026-09-30,2026-10-15,2026-09-15",
 ].join("\n");
 
-/* ================= HELPERS ================= */
+/* HELPERS */
 
 const readPendingClients = () => {
   try {
@@ -112,7 +111,7 @@ const AllInvoices = () => {
   const [payModalInvoiceId, setPayModalInvoiceId] = useState(null);
   const [payModalLoading, setPayModalLoading] = useState(null); // "check" | "ach" | null
 
-  /* ---------------- PENDING CLIENTS (saved in this browser) ---------------- */
+  /* PENDING CLIENTS (saved in this browser) */
 
   const updatePendingClients = (list) => {
     setPendingClients(list);
@@ -123,7 +122,7 @@ const AllInvoices = () => {
     }
   };
 
-  /* ---------------- FETCH INVOICES ---------------- */
+  /* FETCH INVOICES */
 
   const fetchInvoices = async (date = getSelectedDate()) => {
     try {
@@ -142,7 +141,7 @@ const AllInvoices = () => {
     fetchInvoices(getSelectedDate());
   }, []);
 
-  /* ---------------- PAY MODAL ---------------- */
+  /* PAY MODAL */
 
   const openPayModal = (id) => {
     setPayModalInvoiceId(id);
@@ -179,7 +178,7 @@ const AllInvoices = () => {
     }
   };
 
-  /* ---------------- SEARCH FILTER ---------------- */
+  /* SEARCH FILTER */
 
   const filteredData = useMemo(() => {
     if (!searchText) return data;
@@ -195,7 +194,7 @@ const AllInvoices = () => {
     });
   }, [searchText, data]);
 
-  /* ---------------- VIEW PDF ---------------- */
+  /* VIEW PDF */
 
   const handleViewPDF = (record) => {
     if (!record.pdf_url) {
@@ -205,7 +204,7 @@ const AllInvoices = () => {
     window.open(record.pdf_url, "_blank");
   };
 
-  /* ---------------- UPLOAD / REPLACE PDF (CSV-imported invoices) ---------------- */
+  /* UPLOAD / REPLACE PDF (CSV-imported invoices) */
 
   const handleUploadHistoricalPDF = async (record, file) => {
     if (!file) return;
@@ -227,7 +226,7 @@ const AllInvoices = () => {
     }
   };
 
-  /* ---------------- DELETE ---------------- */
+  /* DELETE */
 
   const handleDelete = (invoiceId) => {
     Modal.confirm({
@@ -260,7 +259,7 @@ const AllInvoices = () => {
     },
   });
 
-  /* ---------------- TABLE COLUMNS ---------------- */
+  /* TABLE COLUMNS */
 
   const columns = [
     {
@@ -433,7 +432,7 @@ const AllInvoices = () => {
     },
   ];
 
-  /* ---------------- EXCEL EXPORT ---------------- */
+  /* EXCEL EXPORT */
 
   const handleDownloadExcel = async () => {
     try {
@@ -661,7 +660,7 @@ const AllInvoices = () => {
     }
   };
 
-  /* ---------------- CSV SAMPLE ---------------- */
+  /* CSV SAMPLE */
 
   const handleDownloadCSVSample = () => {
     const blob = new Blob([HISTORICAL_CSV_SAMPLE], {
@@ -670,7 +669,7 @@ const AllInvoices = () => {
     saveAs(blob, "historical-invoices-sample-2026-09.csv");
   };
 
-  /* ---------------- CSV IMPORT ---------------- */
+  /* CSV IMPORT */
 
   const handleCSVImport = async () => {
     if (!csvFile) {
@@ -739,7 +738,7 @@ const AllInvoices = () => {
     }
   };
 
-  /* ---------------- IMPORT RESULT HELPERS ---------------- */
+  /* IMPORT RESULT HELPERS */
 
   const unmatchedRows = importResult?.unmatched || [];
   const errorRows = importResult?.errors || [];
@@ -756,15 +755,6 @@ const AllInvoices = () => {
   );
 
   const missingClientNames = uniqueList(notFoundRows.map((r) => r.client_name));
-
-  const copyMissingClients = async () => {
-    try {
-      await navigator.clipboard.writeText(missingClientNames.join("\n"));
-      message.success("Client names copied");
-    } catch {
-      message.error("Could not copy. Select the names and copy them manually.");
-    }
-  };
 
   const downloadImportReport = () => {
     const escapeCsv = (value) => {
@@ -788,7 +778,7 @@ const AllInvoices = () => {
     );
   };
 
-  /* ---------------- RENDER ---------------- */
+  /* RENDER */
 
   return (
     <>
@@ -803,7 +793,7 @@ const AllInvoices = () => {
         }}
       >
         <Stack spacing={2}>
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={2}
             sx={{
@@ -828,10 +818,10 @@ const AllInvoices = () => {
               </Typography>
             </Box>
 
-            <Stack
+            <Stack useFlexGap
               direction="row"
               spacing={1.5}
-              sx={{ alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}
+              sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: "wrap" }}
             >
               <MuiButton
                 variant="outlined"
@@ -869,7 +859,7 @@ const AllInvoices = () => {
             </Stack>
           </Stack>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
             sx={{

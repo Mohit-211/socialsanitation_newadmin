@@ -1,7 +1,5 @@
-/** @format */
-
 import { Box } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AddUser, CityAPI, StateAPI } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -60,7 +58,6 @@ const AddCustomer = () => {
   const [disable, setDisable] = useState(false);
   const [userType, setUserType] = useState("residential");
 
-  // =========================================================
   // LOCATION — Country/State/City are owned ENTIRELY by the Form
   // now (name="country"/"state"/"city"). Previously these Selects
   // were double-controlled — bound to the Form via `name` AND
@@ -71,13 +68,11 @@ const AddCustomer = () => {
   // empty when the form was submitted. Reading the live selection
   // via Form.useWatch (below) instead of a parallel state removes
   // that desync entirely.
-  //
   // Lat/long and the Google Maps preview have been dropped — the
   // backend never required them for a client's address (it falls
   // back to null), so they were pure complexity for no benefit, and
   // were part of the same double-controlled-input bug on the
   // Address field itself.
-  // =========================================================
 
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -107,7 +102,7 @@ const AddCustomer = () => {
     StateAPI(watchedCountry)
       .then((res) => setStates(res?.data?.data?.all_state || []))
       .catch((err) => {
-        console.log("Error fetching states:", err);
+        console.error("Error fetching states:", err);
         setStates([]);
       });
   }, [watchedCountry]);
@@ -122,7 +117,7 @@ const AddCustomer = () => {
     CityAPI(watchedState)
       .then((res) => setCities(res?.data?.data?.all_city || []))
       .catch((err) => {
-        console.log("Error fetching cities:", err);
+        console.error("Error fetching cities:", err);
         setCities([]);
       });
   }, [watchedState]);
@@ -228,8 +223,6 @@ const AddCustomer = () => {
         },
       };
 
-      console.log(payload, "payload");
-
       const response = await AddUser(payload);
 
       if (response.status === 200) {
@@ -279,7 +272,7 @@ const AddCustomer = () => {
       : commercialAreas.map((item) => item.name);
 
   useEffect(() => {
-    form.resetFields(["details"]); // Or resetFields() for everything
+    form.resetFields(["details"]);
   }, [userType]);
 
   const calculateTotal = () => {
@@ -315,6 +308,7 @@ const AddCustomer = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -397,7 +391,7 @@ const AddCustomer = () => {
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item
                 label="Full Name"
                 name="name"
@@ -407,7 +401,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item
                 label="Email Address"
                 name="email"
@@ -417,7 +411,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item
                 label="Assign To"
                 name="assigned_to"
@@ -432,7 +426,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item label="Estimated Sq/Ft" name="sqft">
                 <Input type="number" min={0} />
               </Form.Item>
@@ -440,7 +434,7 @@ const AddCustomer = () => {
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item
                 label="Country"
                 name="country"
@@ -482,7 +476,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item
                 label="State"
                 name="state"
@@ -522,7 +516,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item label="City" name="city">
                 <Select
                   showSearch
@@ -547,7 +541,7 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Form.Item label="Address" name="address">
                 <Input placeholder="Street address" />
               </Form.Item>
@@ -605,7 +599,7 @@ const AddCustomer = () => {
             </div>
 
             <Row gutter={[24, 24]}>
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Carpet (%)"
                   name="carpet_percentage"
@@ -615,7 +609,7 @@ const AddCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Concrete (%)"
                   name="concrete_percentage"
@@ -625,7 +619,7 @@ const AddCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="VCT/LVT (%)"
                   name="vct_lvt_percentage"
@@ -635,7 +629,7 @@ const AddCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Tile (%)"
                   name="tile_percentage"

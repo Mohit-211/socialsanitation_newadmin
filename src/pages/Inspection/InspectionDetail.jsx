@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   message,
@@ -172,9 +170,7 @@ const InspectionDetail = () => {
 
   const canReview = REVIEWABLE_STATUSES.includes(inspection?.status);
 
-  /* ==========================================
-   * ITEM REVIEW
-   * ========================================== */
+  /* ITEM REVIEW */
 
   const openReviewModal = (item) => {
     if (!canReview || !item.employee_completed) return;
@@ -213,9 +209,7 @@ const InspectionDetail = () => {
     }
   };
 
-  /* ==========================================
-   * SECTION REVIEW
-   * ========================================== */
+  /* SECTION REVIEW */
 
   const openSectionModal = (section) => {
     if (!canReview || !section.review) return;
@@ -251,9 +245,7 @@ const InspectionDetail = () => {
     }
   };
 
-  /* ==========================================
-   * COMPLETE / REOPEN / SEND
-   * ========================================== */
+  /* COMPLETE / REOPEN / SEND */
 
   // Pre-fill with the existing overall remark so a re-completion
   // after a reopen doesn't silently wipe it.
@@ -339,9 +331,7 @@ const InspectionDetail = () => {
     );
   }
 
-  /* ==========================================
-   * DERIVED DATA
-   * ========================================== */
+  /* DERIVED DATA */
 
   const items = inspection?.items || [];
   const sectionReviews = inspection?.section_reviews || [];
@@ -435,9 +425,7 @@ const InspectionDetail = () => {
     ? reviewingSection.items.filter((i) => i.employee_completed).length
     : 0;
 
-  /* ==========================================
-   * RENDER HELPERS
-   * ========================================== */
+  /* RENDER HELPERS */
 
   const renderImageGroup = (images, groupKey) => (
     <div className="timeline-entry__body">
@@ -623,11 +611,9 @@ const InspectionDetail = () => {
 
         <Divider sx={{ my: 2 }} />
 
-        <Stack
+        <Stack sx={{ alignItems: "center", flexWrap: "wrap" }}
           direction="row"
           spacing={4}
-          alignItems="center"
-          flexWrap="wrap"
           useFlexGap
         >
           <Box sx={{ minWidth: 260, flex: 1 }}>
@@ -694,7 +680,7 @@ const InspectionDetail = () => {
         </Stack>
       </Paper>
 
-      {/* ================= SECTIONS TOOLBAR ================= */}
+      {/* SECTIONS TOOLBAR */}
       {sections.length > 0 && (
         <div className="sections-toolbar">
           <span className="sections-toolbar__label">
@@ -711,7 +697,7 @@ const InspectionDetail = () => {
         </div>
       )}
 
-      {/* ================= SECTIONS ================= */}
+      {/* SECTIONS */}
       {sections.map((section) => {
         const sectionCompleted = section.items.filter(
           (i) => i.employee_completed,
@@ -1038,10 +1024,10 @@ const InspectionDetail = () => {
         </Box>
       )}
 
-      {/* ================= ITEM REVIEW MODAL ================= */}
+      {/* ITEM REVIEW MODAL */}
       <Modal
         title={
-          <Stack direction="row" alignItems="center" spacing={1.25}>
+          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
             <Box
               sx={{
                 width: 34,
@@ -1113,10 +1099,10 @@ const InspectionDetail = () => {
         )}
       </Modal>
 
-      {/* ================= SECTION REVIEW MODAL ================= */}
+      {/* SECTION REVIEW MODAL */}
       <Modal
         title={
-          <Stack direction="row" alignItems="center" spacing={1.25}>
+          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
             <Box
               sx={{
                 width: 34,
@@ -1181,10 +1167,10 @@ const InspectionDetail = () => {
         />
       </Modal>
 
-      {/* ================= COMPLETE MODAL ================= */}
+      {/* COMPLETE MODAL */}
       <Modal
         title={
-          <Stack direction="row" alignItems="center" spacing={1.25}>
+          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
             <Box
               sx={{
                 width: 34,
@@ -1274,10 +1260,10 @@ const InspectionDetail = () => {
         />
       </Modal>
 
-      {/* ================= REOPEN MODAL ================= */}
+      {/* REOPEN MODAL */}
       <Modal
         title={
-          <Stack direction="row" alignItems="center" spacing={1.25}>
+          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
             <Box
               sx={{
                 width: 34,

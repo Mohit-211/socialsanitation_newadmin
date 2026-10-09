@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -47,7 +45,6 @@ const ViewBooking = () => {
       try {
         const res = await GetAllServiceCheckListByBookingId(id);
         setChecklistData(res.data.data);
-        console.log(res.data.data, "chejed");
       } catch (error) {
         console.error("Failed to fetch booking data:", error);
       }
@@ -100,6 +97,7 @@ const ViewBooking = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -138,12 +136,12 @@ const ViewBooking = () => {
       {/* Booking Information Card */}
       <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
         <CardContent>
-          <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
             General Information
           </Typography>
           <Divider />
           <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>Booking ID:</strong> {bookingData?.booking_unique_id}
               </Typography>
@@ -157,7 +155,7 @@ const ViewBooking = () => {
                   "--"}
               </Typography>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>Service Name:</strong>{" "}
                 {bookingData?.service_booking?.name ||
@@ -197,7 +195,7 @@ const ViewBooking = () => {
       {/* Employees Assigned */}
       <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
         <CardContent>
-          <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
             Employees Assigned
           </Typography>
           <Divider />
@@ -241,7 +239,7 @@ const ViewBooking = () => {
               style={{ marginTop: "15px" }}
             />
           ) : (
-            <Typography variant="body1" color="error" mt={2}>
+            <Typography sx={{ mt: 2 }} variant="body1" color="error">
               No Employees Assigned
             </Typography>
           )}
@@ -251,12 +249,12 @@ const ViewBooking = () => {
       {/* Booking Timings */}
       <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
         <CardContent>
-          <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
             Booking Schedule
           </Typography>
           <Divider />
           <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>Start Time:</strong>{" "}
                 {bookingData?.start_time
@@ -264,7 +262,7 @@ const ViewBooking = () => {
                   : "---"}
               </Typography>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>End Time:</strong>{" "}
                 {bookingData?.end_time
@@ -279,17 +277,17 @@ const ViewBooking = () => {
       {/* Booking Address */}
       <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
         <CardContent>
-          <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
             Address & Notes
           </Typography>
           <Divider />
           <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>Address:</strong> {fullAddress}
               </Typography>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Typography variant="body1">
                 <strong>Notes:</strong> {bookingData?.notes || "---"}
               </Typography>
@@ -300,11 +298,11 @@ const ViewBooking = () => {
 
       <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
         <CardContent>
-          <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
             Service Images
           </Typography>
           <Divider />
-          <Typography variant="body1" fontWeight="bold" mt={2}>
+          <Typography sx={{ fontWeight: "bold", mt: 2 }} variant="body1">
             Before Service
           </Typography>
           {beforeServiceImages?.length > 0 ? (
@@ -323,7 +321,7 @@ const ViewBooking = () => {
             </Typography>
           )}
 
-          <Typography variant="body1" fontWeight="bold" mt={2}>
+          <Typography sx={{ fontWeight: "bold", mt: 2 }} variant="body1">
             After Service
           </Typography>
           {afterServiceImages?.length > 0 ? (
@@ -348,7 +346,7 @@ const ViewBooking = () => {
         checkListData.map((headingGroup, index) => (
           <Card key={index} sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
             <CardContent>
-              <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
+              <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
                 {headingGroup.heading_title}
               </Typography>
 
@@ -445,7 +443,7 @@ const ViewBooking = () => {
                   })()}
                 </>
               ) : (
-                <Typography color="text.secondary" mt={2}>
+                <Typography sx={{ color: "text.secondary", mt: 2 }}>
                   You haven’t allotted any checklist to this service.{" "}
                   <Link
                     to={`/edit-checklist/${headingGroup.booking_id}`}
@@ -460,10 +458,10 @@ const ViewBooking = () => {
         ))
       ) : (
         <Card sx={{ p: 3, boxShadow: 3 }}>
-          <Typography color="text.secondary">
+          <Typography sx={{ color: "text.secondary" }}>
             You haven’t allotted any checklist to this service.{" "}
             <Link
-              to={`/editService/${bookingData?.service_id}`} // <-- make sure this is defined
+              to={`/editService/${bookingData?.service_id}`}
               style={{ textDecoration: "underline", color: "#1976d2" }}
             >
               Click here to allot checklist

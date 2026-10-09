@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useState } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -27,7 +25,7 @@ const ChangePassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // NEW: live password requirement checks — purely visual guidance,
+  // live password requirement checks — purely visual guidance,
   // doesn't block submission (backend remains source of truth for rules).
   const requirements = [
     { label: "At least 8 characters", met: newPassword.length >= 8 },
@@ -257,13 +255,13 @@ const ChangePassword = () => {
                 }}
               />
 
-              {/* NEW: live requirement checklist */}
+              {/* live requirement checklist */}
               {newPassword.length > 0 && (
                 <Box
                   sx={{
                     mt: 1,
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
                     gap: "4px 12px",
                   }}
                 >
@@ -335,7 +333,7 @@ const ChangePassword = () => {
                 }}
               />
 
-              {/* NEW: live match indicator */}
+              {/* live match indicator */}
               {confirmPassword.length > 0 && (
                 <Box
                   sx={{

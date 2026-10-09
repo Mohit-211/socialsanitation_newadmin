@@ -18,7 +18,7 @@ const EditRole = () => {
         setIdData(res.data.data);
       })
       .catch((err) => {
-        console.log(err, "error");
+        console.error(err, "error");
       });
   }, [id]);
 
@@ -62,8 +62,8 @@ const EditRole = () => {
     navigate("/role-list");
   };
   return (
-    <Box m="20px">
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box sx={{ m: "20px" }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}>
         <h3 style={{ marginBottom: "60px" }}>Edit Role</h3>
       </Box>
       <Card>
@@ -109,7 +109,7 @@ const EditRole = () => {
             <Button
               icon="pi pi-times"
               severity="secondary"
-              onClick={(e) => {
+              onClick={() => {
                 navigateToRole();
               }}
               style={{ borderRadius: "10px", marginLeft: "10px" }}

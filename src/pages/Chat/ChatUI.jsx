@@ -1,30 +1,14 @@
-/** @format */
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Button, Card, Spin, Input, Avatar, Tooltip, Upload, message } from "antd";
 import {
-  Button,
-  Card,
-  Typography,
-  Spin,
-  Input,
-  Avatar,
-  Tooltip,
-  Upload,
-  message,
-} from "antd";
-import {
+  ArrowLeftOutlined,
   SmileOutlined,
   PlusOutlined,
   CloseCircleFilled,
   UserOutlined,
 } from "@ant-design/icons";
 import EmojiPicker from "emoji-picker-react";
-import {
-  ref as dbRef,
-  onValue,
-  push,
-  serverTimestamp,
-  set,
-} from "firebase/database";
+import { ref as dbRef, onValue, push, set } from "firebase/database";
 import {
   getStorage,
   ref as storageRef,
@@ -50,7 +34,6 @@ const ChatUI = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [uploadingImages, setUploadingImages] = useState(false);
   const [chatListLoading, setChatListLoading] = useState(true);
 
   const adminId = localStorage.getItem("adminId");
@@ -111,20 +94,15 @@ const ChatUI = () => {
   };
 
   const handleSend = async () => {
-    console.log("hello image function calling");
     if (!newMessage.trim() && selectedImages.length === 0) return;
     if (!adminId || !selectedChat?.id) return;
-    console.log(selectedImages.length, adminId, selectedChat?.id, "data");
 
     setSending(true);
-    setUploadingImages(true);
 
     try {
       const uploadedUrls = [];
-      console.log("helo");
       // Upload all selected images to Firebase Storage
       for (const file of selectedImages) {
-        console.log(file, "file");
         if (!file || !file.name) {
           console.error("Skipping invalid file:", file);
           continue;
@@ -133,18 +111,12 @@ const ChatUI = () => {
         const imagePath = `one_to_one_uploads/${adminId}/${Date.now()}_${
           file.name
         }`;
-        console.log("Uploading to path:", imagePath);
 
         const imageRef = storageRef(storage, imagePath);
-        console.log(imageRef, "imageRef");
         await uploadBytes(imageRef, file);
-        console.log(uploadBytes, "uploadBytes");
-        console.log(imageRef, file, "imageRef, file");
 
         const downloadURL = await getDownloadURL(imageRef);
-        console.log(downloadURL, "downloadURL");
         uploadedUrls.push(downloadURL);
-        console.log(uploadedUrls, "uploadedUrls");
       }
 
       // Construct chat message
@@ -180,7 +152,6 @@ const ChatUI = () => {
       message.error("Send failed");
     } finally {
       setSending(false);
-      setUploadingImages(false);
     }
   };
 
@@ -188,15 +159,6 @@ const ChatUI = () => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const getInitials = (name) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   useEffect(() => {
@@ -207,6 +169,7 @@ const ChatUI = () => {
 
   return (
     <div
+      className={`chat-layout${selectedChat ? " chat-layout--open" : ""}`}
       style={{
         display: "flex",
         height: "100vh",
@@ -217,6 +180,7 @@ const ChatUI = () => {
     >
       {/* Left Panel */}
       <div
+        className="chat-layout__list"
         style={{
           width: "30%",
           background: "#fff",
@@ -300,6 +264,7 @@ const ChatUI = () => {
 
       {/* Right Panel */}
       <div
+        className="chat-layout__conversation"
         style={{
           width: "70%",
           background: "#fff",
@@ -338,6 +303,13 @@ const ChatUI = () => {
                 zIndex: 10,
               }}
             >
+              <Button
+                className="chat-layout__back"
+                type="text"
+                aria-label="Back to chats"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => setSelectedChat(null)}
+              />
               <Avatar
                 size={40}
                 src={
@@ -361,10 +333,9 @@ const ChatUI = () => {
                 padding: "20px",
                 background: "#fafafa",
               }}
-              // ref={messagesEndRef}
             >
               {messages.map((msg) => {
-                const isSender = msg.source === "SENDER"; // <- USE THIS!
+                const isSender = msg.source === "SENDER";
                 return (
                   <div
                     key={msg.id}

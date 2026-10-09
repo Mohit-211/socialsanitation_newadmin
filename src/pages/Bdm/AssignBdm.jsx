@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import {
   GetAllUsers,
   GetUserByBDMId,
@@ -46,7 +44,7 @@ const AssignBdm = () => {
           setSelectedUsers(assignedUsersList);
           form.setFieldsValue({ user_id: assignedUsersList });
         })
-        .catch((err) => {
+        .catch(() => {
           message.error("Error loading assigned users.");
         });
     }
@@ -82,7 +80,7 @@ const AssignBdm = () => {
       const response = await AssignUser(payload);
       message.success(response.data.message || "Users assigned successfully!");
       navigate("/bdm-list");
-    } catch (error) {
+    } catch {
       message.error("Failed to assign users.");
     } finally {
       setLoading(false);
@@ -105,6 +103,7 @@ const AssignBdm = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -258,7 +257,7 @@ const AssignBdm = () => {
 
           <Divider sx={{ mt: 2.5, mb: 2 }} />
 
-          <Box display="flex" justifyContent="flex-end">
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Space size="middle">
               <Button
                 size="large"

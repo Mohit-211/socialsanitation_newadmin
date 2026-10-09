@@ -1,4 +1,3 @@
-/** @format */
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 

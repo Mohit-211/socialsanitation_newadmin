@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Select, message, Divider, Drawer, Tag, Modal, Spin, Input } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -9,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import dayjs from "@/lib/dayjs";
-import { Eye, Search, User, Clock, ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { UserOutlined, ClockCircleOutlined, ShoppingCartOutlined, FileImageOutlined } from "@ant-design/icons";
 
 import {
@@ -59,7 +57,7 @@ const InventoryRequest = () => {
             await UpdateRequestStatus(id, { status });
             message.success("Status updated successfully");
             getData();
-        } catch (error) {
+        } catch {
             message.error("Error updating status");
         }
     };
@@ -70,7 +68,7 @@ const InventoryRequest = () => {
     };
 
     const getStatusTag = (status) => {
-        let color = "";
+        let color;
         if (status === "Pending") color = "orange";
         else if (status === "Approved") color = "green";
         else if (status === "Rejected") color = "red";
@@ -224,7 +222,7 @@ const InventoryRequest = () => {
                     borderColor: "#eef0f2",
                 }}
             >
-                <Stack
+                <Stack useFlexGap
                     direction="row"
                     spacing={2}
                     sx={{
@@ -260,7 +258,7 @@ const InventoryRequest = () => {
                 </Stack>
             </Paper>
 
-            {/* --- Main Table --- */}
+            {/* Main Table */}
             <Table
                 columns={columns}
                 rowKey={(record) => record.id}
@@ -279,7 +277,7 @@ const InventoryRequest = () => {
                 }}
             />
 
-            {/* --- Request Details Drawer --- */}
+            {/* Request Details Drawer */}
             <Drawer
                 title={<span style={{ fontWeight: 700 }}>Request Details</span>}
                 width={selectedRequest?.product_request_attachments?.length ? 550 : 400} // Dynamic width
@@ -302,7 +300,6 @@ const InventoryRequest = () => {
                                 Requested on:{dayjs(selectedRequest.created_at).format("MMMM D, YYYY [at] h:mm A")}
                             </div>
                         </div>
-
 
                         {/* Employee Details Section */}
                         <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px", borderLeft: '4px solid #1890ff', paddingLeft: '8px' }}>
@@ -408,7 +405,7 @@ const InventoryRequest = () => {
                 )}
             </Drawer>
 
-            {/* --- Full-Screen Image Modal (Lightbox) --- */}
+            {/* Full-Screen Image Modal (Lightbox) */}
             <Modal
                 visible={isModalVisible}
                 title="Attachment View"

@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
@@ -9,11 +7,7 @@ import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
 import { Plus } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-import {
-  DeleteContractAgreement,
-  GetAllContractAgreements,
-  ResumeSigningContract,
-} from "../../services/Api/Api";
+import { DeleteContractAgreement, GetAllContractAgreements } from "../../services/Api/Api";
 
 const ContractAgreement = () => {
   const navigate = useNavigate();
@@ -109,12 +103,6 @@ const ContractAgreement = () => {
                   Edit
                 </Button>
 
-                {/* <Button
-                  type="primary"
-                  onClick={() => requestSigningUrl(record)}
-                >
-                  Sign This PDF
-                </Button> */}
               </>
             )}
 
@@ -139,12 +127,12 @@ const ContractAgreement = () => {
       }));
       setData(newData);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 403) {
         navigate("/error401");
-        console.log("Access denied. You do not have the required permissions.");
+        console.error("Access denied. You do not have the required permissions.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -167,25 +155,6 @@ const ContractAgreement = () => {
       sortField: sorter.field,
       sortOrder: sorter.order,
     });
-  };
-
-  const requestSigningUrl = async (record) => {
-    try {
-      setLoading(true);
-
-      const res = await ResumeSigningContract(record.id);
-      console.log(res, "res");
-
-      const signingUrl = res?.data?.data?.data?.signingUrl;
-
-      if (signingUrl) {
-        window.open(signingUrl, "_blank");
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -246,7 +215,6 @@ const ContractAgreement = () => {
       </Paper>
 
       <Table
-        // rowSelection={rowSelection}
         columns={columns}
         rowKey={(record) => record.id}
         dataSource={data}
@@ -259,6 +227,5 @@ const ContractAgreement = () => {
     </Box>
   );
 };
-
 
 export default ContractAgreement;

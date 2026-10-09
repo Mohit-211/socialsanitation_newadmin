@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import "./ServiceQuoteForm.css";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -13,8 +11,6 @@ import {
   SaveDraftQuote,
   SendQuote,
 } from "../../services/Api/Api";
-import { UNSAFE_NavigationContext } from "react-router-dom";
-import { useContext } from "react";
 import {
   message,
   Spin,
@@ -64,12 +60,10 @@ const ServiceQuoteForm = () => {
     ],
     totalAmount: "",
     date: "",
-    // square_payment_url: "",
   });
 
   const [drafts, setDrafts] = useState([]);
   const [selectedDraftId, setSelectedDraftId] = useState(null);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
@@ -129,10 +123,6 @@ const ServiceQuoteForm = () => {
     }
   };
 
-  //   useEffect(() => {
-  //     calculateTotal();
-  //   }, [formData.items]);
-
   useEffect(() => {
     const loadDrafts = async () => {
       const res = await GetAllDraftQuotes(id);
@@ -174,7 +164,7 @@ const ServiceQuoteForm = () => {
         }));
       })
       .catch((err) => {
-        console.log(err, "error");
+        console.error(err, "error");
         message.error("Failed to load user details");
       });
   }, [id]);
@@ -224,7 +214,7 @@ const ServiceQuoteForm = () => {
     const updatedItems = formData.items.map((item) => {
       const unitPrice = parseFloat(item.unit_price) || 0;
 
-      let multiplier = 1;
+      let multiplier;
 
       if (item.calculation_type === "hour") {
         multiplier = parseFloat(item.hour) || 1;
@@ -304,8 +294,6 @@ const ServiceQuoteForm = () => {
       date: formData.date,
       cc_email: ccEmail,
 
-      // tip: parseFloat(formData.tip || 0),
-      // square_payment_url: formData.square_payment_url,
     };
 
     try {
@@ -425,7 +413,6 @@ const ServiceQuoteForm = () => {
       render: (text, record, index) => (
         <InputNumber
           min={1}
-          // precision={0}
           step={1}
           value={text !== "" ? Number(text) : undefined}
           onChange={(value) => handleItemChange(index, "quantity", value)}
@@ -500,30 +487,6 @@ const ServiceQuoteForm = () => {
         );
       },
     },
-    // {
-    // 	title: "Sqft",
-    // 	dataIndex: "sqft",
-    // 	key: "sqft",
-    // 	render: (text, record, index) => (
-    // 		<Input
-    // 			disabled={isLocked}
-    // 			value={text === "N/A" ? "" : text} // show empty if N/A
-    // 			placeholder="N/A" // show N/A as placeholder
-    // 			onChange={(e) => {
-    // 				const val = e.target.value;
-    // 				// allow only numbers or empty string
-    // 				if (val === "" || /^\d*$/.test(val)) {
-    // 					handleItemChange(index, "sqft", val === "" ? "N/A" : val);
-    // 				}
-    // 			}}
-    // 			style={{
-    // 				width: "100%",
-    // 				fontStyle: text === "N/A" ? "italic" : "normal",
-    // 				color: text === "N/A" ? "#999" : "#000",
-    // 			}}
-    // 		/>
-    // 	),
-    // },
     {
       title: "Unit Price",
       dataIndex: "unit_price",
@@ -969,29 +932,6 @@ const ServiceQuoteForm = () => {
         </div>
 
         {/* Square Payment Link Section */}
-        {/* <div
-					style={{
-						marginTop: "40px",
-						textAlign: "center",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: "10px",
-					}}
-				>
-					<strong>Square Payment Link</strong>
-					<Input
-						placeholder="Enter Square Payment Link"
-						style={{ width: "60%" }}
-						value={formData.square_payment_url}
-						onChange={(e) =>
-							setFormData({
-								...formData,
-								square_payment_url: e.target.value,
-							})
-						}
-					/>
-				</div> */}
 
         <div
           className="disclaimer"
@@ -1013,13 +953,11 @@ const ServiceQuoteForm = () => {
           contact your representative.
         </div>
 
-        <div className="quote-form">
+        <div className="quote-form" style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
-            style={{ left: "85%" }}
             onClick={handleSubmit}
             loading={isLoading}
-            // disabled={isLoading}
           >
             Send PDF via Email
           </Button>

@@ -1,5 +1,5 @@
 import { Button, Checkbox, DatePicker, Form, Input, Space, Table } from "antd";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 const EmployeeDirectDeposite = () => {
     const [form] = Form.useForm();

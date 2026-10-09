@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -11,7 +9,6 @@ import { Select, message, Table, Drawer } from "antd";
 import { GetAllReports, UpdateReport } from "../../services/Api/ReportApi";
 import dayjs from "@/lib/dayjs";
 import { Eye } from "lucide-react";
-import { BASE_URL_IMAGE } from "../../services/Host";
 
 const actionIconBtn = (color) => ({
 	width: 34,
@@ -49,11 +46,6 @@ const Report = () => {
 			sorter: (a, b) => a.index - b.index,
 			width: "5%",
 		},
-		// {
-		// 	title: "Type",
-		// 	dataIndex: "report_type",
-		// 	width: "15%",
-		// },
 		{
 			title: "Reported By",
 			dataIndex: ["report_user", "user_profile", "name"],
@@ -116,7 +108,7 @@ const Report = () => {
 
 						// Optionally, reload data to reflect changes from the server
 						getData(tableParams);
-					} catch (error) {
+					} catch {
 						// Handle any errors
 						message.error({
 							content: "Failed to update status. Please try again.",
@@ -179,19 +171,6 @@ const Report = () => {
 		},
 	];
 
-	const formatDateTime = (date, time) => {
-		if (!date || !time) return "---";
-		const dateObj = new Date(`${date}T${time}`);
-		return dateObj.toLocaleString("en-US", {
-			day: "2-digit",
-			month: "short",
-			year: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-			hour12: true,
-		});
-	};
-
 	const getData = async (params = {}) => {
 		try {
 			setLoading(true);
@@ -218,11 +197,11 @@ const Report = () => {
 			});
 		} catch (e) {
 			// Log the full error object to inspect the structure
-			console.log("Error object: ", e);
+			console.error("Error object: ", e);
 
 			if (e.response && e.response.status === 401) {
 				navigate("/error401");
-				console.log("You do not have access to this page as a sub-admin.");
+				console.error("You do not have access to this page as a sub-admin.");
 			} else if (e.response && e.response.status === 500) {
 				// Handling specific 500 error
 				const errorMessage = e.response.data?.message || e.response.message;
@@ -230,10 +209,10 @@ const Report = () => {
 					message.error("Session Expired");
 					navigate("/login");
 				} else {
-					console.log("Server error. Please try again later.");
+					console.error("Server error. Please try again later.");
 				}
 			} else {
-				console.log("Error loading data. Please try again later.");
+				console.error("Error loading data. Please try again later.");
 			}
 		} finally {
 			setLoading(false);
@@ -294,7 +273,7 @@ const Report = () => {
 	onClose={() => setDrawerVisible(false)}
 	title="Report Details"
 >
-				<Box padding={2}>
+				<Box sx={{ padding: 2 }}>
 					{selectedReport && (
 						<>
 							<p>

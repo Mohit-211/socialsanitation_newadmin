@@ -1,16 +1,5 @@
-/** @format */
-
-import React, { useEffect, useRef, useState } from "react";
-import {
-  Table,
-  Space,
-  message,
-  Modal,
-  Tooltip,
-  Select,
-  Input,
-  Typography as AntTypography,
-} from "antd";
+import { useEffect, useRef, useState } from "react";
+import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -63,11 +52,6 @@ const NEARBY_CLIENT_COLOR = "#1976D2";
 const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
 const NEARBY_SELECTED_COLOR = "#FB8C00";
 
-const nearbyMapContainerStyle = {
-  width: "100%",
-  height: "420px",
-};
-
 // 🔹 Shared circular icon-button styling so every action button in the
 // table stays visually consistent instead of repeating sx objects.
 const actionIconBtn = (color) => ({
@@ -89,7 +73,7 @@ const renderAddress = (user_address, maxWidth = 220) => {
 
   if (!address) {
     return (
-      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: "#9CA3AF" }}>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "#9CA3AF" }}>
         <MapPin size={14} />
         <span style={{ fontSize: 13 }}>N/A</span>
       </Stack>
@@ -110,8 +94,7 @@ const renderAddress = (user_address, maxWidth = 220) => {
       <Stack
         direction="row"
         spacing={0.75}
-        alignItems="flex-start"
-        sx={{ maxWidth, cursor: "default" }}
+        sx={{ alignItems: "flex-start", maxWidth, cursor: "default" }}
       >
         <MapPin
           size={14}
@@ -488,7 +471,7 @@ const User = () => {
       dataIndex: "action",
       width: 300,
       render: (_, record) => (
-        <Stack direction="row" spacing={1} flexWrap="nowrap">
+        <Stack useFlexGap sx={{ flexWrap: "nowrap" }} direction="row" spacing={1}>
           <Tooltip title="View Nearby Employees">
             <IconButton
               size="small"
@@ -595,12 +578,12 @@ const User = () => {
       setData(newData);
       setUserBackupData(newData);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 401) {
         navigate("/error401");
-        console.log("You do not have access to this page as a sub-admin.");
+        console.error("You do not have access to this page as a sub-admin.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -717,8 +700,7 @@ const User = () => {
         key: "odd",
         text: "Select Odd Row",
         onSelect: (changeableRowKeys) => {
-          let newSelectedRowKeys = [];
-          newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
+          const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
             if (index % 2 !== 0) {
               return false;
             }
@@ -731,8 +713,7 @@ const User = () => {
         key: "even",
         text: "Select Even Row",
         onSelect: (changeableRowKeys) => {
-          let newSelectedRowKeys = [];
-          newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
+          const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
             if (index % 2 !== 0) {
               return true;
             }
@@ -757,12 +738,9 @@ const User = () => {
       >
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
           spacing={2}
           useFlexGap
-          flexWrap="wrap"
-          sx={{ width: "100%" }}
+          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
         >
           {/* Left */}
           <Box>
@@ -781,6 +759,7 @@ const User = () => {
             sx={{
               ml: "auto",
               alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
             }}
           >
             <Input
@@ -860,13 +839,11 @@ const User = () => {
         size="middle"
       />
 
-      {/* ---------------------------------------------------------------- */}
       {/* Reset Email / Password modal                                      */}
-      {/* ---------------------------------------------------------------- */}
       {editModalVisible && (
         <Modal
           title={
-            <Stack direction="row" alignItems="center" spacing={1.25}>
+            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
               <Box
                 sx={{
                   width: 34,
@@ -981,13 +958,11 @@ const User = () => {
         </Modal>
       )}
 
-      {/* ---------------------------------------------------------------- */}
       {/* Nearby Employees modal (map + list) — redesigned                   */}
-      {/* ---------------------------------------------------------------- */}
       {nearbyModalVisible && (
         <Modal
           title={
-            <Stack direction="row" alignItems="center" spacing={1.25}>
+            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
               <Box
                 sx={{
                   width: 34,
@@ -1025,7 +1000,6 @@ const User = () => {
           onCancel={() => setNearbyModalVisible(false)}
           footer={null}
           width={900}
-          // style={{ top: 40 }}
         >
           <Divider sx={{ mt: 1, mb: 2 }} />
 
@@ -1033,18 +1007,15 @@ const User = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: "20px",
               alignItems: "center",
               marginBottom: "10px",
             }}
           >
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
+            <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}
             >
-              <Stack direction="row" spacing={0.75} alignItems="center">
+              <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
                 <Navigation size={14} color="#9ca3af" />
                 <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
                   Client & closest employees
@@ -1080,7 +1051,7 @@ const User = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: "20px",
               alignItems: "stretch",
               width: "100%",

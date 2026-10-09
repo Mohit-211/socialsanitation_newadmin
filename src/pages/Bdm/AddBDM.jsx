@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreateAdmin } from "../../services/Api/Api";
 import Box from "@mui/material/Box";
@@ -101,6 +99,7 @@ const AddBDM = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}

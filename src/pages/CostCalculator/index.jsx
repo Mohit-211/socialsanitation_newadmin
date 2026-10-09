@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { CalculatorOutlined, HistoryOutlined } from "@ant-design/icons";
 import CostCalculator from "./CostCalculator";
 import CalculationHistory from "./CalculationHistory";

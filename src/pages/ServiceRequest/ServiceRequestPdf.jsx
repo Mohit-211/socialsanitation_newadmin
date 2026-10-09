@@ -1,8 +1,6 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./Servicerequest.scss";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 
 import {
   message,
@@ -29,7 +27,6 @@ const ServiceRequestPdf = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState([]);
-  const { id } = useParams();
   const [formData, setFormData] = useState({
     ref: "",
     reference_type: "",
@@ -56,10 +53,7 @@ const ServiceRequestPdf = () => {
     date: null,
   });
   const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  const [selectedDraftId, setSelectedDraftId] = useState(null);
-  const [isDirty, setIsDirty] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
 
@@ -75,8 +69,6 @@ const ServiceRequestPdf = () => {
     const user = users.find((u) => u.id === userId);
 
     if (!user) return;
-
-    setSelectedUser(user);
 
     const address = user.address || {};
 
@@ -115,7 +107,6 @@ const ServiceRequestPdf = () => {
   };
 
   const addItem = () => {
-    setIsDirty(true);
     setFormData({
       ...formData,
       items: [
@@ -238,7 +229,6 @@ const ServiceRequestPdf = () => {
   const isLocked = quoteStatus === "SAVED";
 
   const deleteItem = (index) => {
-    setIsDirty(true);
     if (formData.items.length === 1) {
       message.warning("At least one item is required");
       return;
@@ -334,7 +324,6 @@ const ServiceRequestPdf = () => {
       render: (text, record, index) => (
         <InputNumber
           min={1}
-          // precision={0}
           step={1}
           value={text !== "" ? Number(text) : undefined}
           onChange={(value) => handleItemChange(index, "quantity", value)}
@@ -412,7 +401,6 @@ const ServiceRequestPdf = () => {
                 placeholder="Select Ref Type"
                 style={{ width: "100%", marginTop: 5 }}
                 onChange={async (value) => {
-                  setIsDirty(true);
 
                   setFormData((prev) => ({
                     ...prev,
@@ -458,7 +446,6 @@ const ServiceRequestPdf = () => {
                 value={formData.ref}
                 placeholder="Enter reference number"
                 onChange={(e) => {
-                  setIsDirty(true);
                   setIsRefManuallyEdited(true);
                   setFormData({ ...formData, ref: e.target.value });
                 }}
@@ -636,13 +623,11 @@ const ServiceRequestPdf = () => {
           our representative.
         </div>
 
-        <div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
-            style={{ left: "85%" }}
             onClick={handleSubmit}
             loading={isLoading}
-            // disabled={isLoading}
           >
             Send PDF via Email
           </Button>

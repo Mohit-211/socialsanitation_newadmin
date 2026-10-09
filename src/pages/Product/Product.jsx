@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Tooltip, Input } from "antd";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -153,12 +151,12 @@ const Product = () => {
 			setData(newData);
 			setUserBackupData(newData);
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 			if (e.response && e.response.status === 401) {
 				navigate("/error401");
-				console.log("You do not have access to this page as a sub-admin.");
+				console.error("You do not have access to this page as a sub-admin.");
 			} else {
-				console.log("Error loading data. Please try again later.");
+				console.error("Error loading data. Please try again later.");
 			}
 		} finally {
 			setLoading(false);
@@ -219,8 +217,7 @@ const Product = () => {
 				key: "odd",
 				text: "Select Odd Row",
 				onSelect: (changeableRowKeys) => {
-					let newSelectedRowKeys = [];
-					newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
+					const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
 						if (index % 2 !== 0) {
 							return false;
 						}
@@ -233,8 +230,7 @@ const Product = () => {
 				key: "even",
 				text: "Select Even Row",
 				onSelect: (changeableRowKeys) => {
-					let newSelectedRowKeys = [];
-					newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
+					const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
 						if (index % 2 !== 0) {
 							return true;
 						}
@@ -258,7 +254,7 @@ const Product = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap
 					direction="row"
 					spacing={2}
 					sx={{
@@ -283,10 +279,10 @@ const Product = () => {
 						</Typography>
 					</Box>
 
-					<Stack
+					<Stack useFlexGap
 						direction="row"
 						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: 0 }}
+						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
 					>
 						<Input
 							allowClear

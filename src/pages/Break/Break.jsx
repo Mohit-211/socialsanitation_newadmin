@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { GetAllBreaks } from "../../services/Api/leaveRequestApi";
 import { Table, DatePicker, Tag, Input } from "antd";
 import "./Break.scss";
@@ -177,7 +175,7 @@ const Break = () => {
         variant="outlined"
         sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -196,15 +194,11 @@ const Break = () => {
           <Stack
             spacing={2}
             sx={{
-              width: 470,
+              width: { xs: "100%", sm: 470 },
             }}
           >
             {/* Top Row */}
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="flex-end"
-              gap={2}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}
             >
               <DatePicker
                 format="MM/DD/YYYY"

@@ -1,10 +1,8 @@
-/** @format */
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
 //get all products
-export const GetAllHiringForm = async (adminToken, role_id) => {
+export const GetAllHiringForm = async () => {
   try {
     const res = await axios.get(BASE_URL + "/form/getAllForm");
     return res;

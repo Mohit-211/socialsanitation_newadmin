@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -9,7 +7,6 @@ import {
   message,
   Row,
   Col,
-  Typography,
   DatePicker,
   Select,
   Tabs,
@@ -56,12 +53,10 @@ const fetchUserScopeView = async (userId) => {
 
     const sections = res?.data?.data?.data || [];
 
-    console.log("CURRENT USER SCOPE:", sections);
-
     setScopeSections(sections);
     setHasUserScope(Array.isArray(sections) && sections.length > 0);
   } catch (error) {
-    console.log("Failed to fetch user scope:", error);
+    console.error("Failed to fetch user scope:", error);
     setScopeSections([]);
     setHasUserScope(false);
   } finally {
@@ -103,7 +98,7 @@ const fetchUserScopeView = async (userId) => {
         message.success("PDF generated successfully");
         navigate("/pdf-generation");
       }
-    } catch (err) {
+    } catch {
       message.error("Error generating PDF");
     } finally {
       setLoading(false);
@@ -115,7 +110,7 @@ const fetchUserScopeView = async (userId) => {
       const res = await GetAllUserName();
       setUsers(res.data.data);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -144,7 +139,7 @@ const fetchUserScopeView = async (userId) => {
       const res = await GetBDMByUserId(userId);
       setBdm(res?.data?.data || null);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -153,7 +148,7 @@ const fetchUserScopeView = async (userId) => {
       const res = await GetAllBDMS();
       setBdmList(res.data.data);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -184,7 +179,7 @@ const fetchUserScopeView = async (userId) => {
 
       setIsModalOpen(false);
       setSelectedBDM(null);
-    } catch (err) {
+    } catch {
       message.error("Failed to assign BDM");
     }
   };
@@ -235,12 +230,12 @@ const fetchUserScopeView = async (userId) => {
         setBdm(bdmRes?.data?.data || null);
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to load estimate");
     }
   };
 
-  /* ─── Tab items ─── */
+  /* Tab items */
   const tabItems = [
     {
       key: "1",
@@ -260,7 +255,7 @@ const fetchUserScopeView = async (userId) => {
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Client Company Name"
                     name="client_company_name"
@@ -269,7 +264,7 @@ const fetchUserScopeView = async (userId) => {
                     <Input placeholder="e.g. Acme Corp" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Address Line 1"
                     name="address_line_1"
@@ -278,12 +273,12 @@ const fetchUserScopeView = async (userId) => {
                     <Input placeholder="Street address" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item label="Address Line 2" name="address_line_2">
                     <Input placeholder="Suite, unit, etc." />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="City"
                     name="city"
@@ -292,7 +287,7 @@ const fetchUserScopeView = async (userId) => {
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="State"
                     name="state"
@@ -301,11 +296,10 @@ const fetchUserScopeView = async (userId) => {
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Zip Code"
                     name="zip"
-                    // rules={[{ required: true }]}
                   >
                     <Input />
                   </Form.Item>
@@ -318,11 +312,10 @@ const fetchUserScopeView = async (userId) => {
             <div className="ge-section__label">
               <span className="ge-section__num">02</span>
               Contact Information
-              {/* <span className="ge-section__page">Page 10</span> */}
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Select Client"
                     name="user_id"
@@ -347,7 +340,7 @@ const fetchUserScopeView = async (userId) => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Contact Name"
                     name="contact_name"
@@ -356,7 +349,7 @@ const fetchUserScopeView = async (userId) => {
                     <Input placeholder="Enter contact name" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Phone"
                     name="contact_phone"
@@ -365,12 +358,12 @@ const fetchUserScopeView = async (userId) => {
                     <Input placeholder="Enter phone number" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item label="Fax" name="contact_fax">
                     <Input placeholder="Enter fax number" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Email"
                     name="contact_email"
@@ -448,7 +441,7 @@ const fetchUserScopeView = async (userId) => {
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Signed Date"
                     name="signed_date"

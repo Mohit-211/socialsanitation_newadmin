@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
@@ -9,11 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import dayjs from "@/lib/dayjs";
-import {
-  DeleteServiceEstimate,
-  GetAllServiceEstimate,
-  ResumeSigning,
-} from "../../services/Api/Api";
+import { DeleteServiceEstimate, GetAllServiceEstimate } from "../../services/Api/Api";
 
 const PdfGeneration = () => {
   const navigate = useNavigate();
@@ -131,12 +125,12 @@ const PdfGeneration = () => {
       }));
       setData(newData);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 403) {
         navigate("/error401");
-        console.log("Access denied. You do not have the required permissions.");
+        console.error("Access denied. You do not have the required permissions.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -161,25 +155,6 @@ const PdfGeneration = () => {
     });
   };
 
-  const requestSigningUrl = async (record) => {
-    try {
-      setLoading(true);
-
-      const res = await ResumeSigning(record.id);
-      console.log(res, "res");
-
-      const signingUrl = res?.data?.data?.data?.signingUrl;
-
-      if (signingUrl) {
-        window.open(signingUrl, "_blank");
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Box>
       <Paper
@@ -193,12 +168,9 @@ const PdfGeneration = () => {
       >
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
           spacing={2}
           useFlexGap
-          flexWrap="wrap"
-          sx={{ width: "100%" }}
+          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
         >
           {/* Left */}
           <Box>
@@ -215,8 +187,7 @@ const PdfGeneration = () => {
             direction="row"
             spacing={1.5}
             useFlexGap
-            flexWrap="wrap"
-            sx={{ ml: "auto", alignItems: "center" }}
+            sx={{ flexWrap: "wrap", ml: "auto", alignItems: "center" }}
           >
             <Button
               onClick={() => navigate("/universal-scope-of-work")}
@@ -240,7 +211,6 @@ const PdfGeneration = () => {
       </Paper>
 
       <Table
-        // rowSelection={rowSelection}
         columns={columns}
         rowKey={(record) => record.id}
         dataSource={data}

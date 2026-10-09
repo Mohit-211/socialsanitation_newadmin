@@ -1,4 +1,3 @@
-import React from "react";
 import { Modal, Tag, Divider, Button } from "antd";
 import dayjs from "@/lib/dayjs";
 
@@ -23,7 +22,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       onCancel={onClose}
       title={null}
     >
-      {/* ===== Header ===== */}
+      {/* Header */}
       <div
         style={{
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -69,7 +68,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
         </div>
       </div>
 
-      {/* ===== Client Info ===== */}
+      {/* Client Info */}
       <div
         style={{
           background: "#f8f9fa",
@@ -86,7 +85,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
         </div>
       </div>
 
-      {/* ===== Dates & Address ===== */}
+      {/* Dates & Address */}
       <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
         <InfoRow label="Service Date">
           {dayjs(invoice.service_dates).format("MM/DD/YYYY") || "N/A"}
@@ -107,7 +106,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
 
       <Divider />
 
-      {/* ===== Items ===== */}
+      {/* Items */}
       <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
         ITEMS
       </h4>
@@ -143,7 +142,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
         ))}
       </div>
 
-      {/* ===== Payment Link ===== */}
+      {/* Payment Link */}
       <div style={{ marginTop: 20 }}>
         {invoice.payment_status === "PAID" ||
         invoice.payment_status === "CASH_PAID" ? (

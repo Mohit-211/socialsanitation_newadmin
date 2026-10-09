@@ -1,5 +1,3 @@
-/** @format */
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
@@ -111,8 +109,6 @@ export const ImportInvoicesCSV = async (formData) => {
     {
       headers: {
         "x-access-token": localStorage.getItem("adminToken"),
-        // role_id: localStorage.getItem("roleId"),
-        // "Content-Type": "multipart/form-data",
       },
     },
   );
@@ -129,8 +125,6 @@ export const UploadHistoricalInvoicePDF = async (invoiceId, file) => {
       {
         headers: {
           "x-access-token": localStorage.getItem("adminToken"),
-          // role_id: localStorage.getItem("roleId"),
-          // "Content-Type": "multipart/form-data",
         },
       },
     );

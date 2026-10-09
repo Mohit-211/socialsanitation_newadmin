@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Form, Input, DatePicker, Radio } from "antd";
 
 const Education = ({ formData, setFormData }) => {

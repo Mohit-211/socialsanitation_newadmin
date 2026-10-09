@@ -1,7 +1,7 @@
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-export const GetProduct = async (adminToken, role_id) => {
+export const GetProduct = async () => {
 	try {
 		const res = await axios.get(BASE_URL + "product/getAllProducts");
 		return res;
@@ -33,7 +33,7 @@ export const DeleteProduct = async (product_id) => {
 	});
 };
 
-export const GetAllRequestsByAdmin = async (adminToken, role_id) => {
+export const GetAllRequestsByAdmin = async () => {
 	try {
 		const res = await axios.get(BASE_URL + "product/getAllRequestsByAdmin");
 		return res;
@@ -42,7 +42,6 @@ export const GetAllRequestsByAdmin = async (adminToken, role_id) => {
 		throw error;
 	}
 };
-
 
 export const UpdateRequestStatus = async (id, formData) => {
     return await axios.post(BASE_URL + `product/updateRequestStatus/${id}`, formData, {

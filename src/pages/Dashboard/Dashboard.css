@@ -1,29 +1,5 @@
-/** @format */
-
-.dashboard_title {
-  margin-bottom: 0px !important;
-}
-
 .p-card{
   box-shadow: none !important;
-}
-
-.card-box {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.small-card {
-  flex: 1;
-}
-
-.large-card {
-  flex: 2; /* Takes up the space of two small cards */
 }
 
 .percentage {
@@ -31,24 +7,14 @@
   margin-top: 10px;
 }
 
-.positive {
-  color: green;
-}
-
-.negative {
-  color: red;
-}
-
-/* ─────────────────────────────────────────────
-   DEFENSIVE TEXT-COLOR OVERRIDES
+/* DEFENSIVE TEXT-COLOR OVERRIDES
    Some global stylesheet (outside this file) appears to
    force text color via an !important rule on bare tag
    selectors (h4, p, etc), which wins over inline styles
    and makes dashboard card text invisible. These class
    + tag selectors have higher specificity than a bare
    tag selector, so they win back the intended colors
-   regardless of where the conflicting rule lives.
-   ───────────────────────────────────────────── */
+   regardless of where the conflicting rule lives. */
 .ss-dashboard h1.ss-text-dark,
 .ss-dashboard h2.ss-text-dark,
 .ss-dashboard h3.ss-text-dark,
@@ -92,7 +58,7 @@
   color: #999 !important;
 }
 
-/* ─── load more / show less button ─── */
+/* load more / show less button */
 .ss-dashboard .ss-loadmore-btn {
   padding: 8px 20px;
   background: #f5f6fa;

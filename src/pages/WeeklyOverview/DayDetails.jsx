@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
 	Table,
@@ -60,20 +58,6 @@ const DayDetail = () => {
 
 		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		return `${(R * c).toFixed(2)} km`;
-	};
-
-	const formatDuration = (minutes) => {
-		if (Math.abs(minutes) <= 5) return "No delay";
-
-		const hrs = Math.floor(Math.abs(minutes) / 60);
-		const mins = Math.abs(minutes) % 60;
-
-		if (hrs > 0) {
-			return `${hrs} hour${hrs > 1 ? "s" : ""}${
-				mins > 0 ? ` ${mins} minute${mins !== 1 ? "s" : ""}` : ""
-			}`;
-		}
-		return `${mins} minute${mins !== 1 ? "s" : ""}`;
 	};
 
 	const columns = [

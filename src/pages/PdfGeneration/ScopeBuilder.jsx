@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Switch, message } from "antd";
 import {
   PlusOutlined,
@@ -8,7 +6,6 @@ import {
   SaveOutlined,
   EditOutlined,
   HolderOutlined,
-  CheckCircleFilled,
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons";
@@ -25,8 +22,6 @@ import {
 
 import "./ScopeBuilder.scss";
 
-/* ─────────────────────────────────────────────────────────── */
-
 const FreqBadge = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -35,8 +30,6 @@ const FreqBadge = ({ label, active, onClick }) => (
     {label}
   </button>
 );
-
-/* ─────────────────────────────────────────────────────────── */
 
 const ScopeBuilder = () => {
   const [sections, setSections] = useState([]);
@@ -48,16 +41,14 @@ const ScopeBuilder = () => {
   // Track which items have unsaved changes (by key = `${sectionKey}-${itemKey}`)
   const [dirtyItems, setDirtyItems] = useState(new Set());
   // Track which sections are in "editing" mode after being saved
-  const [editingSections, setEditingSections] = useState(new Set());
   // Track which items are in "editing" mode after being saved
-  const [editingItems, setEditingItems] = useState(new Set());
   // Track collapsed sections
   const [collapsedSections, setCollapsedSections] = useState(new Set());
 
   // Refs map for scrolling to new section title inputs
   const sectionRefs = useRef({});
 
-  /* ───────────────── FETCH ───────────────── */
+  /* FETCH */
 
   const fetchScope = async () => {
     try {
@@ -79,7 +70,7 @@ const ScopeBuilder = () => {
 
       setSections(formatted);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to load scope");
     }
   };
@@ -88,7 +79,7 @@ const ScopeBuilder = () => {
     fetchScope();
   }, []);
 
-  /* ───────────────── HELPERS ───────────────── */
+  /* HELPERS */
 
   const getSectionKey = (section) =>
     String(section.id || section.tempId);
@@ -96,7 +87,7 @@ const ScopeBuilder = () => {
   const getItemKey = (section, item) =>
     `${getSectionKey(section)}-${String(item.id || item.tempId)}`;
 
-  /* ───────────────── ADD ───────────────── */
+  /* ADD */
 
   const addSection = () => {
     const tempId = Date.now();
@@ -154,7 +145,7 @@ const ScopeBuilder = () => {
     });
   };
 
-  /* ───────────────── DELETE ───────────────── */
+  /* DELETE */
 
   const deleteSectionHandler = async (index) => {
     try {
@@ -169,13 +160,8 @@ const ScopeBuilder = () => {
         next.delete(key);
         return next;
       });
-      setEditingSections((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
       message.success("Section deleted");
-    } catch (err) {
+    } catch {
       message.error("Delete failed");
     }
   };
@@ -200,18 +186,13 @@ const ScopeBuilder = () => {
         next.delete(iKey);
         return next;
       });
-      setEditingItems((prev) => {
-        const next = new Set(prev);
-        next.delete(iKey);
-        return next;
-      });
       message.success("Task deleted");
-    } catch (err) {
+    } catch {
       message.error("Delete failed");
     }
   };
 
-  /* ───────────────── CHANGE ───────────────── */
+  /* CHANGE */
 
   const handleSectionChange = (index, field, value) => {
     setSections((prev) =>
@@ -241,7 +222,7 @@ const ScopeBuilder = () => {
     );
   };
 
-  /* ───────────────── SAVE SECTION ───────────────── */
+  /* SAVE SECTION */
 
   const saveSection = async (section, index) => {
     try {
@@ -276,12 +257,6 @@ const ScopeBuilder = () => {
           next.delete(newKey);
           return next;
         });
-        setEditingSections((prev) => {
-          const next = new Set(prev);
-          next.delete(key);
-          next.delete(newKey);
-          return next;
-        });
 
         message.success("Section created");
       } else {
@@ -295,23 +270,18 @@ const ScopeBuilder = () => {
           next.delete(key);
           return next;
         });
-        setEditingSections((prev) => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
 
         message.success("Section updated");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Save failed");
     } finally {
       setSavingSection(null);
     }
   };
 
-  /* ───────────────── SAVE ITEM ───────────────── */
+  /* SAVE ITEM */
 
   const saveItem = async (item, sectionIndex, itemIndex) => {
     try {
@@ -361,12 +331,6 @@ const ScopeBuilder = () => {
           next.delete(newKey);
           return next;
         });
-        setEditingItems((prev) => {
-          const next = new Set(prev);
-          next.delete(iKey);
-          next.delete(newKey);
-          return next;
-        });
 
         message.success("Task created");
       } else {
@@ -382,23 +346,18 @@ const ScopeBuilder = () => {
           next.delete(iKey);
           return next;
         });
-        setEditingItems((prev) => {
-          const next = new Set(prev);
-          next.delete(iKey);
-          return next;
-        });
 
         message.success("Task updated");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Save failed");
     } finally {
       setSavingItem(null);
     }
   };
 
-  /* ───────────────── COLLAPSE ───────────────── */
+  /* COLLAPSE */
 
   const toggleCollapse = (section) => {
     const key = getSectionKey(section);
@@ -413,11 +372,10 @@ const ScopeBuilder = () => {
     });
   };
 
-  /* ───────────────── EDIT MODE ───────────────── */
+  /* EDIT MODE */
 
   const enterEditSection = (section) => {
     const key = getSectionKey(section);
-    setEditingSections((prev) => new Set([...prev, key]));
     setDirtySections((prev) => new Set([...prev, key]));
     // Expand if collapsed
     setCollapsedSections((prev) => {
@@ -429,11 +387,10 @@ const ScopeBuilder = () => {
 
   const enterEditItem = (section, item) => {
     const key = getItemKey(section, item);
-    setEditingItems((prev) => new Set([...prev, key]));
     setDirtyItems((prev) => new Set([...prev, key]));
   };
 
-  /* ───────────────── DERIVED STATE HELPERS ───────────────── */
+  /* DERIVED STATE HELPERS */
 
   const isSectionDirty = (section) =>
     dirtySections.has(getSectionKey(section));
@@ -450,7 +407,7 @@ const ScopeBuilder = () => {
   const isSectionCollapsed = (section) =>
     collapsedSections.has(getSectionKey(section));
 
-  /* ───────────────── UI ───────────────── */
+  /* UI */
 
   return (
     <div className="scope-builder">
@@ -582,7 +539,6 @@ const ScopeBuilder = () => {
                   )}
 
                   {(section.items || []).map((item, itemIndex) => {
-                    const iKey = getItemKey(section, item);
                     const itemSaved = isItemSaved(section, item);
                     const itemDirty = isItemDirty(section, item);
 

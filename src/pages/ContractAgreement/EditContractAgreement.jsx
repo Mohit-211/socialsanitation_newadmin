@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Form,
@@ -12,7 +10,6 @@ import {
   Col,
   InputNumber,
   DatePicker,
-  Select,
 } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -25,8 +22,6 @@ import {
   GetContractAgreementById,
 } from "../../services/Api/Api";
 import SignatureField from "../Customer/SignatureField";
-
-const { Option } = Select;
 
 const EditContractAgreement = () => {
   const [loading, setLoading] = useState(false);
@@ -55,14 +50,11 @@ const EditContractAgreement = () => {
         signature: formData.signature,
       });
 
-      const signingUrl = res?.data?.data?.data?.signingUrl;
-
       if (res.status === 200) {
-        // window.open(signingUrl, "_blank");
         navigate("/contract-agreement");
         message.success("Contract updated successfully");
       }
-    } catch (err) {
+    } catch {
       message.error("Error generating contract");
     } finally {
       setLoading(false);
@@ -91,7 +83,7 @@ const EditContractAgreement = () => {
         signature: data.signature || "",
       }));
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to load contract");
     }
   };
@@ -167,7 +159,7 @@ const EditContractAgreement = () => {
         {/* CLIENT */}
         <Card title="Contract Information" style={{ marginBottom: 20 }}>
           <Row gutter={16}>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Company Name"
                 name="client_company_name"
@@ -177,7 +169,7 @@ const EditContractAgreement = () => {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Client Legal Name"
                 name="client_legal_name"
@@ -187,7 +179,7 @@ const EditContractAgreement = () => {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Client Representative"
                 name="client_representative"
@@ -202,7 +194,7 @@ const EditContractAgreement = () => {
         {/* SERVICE DETAILS */}
         <Card title="Service Details" style={{ marginBottom: 20 }}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Total Monthly Price"
                 name="total_monthly_price"

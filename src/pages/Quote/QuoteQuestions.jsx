@@ -1,6 +1,5 @@
-/** @format */
-import React, { useEffect, useState } from "react";
-import { Table, Button, Space, Tag, Popconfirm, message } from "antd";
+import { useEffect, useState } from "react";
+import { Table, Button, Space, Popconfirm, message } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -26,7 +25,7 @@ const QuoteQuestions = () => {
 			setLoading(true);
 			const res = await getAllQuestions();
 			setQuestions(res.data.data || res.data);
-		} catch (error) {
+		} catch {
 			message.error("Failed to load questions");
 		} finally {
 			setLoading(false);
@@ -90,11 +89,6 @@ const QuoteQuestions = () => {
 			title: "Question",
 			dataIndex: "question",
 		},
-		// {
-		// 	title: "Type",
-		// 	dataIndex: "type",
-		// 	render: (type) => <Tag color="blue">{type}</Tag>,
-		// },
 		{
 			title: "Actions",
 			render: (_, record) => (

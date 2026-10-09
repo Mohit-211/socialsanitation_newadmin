@@ -1,13 +1,6 @@
-@use "sass:color";
-
-/** @format */
-
 .invoice-form {
 	font-family: Arial, sans-serif;
-	/* padding: 10px; */
 	font-size: 12px;
-	/* max-width: 900px;
-    margin: auto; */
 }
 
 .invoice-form-container {
@@ -64,28 +57,6 @@
 	width: 150px;
 }
 
-.items-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-top: 20px;
-}
-
-.items-table th,
-.items-table td {
-	border: 1px solid #ccc;
-	padding: 5px;
-	text-align: left;
-}
-
-.items-table input {
-	width: 100%;
-	border: none;
-}
-
-.total-row td {
-	font-weight: bold;
-}
-
 .footer-section {
 	display: flex;
 	justify-content: space-between;
@@ -103,4 +74,27 @@
 	padding: 20px;
 	line-height: 1.4;
 	color: #333;
+}
+
+@media (max-width: 767.98px) {
+	.invoice-form-container {
+		padding: 16px;
+	}
+
+	.header {
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.meta-table,
+	.address-table,
+	.footer-section {
+		flex-direction: column;
+		gap: 16px !important;
+	}
+
+	.meta-table input,
+	.address-table input {
+		width: 100%;
+	}
 }

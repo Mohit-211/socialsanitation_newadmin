@@ -1,5 +1,5 @@
-import { Button, DatePicker, Form, Input, Space, Upload } from "antd";
-import React, { useEffect } from "react";
+import { Button, DatePicker, Form, Input, Upload } from "antd";
+import { useEffect } from "react";
 import { UploadOutlined } from "@ant-design/icons";
 
 const Policy = () => {

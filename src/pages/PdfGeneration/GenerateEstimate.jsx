@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -9,7 +7,6 @@ import {
   message,
   Row,
   Col,
-  Typography,
   DatePicker,
   Select,
   Tabs,
@@ -31,7 +28,6 @@ const GenerateEstimate = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [users, setUsers] = useState([]);
-  const [scopeLoading, setScopeLoading] = useState(true);
   const [formData, setFormData] = useState({
     signature: "",
   });
@@ -85,7 +81,7 @@ const GenerateEstimate = () => {
       setScopeSections(formatted);
       setHasUserScope(formatted.length > 0);
     } catch (err) {
-      console.log("Failed to fetch user scope:", err);
+      console.error("Failed to fetch user scope:", err);
 
       setSelectedUserScope([]);
       setScopeSections([]);
@@ -124,15 +120,13 @@ const GenerateEstimate = () => {
         scope_sections: scopeSections, // ✅ always up to date
       });
 
-      const signingUrl = res?.data?.data?.data?.signingUrl;
       if (res.status === 200) {
-        // window.open(signingUrl, "_blank");
         message.success("PDF generated successfully");
         navigate("/pdf-generation");
       } else {
         message.error("Signing URL not found");
       }
-    } catch (err) {
+    } catch {
       message.error("Error generating PDF");
     } finally {
       setLoading(false);
@@ -140,7 +134,6 @@ const GenerateEstimate = () => {
   };
 
   const fetchScope = async () => {
-    setScopeLoading(true);
     try {
       const res = await getScope();
       const sectionsArray = res?.data?.data?.data || [];
@@ -158,9 +151,7 @@ const GenerateEstimate = () => {
       }));
       setScopeSections(formatted); // ✅ set directly into parent state
     } catch (err) {
-      console.log(err);
-    } finally {
-      setScopeLoading(false);
+      console.error(err);
     }
   };
 
@@ -169,7 +160,7 @@ const GenerateEstimate = () => {
       const res = await GetAllUserName();
       setUsers(res.data.data);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -196,7 +187,7 @@ const GenerateEstimate = () => {
       const res = await GetBDMByUserId(userId);
       setBdm(res?.data?.data || null);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
 
     await fetchUserScopeView(userId);
@@ -207,7 +198,7 @@ const GenerateEstimate = () => {
       const res = await GetAllBDMS();
       setBdmList(res.data.data);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -237,12 +228,12 @@ const GenerateEstimate = () => {
 
       setIsModalOpen(false);
       setSelectedBDM(null);
-    } catch (err) {
+    } catch {
       message.error("Failed to assign BDM");
     }
   };
 
-  /* ─── Tab items ─── */
+  /* Tab items */
   const tabItems = [
     {
       key: "1",
@@ -262,7 +253,7 @@ const GenerateEstimate = () => {
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Client Company Name"
                     name="client_company_name"
@@ -271,7 +262,7 @@ const GenerateEstimate = () => {
                     <Input placeholder="e.g. Acme Corp" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Address Line 1"
                     name="address_line_1"
@@ -280,12 +271,12 @@ const GenerateEstimate = () => {
                     <Input placeholder="Street address" />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item label="Address Line 2" name="address_line_2">
                     <Input placeholder="Suite, unit, etc." />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="City"
                     name="city"
@@ -294,7 +285,7 @@ const GenerateEstimate = () => {
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="State"
                     name="state"
@@ -303,11 +294,10 @@ const GenerateEstimate = () => {
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Zip Code"
                     name="zip"
-                    // rules={[{ required: true }]}
                   >
                     <Input />
                   </Form.Item>
@@ -320,11 +310,10 @@ const GenerateEstimate = () => {
             <div className="ge-section__label">
               <span className="ge-section__num">02</span>
               Contact Information
-              {/* <span className="ge-section__page">Page 10</span> */}
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Select Client"
                     name="user_id"
@@ -349,7 +338,7 @@ const GenerateEstimate = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label="Contact Name"
                     name="contact_name"
@@ -358,7 +347,7 @@ const GenerateEstimate = () => {
                     <Input placeholder="Enter contact name" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Phone"
                     name="contact_phone"
@@ -367,12 +356,12 @@ const GenerateEstimate = () => {
                     <Input placeholder="Enter phone number" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item label="Fax" name="contact_fax">
                     <Input placeholder="Enter fax number" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Email"
                     name="contact_email"
@@ -450,7 +439,7 @@ const GenerateEstimate = () => {
             </div>
             <div className="ge-section__body">
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     label="Signed Date"
                     name="signed_date"
@@ -510,7 +499,6 @@ const GenerateEstimate = () => {
             <UserScopeBuilder
               userId={form.getFieldValue("user_id")}
               onChange={setScopeSections}
-              readOnly={true}
               initialSections={selectedUserScope}
             />
           ) : (

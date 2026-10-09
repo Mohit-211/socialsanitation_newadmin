@@ -1,10 +1,8 @@
-/** @format */
-
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Input, Select } from "antd";
 import { ArrowLeft } from "lucide-react";
@@ -28,7 +26,7 @@ const ViewServiceChecklist = () => {
 				setRoleId(data?.role_id || null);
 			})
 			.catch((err) => {
-				console.log(err, "error");
+				console.error(err, "error");
 			});
 	}, [id]);
 

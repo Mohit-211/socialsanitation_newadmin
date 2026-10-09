@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Badge, Spin, Modal, Button, TimePicker } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -138,6 +136,7 @@ const AttendanceCalendar = () => {
     sx={{
       display: "flex",
       justifyContent: "space-between",
+      flexWrap: { xs: "wrap", md: "nowrap" },
       alignItems: "center",
       gap: 2,
     }}

@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Form,
   Input,
@@ -65,9 +63,7 @@ import {
   ChangeEmployeeRole,
 } from "../../services/Api/Api";
 
-// =========================================================
 // US STATE ABBREVIATIONS
-// =========================================================
 
 const STATE_ABBREVIATIONS = {
   AL: "Alabama",
@@ -122,14 +118,11 @@ const STATE_ABBREVIATIONS = {
   WY: "Wyoming",
 };
 
-// =========================================================
 // COUNTRIES
-//
 // The hiring form now collects a country. Older submissions were
 // taken before that field existed and come back with an empty
 // string — those are treated as USA, matching what every existing
 // hiring form actually was.
-// =========================================================
 
 const COUNTRY_IDS = {
   USA: 233,
@@ -173,10 +166,8 @@ const resolveCountryId = (countryName) => {
   return COUNTRY_IDS.USA;
 };
 
-// =========================================================
 // SHARED STYLE TOKENS (kept consistent with the rest of the
 // admin panel — navy / green, outlined 10px paper, #eef0f2)
-// =========================================================
 
 const NAVY = "#16324f";
 const NAVY_DARK = "#2c3345";
@@ -214,9 +205,7 @@ const getRoleSelectValue = (role_id, sub_role_id) => {
     : "";
 };
 
-// =========================================================
 // COMPONENT
-// =========================================================
 
 const UpdateServiceProvider = () => {
   const [form] = Form.useForm();
@@ -225,25 +214,16 @@ const UpdateServiceProvider = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // =========================================================
   // GENERAL STATES
-  // =========================================================
 
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-
-  const [coordinates, setCoordinates] = useState({
-    lat: null,
-    lng: null,
-  });
 
   const [loading, setLoading] = useState(false);
 
   const [userAddresses, setUserAddresses] = useState([]);
 
-  // =========================================================
   // ADDRESS MODAL
-  // =========================================================
 
   const [addressModalVisible, setAddressModalVisible] =
     useState(false);
@@ -257,9 +237,7 @@ const UpdateServiceProvider = () => {
       lng: null,
     });
 
-  // =========================================================
   // HIRING FORM STATES
-  // =========================================================
 
   const [hiringForms, setHiringForms] = useState([]);
 
@@ -290,7 +268,6 @@ const UpdateServiceProvider = () => {
       lng: null,
     });
 
-  // =========================================================
   // HIRING FORM SEARCH — decoupled from the Name/Email form
   // fields on purpose. These two only change when the admin
   // actually types into the Name or Email inputs (via their
@@ -298,7 +275,6 @@ const UpdateServiceProvider = () => {
   // programmatically fills the Name field. That decoupling is
   // what stops "selecting a form" from immediately re-triggering
   // a search that would wipe the selection out again.
-  // =========================================================
 
   const [emailQuery, setEmailQuery] = useState("");
   const [nameQuery, setNameQuery] = useState("");
@@ -310,9 +286,7 @@ const UpdateServiceProvider = () => {
   // hiring form, which a generic search wouldn't do).
   const skipNextAutoSearchRef = useRef(false);
 
-  // =========================================================
   // ROLE (PROMOTE / REASSIGN)
-  //
   // Kept independent of the main Form — it saves immediately via
   // its own endpoint (same interaction as Employee Type on the
   // employee list page), not as part of the big Save button.
@@ -320,7 +294,6 @@ const UpdateServiceProvider = () => {
   // promote someone without also having a hiring form + resolved
   // location ready, which the main Save requires but role changes
   // don't need at all.
-  // =========================================================
 
   const [roleValue, setRoleValue] = useState("");
   const [updatingRole, setUpdatingRole] = useState(false);
@@ -328,9 +301,7 @@ const UpdateServiceProvider = () => {
   // UI-only: lets the admin collapse the "How this works" note
   const [showHelp, setShowHelp] = useState(true);
 
-  // =========================================================
   // ONLY ONE ADDRESS FOR EMPLOYEE
-  // =========================================================
 
   const hasAddress =
     (userAddresses?.length || 0) >= 1;
@@ -356,17 +327,13 @@ const UpdateServiceProvider = () => {
     .trim()
     .toLowerCase();
 
-  // =========================================================
   // NAVIGATION
-  // =========================================================
 
   const navigateToEmployees = () => {
     navigate("/employees");
   };
 
-  // =========================================================
   // RESET HIRING FORM LOCATION
-  // =========================================================
 
   const resetHiringFormLocation = () => {
     setHiringFormLocation({
@@ -378,14 +345,11 @@ const UpdateServiceProvider = () => {
     });
   };
 
-  // =========================================================
   // FETCH STATES — FOR A GIVEN COUNTRY
-  //
   // The Add/Edit Address modal below lets the admin pick USA or
   // Canada, and the State dropdown needs to reflect whichever one
   // is currently selected there — so this fetches on demand rather
   // than once at mount for a hardcoded country.
-  // =========================================================
 
   const fetchStatesForCountry = (countryId) => {
     return StateAPI(countryId)
@@ -413,12 +377,9 @@ const UpdateServiceProvider = () => {
   // first open, before the admin has touched the Country field.
   useEffect(() => {
     fetchStatesForCountry(COUNTRY_IDS.USA);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // =========================================================
   // FETCH CITIES
-  // =========================================================
 
   const fetchCities = (stateId) => {
     return CityAPI(stateId).then((res) => {
@@ -431,9 +392,7 @@ const UpdateServiceProvider = () => {
     });
   };
 
-  // =========================================================
   // GEOCODE ADDRESS
-  // =========================================================
 
   const fetchCoordinates = async (address) => {
     if (!address) return;
@@ -453,24 +412,17 @@ const UpdateServiceProvider = () => {
 
         if (!location) return;
 
-        setCoordinates({
-          lat: location.lat,
-          lng: location.lng,
-        });
-
         setAddressCoordinates({
           lat: location.lat,
           lng: location.lng,
         });
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
-  // =========================================================
   // RESOLVE HIRING FORM LOCATION
-  // =========================================================
 
   const resolveHiringFormLocation = async (
     hiringForm,
@@ -492,19 +444,14 @@ const UpdateServiceProvider = () => {
         );
       }
 
-      // =====================================================
       // COUNTRY
-      //
       // Empty/missing on older hiring forms — treated as USA,
       // since every hiring form was USA before the country field
       // was added.
-      // =====================================================
 
       const countryId = resolveCountryId(hiringForm.country);
 
-      // =====================================================
       // STATE
-      // =====================================================
 
       const formState = hiringForm.state
         .trim()
@@ -514,15 +461,12 @@ const UpdateServiceProvider = () => {
         STATE_ABBREVIATIONS[formState] ||
         hiringForm.state.trim();
 
-      // =====================================================
       // FETCH STATES FRESH — FOR THE RESOLVED COUNTRY
-      //
       // Don't rely on the `states` state variable here — it's
       // populated by a separate useEffect that races against
       // this one on mount, and it's only ever prefetched for
       // USA. Fetching directly (same pattern as CityAPI below)
       // removes the race and gets the right country's states.
-      // =====================================================
 
       const stateResponse = await StateAPI(countryId);
 
@@ -545,9 +489,7 @@ const UpdateServiceProvider = () => {
         );
       }
 
-      // =====================================================
       // CITY
-      // =====================================================
 
       const cityResponse = await CityAPI(
         matchedState.id,
@@ -577,9 +519,7 @@ const UpdateServiceProvider = () => {
         );
       }
 
-      // =====================================================
       // FULL ADDRESS
-      // =====================================================
 
       const fullAddress = [
         hiringForm.address,
@@ -596,9 +536,7 @@ const UpdateServiceProvider = () => {
         );
       }
 
-      // =====================================================
       // GOOGLE GEOCODING
-      // =====================================================
 
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
@@ -627,9 +565,7 @@ const UpdateServiceProvider = () => {
         );
       }
 
-      // =====================================================
       // FINAL LOCATION
-      // =====================================================
 
       const locationData = {
         country_id: countryId,
@@ -638,11 +574,6 @@ const UpdateServiceProvider = () => {
         lat: location.lat,
         lng: location.lng,
       };
-
-      console.log(
-        "Resolved hiring form location:",
-        locationData,
-      );
 
       setHiringFormLocation(
         locationData,
@@ -663,13 +594,10 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // FETCH HIRING FORMS BY EMAIL AND/OR NAME
-  //
   // Either value alone is enough — the backend matches on
   // email OR name, so we pass through whichever the caller
   // actually has.
-  // =========================================================
 
   const fetchHiringForms = async (
     email,
@@ -706,10 +634,8 @@ const UpdateServiceProvider = () => {
         setHiringForms(forms);
         setHasSearched(true);
 
-        // ===================================================
         // IF EDITING AND EXISTING FORM EXISTS,
         // SELECT IT AUTOMATICALLY
-        // ===================================================
 
         if (existingSubmissionId) {
           const existingForm =
@@ -743,10 +669,8 @@ const UpdateServiceProvider = () => {
           }
         }
 
-        // ===================================================
         // OTHERWISE, DON'T AUTO SELECT
         // We let the admin explicitly select one.
-        // ===================================================
 
         setSelectedHiringForm(null);
         resetHiringFormLocation();
@@ -788,9 +712,7 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // LOAD EMPLOYEE
-  // =========================================================
 
   useEffect(() => {
     const loadEmployee = async () => {
@@ -803,9 +725,7 @@ const UpdateServiceProvider = () => {
 
         if (!data) return;
 
-        // ===================================================
         // USER DATA
-        // ===================================================
 
         const employeeEmail =
           data?.email || "";
@@ -822,13 +742,10 @@ const UpdateServiceProvider = () => {
           email: employeeEmail,
         });
 
-        // ===================================================
         // CURRENT ROLE → "Role" SELECT VALUE
-        //
         // Role 9 (Cleaner / HouseKeeping) is split further by
         // sub_role_id, so it's represented as "9-10" / "9-11"
         // in the select, matching the Add Employee screen.
-        // ===================================================
 
         setRoleValue(
           getRoleSelectValue(
@@ -837,31 +754,24 @@ const UpdateServiceProvider = () => {
           ),
         );
 
-        // ===================================================
         // USER ADDRESS
-        // ===================================================
 
         setUserAddresses(
           data?.user_address || [],
         );
 
-        // ===================================================
         // SEED THE SEARCH STATE
-        //
         // This will fire the search-effect below once, but
         // skipNextAutoSearchRef swallows that single run since
         // we're doing the equivalent search manually right here
         // (and need existingSubmissionId to auto-select).
-        // ===================================================
 
         skipNextAutoSearchRef.current = true;
 
         setEmailQuery(employeeEmail);
         setNameQuery(employeeName);
 
-        // ===================================================
         // EXISTING HIRING FORM
-        // ===================================================
 
         const existingSubmissionId =
           data?.hiring_form_submission_id;
@@ -891,15 +801,12 @@ const UpdateServiceProvider = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // =========================================================
   // EMAIL / NAME INPUT CHANGES
-  //
   // These are the ONLY things that update emailQuery/nameQuery,
   // which is what makes them safe to watch below — selecting a
   // hiring form updates the form's "name" field programmatically
   // (via form.setFieldValue) without going through here, so it
   // never re-triggers a search.
-  // =========================================================
 
   const handleEmailChange = (event) => {
     const email = event.target.value;
@@ -921,9 +828,7 @@ const UpdateServiceProvider = () => {
     resetHiringFormLocation();
   };
 
-  // =========================================================
   // SEARCH HIRING FORMS WHEN EMAIL OR NAME CHANGES
-  // =========================================================
 
   useEffect(() => {
     if (skipNextAutoSearchRef.current) {
@@ -956,23 +861,18 @@ const UpdateServiceProvider = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailQuery, nameQuery]);
 
-  // =========================================================
   // SELECT HIRING FORM
-  // =========================================================
 
   const handleHiringFormSelect = async (
     hiringForm,
   ) => {
-    // =====================================================
     // GUARD: BLOCK CROSS-EMAIL SELECTION
-    //
     // The account's email is fixed (this employee was already
     // created with it) — a hiring form submitted under a
     // different email can never actually be assigned to them.
     // The backend already rejects this on save, but that's a
     // confusing way to find out; catch it here instead so the
     // admin sees why immediately and nothing gets selected.
-    // =====================================================
 
     const accountEmail = (
       form.getFieldValue("email") || ""
@@ -1023,20 +923,17 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // ROLE CHANGE — INSTANT, VIA DEDICATED ENDPOINT
-  //
   // Hits POST /change-employee-role/:id directly. Doesn't touch
   // the main Form at all, so it works regardless of whether a
   // hiring form or location has been resolved yet.
-  // =========================================================
 
   const handleRoleChange = async (value) => {
     const previousValue = roleValue;
 
     setRoleValue(value);
 
-    let role_id = value;
+    let role_id;
     let sub_role_id = null;
 
     if (String(value).includes("-")) {
@@ -1080,9 +977,7 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // SAVE EMPLOYEE
-  // =========================================================
 
   const handleSave = async (
     values,
@@ -1090,9 +985,7 @@ const UpdateServiceProvider = () => {
     try {
       setLoading(true);
 
-      // =====================================================
       // HIRING FORM REQUIRED
-      // =====================================================
 
       if (!selectedHiringForm) {
         message.error(
@@ -1103,9 +996,7 @@ const UpdateServiceProvider = () => {
         return;
       }
 
-      // =====================================================
       // LOCATION REQUIRED
-      // =====================================================
 
       if (
         !hiringFormLocation.country_id ||
@@ -1122,12 +1013,9 @@ const UpdateServiceProvider = () => {
         return;
       }
 
-      // =====================================================
       // PAYLOAD
-      //
       // Role is intentionally NOT included here — it's saved
       // instantly by handleRoleChange above via its own endpoint.
-      // =====================================================
 
       const payload = {
         name: values.name,
@@ -1139,16 +1027,12 @@ const UpdateServiceProvider = () => {
         employee_type:
           values.employee_type,
 
-        // ===================================================
         // HIRING FORM
-        // ===================================================
 
         hiring_form_submission_id:
           selectedHiringForm.submission_id,
 
-        // ===================================================
         // LOCATION
-        // ===================================================
 
         country_id:
           hiringFormLocation.country_id,
@@ -1165,26 +1049,6 @@ const UpdateServiceProvider = () => {
         address_long:
           hiringFormLocation.lng,
       };
-
-      console.log(
-        "========================================",
-      );
-
-      console.log(
-        "UPDATE EMPLOYEE PAYLOAD",
-      );
-
-      console.log(
-        JSON.stringify(
-          payload,
-          null,
-          2,
-        ),
-      );
-
-      console.log(
-        "========================================",
-      );
 
       await EditUserById(
         id,
@@ -1214,9 +1078,7 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // REFRESH USER
-  // =========================================================
 
   const refreshUser = async () => {
     try {
@@ -1237,9 +1099,7 @@ const UpdateServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // OPEN ADD ADDRESS
-  // =========================================================
 
   const openAddAddress = () => {
     if (hasAddress) return;
@@ -1264,9 +1124,7 @@ const UpdateServiceProvider = () => {
     setAddressModalVisible(true);
   };
 
-  // =========================================================
   // OPEN EDIT ADDRESS
-  // =========================================================
 
   const openEditAddress = (
     addr,
@@ -1317,9 +1175,7 @@ const UpdateServiceProvider = () => {
     }, 100);
   };
 
-  // =========================================================
   // SAVE MANUAL ADDRESS
-  // =========================================================
 
   const handleSaveAddress =
     async () => {
@@ -1428,9 +1284,7 @@ const UpdateServiceProvider = () => {
       }
     };
 
-  // =========================================================
   // DELETE ADDRESS
-  // =========================================================
 
   const handleDeleteAddress = (
     addressId,
@@ -1469,9 +1323,7 @@ const UpdateServiceProvider = () => {
     });
   };
 
-  // =========================================================
   // DATE FORMAT
-  // =========================================================
 
   const formatSubmittedDate = (
     date,
@@ -1492,21 +1344,18 @@ const UpdateServiceProvider = () => {
     );
   };
 
-  // =========================================================
   // RENDER
-  // =========================================================
 
   return (
     <Box>
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+      {/* HEADER */}
 
       <Paper variant="outlined" sx={{ ...sectionPaper, mb: 3 }}>
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             width: "100%",
             gap: 2,
@@ -1564,9 +1413,7 @@ const UpdateServiceProvider = () => {
         </Box>
       </Paper>
 
-      {/* =====================================================
-          HOW THIS WORKS
-      ====================================================== */}
+      {/* HOW THIS WORKS */}
 
       <Paper
         variant="outlined"
@@ -1679,15 +1526,11 @@ const UpdateServiceProvider = () => {
         </Collapse>
       </Paper>
 
-      {/* =====================================================
-          MAIN FORM
-      ====================================================== */}
+      {/* MAIN FORM */}
 
       <Paper variant="outlined" sx={{ p: 3, borderRadius: "10px", borderColor: BORDER }}>
         <Form layout="vertical" form={form} onFinish={handleSave}>
-          {/* =================================================
-              BASIC INFORMATION
-          ================================================== */}
+          {/* BASIC INFORMATION */}
 
           <Row gutter={24}>
             <Col xs={24} md={12}>
@@ -1772,14 +1615,12 @@ const UpdateServiceProvider = () => {
               </Form.Item>
             </Col>
 
-            {/* =============================================
-                ROLE — laid out like any other field here, but
+            {/* ROLE — laid out like any other field here, but
                 NOT part of this Form: it saves immediately via
                 ChangeEmployeeRole (handleRoleChange), the same
                 interaction as Employee Type on the employee list
                 page. It doesn't touch form values or the Save
-                button below.
-            ============================================== */}
+                button below. */}
 
             <Col xs={24} md={12}>
               <Box sx={{ mb: "24px" }}>
@@ -1839,9 +1680,7 @@ const UpdateServiceProvider = () => {
             </Col>
           </Row>
 
-          {/* =================================================
-              HIRING FORMS
-          ================================================== */}
+          {/* HIRING FORMS */}
 
           <Paper variant="outlined" sx={sectionPaper}>
             <Box
@@ -2001,6 +1840,7 @@ const UpdateServiceProvider = () => {
                                 display: "flex",
                                 alignItems: "flex-start",
                                 justifyContent: "space-between",
+                                flexWrap: { xs: "wrap", md: "nowrap" },
                                 gap: 1,
                                 width: "100%",
                                 pl: 0.5,
@@ -2118,9 +1958,7 @@ const UpdateServiceProvider = () => {
               </RadioGroup>
             )}
 
-            {/* =================================================
-                SELECTED HIRING FORM LOCATION
-            ================================================== */}
+            {/* SELECTED HIRING FORM LOCATION */}
 
             {selectedHiringForm && (
               <Box
@@ -2141,12 +1979,12 @@ const UpdateServiceProvider = () => {
                 </Box>
 
                 <Row gutter={16}>
-                  <Col span={6}>
-                    <MuiTypography variant="caption" color="text.secondary">
+                  <Col xs={24} sm={12} md={6}>
+                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
                       Country
                     </MuiTypography>
 
-                    <MuiTypography fontWeight={600}>
+                    <MuiTypography sx={{ fontWeight: 600 }}>
                       {loadingLocation
                         ? "Loading..."
                         : COUNTRY_NAMES_BY_ID[
@@ -2155,12 +1993,12 @@ const UpdateServiceProvider = () => {
                     </MuiTypography>
                   </Col>
 
-                  <Col span={6}>
-                    <MuiTypography variant="caption" color="text.secondary">
+                  <Col xs={24} sm={12} md={6}>
+                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
                       State
                     </MuiTypography>
 
-                    <MuiTypography fontWeight={600}>
+                    <MuiTypography sx={{ fontWeight: 600 }}>
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.state_id
@@ -2169,12 +2007,12 @@ const UpdateServiceProvider = () => {
                     </MuiTypography>
                   </Col>
 
-                  <Col span={6}>
-                    <MuiTypography variant="caption" color="text.secondary">
+                  <Col xs={24} sm={12} md={6}>
+                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
                       City
                     </MuiTypography>
 
-                    <MuiTypography fontWeight={600}>
+                    <MuiTypography sx={{ fontWeight: 600 }}>
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.city_id
@@ -2183,8 +2021,8 @@ const UpdateServiceProvider = () => {
                     </MuiTypography>
                   </Col>
 
-                  <Col span={6}>
-                    <MuiTypography variant="caption" color="text.secondary">
+                  <Col xs={24} sm={12} md={6}>
+                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
                       Status
                     </MuiTypography>
 
@@ -2195,18 +2033,18 @@ const UpdateServiceProvider = () => {
                         <CircularProgress size={12} />
                       )}
 
-                      <MuiTypography fontWeight={600} sx={{ color: locationReady ? GREEN : "#9ca3af" }}>
+                      <MuiTypography sx={{ fontWeight: 600, color: locationReady ? GREEN : "#9ca3af" }}>
                         {locationReady ? "Ready" : "Resolving…"}
                       </MuiTypography>
                     </Box>
                   </Col>
 
                   <Col span={24}>
-                    <MuiTypography variant="caption" color="text.secondary">
+                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
                       Coordinates
                     </MuiTypography>
 
-                    <MuiTypography fontWeight={600}>
+                    <MuiTypography sx={{ fontWeight: 600 }}>
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.lat !== null && hiringFormLocation.lng !== null
@@ -2219,9 +2057,7 @@ const UpdateServiceProvider = () => {
             )}
           </Paper>
 
-          {/* =================================================
-              EMPLOYEE ADDRESS
-          ================================================== */}
+          {/* EMPLOYEE ADDRESS */}
 
           <Paper variant="outlined" sx={sectionPaper}>
             <Box
@@ -2273,7 +2109,7 @@ const UpdateServiceProvider = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
                   gap: "16px",
                 }}
               >
@@ -2302,7 +2138,7 @@ const UpdateServiceProvider = () => {
 
                     <Divider sx={{ my: 0.5 }} />
 
-                    <Stack direction="row" spacing={1}>
+                    <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
                       <Tooltip title="Edit Address">
                         <IconButton
                           size="small"
@@ -2357,9 +2193,7 @@ const UpdateServiceProvider = () => {
             )}
           </Paper>
 
-          {/* =================================================
-              ACTIONS
-          ================================================== */}
+          {/* ACTIONS */}
 
           <Form.Item style={{ marginTop: "8px" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -2419,9 +2253,7 @@ const UpdateServiceProvider = () => {
           </Form.Item>
         </Form>
 
-        {/* =====================================================
-            ADDRESS MODAL
-        ====================================================== */}
+        {/* ADDRESS MODAL */}
 
         <Modal
           title={editingAddress ? "Edit Address" : "Add New Address"}

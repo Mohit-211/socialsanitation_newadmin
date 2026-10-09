@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { Modal, Select, DatePicker, message, Empty, Spin, Alert } from "antd";
 import Box from "@mui/material/Box";
@@ -277,9 +275,8 @@ const ClientInspections = () => {
       <Stack
         direction="row"
         spacing={2}
-        sx={{ mb: 2.5 }}
+        sx={{ flexWrap: "wrap", mb: 2.5 }}
         useFlexGap
-        flexWrap="wrap"
       >
         <StatCard
           icon={<ClipboardList size={20} />}
@@ -384,7 +381,7 @@ const ClientInspections = () => {
                 }}
               >
                 <div className="inspection-card__top-row">
-                  <Stack direction="row" spacing={0.75} alignItems="center">
+                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
                     <Box
                       sx={{
                         px: 1.25,
@@ -461,20 +458,20 @@ const ClientInspections = () => {
                 </Typography>
 
                 <Stack spacing={0.75}>
-                  <Stack direction="row" spacing={0.9} alignItems="center">
+                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.9}>
                     <Calendar size={14} color="#9ca3af" />
                     <Typography sx={{ fontSize: 12.5, color: "#6b7280" }}>
                       {dayjs(item.inspection_date).format("MMM D, YYYY")}
                     </Typography>
                   </Stack>
-                  <Stack direction="row" spacing={0.9} alignItems="center">
+                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.9}>
                     <UserRound size={14} color="#9ca3af" />
                     <Typography sx={{ fontSize: 12.5, color: "#6b7280" }}>
                       {item.employee?.name || "Unassigned"}
                     </Typography>
                   </Stack>
                   {isReopened && item.reopen_remark && (
-                    <Stack direction="row" spacing={0.9} alignItems="flex-start">
+                    <Stack sx={{ alignItems: "flex-start" }} direction="row" spacing={0.9}>
                       <RotateCcw
                         size={14}
                         color="#ea580c"
@@ -500,7 +497,7 @@ const ClientInspections = () => {
                   {item.status === "COMPLETED" &&
                   item.score !== null &&
                   item.score !== undefined ? (
-                    <Stack direction="row" spacing={0.6} alignItems="center">
+                    <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.6}>
                       <Award size={14} color="#16A34A" />
                       <Typography
                         sx={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}
@@ -517,8 +514,7 @@ const ClientInspections = () => {
                   <Stack
                     direction="row"
                     spacing={0.25}
-                    alignItems="center"
-                    sx={{ color: "#6366F1" }}
+                    sx={{ alignItems: "center", color: "#6366F1" }}
                   >
                     <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>
                       View
@@ -535,7 +531,7 @@ const ClientInspections = () => {
       {/* Create Inspection modal */}
       <Modal
         title={
-          <Stack direction="row" alignItems="center" spacing={1.25}>
+          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
             <Box
               sx={{
                 width: 34,

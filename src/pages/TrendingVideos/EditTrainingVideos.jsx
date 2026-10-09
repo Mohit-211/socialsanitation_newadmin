@@ -1,10 +1,8 @@
-/** @format */
-
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Button, Input, Space, message } from "antd";
 import { ArrowLeft, Check, X } from "lucide-react";

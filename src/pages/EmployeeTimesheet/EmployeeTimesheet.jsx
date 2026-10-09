@@ -1,6 +1,5 @@
-/** @format */
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Divider, Select } from "antd";
@@ -14,13 +13,7 @@ import {
   Badge,
   Typography,
 } from "antd";
-import {
-  ClockCircleOutlined,
-  SaveOutlined,
-  CalendarOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
+import { ClockCircleOutlined, SaveOutlined } from "@ant-design/icons";
 import { DownloadOutlined } from "@ant-design/icons";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -57,7 +50,7 @@ const EmployeeTimesheet = () => {
     return dayjs(time, "HH:mm").format("h:mm A");
   };
 
-  /* ---------------- FETCH ---------------- */
+  /* FETCH */
   const fetchData = async (dateObj) => {
     setLoading(true);
     try {
@@ -65,7 +58,7 @@ const EmployeeTimesheet = () => {
         date: getESTDateString(dateObj),
       });
       setEmployees(res.data.data.employees || []);
-    } catch (err) {
+    } catch {
       message.error("Failed to load data");
     }
     setLoading(false);
@@ -75,7 +68,7 @@ const EmployeeTimesheet = () => {
     fetchData(selectedDate);
   }, []);
 
-  /* ---------------- HANDLE CHANGE ---------------- */
+  /* HANDLE CHANGE */
   const updateLocalValue = (empId, field, value) => {
     setEmployees((prev) =>
       prev.map((e) => {
@@ -94,7 +87,7 @@ const EmployeeTimesheet = () => {
     );
   };
 
-  /* ---------------- SAVE ---------------- */
+  /* SAVE */
   const onSave = async (emp) => {
     setSavingId(emp.employee_id);
     try {
@@ -113,7 +106,7 @@ const EmployeeTimesheet = () => {
 
       // ✅ IMPORTANT: REFRESH DATA
       await fetchData(selectedDate);
-    } catch (err) {
+    } catch {
       message.error("Failed to save timesheet");
     }
     setSavingId(null);
@@ -136,7 +129,7 @@ const EmployeeTimesheet = () => {
           e.employee_id === empId ? { ...e, employee_type: type } : e,
         ),
       );
-    } catch (error) {
+    } catch {
       message.error("Failed to update employee type");
     }
   };
@@ -180,7 +173,7 @@ const EmployeeTimesheet = () => {
       });
     });
 
-    // ===== HEADER STYLE =====
+    // HEADER STYLE
     worksheet.getRow(1).eachCell((cell) => {
       cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
       cell.fill = {
@@ -197,7 +190,7 @@ const EmployeeTimesheet = () => {
       };
     });
 
-    // ===== ROW STYLING =====
+    // ROW STYLING
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
 
@@ -407,7 +400,6 @@ formatTime(r.clock_out),
   return (
     <div
       style={{
-        // padding: "32px",
         background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
         minHeight: "100vh",
       }}

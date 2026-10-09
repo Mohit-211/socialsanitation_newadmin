@@ -40,7 +40,6 @@ export const ReopenInspection = (inspectionId, payload) => {
   );
 };
 
-
 export const ReviewInspectionItem = (itemId, payload) => {
   return axios.put(
     BASE_URL + `inspection/reviewInspectionItem/${itemId}`,

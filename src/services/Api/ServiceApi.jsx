@@ -1,8 +1,7 @@
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-
-export const GetServices = async (adminToken, role_id) => {
+export const GetServices = async (adminToken) => {
   try {
     const res = await axios.get(BASE_URL + "service/getAllServicesByAdmin", {
       headers: {

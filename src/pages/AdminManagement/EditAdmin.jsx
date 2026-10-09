@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GetAdminById, UpdateAdmin } from "../../services/Api/Api.jsx";
 import { message } from "antd";
@@ -26,7 +24,7 @@ const EditAdmin = () => {
 				setIdData(res.data.data);
 			})
 			.catch((err) => {
-				console.log(err, "error");
+				console.error(err, "error");
 			});
 	}, [id]);
 

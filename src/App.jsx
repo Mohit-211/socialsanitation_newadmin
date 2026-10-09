@@ -1,6 +1,3 @@
-/** @format */
-
-import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
@@ -89,7 +86,6 @@ import EditInvoice from "./pages/GenerateInvoice/EditInvoice.jsx";
 import EditBDM from "./pages/Bdm/EditBDM.jsx";
 import ScopeBuilder from "./pages/PdfGeneration/ScopeBuilder.jsx";
 import BusinessAnalytics from "./pages/Payment/BusinessAnalytics.jsx";
-import CostCalculator from "./pages/CostCalculator/CostCalculator.jsx";
 import Calculator from "./pages/CostCalculator/index.jsx";
 import CostCalculationSettings from "./pages/CostCalculator/CostCalculationSettings.jsx";
 import UpdateServiceQuote from "./pages/ServiceQuote/UpdateServiceQuote.jsx";

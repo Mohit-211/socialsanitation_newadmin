@@ -1,10 +1,8 @@
-/** @format */
-
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Form, Card, Button, Input, Space, message, Select } from "antd";
 import { ArrowLeft, Trash2, Plus, Check, X } from "lucide-react";
@@ -25,13 +23,12 @@ const EditDailyChecklist = () => {
 		GetDailyChecklistById(id)
 			.then((res) => {
 				const data = res.data.data;
-				console.log(res.data.data);
 				setHeading(data?.title);
 				setTasks(data?.daily_task || []);
 				setRoleId(data?.role_id || null);
 			})
 			.catch((err) => {
-				console.log(err, "error");
+				console.error(err, "error");
 			});
 	}, [id]);
 
@@ -42,7 +39,7 @@ const EditDailyChecklist = () => {
 	};
 
 	const addTaskField = () => {
-		setTasks([...tasks, { task: "" }]); // new task has no ID
+		setTasks([...tasks, { task: "" }]);
 	};
 
 	const removeTaskField = (index) => {

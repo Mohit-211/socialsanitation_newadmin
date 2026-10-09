@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Button from "@mui/material/Button";
 import { Box, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,17 +20,7 @@ import {
   DeleteUserAddress,
 } from "../../services/Api/Api";
 import Card from "@mui/material/Card";
-import {
-  Space,
-  Table,
-  Tag,
-  message,
-  Modal,
-  Tabs,
-  Input,
-  Select,
-  Form,
-} from "antd";
+import { Table, Tag, message, Modal, Tabs, Input, Select, Form } from "antd";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
@@ -62,9 +50,7 @@ import "./Customers.css";
 import { DeleteOutlined } from "@mui/icons-material";
 import { CreateInvoice, DeleteInvoice } from "../../services/Api/InvoiceApi";
 
-/* -------------------------------------------------------------------------- */
 /* Shared presentational helpers for the Invoices / Contracts / Estimates tabs */
-/* -------------------------------------------------------------------------- */
 
 const STATUS_STYLES = {
   PAID: { bg: "#2ecc71", label: "PAID" },
@@ -118,7 +104,7 @@ const CardGrid = ({ children }) => (
   <div
     style={{
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))",
       gap: "24px",
     }}
   >
@@ -396,8 +382,6 @@ const NEARBY_CLIENT_COLOR = "#667eea";
 const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
 const NEARBY_SELECTED_COLOR = "#FB8C00";
 
-/* -------------------------------------------------------------------------- */
-
 const ViewCustomer = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -439,11 +423,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
   }
 };
 
-
-
-  /* ---------------------------------------------------------------- */
   /* Address: edit modal state                                          */
-  /* ---------------------------------------------------------------- */
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [addressForm] = Form.useForm();
@@ -454,9 +434,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     lng: null,
   });
 
-  /* ---------------------------------------------------------------- */
   /* Address: nearest-employees modal state                             */
-  /* ---------------------------------------------------------------- */
   const [nearbyModalVisible, setNearbyModalVisible] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyEmployees, setNearbyEmployees] = useState([]);
@@ -482,25 +460,21 @@ const handleCreateInvoiceFromQuote = async (quote) => {
 
   const clientName = userData?.user_profile?.name || "Client";
 
-  /* ---------------------------------------------------------------- */
   /* Refresh client (used after address add/edit/delete)                */
-  /* ---------------------------------------------------------------- */
   const refreshUser = async () => {
     try {
       const res = await GetUserById(id);
       setUserData(res.data.data);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
-  /* ---------------------------------------------------------------- */
   /* Address: fetch states / cities                                     */
-  /* ---------------------------------------------------------------- */
   useEffect(() => {
     StateAPI(233)
       .then((res) => setStates(res?.data?.data?.all_state || []))
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   }, []);
 
   const fetchCities = (stateId) => {
@@ -525,7 +499,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         setAddressCoordinates({ lat: location.lat, lng: location.lng });
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -586,14 +560,12 @@ const handleCreateInvoiceFromQuote = async (quote) => {
       setEditingAddress(null);
       addressForm.resetFields();
       setAddressCoordinates({ lat: null, lng: null });
-    } catch (err) {
+    } catch {
       message.error("Failed to save address");
     }
   };
 
-  /* ---------------------------------------------------------------- */
   /* Address: delete                                                    */
-  /* ---------------------------------------------------------------- */
   const handleDeleteAddress = (addressId) => {
     Modal.confirm({
       title: "Delete Address",
@@ -613,9 +585,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     });
   };
 
-  /* ---------------------------------------------------------------- */
   /* Address: nearest employees                                         */
-  /* ---------------------------------------------------------------- */
   const capZoom = (max) => {
     window.google.maps.event.addListenerOnce(
       nearbyMapRef.current,
@@ -701,8 +671,6 @@ const handleCreateInvoiceFromQuote = async (quote) => {
   const selectedNearbyEmployee = nearbyEmployees.find(
     (emp) => emp.id === selectedNearbyId,
   );
-
-  /* ---------------------------------------------------------------- */
 
   const handleDeleteServiceEstimate = (estimateId) => {
     Modal.confirm({
@@ -794,7 +762,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         setUserData(res.data.data);
       })
       .catch((err) => {
-        console.log(err, "error");
+        console.error(err, "error");
       });
   }, [id]);
 
@@ -808,7 +776,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
       }));
       setBookingData(dataWithIndex);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -856,11 +824,6 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         }
       },
     });
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    return dateString.split("T")[0];
   };
 
   const getStatusColor = (status) => {
@@ -1004,9 +967,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     margin: 0,
   };
 
-  /* ---------------------------------------------------------------- */
   /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
-  /* ---------------------------------------------------------------- */
   const bookingStatusTabItems = [
     { label: "All", key: "all" },
     { label: "Ongoing", key: "ONGOING" },
@@ -1026,9 +987,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     ),
   }));
 
-  /* ---------------------------------------------------------------- */
   /* Overview tab content                                               */
-  /* ---------------------------------------------------------------- */
   const overviewContent = (
     <>
       <Card
@@ -1041,13 +1000,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           padding: "28px",
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "32px",
-          }}
-        >
+        <div className="responsive-grid-3" style={{ gap: "32px" }}>
           <div>
             <div style={infoLabelStyle}>User's Name</div>
             <p style={infoValueStyle}>
@@ -1067,7 +1020,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         </div>
       </Card>
 
-      {/* ---------------- Client Addresses ---------------- */}
+      {/* Client Addresses */}
       <Card
         style={{
           borderRadius: "16px",
@@ -1080,6 +1033,8 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
+            rowGap: 1.5,
             alignItems: "center",
             mb: 2.5,
           }}
@@ -1112,7 +1067,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
               gap: "16px",
             }}
           >
@@ -1150,7 +1105,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
 
                 <Divider sx={{ my: 0.5 }} />
 
-                <Stack direction="row" spacing={1}>
+                <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
                   <Tooltip title="Edit Address">
                     <IconButton
                       size="small"
@@ -1228,9 +1183,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     </>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Service Quotes tab content                                         */
-  /* ---------------------------------------------------------------- */
   const quotesContent = (
     <Card style={sectionCardStyle}>
       <SectionHeader title={`Service Quotes for ${clientName}`} />
@@ -1611,7 +1564,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
                   )}
                 </div>
 
-                {/* NEW: Create/Edit Invoice button */}
+                {/* Create/Edit Invoice button */}
 <div style={{ marginTop: "12px" }}>
   {quote.invoice_created ? (
     <Button
@@ -1663,9 +1616,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     </Card>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Monthly Invoices tab content                                       */
-  /* ---------------------------------------------------------------- */
   const invoicesContent = (
     <Card style={sectionCardStyle}>
       <SectionHeader title={`Monthly Invoices for ${clientName}`} />
@@ -1738,9 +1689,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     </Card>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Contract Agreements tab content                                    */
-  /* ---------------------------------------------------------------- */
   const contractsContent = (
     <Card style={sectionCardStyle}>
       <SectionHeader title={`Contract Agreements for ${clientName}`} />
@@ -1806,9 +1755,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     </Card>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Service Estimates tab content                                      */
-  /* ---------------------------------------------------------------- */
   const estimatesContent = (
     <Card style={sectionCardStyle}>
       <SectionHeader title={`Service Estimates for ${clientName}`} />
@@ -1861,9 +1808,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     </Card>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Service Requests tab content                                       */
-  /* ---------------------------------------------------------------- */
   const serviceRequestsContent = (
     <Card style={sectionCardStyle}>
       <SectionHeader title={`Service Requests for ${clientName}`} />
@@ -1971,6 +1916,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             width: "100%",
             gap: 2,
@@ -2019,13 +1965,11 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         />
       </div>
 
-      {/* ---------------------------------------------------------------- */}
       {/* Add / Edit Address modal                                           */}
-      {/* ---------------------------------------------------------------- */}
       {addressModalVisible && (
         <Modal
           title={
-            <Stack direction="row" alignItems="center" spacing={1.25}>
+            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
               <Box
                 sx={{
                   width: 34,
@@ -2161,13 +2105,11 @@ const handleCreateInvoiceFromQuote = async (quote) => {
         </Modal>
       )}
 
-      {/* ---------------------------------------------------------------- */}
       {/* Nearest Employees modal (map + list)                               */}
-      {/* ---------------------------------------------------------------- */}
       {nearbyModalVisible && (
         <Modal
           title={
-            <Stack direction="row" alignItems="center" spacing={1.25}>
+            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
               <Box
                 sx={{
                   width: 34,
@@ -2211,18 +2153,15 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: "20px",
               alignItems: "center",
               marginBottom: "10px",
             }}
           >
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
+            <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}
             >
-              <Stack direction="row" spacing={0.75} alignItems="center">
+              <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
                 <IoNavigateOutline size={14} color="#9ca3af" />
                 <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
                   Address & closest employees
@@ -2257,7 +2196,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: "20px",
               alignItems: "stretch",
               width: "100%",

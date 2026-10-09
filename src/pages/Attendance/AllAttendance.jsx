@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   GetAllAttendance,
   GetTodayAttendanceStats,
@@ -279,7 +277,6 @@ const AllAttendance = () => {
     },
     {
       title: "Date",
-      width: 80,
       dataIndex: "date",
       key: "date",
       width: "10%",
@@ -452,7 +449,7 @@ const AllAttendance = () => {
         variant="outlined"
         sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -473,7 +470,7 @@ const AllAttendance = () => {
           </Box>
 
           {isMonthlyView ? (
-            <Stack
+            <Stack useFlexGap
               direction="row"
               spacing={1.5}
               sx={{ alignItems: "center", flexWrap: "wrap" }}
@@ -494,15 +491,11 @@ const AllAttendance = () => {
             <Stack
               spacing={2}
               sx={{
-                width: 470, // adjust to 500 if needed
+                width: { xs: "100%", sm: 470 },
               }}
             >
               {/* Top Row */}
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                gap={2}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" } }}
               >
                 <DatePicker
                   value={selectedDate}
@@ -541,7 +534,7 @@ const AllAttendance = () => {
 
       {isMonthlyView ? (
         <div style={{ overflowX: "auto" }}>
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={3}
             sx={{
@@ -646,7 +639,7 @@ const AllAttendance = () => {
         </div>
       ) : (
         <>
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
             sx={{ flexWrap: "wrap", mb: 2.5 }}

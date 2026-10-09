@@ -1,7 +1,5 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import { Table, Space, message, Input, Modal } from "antd";
+import { useEffect, useState } from "react";
+import { Table, message, Input, Modal } from "antd";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -81,7 +79,7 @@ const Service = () => {
       dataIndex: "action",
       width: 150,
       render: (_, record) => (
-        <Stack direction="row" spacing={0.5}>
+        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
           <Tooltip title="View Service">
             <IconButton
               size="small"
@@ -130,11 +128,11 @@ const Service = () => {
       setServiceData(newData);
       setFilteredData(newData); // Initialize filtered data
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 401) {
         navigate("/error401");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -213,7 +211,7 @@ const Service = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -238,10 +236,10 @@ const Service = () => {
             </Typography>
           </Box>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: 0 }}
+            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
           >
             <Input
               allowClear

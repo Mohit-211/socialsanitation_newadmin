@@ -1,21 +1,9 @@
-/** @format */
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
 //admin login
 export const AdminLogin = async (formdata) => {
-  console.log("result", formdata);
   return await axios.post(BASE_URL + "admin/auth/login", formdata);
-};
-
-export const GetAuthorizationUrl = async () => {
-  return await axios.get(BASE_URL + "calendar/adminAuthorize", {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
 };
 
 export const GetValidateToken = async (token) => {
@@ -28,7 +16,7 @@ export const GetValidateToken = async (token) => {
 };
 
 //get all user
-export const GetUsers = async (adminToken, role_id) => {
+export const GetUsers = async (adminToken) => {
   try {
     const res = await axios.get(BASE_URL + "admin/user/getAllUsers", {
       headers: {
@@ -62,7 +50,6 @@ export const GetAllDriver = async (adminToken) => {
   try {
     const res = await axios.get(
       BASE_URL + "admin/user/getAllDrivers",
-      // { role_id: "7" },
       {
         headers: {
           "x-access-token": `${adminToken}`,
@@ -123,22 +110,6 @@ export const GetUserById = async (id) => {
   return await axios.get(BASE_URL + "admin/user/getUserById?id=" + id);
 };
 
-export const GetEmployeeHiringForms = async (employeeId) => {
-  return await axios.get(`${BASE_URL}admin/user/employee-hiring-forms`, {
-    params: { employee_id: employeeId },
-  });
-};
-
-export const GetEmployeeEquipment = async (employeeId) => {
-  return await axios.get(
-    `${BASE_URL}eqipment/employee/${employeeId}/equipment`,
-  );
-};
-
-export const GetEmployeeInspections = async (employeeId) => {
-  return await axios.get(`${BASE_URL}inspection/employee/${employeeId}`, {});
-};
-
 export const GetClosestEmployeesByAddress = async (addressId) => {
   return await axios.get(
     BASE_URL + "admin/user/get-closest-employees-by-address/" + addressId,
@@ -150,10 +121,6 @@ export const DeleteUserAddress = async (addressId) => {
     BASE_URL + "admin/user/delete-user-address/" + addressId,
   );
 };
-
-// export const GetAllDriver = async (id) => {
-//   return await axios.get(BASE_URL + "admin/user/getAllDrivers");
-// };
 
 //admin add user
 export const AddUser = async (data) => {
@@ -265,19 +232,6 @@ export const UpdateRoles = async (formData) => {
   });
 };
 
-//delete role
-export const DeleteRole = async (role_id, adminToken) => {
-  const formData = new FormData();
-  formData.append("role_id", role_id);
-  return axios.delete(BASE_URL + "role/deleteRole", {
-    data: formData,
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "x-access-token": adminToken,
-    },
-  });
-};
-
 // ********************************ADMIN API***********************************************************
 export const ChangeAdminPassword = async (data) => {
   return axios.post(BASE_URL + "admin/auth/change-password", data, {
@@ -288,7 +242,7 @@ export const ChangeAdminPassword = async (data) => {
   });
 };
 
-export const GetAdmins = async (adminToken, role_id) => {
+export const GetAdmins = async (adminToken) => {
   try {
     const res = await axios.get(BASE_URL + "admin/auth/getAllAdmins", {
       headers: {
@@ -360,14 +314,6 @@ export const CreateAdmin = async (formData) => {
   });
 };
 
-export const ChangePaymentStatus = async ({ user_id, payment_status }) => {
-  const formData = new FormData();
-  formData.append("user_id", user_id);
-  formData.append("payment_status", payment_status);
-
-  return await axios.post(BASE_URL + "admin/updatepaymentStatus", formData);
-};
-
 export const GetUserCount = async () => {
   const res = await axios.get(BASE_URL + "/admin/user/getUserCount");
   return res;
@@ -383,38 +329,8 @@ export const GetAdminCount = async () => {
   return res;
 };
 
-export const GetBlogCount = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getBlogCount");
-  return res;
-};
-
-export const GetProductCount = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getProductCount");
-  return res;
-};
-
 export const GetServiceCount = async () => {
   const res = await axios.get(BASE_URL + "admin/user/getServiceCount");
-  return res;
-};
-
-export const GetOrderCount = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getOrderCount");
-  return res;
-};
-
-export const GetBookingCount = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getBookingCount");
-  return res;
-};
-
-export const GetSalesCountByMonth = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getSalesCountByMonth");
-  return res;
-};
-
-export const GetMostBookedService = async () => {
-  const res = await axios.get(BASE_URL + "admin/user/getMostBookedService");
   return res;
 };
 
@@ -468,7 +384,7 @@ export const ChangeSyncWithCalandar = async (data) => {
   });
 };
 
-export const GetPayment = async (adminToken, role_id) => {
+export const GetPayment = async (adminToken) => {
   try {
     const res = await axios.get(BASE_URL + "admin/user/getAllTransactions", {
       headers: {
@@ -480,25 +396,6 @@ export const GetPayment = async (adminToken, role_id) => {
     return res;
   } catch (error) {
     // Handle error if needed
-    console.error("Error fetching users:", error);
-    throw error;
-  }
-};
-
-// Get all distinct prices
-export const GetServicePrices = async (token) => {
-  const res = await axios.get(BASE_URL + "service/getServicePrices");
-  return res;
-};
-
-export const UpdateServicePrices = async (formData) => {
-  try {
-    const res = await axios.post(
-      BASE_URL + "service/updateServicePrices",
-      formData,
-    );
-    return res;
-  } catch (error) {
     console.error("Error fetching users:", error);
     throw error;
   }
@@ -660,11 +557,6 @@ export const GetServiceEstimateById = async (id) => {
   return axios.get(BASE_URL + `admin/auth/service-estimate/${id}`);
 };
 
-export const ResumeSigning = async (id) => {
-  const res = await axios.get(BASE_URL + `admin/auth/resume-signing/${id}`);
-  return res;
-};
-
 export const DeleteServiceEstimate = async (id) => {
   return axios.delete(BASE_URL + `admin/auth/deleteServiceEstimate/${id}`);
 };
@@ -692,13 +584,6 @@ export const UpdateContractAgreement = async (formData) => {
 
 export const GetContractAgreementById = async (id) => {
   return axios.get(BASE_URL + `admin/auth/contract-agreement/${id}`);
-};
-
-export const ResumeSigningContract = async (id) => {
-  const res = await axios.get(
-    BASE_URL + `admin/auth/resume-contract-signing/${id}`,
-  );
-  return res;
 };
 
 export const DeleteContractAgreement = async (id) => {

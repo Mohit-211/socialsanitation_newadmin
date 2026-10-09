@@ -1,18 +1,8 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "@/lib/dayjs";
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  CircularProgress,
-  Stack,
-  Divider,
-} from "@mui/material";
+import { Box, Paper, Typography, Button, CircularProgress, Stack } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
   User,
@@ -28,10 +18,8 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
 // Config: section metadata (icon + friendly title) — falls back gracefully
 // for any section name not explicitly listed.
-// ---------------------------------------------------------------------------
 const SECTION_META = {
   personalInfo: { title: "Personal Information", icon: User },
   employmentEligibility: { title: "Employment Eligibility", icon: FileCheck2 },
@@ -46,16 +34,13 @@ const SECTION_META = {
   directDeposit: { title: "Direct Deposit", icon: Landmark },
 };
 
-// ---------------------------------------------------------------------------
 // Address field grouping
-//
 // "country" was added to the hiring form after streetAddress/aptSuite/
 // city/state/zipCode already existed, so on the raw JSON it lands at the
 // very end of personalInfo — after employmentType, signature, etc. — far
 // from the rest of the address. This reorders any of these keys that are
 // present so they render together, in a sensible reading order, wherever
 // the first one of them would have appeared.
-// ---------------------------------------------------------------------------
 const ADDRESS_KEY_ORDER = [
   "streetAddress",
   "aptSuite",
@@ -70,7 +55,7 @@ const groupAddressFields = (entries) => {
   const restEntries = [];
   let firstAddressIndex = -1;
 
-  entries.forEach(([key, value], index) => {
+  entries.forEach(([key, value]) => {
     if (ADDRESS_KEY_ORDER.includes(key)) {
       addressEntries.push([key, value]);
       if (firstAddressIndex === -1) firstAddressIndex = restEntries.length;
@@ -137,9 +122,7 @@ const isImageValue = (value) =>
 
 const isSignatureKey = (key) => /signature/i.test(key);
 
-// ---------------------------------------------------------------------------
 // Presentational bits
-// ---------------------------------------------------------------------------
 
 const FieldValue = ({ fieldKey, value }) => {
   if (value === null || value === undefined || value === "") {
@@ -185,7 +168,7 @@ const FieldValue = ({ fieldKey, value }) => {
     }
     if (value.every((item) => typeof item !== "object" || item === null)) {
       return (
-        <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mt: 0.5 }}>
+        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75, mt: 0.5 }}>
           {value.map((item, i) => (
             <Box
               key={i}
@@ -495,9 +478,7 @@ const SectionHeader = ({ Icon, title }) => (
   </Box>
 );
 
-// ---------------------------------------------------------------------------
 // Main component
-// ---------------------------------------------------------------------------
 
 const ViewForm = () => {
   const { id } = useParams();

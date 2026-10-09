@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useState } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -8,7 +6,6 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import Card from "@mui/material/Card";
 import { CreateAdmin } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
@@ -53,7 +50,7 @@ const AddAdmin = () => {
       const response = await CreateAdmin(formData);
 
       if (response.status === 201) {
-        // NEW: confirm the credentials email was sent, and that the
+        // confirm the credentials email was sent, and that the
         // admin can change their password anytime afterward.
         message.success({
           content: `Admin added successfully. Login credentials have been emailed to ${email}.`,
@@ -175,7 +172,7 @@ const AddAdmin = () => {
             borderColor: "#eef0f2",
           }}
         >
-          {/* NEW: info banner explaining the credentials-by-email flow */}
+          {/* info banner explaining the credentials-by-email flow */}
           <Box
             sx={{
               display: "flex",

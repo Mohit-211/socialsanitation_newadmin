@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Space, message, Select, Tag, Input } from "antd";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
@@ -60,7 +58,7 @@ const LeaveRequest = () => {
       title: "Number of Days",
       dataIndex: "num_days",
       width: "10%",
-      render: (_, record) => 1,
+      render: () => 1,
     },
     {
       title: "Reason",
@@ -113,7 +111,7 @@ const LeaveRequest = () => {
       if (e.response && e.response.status === 403) {
         navigate("/error401");
       } else {
-        console.log("Error loading data.");
+        console.error("Error loading data.");
       }
     } finally {
       setLoading(false);
@@ -143,7 +141,7 @@ const LeaveRequest = () => {
         message.success(`Leave ${value.toLowerCase()} successfully!`);
         await getData(); // Refresh table
       }
-    } catch (error) {
+    } catch {
       message.error("Failed to update leave status.");
     }
   };
@@ -160,7 +158,7 @@ const LeaveRequest = () => {
         variant="outlined"
         sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -176,7 +174,7 @@ const LeaveRequest = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ width: 320 }}>
+          <Box sx={{ width: { xs: "100%", sm: 320 } }}>
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}

@@ -1,6 +1,3 @@
-/** @format */
-
-import React from "react";
 import { Result, Button } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 

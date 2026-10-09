@@ -1,6 +1,5 @@
-/** @format */
-import React, { useEffect, useState, useMemo } from "react";
-import { Table, Tag, Button, Space, message, Modal, Input, Select } from "antd";
+import { useEffect, useState, useMemo } from "react";
+import { Table, Tag, Button, message, Modal, Input, Select } from "antd";
 import dayjs from "@/lib/dayjs";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -72,7 +71,6 @@ const handleViewPdf = (record) => {
 
 const Invoices = () => {
   const navigate = useNavigate();
-  const adminToken = localStorage.getItem("adminToken");
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -209,7 +207,7 @@ const Invoices = () => {
     {
       title: "Actions",
       render: (_, record) => (
-        <Stack direction="row" spacing={0.75}>
+        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.75}>
           <Tooltip title="View Details">
             <IconButton
               size="small"
@@ -555,7 +553,7 @@ const Invoices = () => {
         sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
       >
         <Stack spacing={2}>
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={2}
             sx={{
@@ -601,7 +599,7 @@ const Invoices = () => {
             </MuiButton>
           </Stack>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
             sx={{ justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}

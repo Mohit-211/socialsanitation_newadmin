@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Form,
@@ -23,8 +21,6 @@ import { ArrowLeft } from "lucide-react";
 import { GenerateContractAgreement } from "../../services/Api/Api";
 import { GetAllUserName } from "../../services/Api/InvoiceApi";
 import SignatureField from "../Customer/SignatureField";
-
-const { Option } = Select;
 
 const CreateContractAgreement = () => {
   const [loading, setLoading] = useState(false);
@@ -57,14 +53,11 @@ const CreateContractAgreement = () => {
         signature: formData.signature,
       });
 
-      const signingUrl = res?.data?.data?.data?.signingUrl;
-
       if (res.status === 200) {
-        // window.open(signingUrl, "_blank");
         navigate("/contract-agreement");
         message.success("Contract generated successfully");
       }
-    } catch (err) {
+    } catch {
       message.error("Error generating contract");
     } finally {
       setLoading(false);
@@ -76,7 +69,7 @@ const CreateContractAgreement = () => {
       const res = await GetAllUserName();
       setUsers(res.data.data);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -84,7 +77,7 @@ const CreateContractAgreement = () => {
     getUsers();
   }, []);
 
-  /* ================= UPDATED AUTO-FILL ================= */
+  /* Auto-fill */
 
   const handleUserChange = (userId) => {
     const user = users.find((u) => u.id === userId);
@@ -174,7 +167,7 @@ const CreateContractAgreement = () => {
         {/* CLIENT */}
         <Card title="Client Information" style={{ marginBottom: 20 }}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Select Client"
                 name="user_id"
@@ -193,7 +186,7 @@ const CreateContractAgreement = () => {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Client Company Name"
                 name="client_company_name"
@@ -203,7 +196,7 @@ const CreateContractAgreement = () => {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Client Legal Name"
                 name="client_legal_name"
@@ -213,7 +206,7 @@ const CreateContractAgreement = () => {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Client Representative"
                 name="client_representative"
@@ -228,7 +221,7 @@ const CreateContractAgreement = () => {
         {/* SERVICE DETAILS */}
         <Card title="Service Details" style={{ marginBottom: 20 }}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Total Monthly Price"
                 name="total_monthly_price"

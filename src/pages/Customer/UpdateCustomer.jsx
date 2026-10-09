@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -8,7 +6,6 @@ import {
   Select,
   Row,
   Col,
-  Typography,
   message,
   Modal,
   Radio,
@@ -18,7 +15,6 @@ import {
   Box,
   Paper,
   Button,
-  Card,
   Stack,
   IconButton,
   Tooltip,
@@ -69,13 +65,10 @@ const tdStyle = {
   background: "#fff",
 };
 
-// =========================================================
 // COUNTRIES
-//
 // Client addresses predate the country field — older checklists and
 // UserAddress rows with no country on file are treated as USA, same
 // convention used on the employee side of this app.
-// =========================================================
 
 const COUNTRY_IDS = {
   USA: 233,
@@ -91,8 +84,6 @@ const UpdateCustomer = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
   const [clientType, setClientType] = useState("commercial");
@@ -108,7 +99,6 @@ const UpdateCustomer = () => {
     lng: null,
   });
 
-  const [scopeModalVisible, setScopeModalVisible] = useState(false);
   const [checkingScope, setCheckingScope] = useState(false);
 
   const [scopeExists, setScopeExists] = useState(false);
@@ -134,31 +124,6 @@ const UpdateCustomer = () => {
     navigate("/users");
   };
 
-  // =========================================================
-  // MAIN FORM — COUNTRY/STATE FETCHING
-  //
-  // Replaces a mount-time `StateAPI(233)` call that always fetched
-  // USA states regardless of what the client's checklist actually
-  // had on file, and never refetched when the admin changed country.
-  // =========================================================
-
-  const watchedCountryId = Form.useWatch("country_id", form);
-  const watchedStateId = Form.useWatch("state_id", form);
-
-  useEffect(() => {
-    if (!watchedCountryId) {
-      setStates([]);
-      return;
-    }
-
-    StateAPI(watchedCountryId)
-      .then((res) => setStates(res?.data?.data?.all_state || []))
-      .catch((err) => {
-        console.log("Error fetching states:", err);
-        setStates([]);
-      });
-  }, [watchedCountryId]);
-
   const carpetPercentage = Form.useWatch("carpet_percentage", form) || 0;
   const concretePercentage = Form.useWatch("concrete_percentage", form) || 0;
   const vctLvtPercentage = Form.useWatch("vct_lvt_percentage", form) || 0;
@@ -173,22 +138,21 @@ const UpdateCustomer = () => {
   const fetchCities = (stateId) => {
     return CityAPI(stateId).then((res) => {
       const citiesList = res?.data?.data?.all_city || [];
-      setCities(citiesList);
       return citiesList; // Needed for chaining
     });
   };
+
+  const watchedStateId = Form.useWatch("state_id", form);
 
   // Re-fetch cities whenever the main form's state changes (covers both
   // the initial load, via the effect below, and the admin picking a
   // different state via onValuesChange).
   useEffect(() => {
     if (!watchedStateId) {
-      setCities([]);
       return;
     }
 
     fetchCities(watchedStateId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStateId]);
 
   const refreshUser = () => {
@@ -218,9 +182,7 @@ const UpdateCustomer = () => {
 
       const serviceAreas = getServiceAreasByType(userTypeFromBackend);
 
-      // =========================================================
       // INITIAL CLIENT CHART
-      // =========================================================
 
       if (userTypeFromBackend === "commercial") {
         if (details.length > 0) {
@@ -244,9 +206,7 @@ const UpdateCustomer = () => {
         }
       }
 
-      // =========================================================
       // BUILD CHECKLIST DETAILS
-      // =========================================================
 
       const mergedChecklist =
         details.length > 0
@@ -281,9 +241,7 @@ const UpdateCustomer = () => {
               special_requests: "",
             }));
 
-      // =========================================================
       // FORM
-      // =========================================================
 
       form.setFieldsValue({
         name: data?.user_profile?.name,
@@ -355,8 +313,6 @@ const UpdateCustomer = () => {
       },
     };
 
-    console.log("Submitting payload", JSON.stringify(payload, null, 2));
-
     const totalFloorPercentage =
       Number(values.carpet_percentage || 0) +
       Number(values.concrete_percentage || 0) +
@@ -380,19 +336,16 @@ const UpdateCustomer = () => {
       message.success("User updated successfully");
       setTimeout(() => navigate("/users"), 1000);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Update failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================================================
   // ADD ADDRESS MODAL — COUNTRY/STATE FETCHING
-  //
   // Separate state lists from the main form's, since this modal has
   // its own Country selection independent of the checklist's.
-  // =========================================================
 
   const fetchAddressStatesForCountry = (countryId) => {
     return StateAPI(countryId)
@@ -402,7 +355,7 @@ const UpdateCustomer = () => {
         return stateList;
       })
       .catch((err) => {
-        console.log("Error fetching states:", err);
+        console.error("Error fetching states:", err);
         setAddressStates([]);
         return [];
       });
@@ -430,7 +383,7 @@ const UpdateCustomer = () => {
         setAddressCoordinates({ lat: location.lat, lng: location.lng });
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -521,7 +474,7 @@ const UpdateCustomer = () => {
       setEditingAddress(null);
       addressForm.resetFields();
       setAddressCoordinates({ lat: null, lng: null });
-    } catch (err) {
+    } catch {
       message.error("Failed to save address");
     }
   };
@@ -640,7 +593,7 @@ const UpdateCustomer = () => {
         navigate(`/client-scope/${id}`);
       }, 1000);
     } catch (err) {
-      console.log("Scope of Work error:", err);
+      console.error("Scope of Work error:", err);
 
       const errorMessage =
         err?.response?.data?.message ||
@@ -668,6 +621,7 @@ const UpdateCustomer = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             width: "100%",
             gap: 2,
@@ -724,7 +678,6 @@ const UpdateCustomer = () => {
               // Switching country invalidates whatever state/city were
               // picked for the old one.
               form.setFieldsValue({ state_id: undefined, city_id: undefined });
-              setCities([]);
             }
 
             if (changed.state_id) {
@@ -752,7 +705,7 @@ const UpdateCustomer = () => {
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 name="name"
                 label="Full Name"
@@ -762,13 +715,13 @@ const UpdateCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item name="email" label="Email">
                 <Input disabled />
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item name="cc_email" label="CC Email">
                 <Input placeholder="Enter CC email" type="email" />
               </Form.Item>
@@ -776,7 +729,7 @@ const UpdateCustomer = () => {
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 name="walkaround_minutes"
                 label="Walkaround Time (Minutes)"
@@ -785,134 +738,18 @@ const UpdateCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item name="sqft" label="Estimated Sq/Ft">
                 <Input type="number" min={0} />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* =================================================
-              CLIENT LOCATION (checklist-level) — previously these
+          {/* CLIENT LOCATION (checklist-level) — previously these
               values were loaded into the form and resubmitted
               unchanged on every save, but had no actual input to
               edit them. Now a real, editable Country/State/City/
-              Address block, same simple pattern as Add Client.
-          ================================================== */}
-
-          {/* <Row gutter={[24, 24]}>
-            <Col span={6}>
-              <Form.Item
-                name="country_id"
-                label="Country"
-                rules={[
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      const addr = getFieldValue("address");
-                      if (!addr || value) return Promise.resolve();
-
-                      return Promise.reject(
-                        new Error(
-                          "Country is required when address is provided",
-                        ),
-                      );
-                    },
-                  }),
-                ]}
-              >
-                <Select
-                  showSearch
-                  placeholder="Select Country"
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                  filterSort={(optionA, optionB) =>
-                    optionA.children
-                      .toLowerCase()
-                      .localeCompare(optionB.children.toLowerCase())
-                  }
-                >
-                  {COUNTRIES.map((country) => (
-                    <Select.Option key={country.id} value={country.id}>
-                      {country.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item
-                name="state_id"
-                label="State"
-                rules={[
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      const addr = getFieldValue("address");
-                      if (!addr || value) return Promise.resolve();
-
-                      return Promise.reject(
-                        new Error("State is required when address is provided"),
-                      );
-                    },
-                  }),
-                ]}
-              >
-                <Select
-                  showSearch
-                  disabled={!watchedCountryId}
-                  placeholder="Select State"
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                  filterSort={(optionA, optionB) =>
-                    optionA.children
-                      .toLowerCase()
-                      .localeCompare(optionB.children.toLowerCase())
-                  }
-                >
-                  {states.map((s) => (
-                    <Select.Option key={s.id} value={s.id}>
-                      {s.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item name="city_id" label="City">
-                <Select
-                  showSearch
-                  disabled={!watchedStateId}
-                  placeholder="Select City"
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                  filterSort={(optionA, optionB) =>
-                    optionA.children
-                      .toLowerCase()
-                      .localeCompare(optionB.children.toLowerCase())
-                  }
-                >
-                  {cities.map((c) => (
-                    <Select.Option key={c.id} value={c.id}>
-                      {c.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-
-            <Col span={6}>
-              <Form.Item name="address" label="Address">
-                <Input placeholder="Street address" />
-              </Form.Item>
-            </Col>
-          </Row> */}
+              Address block, same simple pattern as Add Client. */}
 
           {/* Client Addresses Card */}
           <Paper
@@ -970,7 +807,7 @@ const UpdateCustomer = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
                   gap: "16px",
                 }}
               >
@@ -1011,7 +848,7 @@ const UpdateCustomer = () => {
 
                     <Divider sx={{ my: 0.5 }} />
 
-                    <Stack direction="row" spacing={1}>
+                    <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
                       <Tooltip title="Edit Address">
                         <IconButton
                           size="small"
@@ -1117,7 +954,7 @@ const UpdateCustomer = () => {
             </div>
 
             <Row gutter={[24, 24]}>
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Carpet (%)"
                   name="carpet_percentage"
@@ -1127,7 +964,7 @@ const UpdateCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Concrete (%)"
                   name="concrete_percentage"
@@ -1137,7 +974,7 @@ const UpdateCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="VCT/LVT (%)"
                   name="vct_lvt_percentage"
@@ -1147,7 +984,7 @@ const UpdateCustomer = () => {
                 </Form.Item>
               </Col>
 
-              <Col span={6}>
+              <Col xs={24} sm={12} md={6}>
                 <Form.Item
                   label="Tile (%)"
                   name="tile_percentage"
@@ -1191,7 +1028,7 @@ const UpdateCustomer = () => {
                 </div>
               </div>
 
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack useFlexGap sx={{ alignItems: "center", flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
                 <AntButton
                   type="primary"
                   loading={checkingScope}

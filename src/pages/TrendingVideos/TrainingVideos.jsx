@@ -1,7 +1,5 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import { Table, Modal, message, Space } from "antd";
+import { useEffect, useState } from "react";
+import { Table, Modal, message } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -78,7 +76,7 @@ const TrainingVideos = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack direction="row" spacing={0.5}>
+				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
 					<Tooltip title="Edit Video">
 						<IconButton
 							size="small"
@@ -116,7 +114,7 @@ const TrainingVideos = () => {
 			if (e.response && e.response.status === 403) {
 				navigate("/error401");
 			} else {
-				console.log("Error loading data.");
+				console.error("Error loading data.");
 			}
 		} finally {
 			setLoading(false);
@@ -150,7 +148,7 @@ const TrainingVideos = () => {
 					await DeleteVideos(brandIds, localStorage.getItem("adminToken"));
 					message.success("Video(s) deleted successfully");
 					getData();
-				} catch (error) {
+				} catch {
 					message.error("Error deleting Video(s)");
 				}
 			},
@@ -177,7 +175,7 @@ const TrainingVideos = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap
 					direction="row"
 					spacing={2}
 					sx={{

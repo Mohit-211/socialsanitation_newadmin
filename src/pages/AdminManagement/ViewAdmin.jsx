@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GetAdminProfile } from "../../services/Api/Api.jsx";
 import Box from "@mui/material/Box";
@@ -16,7 +16,7 @@ const ViewAdmin = () => {
       let result = await GetAdminProfile(localStorage.getItem("adminToken"));
       setIdData(result.data.data);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 

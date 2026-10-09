@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 import Card from "@mui/material/Card";
@@ -28,11 +26,7 @@ import {
 	GetAllCleanerByAdmin,
 	GetAllQualityInspectorByAdmin,
 } from "../../services/Api/Api";
-import {
-	GetAllServiceCheckListByBookingId,
-	GetBookingById,
-	UpdateBooking,
-} from "../../services/Api/BookingApi";
+import { GetBookingById, UpdateBooking } from "../../services/Api/BookingApi";
 import dayjs from "@/lib/dayjs";
 
 const EditBookings = () => {
@@ -65,7 +59,6 @@ const EditBookings = () => {
 	const [editModeModalOpen, setEditModeModalOpen] = useState(false);
 
 	const [loading, setLoading] = useState(true);
-	const [checkListData, setChecklistData] = useState([]);
 
 	useEffect(() => {
 		if (bookingData?.type === "Recurring Booking") {
@@ -82,19 +75,6 @@ const EditBookings = () => {
 				setRecurrenceEndValue(bookingData.recurrence_end_value);
 		}
 	}, [bookingData]);
-
-	useLayoutEffect(() => {
-		const fetchBookingData = async () => {
-			try {
-				const res = await GetAllServiceCheckListByBookingId(id);
-				setChecklistData(res.data.data);
-				console.log(res.data.data, "chejed");
-			} catch (error) {
-				console.error("Failed to fetch booking data:", error);
-			}
-		};
-		fetchBookingData();
-	}, [id]);
 
 	// Fetch employee lists (supervisors, cleaners, and quality inspectors)
 	const getSupervisorList = async () => {
@@ -150,10 +130,8 @@ const EditBookings = () => {
 			try {
 				const res = await GetBookingById(id);
 				setBookingData(res.data.data);
-				// form.setFieldsValue(res.data.data);
 				form.setFieldsValue({
 					...res.data.data,
-					// date: res.data.data.date ? dayjs(res.data.data.date, "YYYY-MM-DD") : null,
 					time: res.data.data.time
 						? dayjs(res.data.data.time, "HH:mm:ss")
 						: null,
@@ -247,9 +225,6 @@ const EditBookings = () => {
 				: [...prev, { employee_id: employeeId }]
 		);
 	};
-	console.log(bookingData.type, "qsdsd");
-	console.log(bookingData?.recurrence_id, "recurrence_id");
-	console.log(bookingData?.recurring_type, "recurring_type");
 	useEffect(() => {
 		if (bookingData?.recurring_type) {
 			setRecurringType(bookingData.recurring_type);
@@ -258,16 +233,13 @@ const EditBookings = () => {
 	}, [bookingData]);
 
 	const handleSave = () => {
-		console.log("action taken");
 		if (
 			bookingData?.type === "Recurring Booking" &&
 			bookingData?.recurrence_id
 		) {
-			console.log("going open edit mode modal");
 			// Open the modal and wait for user action
 			setEditModeModalOpen(true);
 		} else {
-			console.log("goiing to handleSubmit");
 			// Directly submit for non-recurring bookings
 			handleSubmit();
 		}
@@ -323,8 +295,6 @@ const EditBookings = () => {
 		if (newEndTime !== bookingData.end_time_by_admin) {
 			formData.end_time_by_admin = newEndTime;
 		}
-
-		console.log(formValues.end_time_by_admin, "fdddddwdw");
 
 		// EMPLOYEE COMPARISONS
 		const getIdsByRole = (role_id) =>
@@ -386,7 +356,6 @@ const EditBookings = () => {
 			if (recurringType && recurringType !== bookingData.recurring_type) {
 				formData.recurring_type = recurringType;
 			}
-			console.log(recurringType, "recurringType");
 
 			// weekly repeat_on_days comparison
 			if (recurringType === "week") {
@@ -399,7 +368,6 @@ const EditBookings = () => {
 					formData.repeat_on_days = newRepeatOn; // ✅ correct
 				}
 			}
-			console.log("recurrence_end_type", recurrenceEndType);
 			// Recurrence end comparison
 			if (
 				recurrenceEndType ||
@@ -422,10 +390,6 @@ const EditBookings = () => {
 				}
 			}
 		}
-		console.log("edit_mode being sent:", formData.edit_mode);
-
-		console.log("✅ Final Changed formData =>", formData);
-		console.log("✅ formData.recurring_every", formData.recurring_every);
 
 		UpdateBooking(formData)
 			.then((res) => {
@@ -455,27 +419,6 @@ const EditBookings = () => {
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	// {
-	// 	isSubmitting && (
-	// 		<div
-	// 			style={{
-	// 				position: "fixed",
-	// 				top: 0,
-	// 				left: 0,
-	// 				width: "100vw",
-	// 				height: "100vh",
-	// 				backgroundColor: "rgba(255, 255, 255, 0.7)",
-	// 				display: "flex",
-	// 				justifyContent: "center",
-	// 				alignItems: "center",
-	// 				zIndex: 9999,
-	// 			}}
-	// 		>
-	// 			<Spin size="large" tip="Updating..." />
-	// 		</div>
-	// 	);
-	// }
-
 	return (
 		<Box>
 			<Paper
@@ -491,6 +434,7 @@ const EditBookings = () => {
 					sx={{
 						display: "flex",
 						justifyContent: "space-between",
+						flexWrap: { xs: "wrap", md: "nowrap" },
 						alignItems: "center",
 						width: "100%",
 						gap: 2,
@@ -532,8 +476,9 @@ const EditBookings = () => {
 			</Paper>
 			<Spin spinning={isSubmitting} tip="Updating..." size="large">
 				<Form form={form} layout="vertical">
-					<div style={{ display: "flex", flexDirection: "row" }}>
+					<div className="booking-edit">
 						<Card
+							className="booking-edit__side"
 							style={{
 								width: "30%",
 								marginRight: "20px",
@@ -762,7 +707,10 @@ const EditBookings = () => {
 								></Button>
 							</div>
 						</Card>
-						<Card style={{ width: "70%", padding: "24px", borderRadius: "10px" }}>
+						<Card
+							className="booking-edit__main"
+							style={{ width: "70%", padding: "24px", borderRadius: "10px" }}
+						>
 							<h4
 								style={{
 									fontSize: "1.2rem",
@@ -816,7 +764,7 @@ const EditBookings = () => {
 
 									{bookingData?.user_id === null ? (
 										<Row gutter={8}>
-											<Col span={12}>
+											<Col xs={24} md={12}>
 												<Form.Item label="Client Name" name="client_name">
 													<Input
 														value={bookingData?.client_name}
@@ -825,7 +773,7 @@ const EditBookings = () => {
 													/>
 												</Form.Item>
 											</Col>
-											<Col span={12}>
+											<Col xs={24} md={12}>
 												<Form.Item label="Booking Name" name="booking_name">
 													<Input
 														placeholder="Enter Booking Name"
@@ -852,7 +800,7 @@ const EditBookings = () => {
 									{bookingData?.type === "One Time Booking" && (
 										<>
 											<Row gutter={8}>
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item label="Date">
 														{bookingData?.date ? (
 															<DatePicker
@@ -883,7 +831,7 @@ const EditBookings = () => {
 													</Form.Item>
 												</Col>
 
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item name="time" label="Time">
 														<TimePicker
 															use12Hours
@@ -894,30 +842,13 @@ const EditBookings = () => {
 													</Form.Item>
 												</Col>
 
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item name="end_time_by_admin" label="End Time">
 														<TimePicker
 															minuteStep={5}
 															use12Hours
 															format="hh:mm A"
 															style={{ width: "100%" }}
-															// value={
-															// 	bookingData?.end_time_by_admin
-															// 		? dayjs(
-															// 				bookingData.end_time_by_admin,
-															// 				"HH:mm:ss"
-															// 		  )
-															// 		: null
-															// }
-															// onChange={(time) => {
-															// 	form.setFieldValue("end_time_by_admin", time);
-															// 	setBookingData((prev) => ({
-															// 		...prev,
-															// 		end_time_by_admin: time
-															// 			? time.format("HH:mm:ss")
-															// 			: null,
-															// 	}));
-															// }}
 														/>
 													</Form.Item>
 												</Col>
@@ -945,7 +876,7 @@ const EditBookings = () => {
 												?.filter((emp) => emp.role_id === 7)
 												.map((emp) => emp.employee_profile?.user_profile?.name)} // This should be the correct array
 											tagRender={(props) => {
-												const { label, value, onClose } = props;
+												const { label, onClose } = props;
 
 												const employeeId = bookingEmployeeDetails?.find(
 													(emp) =>
@@ -1013,7 +944,7 @@ const EditBookings = () => {
 												?.filter((emp) => emp.role_id === 8)
 												.map((emp) => emp.employee_profile?.user_profile?.name)}
 											tagRender={(props) => {
-												const { label, value, onClose } = props;
+												const { label, onClose } = props;
 
 												const employeeId = bookingEmployeeDetails?.find(
 													(emp) =>
@@ -1078,7 +1009,7 @@ const EditBookings = () => {
 												?.filter((emp) => emp.role_id === 9)
 												.map((emp) => emp.employee_profile?.user_profile?.name)}
 											tagRender={(props) => {
-												const { label, value, onClose } = props;
+												const { label, onClose } = props;
 
 												const employeeId = bookingEmployeeDetails?.find(
 													(emp) =>
@@ -1143,7 +1074,7 @@ const EditBookings = () => {
 
 											{/* Start Date */}
 											<Row gutter={8}>
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item label="Start Date">
 														{bookingData?.date ? (
 															<DatePicker
@@ -1174,7 +1105,7 @@ const EditBookings = () => {
 													</Form.Item>
 												</Col>
 
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item name="time" label="Start Time">
 														{bookingData?.time ? (
 															<TimePicker
@@ -1196,21 +1127,13 @@ const EditBookings = () => {
 													</Form.Item>
 												</Col>
 
-												<Col span={8}>
+												<Col xs={24} sm={12} md={8}>
 													<Form.Item name="end_time_by_admin" label="End Time">
 														<TimePicker
 															minuteStep={5}
 															use12Hours
 															format="hh:mm A"
 															style={{ width: "100%" }}
-															// value={
-															// 	bookingData?.end_time_by_admin
-															// 		? dayjs(
-															// 				bookingData.end_time_by_admin,
-															// 				"HH:mm:ss"
-															// 		  )
-															// 		: null
-															// }
 															onChange={(time) => {
 																form.setFieldValue("end_time_by_admin", time);
 																setBookingData((prev) => ({

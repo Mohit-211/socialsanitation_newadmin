@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Select, Spin, Table, message } from "antd";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -69,7 +67,6 @@ const WeeklyChecklistView = () => {
 		const headingsMap = {};
 
 		Object.entries(checklistData).forEach(([date, groups]) => {
-			console.log("Checklist data breakdown:", checklistData);
 
 			if (!Array.isArray(groups)) return; // ✅ skip non-array values
 
@@ -152,7 +149,7 @@ const WeeklyChecklistView = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap
 					direction="row"
 					spacing={2}
 					sx={{
@@ -179,7 +176,7 @@ const WeeklyChecklistView = () => {
 
 					<Select
 						placeholder="Select Cleaner or Housekeeping User"
-						style={{ width: 350, flexShrink: 0 }}
+						style={{ width: 350, maxWidth: "100%", flexShrink: 0 }}
 						onChange={(val) => setSelectedUser(val)}
 						value={selectedUser}
 						loading={users.length === 0}

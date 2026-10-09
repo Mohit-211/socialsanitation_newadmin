@@ -13,12 +13,6 @@
     text-transform: none;
     font-weight: 400;
   }
-
-  .saving_buttons {
-    text-align: right;
-    width: 100%;
-  }
-
   // Borderless, softly-striped table to match design reference
   .service-table {
     :global(.ant-table) {
@@ -54,11 +48,6 @@
     .page-title {
       font-size: 20px;
     }
-
-    .saving_buttons {
-      text-align: center;
-    }
-
     :global(.ant-input-affix-wrapper) {
       max-width: 100% !important;
     }

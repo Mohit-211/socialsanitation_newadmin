@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { message, Select } from "antd";
 import {
   CalculatorOutlined,
@@ -21,7 +21,7 @@ import { GetClientChecklistByUserId } from "../../services/Api/BookingApi";
 
 const { Option } = Select;
 
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// TOAST
 const useToast = () => {
   const [toasts, setToasts] = useState([]);
 
@@ -47,7 +47,7 @@ const useToast = () => {
   return { show, ToastContainer };
 };
 
-// ─── FORMULA CHIPS DATA ───────────────────────────────────────────────────────
+// FORMULA CHIPS DATA
 const TIME_FORMULAS = [
   {
     name: "Square Footage",
@@ -123,7 +123,7 @@ const HOW_TO_STEPS = [
   "Generate the Cost Calculation and then use Bid Maximizer to create customer-facing pricing.",
 ];
 
-// ─── INSTRUCTIONS MODAL ───────────────────────────────────────────────────────
+// INSTRUCTIONS MODAL
 const FormulaGrid = ({ formulas }) => (
   <div className="cc-formula-grid">
     {formulas.map((f) => (
@@ -261,7 +261,7 @@ const InstructionsModal = ({ onClose }) => (
   </div>
 );
 
-// ─── PROPERTY FIELDS CONFIG ───────────────────────────────────────────────────
+// PROPERTY FIELDS CONFIG
 const PROPERTY_FIELDS = [
   { key: "room_count", label: "Rooms" },
   { key: "restroom_count", label: "Restrooms" },
@@ -280,7 +280,7 @@ const BID_FIELDS = [
   { key: "commission_percentage", label: "Commission (%)" },
 ];
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+// MAIN COMPONENT
 const CostCalculator = () => {
   const { show, ToastContainer } = useToast();
 
@@ -640,7 +640,6 @@ const CostCalculator = () => {
   const tileSqft =
     (Number(formData.estimated_sqft) * floorComposition.tile) / 100;
 
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <>
       {ToastContainer}
@@ -650,7 +649,7 @@ const CostCalculator = () => {
       )}
 
       <div className="cc-page">
-        {/* ══════════════════ LEFT COLUMN ══════════════════ */}
+        {/* LEFT COLUMN */}
         <div>
           {/* Header */}
           <div className="cc-page-header">
@@ -1070,7 +1069,7 @@ const CostCalculator = () => {
           )}
         </div>
 
-        {/* ══════════════════ RIGHT SIDEBAR ══════════════════ */}
+        {/* RIGHT SIDEBAR */}
         <div className="cc-sidebar">
           {/* Live Estimate */}
           <div className="cc-card cc-card--accent">

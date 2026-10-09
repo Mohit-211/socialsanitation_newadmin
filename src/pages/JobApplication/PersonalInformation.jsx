@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
 import {
   Form,
@@ -37,7 +37,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
         onValuesChange={handleChange} // ✅ Sync changes to state
       >
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item
               label="First Name"
               name="firstName"
@@ -48,12 +48,12 @@ const PersonalInformation = ({ formData, setFormData }) => {
               <Input placeholder="First" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item label="Middle Name" name="middleName">
               <Input placeholder="Middle" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item
               label="Last Name"
               name="lastName"
@@ -77,7 +77,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Street Address"
               name="streetAddress"
@@ -91,7 +91,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
               <Input placeholder="Enter your street address" />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item label="Apt/Suite" name="aptSuite">
               <Input placeholder="Apt/Suite" />
             </Form.Item>
@@ -99,7 +99,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item
               label="City"
               name="city"
@@ -108,7 +108,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
               <Input placeholder="Enter your city" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item
               label="State"
               name="state"
@@ -117,7 +117,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
               <Input placeholder="Enter your state" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Form.Item
               label="Zip Code"
               name="zipCode"
@@ -131,7 +131,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
         </Row>
 
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="E-Mail"
               name="email"
@@ -143,7 +143,7 @@ const PersonalInformation = ({ formData, setFormData }) => {
               <Input type="email" placeholder="Enter your email" />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Phone"
               name="phone"

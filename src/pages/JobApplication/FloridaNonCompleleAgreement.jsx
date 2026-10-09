@@ -1,5 +1,4 @@
 import { Col, Form, Input, Row } from "antd";
-import React from "react";
 
 const FloridaNonCompleleAgreement = () => {
   return (
@@ -268,7 +267,7 @@ const FloridaNonCompleleAgreement = () => {
           <Form layout="vertical">
             <Row gutter={16}>
               {/* Left Column - The Company */}
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <h4>The Company</h4>
                 <Form.Item name="companySignature" label="Signature">
                   <Input placeholder="Signature" />
@@ -279,7 +278,7 @@ const FloridaNonCompleleAgreement = () => {
               </Col>
 
               {/* Right Column - The Recipient */}
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <h4>The Recipient</h4>
                 <Form.Item name="recipientSignature" label="Signature">
                   <Input placeholder="Signature" />

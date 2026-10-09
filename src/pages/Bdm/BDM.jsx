@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Input } from "antd";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -27,7 +27,7 @@ const BDM = () => {
   const [userdData, setUserData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [tableParams, setTableParams] = useState({
+  const [tableParams] = useState({
     pagination: { current: 1, pageSize: 10 },
   });
 
@@ -141,7 +141,7 @@ const BDM = () => {
           message.success("Deleted successfully");
           setSelectedRowKeys([]);
           getData();
-        } catch (error) {
+        } catch {
           message.error("Error deleting record(s)");
         }
       },
@@ -184,10 +184,6 @@ const BDM = () => {
     navigate(`/assign/${id}`);
   };
 
-  const onSelectChange = (newSelectedRowKeys) => {
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
   const getUserData = async (id) => {
     try {
       let result = await GetUserByBDMId(id);
@@ -197,7 +193,7 @@ const BDM = () => {
       }));
       setUserData(dataWithIndex);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -212,7 +208,7 @@ const BDM = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -286,10 +282,6 @@ const BDM = () => {
           dataSource={data}
           pagination={{ ...tableParams.pagination, showSizeChanger: true }}
           loading={loading}
-          //   rowSelection={{
-          //     selectedRowKeys,
-          //     onChange: onSelectChange,
-          //   }}
           className="custom-table"
           bordered
           size="middle"

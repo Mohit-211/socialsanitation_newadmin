@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { GetAttendanceByUserId } from "../../services/Api/leaveRequestApi";
 import { Table, Select, DatePicker, Image } from "antd";
@@ -33,7 +31,7 @@ const Attendance = () => {
 		});
 	};
 	// 🔹 Fetch Attendance Data
-	const getData = async (booking_status) => {
+	const getData = async () => {
 		try {
 			setLoading(true);
 			const formData = { id, filterType };
@@ -49,9 +47,8 @@ const Attendance = () => {
 				autoIncrementId: index + 1,
 			}));
 			setAttendanceData(dataWithIndex);
-			console.log("userbooking==>", dataWithIndex);
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 		} finally {
 			setLoading(false);
 		}

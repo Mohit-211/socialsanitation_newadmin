@@ -1,24 +1,21 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    Box,
-    Button,
-    Paper,
-    Typography,
-    TextField,
-    MenuItem,
-    Select,
-    FormControl,
-    FormLabel,
-    CircularProgress,
-    Radio,
-    RadioGroup,
-    FormControlLabel,
-    Chip,
-    Avatar,
-    Divider,
-    Collapse,
+  Box,
+  Button,
+  Paper,
+  Typography,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  FormLabel,
+  CircularProgress,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  Chip,
+  Divider,
+  Collapse,
 } from "@mui/material";
 
 import {
@@ -49,9 +46,7 @@ import {
     Globe,
 } from "lucide-react";
 
-// =========================================================
 // US STATE ABBREVIATIONS
-// =========================================================
 
 const STATE_ABBREVIATIONS = {
     AL: "Alabama",
@@ -106,14 +101,11 @@ const STATE_ABBREVIATIONS = {
     WY: "Wyoming",
 };
 
-// =========================================================
 // COUNTRIES
-//
 // The hiring form now collects a country. Older submissions were
 // taken before that field existed and come back with an empty
 // string — those are treated as USA, matching what every existing
 // hiring form actually was.
-// =========================================================
 
 const COUNTRY_IDS = {
     USA: 233,
@@ -157,10 +149,8 @@ const resolveCountryId = (countryName) => {
     return COUNTRY_IDS.USA;
 };
 
-// =========================================================
 // SHARED STYLE TOKENS (kept consistent with the rest of the
 // admin panel — navy / green, outlined 10px paper, #eef0f2)
-// =========================================================
 
 const NAVY = "#16324f";
 const NAVY_DARK = "#2c3345";
@@ -212,9 +202,7 @@ const AddServiceProvider = () => {
     const [disable, setDisable] = useState(false);
     const [employeeType, setEmployeeType] = useState("");
 
-    // =========================================================
     // HIRING FORM STATES
-    // =========================================================
 
     const [hiringForms, setHiringForms] = useState([]);
     const [selectedHiringForm, setSelectedHiringForm] =
@@ -225,11 +213,7 @@ const AddServiceProvider = () => {
     // show "no forms found" after a real attempt (not on first render).
     const [hasSearched, setHasSearched] = useState(false);
 
-    // =========================================================
     // LOCATION STATES
-    // =========================================================
-
-    const [states, setStates] = useState([]);
 
     const [hiringFormLocation, setHiringFormLocation] =
         useState({
@@ -248,37 +232,7 @@ const AddServiceProvider = () => {
 
     const navigate = useNavigate();
 
-    // =========================================================
-    // FETCH STATES
-    //
-    // Just a background prefetch for USA — resolveHiringFormLocation
-    // below always re-fetches states for whichever country the
-    // selected hiring form actually resolves to, so this isn't
-    // depended on for correctness.
-    // =========================================================
-
-    useEffect(() => {
-        const fetchStates = async () => {
-            try {
-                const response = await StateAPI(COUNTRY_IDS.USA);
-
-                setStates(
-                    response?.data?.data?.all_state || [],
-                );
-            } catch (error) {
-                console.error(
-                    "Error fetching states:",
-                    error,
-                );
-            }
-        };
-
-        fetchStates();
-    }, []);
-
-    // =========================================================
     // RESET HIRING FORM LOCATION
-    // =========================================================
 
     const resetHiringFormLocation = () => {
         setHiringFormLocation({
@@ -290,12 +244,9 @@ const AddServiceProvider = () => {
         });
     };
 
-    // =========================================================
     // FETCH HIRING FORMS WHEN EMAIL OR NAME CHANGES
-    //
     // Either field alone is enough to search — the backend matches
     // on email OR name, so we send whichever (or both) are filled in.
-    // =========================================================
 
     useEffect(() => {
         const normalizedEmail = email.trim().toLowerCase();
@@ -363,9 +314,7 @@ const AddServiceProvider = () => {
         return () => clearTimeout(timer);
     }, [email, nameQuery, navigate]);
 
-    // =========================================================
     // RESOLVE HIRING FORM LOCATION
-    // =========================================================
 
     const resolveHiringFormLocation = async (
         form,
@@ -375,9 +324,7 @@ const AddServiceProvider = () => {
 
             resetHiringFormLocation();
 
-            // =================================================
             // VALIDATE STATE / CITY
-            // =================================================
 
             if (!form?.state) {
                 throw new Error(
@@ -391,31 +338,18 @@ const AddServiceProvider = () => {
                 );
             }
 
-            // =================================================
             // RESOLVE COUNTRY
-            //
             // Empty/missing on older hiring forms — treated as
             // USA, since every hiring form was USA before the
             // country field was added.
-            // =================================================
 
             const countryId = resolveCountryId(form.country);
 
-            console.log(
-                "Hiring form country:",
-                form.country,
-                "-> resolved country_id:",
-                countryId,
-            );
-
-            // =================================================
             // NORMALIZE STATE
-            //
             // Example:
             // FL -> Florida
             // fl -> Florida
             // Florida -> Florida
-            // =================================================
 
             const formState = form.state
                 .trim()
@@ -426,26 +360,13 @@ const AddServiceProvider = () => {
                     formState
                 ] || form.state.trim();
 
-            console.log(
-                "Hiring form state:",
-                form.state,
-            );
-
-            console.log(
-                "Normalized state:",
-                normalizedStateName,
-            );
-
-            // =================================================
             // FETCH STATES FRESH — FOR THE RESOLVED COUNTRY
-            //
             // Don't rely on the `states` state variable here —
             // it's populated by a separate useEffect that could
             // still be in flight, and it's only ever prefetched
             // for USA. Fetching directly (same pattern as CityAPI
             // below) removes any race and gets the right country's
             // state list.
-            // =================================================
 
             const stateResponse = await StateAPI(countryId);
 
@@ -453,9 +374,7 @@ const AddServiceProvider = () => {
                 stateResponse?.data?.data
                     ?.all_state || [];
 
-            // =================================================
             // MATCH STATE WITH OUR STATE LIST
-            // =================================================
 
             const matchedState = stateList.find(
                 (state) =>
@@ -473,14 +392,7 @@ const AddServiceProvider = () => {
                 );
             }
 
-            console.log(
-                "Matched state:",
-                matchedState,
-            );
-
-            // =================================================
             // FETCH CITIES FOR MATCHED STATE
-            // =================================================
 
             const cityResponse = await CityAPI(
                 matchedState.id,
@@ -490,14 +402,7 @@ const AddServiceProvider = () => {
                 cityResponse?.data?.data
                     ?.all_city || [];
 
-            console.log(
-                "Cities for state:",
-                cityList,
-            );
-
-            // =================================================
             // NORMALIZE CITY
-            // =================================================
 
             const normalizedCityName =
                 form.city
@@ -505,9 +410,7 @@ const AddServiceProvider = () => {
                     .replace(/\s+/g, " ")
                     .toLowerCase();
 
-            // =================================================
             // MATCH CITY
-            // =================================================
 
             const matchedCity =
                 cityList.find(
@@ -528,14 +431,7 @@ const AddServiceProvider = () => {
                 );
             }
 
-            console.log(
-                "Matched city:",
-                matchedCity,
-            );
-
-            // =================================================
             // BUILD FULL ADDRESS
-            // =================================================
 
             const fullAddress = [
                 form.address,
@@ -552,14 +448,7 @@ const AddServiceProvider = () => {
                 );
             }
 
-            console.log(
-                "Address for geocoding:",
-                fullAddress,
-            );
-
-            // =================================================
             // GOOGLE GEOCODING
-            // =================================================
 
             const geocodeResponse =
                 await fetch(
@@ -570,11 +459,6 @@ const AddServiceProvider = () => {
 
             const geocodeData =
                 await geocodeResponse.json();
-
-            console.log(
-                "Google geocode response:",
-                geocodeData,
-            );
 
             if (
                 geocodeData.status !==
@@ -601,9 +485,7 @@ const AddServiceProvider = () => {
                 );
             }
 
-            // =================================================
             // FINAL LOCATION DATA
-            // =================================================
 
             const locationData = {
                 country_id: countryId,
@@ -618,11 +500,6 @@ const AddServiceProvider = () => {
 
                 lng: location.lng,
             };
-
-            console.log(
-                "Final hiring form location:",
-                locationData,
-            );
 
             setHiringFormLocation(
                 locationData,
@@ -643,9 +520,7 @@ const AddServiceProvider = () => {
         }
     };
 
-    // =========================================================
     // SELECT HIRING FORM
-    // =========================================================
 
     const handleHiringFormSelect = async (
         form,
@@ -677,18 +552,14 @@ const AddServiceProvider = () => {
         }
     };
 
-    // =========================================================
     // SUBMIT
-    // =========================================================
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         setDisable(true);
 
-        // =====================================================
         // BASIC VALIDATION
-        // =====================================================
 
         if (!name?.trim()) {
             message.error(
@@ -726,9 +597,7 @@ const AddServiceProvider = () => {
             return;
         }
 
-        // =====================================================
         // HIRING FORM REQUIRED FOR EMPLOYEES
-        // =====================================================
 
         if (!selectedHiringForm) {
             message.error(
@@ -739,9 +608,7 @@ const AddServiceProvider = () => {
             return;
         }
 
-        // =====================================================
         // LOCATION REQUIRED
-        // =====================================================
 
         if (
             !hiringFormLocation.country_id ||
@@ -758,11 +625,9 @@ const AddServiceProvider = () => {
             return;
         }
 
-        // =====================================================
         // ROLE / SUB ROLE
-        // =====================================================
 
-        let finalRoleId = roleId;
+        let finalRoleId;
         let subRoleId = null;
 
         if (roleId.includes("-")) {
@@ -780,9 +645,7 @@ const AddServiceProvider = () => {
         }
 
         try {
-            // =================================================
             // ADD USER PAYLOAD
-            // =================================================
 
             const payload = {
                 email: email
@@ -803,16 +666,12 @@ const AddServiceProvider = () => {
                 // even though the dropdown showed a value selected.)
                 employee_type: employeeType,
 
-                // =============================================
                 // SELECTED HIRING FORM
-                // =============================================
 
                 hiring_form_submission_id:
                     selectedHiringForm.submission_id,
 
-                // =============================================
                 // LOCATION
-                // =============================================
 
                 country_id:
                     hiringFormLocation.country_id,
@@ -829,26 +688,6 @@ const AddServiceProvider = () => {
                 address_long:
                     hiringFormLocation.lng,
             };
-
-            console.log(
-                "========================================",
-            );
-
-            console.log(
-                "ADD EMPLOYEE PAYLOAD",
-            );
-
-            console.log(
-                JSON.stringify(
-                    payload,
-                    null,
-                    2,
-                ),
-            );
-
-            console.log(
-                "========================================",
-            );
 
             const response =
                 await AddUser(payload);
@@ -909,17 +748,13 @@ const AddServiceProvider = () => {
         }
     };
 
-    // =========================================================
     // NAVIGATION
-    // =========================================================
 
     const navigateToUser = () => {
         navigate("/employees");
     };
 
-    // =========================================================
     // DATE FORMAT
-    // =========================================================
 
     const formatSubmittedDate = (
         date,
@@ -937,9 +772,7 @@ const AddServiceProvider = () => {
         });
     };
 
-    // =========================================================
     // DERIVED — UI ONLY
-    // =========================================================
 
     const locationReady =
         !loadingLocation &&
@@ -958,9 +791,7 @@ const AddServiceProvider = () => {
 
     return (
         <Box>
-            {/* =====================================================
-                HEADER
-            ====================================================== */}
+            {/* HEADER */}
 
             <Paper
                 variant="outlined"
@@ -975,6 +806,7 @@ const AddServiceProvider = () => {
                     sx={{
                         display: "flex",
                         justifyContent: "space-between",
+                        flexWrap: { xs: "wrap", md: "nowrap" },
                         alignItems: "center",
                         gap: 2,
                     }}
@@ -1030,9 +862,7 @@ const AddServiceProvider = () => {
                 </Box>
             </Paper>
 
-            {/* =====================================================
-                HOW THIS WORKS
-            ====================================================== */}
+            {/* HOW THIS WORKS */}
 
             <Paper
                 variant="outlined"
@@ -1165,9 +995,7 @@ const AddServiceProvider = () => {
                 </Collapse>
             </Paper>
 
-            {/* =====================================================
-                FORM
-            ====================================================== */}
+            {/* FORM */}
 
             <Paper variant="outlined" sx={sectionCard}>
                 <form onSubmit={handleSubmit}>
@@ -1178,9 +1006,7 @@ const AddServiceProvider = () => {
                             gap: 3,
                         }}
                     >
-                        {/* =================================================
-                            BASIC INFO
-                        ================================================== */}
+                        {/* BASIC INFO */}
 
                         <Box
                             sx={{
@@ -1281,9 +1107,7 @@ const AddServiceProvider = () => {
                             </FormControl>
                         </Box>
 
-                        {/* =================================================
-                            HIRING FORMS
-                        ================================================== */}
+                        {/* HIRING FORMS */}
 
                         {hasSearchInput && (
                             <Box>
@@ -1428,6 +1252,7 @@ const AddServiceProvider = () => {
                                                                             "flex-start",
                                                                         justifyContent:
                                                                             "space-between",
+                                                                        flexWrap: { xs: "wrap", md: "nowrap" },
                                                                         gap: 1,
                                                                         width: "100%",
                                                                         pl: 0.5,
@@ -1541,9 +1366,7 @@ const AddServiceProvider = () => {
                             </Box>
                         )}
 
-                        {/* =================================================
-                            SELECTED HIRING FORM DETAILS
-                        ================================================== */}
+                        {/* SELECTED HIRING FORM DETAILS */}
 
                         {selectedHiringForm && (
                             <Paper
@@ -1686,9 +1509,7 @@ const AddServiceProvider = () => {
 
                         <Divider sx={{ borderColor: BORDER }} />
 
-                        {/* =================================================
-                            ROLE / TYPE
-                        ================================================== */}
+                        {/* ROLE / TYPE */}
 
                         <Box
                             sx={{
@@ -1725,7 +1546,7 @@ const AddServiceProvider = () => {
                                     }}
                                 >
                                     <MenuItem value="" disabled>
-                                        <Typography color="text.secondary">
+                                        <Typography sx={{ color: "text.secondary" }}>
                                             Select User Type
                                         </Typography>
                                     </MenuItem>
@@ -1773,7 +1594,7 @@ const AddServiceProvider = () => {
                                     }}
                                 >
                                     <MenuItem value="" disabled>
-                                        <Typography color="text.secondary">
+                                        <Typography sx={{ color: "text.secondary" }}>
                                             Select Employee Type
                                         </Typography>
                                     </MenuItem>
@@ -1789,9 +1610,7 @@ const AddServiceProvider = () => {
                             </FormControl>
                         </Box>
 
-                        {/* =================================================
-                            ACTION BUTTONS
-                        ================================================== */}
+                        {/* ACTION BUTTONS */}
 
                         <Box
                             sx={{

@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./Servicerequest.scss";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -66,9 +64,6 @@ const EditServiceRequest = () => {
 
       const quote = res.data.data;
 
-      console.log("QUOTE", quote);
-      console.log("ITEMS", quote.service_request_quote_item);
-
       setFormData({
         user_id: quote.user_id,
         ref: quote.ref_no,
@@ -94,16 +89,6 @@ const EditServiceRequest = () => {
             amount: item.amount,
           })) || [],
       });
-
-      console.log(
-        quote.service_request_quote_item?.map((item) => ({
-          description: item.description,
-          frequency: item.frequency,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          amount: item.amount,
-        })),
-      );
 
       setUserId(quote.user_id);
     } finally {
@@ -389,7 +374,6 @@ const EditServiceRequest = () => {
       render: (text, record, index) => (
         <InputNumber
           min={1}
-          // precision={0}
           step={1}
           value={text !== "" ? Number(text) : undefined}
           onChange={(value) => handleItemChange(index, "quantity", value)}
@@ -618,13 +602,11 @@ const EditServiceRequest = () => {
           our representative.
         </div>
 
-        <div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
-            style={{ left: "85%" }}
             onClick={handleSubmit}
             loading={isLoading}
-            // disabled={isLoading}
           >
             Send PDF via Email
           </Button>

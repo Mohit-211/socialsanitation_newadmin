@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./invoice.css";
 import { useNavigate, useParams } from "react-router";
 import { ChevronDown, GripVertical, Info } from "lucide-react";
@@ -169,15 +167,10 @@ const EditInvoice = () => {
     totalAmount: "",
     date: null,
   });
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  const [selectedDraftId, setSelectedDraftId] = useState(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
-  const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
+   // DRAFT | SAVED
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
-  // NEW: tracks which row is currently the drop target, purely for the
+  // tracks which row is currently the drop target, purely for the
   // visual highlight — the reorder + API-persist logic is unchanged.
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -209,7 +202,7 @@ const EditInvoice = () => {
         amount: i.amount,
       }));
 
-      // NEW: derive recurring state from the nested `recurring` object
+      // derive recurring state from the nested `recurring` object
       const recurring = inv.recurring;
       const isRecurringActive = !!recurring && recurring.status !== "CANCELLED";
 
@@ -218,11 +211,9 @@ const EditInvoice = () => {
         ref: inv.ref_no,
         reference_type: inv.ref_type,
 
-        // NEW
         custom_ref_no: inv.custom_ref_no || "",
         useCustomRef: !!inv.custom_ref_no,
 
-        // NEW
         is_recurring: isRecurringActive,
         recurring_frequency: recurring?.frequency || "MONTHLY",
         recurring_end_date: recurring?.end_date
@@ -250,7 +241,7 @@ const EditInvoice = () => {
         user_id: inv.user_id, // ✅ locked
         signature: inv.signature,
       }));
-    } catch (err) {
+    } catch {
       message.error("Failed to load invoice");
     } finally {
       setIsLoading(false);
@@ -334,7 +325,7 @@ const EditInvoice = () => {
     }
   };
 
-  // NEW: clears the drag visuals if a drag ends without a drop (e.g. Esc,
+  // clears the drag visuals if a drag ends without a drop (e.g. Esc,
   // or dropped outside the table). Purely cosmetic — the reorder + API
   // call still only happens in handleDrop.
   const handleDragEnd = () => {
@@ -388,7 +379,7 @@ const EditInvoice = () => {
     const updatedItems = formData.items.map((item) => {
       const unitPrice = parseFloat(item.unit_price) || 0;
 
-      let multiplier = 1;
+      let multiplier;
 
       if (item.calculation_type === "hour") {
         multiplier = parseFloat(item.hour) || 1;
@@ -430,7 +421,7 @@ const EditInvoice = () => {
     return number.toFixed(6).replace(/\.?0+$/, "");
   };
 
-  /* ================= UPDATE ================= */
+  /* UPDATE */
 
   const handleSubmit = async () => {
     try {
@@ -443,13 +434,12 @@ const EditInvoice = () => {
         service_end: formData.service_end.format("YYYY-MM-DD"),
         due_date: formData.dueDate.format("YYYY-MM-DD"),
 
-        // NEW
         custom_ref_no:
           formData.useCustomRef && formData.custom_ref_no.trim() !== ""
             ? formData.custom_ref_no.trim()
             : null,
 
-        // NEW: recurring fields — backend's updateInvoice reads these directly off `body`
+        // recurring fields — backend's updateInvoice reads these directly off `body`
         is_recurring: formData.is_recurring,
         recurring_frequency: formData.is_recurring
           ? formData.recurring_frequency
@@ -493,15 +483,11 @@ const EditInvoice = () => {
       message.success("Invoice updated successfully");
 
       setTimeout(() => navigate("/all-invoices"), 1000);
-    } catch (error) {
+    } catch {
       message.error("Update failed");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const onServiceDateChange = (date) => {
-    setFormData((prev) => ({ ...prev, serviceDates: date }));
   };
 
   const onDueDateChange = (date) => {
@@ -513,7 +499,7 @@ const EditInvoice = () => {
   };
 
   const columns = [
-    // NEW: explicit drag handle column so the reorder affordance is visible
+    // explicit drag handle column so the reorder affordance is visible
     // instead of relying on the whole row silently being draggable.
     {
       title: "",
@@ -604,7 +590,6 @@ const EditInvoice = () => {
       render: (text, record, index) => (
         <InputNumber
           min={1}
-          // precision={0}
           step={1}
           value={text !== "" ? Number(text) : undefined}
           onChange={(value) => handleItemChange(index, "quantity", value)}
@@ -785,12 +770,11 @@ const EditInvoice = () => {
               <strong>REF #:</strong>
               <Input style={{ marginTop: 5 }} value={formData.ref} disabled />
 
-              {/* NEW: custom ref toggle */}
+              {/* custom ref toggle */}
               <div style={{ marginTop: 8 }}>
                 <Checkbox
                   checked={formData.useCustomRef}
                   onChange={(e) => {
-                    setIsDirty(true);
                     setFormData((prev) => ({
                       ...prev,
                       useCustomRef: e.target.checked,
@@ -807,7 +791,6 @@ const EditInvoice = () => {
                     placeholder="e.g. RHK100"
                     value={formData.custom_ref_no}
                     onChange={(e) => {
-                      setIsDirty(true);
                       setFormData((prev) => ({
                         ...prev,
                         custom_ref_no: e.target.value,
@@ -886,7 +869,6 @@ const EditInvoice = () => {
                 style={{ width: "100%", marginTop: 5 }}
                 suffixIcon={<ChevronDown size={16} color="#2c3345" />}
                 onChange={(value) => {
-                  setIsDirty(true);
                   setFormData((prev) => ({ ...prev, is_recurring: value }));
                 }}
                 options={IS_RECURRING_OPTIONS}
@@ -1048,7 +1030,6 @@ const EditInvoice = () => {
             placeholder="Enter event name (optional)"
             value={formData.event_name}
             onChange={(e) => {
-              setIsDirty(true);
 
               setFormData((prev) => ({
                 ...prev,
@@ -1161,13 +1142,11 @@ const EditInvoice = () => {
           for the previous service month.
         </div>
 
-        <div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
-            style={{ left: "85%" }}
             onClick={handleSubmit}
             loading={isLoading}
-            // disabled={isLoading}
           >
             Send PDF via Email
           </Button>

@@ -1,9 +1,7 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import {  Table } from "antd";
+import { useEffect, useState } from "react";
+import { Input, Table } from "antd";
+import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
-import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import dayjs from "@/lib/dayjs";
 import { GetContactUs } from "../../services/Api/ContentApi";
@@ -66,12 +64,12 @@ const ContactUs = () => {
 			setData(newData);
 			setUserBackupData(newData);
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 			if (e.response && e.response.status === 403) {
 				navigate("/error401");
-				console.log("Access denied. You do not have the required permissions.");
+				console.error("Access denied. You do not have the required permissions.");
 			} else {
-				console.log("Error loading data. Please try again later.");
+				console.error("Error loading data. Please try again later.");
 			}
 		} finally {
 			setLoading(false);
@@ -105,31 +103,23 @@ const ContactUs = () => {
 		setData(searchList);
 	};
 
-
 	return (
 		<Box>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				alignItems="center"
-				marginBottom="20px"
+			<Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center", marginBottom: "20px" }}
 			>
 				<div>
 					<h3 className="page-title">CONTACT US MANAGEMENT</h3>
 					<p className="page-sub-title">Manage User Queries</p>
 				</div>
-				<Box display="flex" justifyContent="space-between" alignItems="center">
+				<Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}>
 					<Box>
-						<span className="p-input-icon-left">
-							<i className="pi pi-search" />
-							<InputText
-								type="search"
-								onChange={(e) => {
-									onSearch(e.target.value);
-								}}
-								placeholder="Search..."
-							/>
-						</span>
+						<Input
+							allowClear
+							prefix={<Search size={18} color="#9CA3AF" />}
+							placeholder="Search..."
+							style={{ width: "100%", height: 44 }}
+							onChange={(e) => onSearch(e.target.value)}
+						/>
 					</Box>
 				</Box>
 			</Box>

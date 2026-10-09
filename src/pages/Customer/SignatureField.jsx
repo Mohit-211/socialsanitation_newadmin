@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import SignaturePad from "react-signature-canvas";
 import { Modal, Button } from "antd";
 
@@ -29,7 +27,7 @@ const SignatureField = ({ formData, setFormData }) => {
 				<img
 					src={formData.signature}
 					alt="Signature"
-					style={{ marginTop: 10, width: 300, border: "1px solid #ccc" }}
+					style={{ marginTop: 10, width: 300, maxWidth: "100%", border: "1px solid #ccc" }}
 				/>
 			) : (
 				<Button type="primary" onClick={openModal} style={{ marginTop: 10 }}>
@@ -56,7 +54,7 @@ const SignatureField = ({ formData, setFormData }) => {
 				<SignaturePad
 					ref={sigPadRef}
 					canvasProps={{
-						width: 500,
+						width: Math.min(500, window.innerWidth - 80),
 						height: 200,
 						style: { border: "1px solid #ccc", borderRadius: 4 },
 					}}

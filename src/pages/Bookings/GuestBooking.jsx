@@ -1,5 +1,3 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
@@ -48,8 +46,6 @@ const GuestBooking = () => {
 	const [form] = Form.useForm();
 	const [bookingType, setBookingType] = useState(null); // null initially
 	const [recurrenceEndType, setRecurrenceEndType] = useState("never");
-	const [clientName, setClientName] = useState("");
-	const [bookingName, setBookingName] = useState("");
 
 	const [services, setServices] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -69,7 +65,7 @@ const GuestBooking = () => {
 	useEffect(() => {
 		StateAPI(233)
 			.then((res) => setStates(res?.data?.data?.all_state || []))
-			.catch((err) => console.log("Error fetching states:", err));
+			.catch((err) => console.error("Error fetching states:", err));
 	}, []);
 
 	const handleStateChange = (stateId) => {
@@ -84,7 +80,7 @@ const GuestBooking = () => {
 				setCities(newCities);
 			})
 			.catch((err) => {
-				console.log("Error fetching cities:", err);
+				console.error("Error fetching cities:", err);
 				setCities([]);
 			});
 	};
@@ -135,7 +131,6 @@ const GuestBooking = () => {
 			document.head.appendChild(script);
 
 			script.onload = () => {
-				console.log("Google Maps script loaded");
 			};
 		}
 	}, []);
@@ -224,7 +219,7 @@ const GuestBooking = () => {
 			} else {
 				message.error("Unexpected response. Please try again.");
 			}
-		} catch (err) {
+		} catch {
 			message.error("Failed to create booking. Please try again.");
 		} finally {
 			setLoading(false);
@@ -256,6 +251,7 @@ const GuestBooking = () => {
 					sx={{
 						display: "flex",
 						justifyContent: "space-between",
+						flexWrap: { xs: "wrap", md: "nowrap" },
 						alignItems: "center",
 						gap: 2,
 					}}
@@ -334,13 +330,13 @@ const GuestBooking = () => {
 					}}
 				>
 					<Row gutter={16}>
-						<Col span={8}>
+						<Col xs={24} sm={12} md={8}>
 							<Form.Item name="client_name" label="Client Name(optional)">
 								<Input placeholder="Enter Client Name" />
 							</Form.Item>
 						</Col>
 
-						<Col span={8}>
+						<Col xs={24} sm={12} md={8}>
 							<Form.Item
 								name="booking_name"
 								label="Booking Name"
@@ -351,7 +347,7 @@ const GuestBooking = () => {
 								<Input placeholder="Enter Booking Name" />
 							</Form.Item>
 						</Col>
-						<Col span={8}>
+						<Col xs={24} sm={12} md={8}>
 							<Form.Item
 								name="service_id"
 								label="Service"
@@ -369,7 +365,7 @@ const GuestBooking = () => {
 					</Row>
 
 					<Row gutter={16}>
-						<Col span={12}>
+						<Col xs={24} md={12}>
 							<Form.Item
 								label="State"
 								name="state"
@@ -399,11 +395,10 @@ const GuestBooking = () => {
 							</Form.Item>
 						</Col>
 
-						<Col span={12}>
+						<Col xs={24} md={12}>
 							<Form.Item
 								label="City"
 								name="city"
-								// rules={[{ required: true, message: "Please select a city" }]}
 							>
 								<Select
 									value={selectedCity}
@@ -422,11 +417,10 @@ const GuestBooking = () => {
 					</Row>
 
 					<Row gutter={[24, 24]}>
-						<Col span={12}>
+						<Col xs={24} md={12}>
 							<Form.Item
 								label="Address"
 								name="address"
-								// rules={[{ required: true, message: "Please enter address" }]}
 							>
 								<Input.TextArea
 									rows={5}
@@ -437,7 +431,7 @@ const GuestBooking = () => {
 							</Form.Item>
 						</Col>
 
-						<Col span={12}>
+						<Col xs={24} md={12}>
 							<Form.Item label="Map Preview">
 								{!window.google ? (
 									<div style={{ color: "red" }}>
@@ -475,7 +469,7 @@ const GuestBooking = () => {
 
 					{bookingType === "One Time Booking" && (
 						<Row gutter={16}>
-							<Col span={8}>
+							<Col xs={24} sm={12} md={8}>
 								<Form.Item
 									name="date"
 									label="Date"
@@ -489,7 +483,7 @@ const GuestBooking = () => {
 									/>
 								</Form.Item>
 							</Col>
-							<Col span={8}>
+							<Col xs={24} sm={12} md={8}>
 								<Form.Item
 									name="time"
 									label="Time"
@@ -503,7 +497,7 @@ const GuestBooking = () => {
 									/>
 								</Form.Item>
 							</Col>
-							<Col span={8}>
+							<Col xs={24} sm={12} md={8}>
 								<Form.Item
 									name="end_time_by_admin"
 									label="End Time"
@@ -534,7 +528,7 @@ const GuestBooking = () => {
 							}}
 						>
 							<Row gutter={16}>
-								<Col span={8}>
+								<Col xs={24} sm={12} md={8}>
 									<Form.Item
 										name="date"
 										label="Start date"
@@ -548,7 +542,7 @@ const GuestBooking = () => {
 										/>
 									</Form.Item>
 								</Col>
-								<Col span={8}>
+								<Col xs={24} sm={12} md={8}>
 									<Form.Item
 										name="time"
 										label="Start time"
@@ -562,7 +556,7 @@ const GuestBooking = () => {
 										/>
 									</Form.Item>
 								</Col>
-								<Col span={8}>
+								<Col xs={24} sm={12} md={8}>
 									<Form.Item
 										name="end_time_by_admin"
 										label="End Time"
@@ -581,21 +575,18 @@ const GuestBooking = () => {
 							</Row>
 
 							<Row gutter={8}>
-								<Col span={12}>
+								<Col xs={24} md={12}>
 									<Form.Item
 										name="recurring_every"
 										label="Repeat every"
-										// initialValues={1}
 										rules={[{ required: true }]}
 									>
 										<InputNumber min={1} style={{ width: "100%" }} />
 									</Form.Item>
 								</Col>
-								<Col span={12}>
+								<Col xs={24} md={12}>
 									<Form.Item
-										// label="Select Unit"
 										name="recurring_type"
-										// initialValue="week"
 										rules={[{ required: true }]}
 										style={{ marginTop: 33 }}
 									>
@@ -646,16 +637,16 @@ const GuestBooking = () => {
 									}}
 								>
 									<Row gutter={16} style={{ marginBottom: 8 }}>
-										<Col span={6}>
+										<Col xs={24} sm={12} md={6}>
 											<Radio value="never">Never (max 100 entries)</Radio>
 										</Col>
 									</Row>
 
 									<Row gutter={16} align="middle" style={{ marginBottom: 8 }}>
-										<Col span={6}>
+										<Col xs={24} sm={12} md={6}>
 											<Radio value="on_date">On</Radio>
 										</Col>
-										<Col span={12}>
+										<Col xs={24} md={12}>
 											<Form.Item
 												name="recurrence_end_value_date"
 												noStyle
@@ -680,10 +671,10 @@ const GuestBooking = () => {
 									</Row>
 
 									<Row gutter={16} align="middle">
-										<Col span={6}>
+										<Col xs={24} sm={12} md={6}>
 											<Radio value="after">After</Radio>
 										</Col>
-										<Col span={6}>
+										<Col xs={24} sm={12} md={6}>
 											<Form.Item
 												name="recurrence_end_value_count"
 												noStyle

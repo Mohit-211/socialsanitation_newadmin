@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Calendar,
 	Badge,
@@ -25,7 +23,6 @@ const MonthlyBooking = () => {
 	const [bookingData, setBookingData] = useState({});
 	const [loading, setLoading] = useState(false);
 	const [modalVisible, setModalVisible] = useState(false);
-	const [selectedDate, setSelectedDate] = useState(null);
 	const [selectedBookings, setSelectedBookings] = useState([]);
 	const navigate = useNavigate();
 
@@ -60,7 +57,6 @@ const MonthlyBooking = () => {
 		const dateStr = value.format("YYYY-MM-DD");
 		const bookings = bookingData[dateStr] || [];
 		if (bookings.length > 0) {
-			setSelectedDate(dateStr);
 			setSelectedBookings(bookings);
 			setModalVisible(true);
 		}
@@ -78,7 +74,6 @@ const MonthlyBooking = () => {
 						key={booking.id}
 						style={{ cursor: "pointer" }}
 						onClick={() => {
-							setSelectedDate(dateStr);
 							setSelectedBookings(bookings);
 							setModalVisible(true);
 						}}
@@ -98,7 +93,6 @@ const MonthlyBooking = () => {
 						type="secondary"
 						style={{ fontSize: 12, cursor: "pointer" }}
 						onClick={() => {
-							setSelectedDate(dateStr);
 							setSelectedBookings(bookings);
 							setModalVisible(true);
 						}}

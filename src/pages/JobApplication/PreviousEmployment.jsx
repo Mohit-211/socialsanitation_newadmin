@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { DatePicker, Form, Input, Radio, Button, Space } from "antd";
+import { useState } from "react";
+import { DatePicker, Form, Input, Radio, Button } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 
 const PreviousEmployment = ({ formData, setFormData }) => {

@@ -1,9 +1,7 @@
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-
-export const GetAllChecklist = (adminToken, formdata) => {
+export const GetAllChecklist = (adminToken) => {
 	return axios.get(BASE_URL + `checklist/getAllServiceChecklist`, {
 		headers: {
 			"x-access-token": `${adminToken}`,
@@ -23,7 +21,6 @@ export const CreateChecklist = (formData, adminToken) => {
 export const GetDailyChecklistById = async (id) => {
     return await axios.get(BASE_URL + `/checklist/findServiceChecklistById/${id}`);
   };
-
 
 export const DeleteChecklist = (heading_id) => {
 	return axios.post(BASE_URL + `checklist/deleteServiceChecklist`, { heading_id: heading_id });

@@ -1,7 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 // HARD CODE THIS FOR TESTING
 const TEST_ORDER_ID = 15;
@@ -40,11 +37,7 @@ const PayPalTest = () => {
     setLoading,
   ] = useState(false);
 
-  /*
-   * ==================================================
-   * CAPTURE PAYPAL ORDER
-   * ==================================================
-   */
+  /* CAPTURE PAYPAL ORDER */
 
   const capturePayPalOrder =
     async (paypalOrderId) => {
@@ -128,9 +121,7 @@ const PayPalTest = () => {
     };
 
   /*
-   * ==================================================
    * HANDLE PAYPAL RETURN
-   * ==================================================
    *
    * PayPal redirects back to:
    *
@@ -221,11 +212,7 @@ const PayPalTest = () => {
     handlePayPalReturn();
   }, []);
 
-  /*
-   * ==================================================
-   * CREATE PAYPAL ORDER
-   * ==================================================
-   */
+  /* CREATE PAYPAL ORDER */
 
   const createPayPalOrder =
     async () => {
@@ -362,11 +349,7 @@ const PayPalTest = () => {
       }
     };
 
-  /*
-   * ==================================================
-   * UI
-   * ==================================================
-   */
+  /* UI */
 
   return (
     <div
@@ -397,9 +380,7 @@ const PayPalTest = () => {
         Sandbox
       </p>
 
-      {/* ==========================================
-          PAYPAL BUTTON
-          ========================================== */}
+      {/* PAYPAL BUTTON */}
 
       <button
         type="button"
@@ -431,9 +412,7 @@ const PayPalTest = () => {
           : "Pay with PayPal"}
       </button>
 
-      {/* ==========================================
-          PAYPAL ORDER ID
-          ========================================== */}
+      {/* PAYPAL ORDER ID */}
 
       {paypalOrderId && (
         <div
@@ -461,9 +440,7 @@ const PayPalTest = () => {
         </div>
       )}
 
-      {/* ==========================================
-          APPROVAL URL
-          ========================================== */}
+      {/* APPROVAL URL */}
 
       {approvalUrl && (
         <div
@@ -497,9 +474,7 @@ const PayPalTest = () => {
         </div>
       )}
 
-      {/* ==========================================
-          LOADING
-          ========================================== */}
+      {/* LOADING */}
 
       {loading && (
         <div
@@ -511,9 +486,7 @@ const PayPalTest = () => {
         </div>
       )}
 
-      {/* ==========================================
-          ERROR
-          ========================================== */}
+      {/* ERROR */}
 
       {error && (
         <div
@@ -533,9 +506,7 @@ const PayPalTest = () => {
         </div>
       )}
 
-      {/* ==========================================
-          CAPTURE RESPONSE
-          ========================================== */}
+      {/* CAPTURE RESPONSE */}
 
       {captureResult && (
         <div

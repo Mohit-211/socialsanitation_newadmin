@@ -178,7 +178,6 @@ Row.propTypes = {
 
 const LoginLogs = () => {
   const [userLoginTimingData, setUserLoginTimingData] = useState([]);
-  const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [clearLoading, setClearLoading] = useState(false);
 
@@ -187,8 +186,8 @@ const LoginLogs = () => {
       try {
         let data = await getUserLoginTimings();
         setUserLoginTimingData(data.data.data);
-      } catch (error) {
-        setError(error.message);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -203,7 +202,7 @@ const LoginLogs = () => {
       await clearUserLoginTimings();
       setUserLoginTimingData([]);
       message.success("Login Record Cleared Successfully");
-    } catch (error) {
+    } catch {
       message.error("Failed to Clear Login Record");
     } finally {
       setClearLoading(false);
@@ -222,7 +221,7 @@ const LoginLogs = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{

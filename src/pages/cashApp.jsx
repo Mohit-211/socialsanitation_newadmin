@@ -23,17 +23,13 @@ const CashAppTest = () => {
       try {
         setStatus("Initializing Square...");
 
-        // ==================================================
         // SQUARE
-        // ==================================================
 
         const payments = await getSquarePayments();
 
         console.log("Square Payments initialized:", payments);
 
-        // ==================================================
         // PAYMENT REQUEST
-        // ==================================================
 
         const paymentRequest = payments.paymentRequest({
           countryCode: "US",
@@ -46,9 +42,7 @@ const CashAppTest = () => {
 
         console.log("Payment request created:", paymentRequest);
 
-        // ==================================================
         // CASH APP PAY
-        // ==================================================
 
         cashAppPay = await payments.cashAppPay(paymentRequest, {
           redirectURL: window.location.href,
@@ -57,9 +51,7 @@ const CashAppTest = () => {
 
         console.log("Cash App Pay instance created:", cashAppPay);
 
-        // ==================================================
         // TOKENIZATION
-        // ==================================================
 
         cashAppPay.addEventListener("ontokenization", async (event) => {
           try {
@@ -67,9 +59,7 @@ const CashAppTest = () => {
 
             const { tokenResult, error } = event.detail;
 
-            // ==============================================
             // CASH APP ERROR
-            // ==============================================
 
             if (error) {
               console.error("Cash App Pay error:", error);
@@ -80,9 +70,7 @@ const CashAppTest = () => {
               return;
             }
 
-            // ==============================================
             // TOKENIZATION STATUS
-            // ==============================================
 
             console.log("Cash App tokenization status:", tokenResult?.status);
 
@@ -96,9 +84,7 @@ const CashAppTest = () => {
               return;
             }
 
-            // ==============================================
             // PAYMENT TOKEN
-            // ==============================================
 
             const token = tokenResult.token;
 
@@ -109,9 +95,7 @@ const CashAppTest = () => {
 
             setStatus("Cash App approved. Creating payment...");
 
-            // ==============================================
             // SEND TOKEN TO BACKEND
-            // ==============================================
 
             const response = await fetch(
               `${API_BASE_URL}/square/create-payment`,
@@ -135,9 +119,7 @@ const CashAppTest = () => {
 
             console.log("💰 SQUARE CASH APP PAYMENT RESPONSE:", data);
 
-            // ==============================================
             // API ERROR
-            // ==============================================
 
             if (!response.ok) {
               throw new Error(
@@ -145,16 +127,12 @@ const CashAppTest = () => {
               );
             }
 
-            // ==============================================
             // PAYMENT SUCCESS RESPONSE
-            // ==============================================
 
             setPaymentResponse(data);
             setStatus("Payment request sent successfully.");
 
-            // ==============================================
             // IMPORTANT
-            // ==============================================
 
             /*
              * The Square webhook is responsible for
@@ -175,9 +153,7 @@ const CashAppTest = () => {
           }
         });
 
-        // ==================================================
         // ATTACH BUTTON
-        // ==================================================
 
         await cashAppPay.attach("#cash-app-pay");
 
@@ -195,9 +171,7 @@ const CashAppTest = () => {
 
     initializeCashApp();
 
-    // ==================================================
     // CLEANUP
-    // ==================================================
 
     return () => {
       if (cashAppPay) {
@@ -225,9 +199,7 @@ const CashAppTest = () => {
         <strong>Status:</strong> {status}
       </p>
 
-      {/* ==============================================
-          CASH APP BUTTON
-      ============================================== */}
+      {/* CASH APP BUTTON */}
 
       <div
         id="cash-app-pay"
@@ -237,9 +209,7 @@ const CashAppTest = () => {
         }}
       />
 
-      {/* ==============================================
-          ERROR
-      ============================================== */}
+      {/* ERROR */}
 
       {error && (
         <div
@@ -255,9 +225,7 @@ const CashAppTest = () => {
         </div>
       )}
 
-      {/* ==============================================
-          PAYMENT RESPONSE
-      ============================================== */}
+      {/* PAYMENT RESPONSE */}
 
       {paymentResponse && (
         <div

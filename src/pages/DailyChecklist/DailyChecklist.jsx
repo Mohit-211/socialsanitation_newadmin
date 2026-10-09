@@ -1,7 +1,5 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Input } from "antd";
+import { useEffect, useState } from "react";
+import { Table, message, Modal, Input } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -25,7 +23,6 @@ const DailyChecklist = () => {
 	const [userBackupData, setUserBackupData] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-	const [checklist, setChecklist] = useState([]);
 	const [oldChecklist, setOldChecklist] = useState("");
 	const [newChecklist, setNewChecklist] = useState("");
 	const [checklistLoading, setChecklistLoading] = useState(false);
@@ -57,8 +54,8 @@ const DailyChecklist = () => {
 			}));
 			setData(newData);
 			setUserBackupData(newData);
-		} catch (e) {
-			console.log("Error loading data. Please try again later.");
+		} catch {
+			console.error("Error loading data. Please try again later.");
 		} finally {
 			setLoading(false);
 		}
@@ -91,7 +88,7 @@ const DailyChecklist = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack direction="row" spacing={0.5}>
+				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
 					<Tooltip title="View Checklist">
 						<IconButton
 							size="small"
@@ -170,7 +167,7 @@ const DailyChecklist = () => {
 					await DeleteChecklist(brandIds, localStorage.getItem("adminToken"));
 					message.success("Checklist(s) deleted successfully");
 					getData();
-				} catch (error) {
+				} catch {
 					message.error("Error deleting Checklist(s)");
 				}
 			},
@@ -181,9 +178,7 @@ const DailyChecklist = () => {
 		try {
 			setChecklistLoading(true);
 			const res = await GetChecklistMainTitle();
-			setChecklist(res?.data?.data);
 			setOldChecklist(res?.data?.data);
-			console.log(res.data.data, "fwefw");
 		} catch (e) {
 			console.error("Error fetching prices", e);
 		} finally {
@@ -209,7 +204,7 @@ const DailyChecklist = () => {
 				setNewChecklist("");
 				await getAllPrices();
 			}
-		} catch (e) {
+		} catch {
 			message.error("Failed to update price.");
 		}
 	};
@@ -226,7 +221,7 @@ const DailyChecklist = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap
 					direction="row"
 					spacing={2}
 					sx={{
@@ -251,10 +246,10 @@ const DailyChecklist = () => {
 						</Typography>
 					</Box>
 
-					<Stack
+					<Stack useFlexGap
 						direction="row"
 						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: 0 }}
+						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
 					>
 						<Input
 							allowClear
@@ -316,11 +311,9 @@ const DailyChecklist = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap sx={{ alignItems: "flex-end", flexWrap: "wrap" }}
 	direction="row"
 	spacing={2.5}
-	alignItems="flex-end"
-	flexWrap="wrap"
 >
 	<Box>
 		<Typography

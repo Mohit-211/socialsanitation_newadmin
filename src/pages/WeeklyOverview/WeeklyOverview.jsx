@@ -1,16 +1,5 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import {
-	Table,
-	Button,
-	Card,
-	Space,
-	Row,
-	Col,
-	Statistic,
-	Typography,
-} from "antd";
+import { useEffect, useState } from "react";
+import { Table, Button, Card, Row, Col, Statistic, Typography } from "antd";
 import {
 	LeftOutlined,
 	RightOutlined,
@@ -20,7 +9,6 @@ import {
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router-dom";
 import { GetDayOverview } from "../../services/Api/BookingApi";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import ExcelJS from "exceljs";
 
@@ -119,17 +107,13 @@ const DayOverview = () => {
 		},
 	];
 
-
-
 const downloadExcel = async () => {
     setLoading(true);
     try {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Weekly Overview");
         
-        // ----------------------------------------------------
         // 1. DEFINE STYLES 🎨
-        // ----------------------------------------------------
         const DATE_HEADER_STYLE = {
             font: { bold: true, size: 16, color: { argb: 'FFFFFF' } }, // White text
             fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '4CAF50' } }, // Green background
@@ -167,9 +151,7 @@ const downloadExcel = async () => {
                 right: { style: 'thin' }
             }
         };
-        // ----------------------------------------------------
         // 2. BUG FIX & COLUMN DEFINITION (Sets widths) ✅
-        // ----------------------------------------------------
         worksheet.columns = [
             { header: 'Booking Name', key: 'booking_name', width: 25 },
             { header: 'Client', key: 'client', width: 20 },
@@ -181,7 +163,6 @@ const downloadExcel = async () => {
             { header: 'Breaks', key: 'breaks', width: 10 },
             { header: 'Break Timings', key: 'break_timings', width: 25 },
         ];
-        // ----------------------------------------------------
         
         let rowIndex = 1;
 
@@ -317,7 +298,8 @@ const downloadExcel = async () => {
 								key={d.date}
 								type={d.date === selectedDate ? "primary" : "default"}
 								style={{
-									width: 100,
+									flex: "0 1 100px",
+									minWidth: 80,
 									height: 60,
 									textAlign: "center",
 									padding: "5px 6px",
@@ -381,7 +363,11 @@ const downloadExcel = async () => {
 
 				<Row justify="end" style={{ marginBottom: 20 }}>
 					<Col>
-						<Button type="primary" onClick={downloadExcel}>
+						<Button
+							type="primary"
+							onClick={downloadExcel}
+							style={{ height: "auto", minHeight: 32, whiteSpace: "normal" }}
+						>
 							Download Weekly Bookings (Excel)
 						</Button>
 					</Col>

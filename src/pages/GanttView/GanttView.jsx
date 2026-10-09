@@ -1,7 +1,5 @@
-/** @format */
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
-import { Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { GantOverview } from "../../services/Api/BookingApi";
@@ -94,7 +92,6 @@ const GanttView = () => {
 	return (
 		<div
 			style={{
-				// margin: 20,
 				padding: 24,
 				borderRadius: 12,
 				boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -196,15 +193,6 @@ const GanttView = () => {
 										fontWeight: 500,
 									}}
 								>
-									{/* <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: PASTEL_COLORS[idx % PASTEL_COLORS.length],
-                      marginRight: 10,
-                    }}
-                  ></div> */}
 									{emp.name}
 								</div>
 							))}

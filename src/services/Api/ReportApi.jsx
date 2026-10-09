@@ -1,8 +1,7 @@
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-export const GetAllReports = async (adminToken, params) => {
+export const GetAllReports = async (adminToken) => {
 	try {
 		const res = await axios.get(BASE_URL + "report/getAllReport", {
 			headers: {
@@ -27,5 +26,4 @@ export const UpdateReport = async (formData) => {
 		},
 	});
 };
-
 

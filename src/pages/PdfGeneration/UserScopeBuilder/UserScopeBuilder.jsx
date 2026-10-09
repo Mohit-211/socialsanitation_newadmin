@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
 import {
   PlusOutlined,
@@ -50,7 +48,7 @@ const FreqBadge = ({ label, active, onClick }) => (
   </button>
 );
 
-/* ───────────────── SORTABLE SECTION WRAPPER ───────────────── */
+/* SORTABLE SECTION WRAPPER */
 /* dnd-kit requires useSortable() to be called from its own component,
    not inline inside a .map() — otherwise the hook count changes
    whenever a section is added/removed and breaks React's rules of hooks. */
@@ -78,7 +76,7 @@ const SortableSection = ({ id, disabled, children }) => {
   );
 };
 
-/* ───────────────── SORTABLE TASK ROW WRAPPER ───────────────── */
+/* SORTABLE TASK ROW WRAPPER */
 const SortableTaskRow = ({ id, disabled, children }) => {
   const {
     attributes,
@@ -106,7 +104,6 @@ const SortableTaskRow = ({ id, disabled, children }) => {
 const UserScopeBuilder = ({
   userId,
   onChange,
-  readOnly = false,
   initialSections = null,
 }) => {
   const [sections, setSections] = useState([]);
@@ -127,7 +124,7 @@ const UserScopeBuilder = ({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  /* ───────────────── FETCH CHECKLIST ───────────────── */
+  /* FETCH CHECKLIST */
 
   const fetchChecklist = async () => {
     if (!userId) {
@@ -152,7 +149,7 @@ const UserScopeBuilder = ({
     }
   };
 
-  /* ───────────────── FETCH USER SCOPE ───────────────── */
+  /* FETCH USER SCOPE */
 
   const fetchUserScope = async () => {
     if (!userId) {
@@ -184,7 +181,7 @@ const UserScopeBuilder = ({
       setSections(formatted);
       if (onChange) onChange(formatted);
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to load user scope");
     } finally {
       setLoading(false);
@@ -205,7 +202,7 @@ useEffect(() => {
     if (onChange) onChange(sections);
   }, [sections]);
 
-  /* ───────────────── COLLAPSE HELPERS ───────────────── */
+  /* COLLAPSE HELPERS */
 
   const toggleSection = (sectionIndex) => {
     setCollapsedSections((prev) => ({
@@ -214,7 +211,7 @@ useEffect(() => {
     }));
   };
 
-  /* ───────────────── SECTION CHANGE ───────────────── */
+  /* SECTION CHANGE */
 
   const handleSectionChange = (index, field, value) => {
     setSections((prev) =>
@@ -224,7 +221,7 @@ useEffect(() => {
     );
   };
 
-  /* ───────────────── ITEM CHANGE ───────────────── */
+  /* ITEM CHANGE */
 
   const handleItemChange = (sectionIndex, itemIndex, field, value) => {
     setSections((prev) =>
@@ -240,7 +237,7 @@ useEffect(() => {
     );
   };
 
-  /* ───────────────── SECTION DRAG END ───────────────── */
+  /* SECTION DRAG END */
 
   const sectionSortableId = (section) => `section-${section.id}`;
 
@@ -268,13 +265,13 @@ useEffect(() => {
         reordered.map((s) => ({ id: s.id, order: s.order })),
       );
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to save new section order");
       setSections(previousSections);
     }
   };
 
-  /* ───────────────── ITEM DRAG END ───────────────── */
+  /* ITEM DRAG END */
 
   const itemSortableId = (item) => `item-${item.id || item.tempId}`;
 
@@ -310,13 +307,13 @@ useEffect(() => {
         savableItems.map((i) => ({ id: i.id, order: i.order })),
       );
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to save new task order");
       setSections(previousSections);
     }
   };
 
-  /* ───────────────── CREATE SECTION ───────────────── */
+  /* CREATE SECTION */
 
   const createSection = async () => {
     try {
@@ -329,12 +326,12 @@ useEffect(() => {
       setSections((prev) => [...prev, { ...section, items: [] }]);
       message.success("Section created");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to create section");
     }
   };
 
-  /* ───────────────── SAVE SECTION ───────────────── */
+  /* SAVE SECTION */
 
   const saveSection = async (section, index) => {
     try {
@@ -345,14 +342,14 @@ useEffect(() => {
       });
       message.success("Section saved");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Failed to save section");
     } finally {
       setSavingSection(null);
     }
   };
 
-  /* ───────────────── DELETE SECTION ───────────────── */
+  /* DELETE SECTION */
 
   const deleteSection = async (sectionIndex) => {
     try {
@@ -369,12 +366,12 @@ useEffect(() => {
         },
       });
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Delete failed");
     }
   };
 
-  /* ───────────────── ADD ITEM ───────────────── */
+  /* ADD ITEM */
 
   const addItem = (sectionIndex) => {
     setCollapsedSections((prev) => ({ ...prev, [sectionIndex]: false }));
@@ -401,7 +398,7 @@ useEffect(() => {
     );
   };
 
-  /* ───────────────── SAVE ITEM ───────────────── */
+  /* SAVE ITEM */
 
   const saveItem = async (item, sectionIndex, itemIndex) => {
     try {
@@ -443,14 +440,14 @@ useEffect(() => {
         message.success("Task saved");
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Save failed");
     } finally {
       setSavingItem(null);
     }
   };
 
-  /* ───────────────── DELETE ITEM ───────────────── */
+  /* DELETE ITEM */
 
   const deleteItem = async (sectionIndex, itemIndex) => {
     try {
@@ -470,12 +467,12 @@ useEffect(() => {
       );
       message.success("Task deleted");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       message.error("Delete failed");
     }
   };
 
-  /* ───────────────── EMPTY / LOADING ───────────────── */
+  /* EMPTY / LOADING */
 
   if (!userId) {
     return (
@@ -493,7 +490,7 @@ useEffect(() => {
     );
   }
 
-  /* ───────────────── UI ───────────────── */
+  /* UI */
 
   return (
     <div className="usb-root">

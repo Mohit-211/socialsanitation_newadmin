@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, message, Space, Modal } from "antd";
 import { useNavigate } from "react-router-dom";
 import { GetAdmins, DeleteAdmin } from "../../services/Api/Api";
@@ -37,14 +35,13 @@ const AdminUser = () => {
 		sortOrder: null,
 	});
 
-	const getData = async (pagination) => {
+	const getData = async () => {
 		try {
 			setLoading(true);
 			let result = await GetAdmins(localStorage.getItem("adminToken"));
 			setRoleData(result.data.data);
-			console.log("admins", result.data.data);
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 			if (e.response && e.response.status === 401) {
 				navigate("/error401");
 				message.error("You do not have access to this page.");
@@ -89,7 +86,7 @@ const AdminUser = () => {
 				getData(); // Reload data after deleting
 			})
 			.catch((error) => {
-				console.log(error);
+				console.error(error);
 				message.error("Error deleting admin.");
 			});
 	};

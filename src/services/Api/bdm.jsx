@@ -1,9 +1,7 @@
-/** @format */
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-export const GetAllBDMS = (adminToken, formdata) => {
+export const GetAllBDMS = (adminToken) => {
 	return axios.get(BASE_URL + `bdmuser/getAllBDMs`, {
 		headers: {
 			"x-access-token": `${adminToken}`,
@@ -22,7 +20,7 @@ export const GetUserByBDMId = async (id) => {
 	}
 };
 
-export const AssignUser = (formData, adminToken) => {
+export const AssignUser = (formData) => {
 	return axios.post(BASE_URL + `bdmuser/assignUser`, formData, {
 	});
 };
@@ -31,7 +29,7 @@ export const DeleteBDM = (user_id) => {
 	return axios.post(BASE_URL + `bdmuser/deleteBDM`, { user_id: user_id });
 };
 
-export const GetAllUsers = (adminToken, formdata) => {
+export const GetAllUsers = () => {
 	return axios.get(BASE_URL + `bdmuser/getAllUsers`);
 };
 

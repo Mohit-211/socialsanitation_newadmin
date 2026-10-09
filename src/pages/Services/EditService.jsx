@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -371,7 +369,7 @@ const EditService = () => {
 						</div>
 					</Form.Item>
 
-					<Box display="flex" gap="10px">
+					<Box sx={{ display: "flex", gap: "10px" }}>
 						<Button type="primary" htmlType="submit">
 							Save
 						</Button>

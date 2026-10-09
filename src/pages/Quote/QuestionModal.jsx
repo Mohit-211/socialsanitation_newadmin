@@ -1,5 +1,4 @@
-/** @format */
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Modal, Form, Input } from "antd";
 
 const QuestionModal = ({ open, onCancel, onSubmit, editingQuestion }) => {

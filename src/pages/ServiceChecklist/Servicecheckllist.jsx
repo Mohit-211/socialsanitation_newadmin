@@ -1,7 +1,5 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Input } from "antd";
+import { useEffect, useState } from "react";
+import { Table, message, Modal, Input } from "antd";
 import { useNavigate } from "react-router";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -47,8 +45,8 @@ const ServiceChecklist = () => {
 			}));
 			setData(newData);
 			setUserBackupData(newData);
-		} catch (e) {
-			console.log("Error loading data. Please try again later.");
+		} catch {
+			console.error("Error loading data. Please try again later.");
 		} finally {
 			setLoading(false);
 		}
@@ -81,7 +79,7 @@ const ServiceChecklist = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack direction="row" spacing={0.5}>
+				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
 					<Tooltip title="View Checklist">
 						<IconButton
 							size="small"
@@ -160,7 +158,7 @@ const ServiceChecklist = () => {
 					await DeleteChecklist(brandIds, localStorage.getItem("adminToken"));
 					message.success("Checklist(s) deleted successfully");
 					getData();
-				} catch (error) {
+				} catch {
 					message.error("Error deleting Checklist(s)");
 				}
 			},
@@ -179,7 +177,7 @@ const ServiceChecklist = () => {
 					borderColor: "#eef0f2",
 				}}
 			>
-				<Stack
+				<Stack useFlexGap
 					direction="row"
 					spacing={2}
 					sx={{
@@ -204,10 +202,10 @@ const ServiceChecklist = () => {
 						</Typography>
 					</Box>
 
-					<Stack
+					<Stack useFlexGap
 						direction="row"
 						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: 0 }}
+						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
 					>
 						<Input
 							allowClear

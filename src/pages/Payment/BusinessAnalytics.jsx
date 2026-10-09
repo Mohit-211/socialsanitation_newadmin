@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -11,7 +9,7 @@ import { RefreshCw } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { GetInvoiceAnalytics } from "../../services/Api/Api";
 
-/* ─── tiny helpers ─── */
+/* tiny helpers */
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -39,8 +37,8 @@ const STATUS_BADGE = {
   NOT_PAID: { label: "Not paid", bg: "#FAECE7", color: "#993C1D" },
 };
 
-/* ─── design tokens (kept local so the rest of the file's inline
-      styles stay easy to scan/diff against the original) ─── */
+/* design tokens (kept local so the rest of the file's inline
+      styles stay easy to scan/diff against the original) */
 const cardStyle = {
   background: "#fff",
   border: "1px solid #eef0f2",
@@ -78,7 +76,7 @@ const tdStyle = {
   color: "#374151",
 };
 
-/* ─── sub-components ─── */
+/* sub-components */
 const MetricCard = ({ label, value, sub, accent }) => {
   const accentColors = {
     green: "#0F6E56",
@@ -178,7 +176,7 @@ const MiniBar = ({ value, max, color = "#185FA5" }) => {
   );
 };
 
-/* ─── page ─── */
+/* page */
 const InvoiceAnalytics = () => {
   const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
   const [selectedYear, setSelectedYear] = useState(dayjs().year());
@@ -203,7 +201,6 @@ const InvoiceAnalytics = () => {
 
   useEffect(() => {
     fetchData(selectedMonth, selectedYear);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, selectedYear]);
 
   const ov = analytics?.overview || {};
@@ -236,7 +233,7 @@ const InvoiceAnalytics = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -261,10 +258,10 @@ const InvoiceAnalytics = () => {
             </Typography>
           </Box>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: 0 }}
+            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
           >
             <AntSelect
               value={selectedMonth}
@@ -304,7 +301,7 @@ const InvoiceAnalytics = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
@@ -355,7 +352,7 @@ const InvoiceAnalytics = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
           gap: 16,
           marginBottom: 16,
         }}
@@ -561,7 +558,7 @@ const InvoiceAnalytics = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
           gap: 16,
           marginBottom: 16,
         }}
@@ -614,7 +611,7 @@ const InvoiceAnalytics = () => {
         </div>
 
         {/* daily breakdown */}
-        <div style={cardStyle}>
+        <div style={{ ...cardStyle, overflowX: "auto" }}>
           <p style={sectionTitleStyle}>📈 Daily activity</p>
           {/* header row */}
           <div

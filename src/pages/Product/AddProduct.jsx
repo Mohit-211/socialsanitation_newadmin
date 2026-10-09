@@ -1,5 +1,4 @@
-/** @format */
-import React, { useState } from "react";
+import { useState } from "react";
 import { Form, Input, Button, message, Card } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { CKEditor } from "@ckeditor/ckeditor5-react";

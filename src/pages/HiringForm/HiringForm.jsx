@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Input, Modal, message, Space, Button } from "antd";
 import { Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -212,12 +210,12 @@ const HiringForm = () => {
       setData(newData);
       setFilteredData(newData);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 401) {
         navigate("/error401");
-        console.log("You do not have access to this page as a sub-admin.");
+        console.error("You do not have access to this page as a sub-admin.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -278,7 +276,7 @@ const HiringForm = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -297,7 +295,16 @@ const HiringForm = () => {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack
+            useFlexGap
+            direction="row"
+            spacing={1.5}
+            sx={{
+              alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
             {selectedRowKeys.length > 0 && (
               <Button
                 danger
@@ -322,6 +329,7 @@ const HiringForm = () => {
               onChange={(e) => setSearchText(e.target.value)}
               style={{
                 width: 320,
+                maxWidth: "100%",
                 height: 44,
               }}
             />

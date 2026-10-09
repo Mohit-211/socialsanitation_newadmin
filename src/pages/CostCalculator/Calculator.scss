@@ -212,42 +212,6 @@ $shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08);
   letter-spacing: 0.1px;
 }
 
-.cc-input {
-  background: $surface2 !important;
-  border: 1px solid $border !important;
-  border-radius: $radius-sm !important;
-  color: $text-primary !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-size: 14px !important;
-  transition: all 0.2s ease !important;
-  width: 100%;
-
-  input {
-    background: transparent !important;
-    color: $text-primary !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-  }
-
-  .ant-input-number-prefix {
-    color: $text-muted !important;
-  }
-
-  &:hover, &:focus, &.ant-input-number-focused {
-    border-color: $border-active !important;
-    box-shadow: 0 0 0 3px rgba($accent, 0.06) !important;
-  }
-}
-
-.ant-input.cc-input,
-.ant-input-number.cc-input {
-  background: $surface2;
-  border-color: $border;
-  color: $text-primary;
-
-  &:hover { border-color: $border-active; }
-  &:focus { border-color: $accent; box-shadow: 0 0 0 3px rgba($accent, 0.06); }
-}
-
 // Grid layouts
 .cc-grid-2 {
   display: grid;
@@ -262,20 +226,6 @@ $shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08);
   gap: 18px;
   @media (max-width: 800px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 480px) { grid-template-columns: minmax(0, 1fr); }
-}
-
-.cc-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (max-width: 480px) { grid-template-columns: minmax(0, 1fr); }
-}
-
-.cc-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, $border 20%, $border 80%, transparent);
-  margin: 28px 0;
 }
 
 // Custom Tasks Table
@@ -435,7 +385,7 @@ $shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08);
   position: sticky;
   top: 32px;
   width: 100%;
-    min-width: 320px;
+  min-width: min(320px, 100%);
 }
 
 .calc-tab-content {
@@ -1298,8 +1248,9 @@ $shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08);
 
 .cc-floor-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .cc-floor-item {
@@ -1359,9 +1310,10 @@ $shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.08);
 
 .cc-floor-example-grid{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:14px;
-    margin-bottom:18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+    @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .cc-floor-example-item{

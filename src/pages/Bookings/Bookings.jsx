@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -23,12 +21,7 @@ import {
   Input,
 } from "antd";
 import { BASE_URL_IMAGE } from "../../services/Host";
-import {
-  GetBookingRequestCount,
-  GetUserBooking,
-  DeleteBooking,
-  GetBookingById,
-} from "../../services/Api/BookingApi";
+import { GetUserBooking, DeleteBooking, GetBookingById } from "../../services/Api/BookingApi";
 import {
   Search,
   Plus,
@@ -464,7 +457,7 @@ const Bookings = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{

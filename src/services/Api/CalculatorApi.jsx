@@ -23,7 +23,6 @@ export const CreateBidMaximizer = async (body) => {
   }
 };
 
-
 export const GetAllCostCalculations =
   async () => {
     try {

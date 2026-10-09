@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -81,7 +81,7 @@ const EquipmentPage = () => {
       const list = res?.data?.data?.equipments || [];
       setEquipments(list);
       setFilteredEquipments(list);
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch equipments.");
     } finally {
       setLoading(false);
@@ -164,12 +164,12 @@ const EquipmentPage = () => {
       await DeleteEquipment(id);
       message.success("Equipment deleted successfully.");
       fetchEquipments();
-    } catch (err) {
+    } catch {
       message.error("Failed to delete equipment.");
     }
   };
 
-  // ---------- Import (CSV) ----------
+  // Import (CSV)
 
   const openImportModal = () => {
     setParsedRows([]);
@@ -226,7 +226,7 @@ const EquipmentPage = () => {
       try {
         await CreateEquipment({ name: row.name, quantity: row.quantity });
         successCount += 1;
-      } catch (err) {
+      } catch {
         failCount += 1;
       }
     }
@@ -291,7 +291,7 @@ const EquipmentPage = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -316,10 +316,10 @@ const EquipmentPage = () => {
             </Typography>
           </Box>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: 0 }}
+            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
           >
             <Input
               allowClear

@@ -1,4 +1,3 @@
-import React from "react";
 import { Form, Radio, Input } from "antd";
 
 const EmploymentEligibility = ({ formData, setFormData }) => {

@@ -1,4 +1,3 @@
-
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
@@ -37,20 +36,9 @@ export const GetUserBooking = async (
   }
 };
 
-export const GetBookingRequestCount = async () => {
-	const res = await axios.get(BASE_URL + "admin/booking/checkBookingRequest");
-	return res;
-};
-
 export const GetBookingById = async (id) => {
 	return await axios.get(
 		BASE_URL + `admin/booking/getBookingByBookingid/${id}`
-	);
-};
-
-export const GetBookingDetailsByBookingId = async (id) => {
-	return await axios.get(
-		BASE_URL + `admin/booking/getBookingDetailsByBookingid/${id}`
 	);
 };
 
@@ -117,7 +105,6 @@ export const GetContractAgreementsByUserId = async (id) => {
 	return res;
 };
 
-
 export const GetServiceEstimatesByUserId = async (id) => {
 	const res = await axios.get(
 		BASE_URL + `admin/auth/service-estimate/user/${id}`
@@ -136,27 +123,6 @@ export const GetBookingBySPId = async (formData) => {
 		console.error("Error fetching users:", error);
 		throw error;
 	}
-};
-
-//STATISTICS
-export const GetAllBookingCount = async () => {
-	const res = await axios.get(BASE_URL + "admin/user/getBookingCount");
-	return res;
-};
-
-export const GetPendingCount = async () => {
-	const res = await axios.get(BASE_URL + "admin/user/getPendingBookingCount");
-	return res;
-};
-
-export const GetCompletedCount = async () => {
-	const res = await axios.get(BASE_URL + "admin/user/getCompletedBookingCount");
-	return res;
-};
-
-export const GetDeletedCount = async () => {
-	const res = await axios.get(BASE_URL + "admin/user/getDeletedBookingCount");
-	return res;
 };
 
 // create booking
@@ -231,7 +197,6 @@ export const GetBookingOverviewById = async (id) => {
 	return res;
 };
 
-
 export const GetClientChecklistByUserId = async (id) => {
 	const res = await axios.get(
 		BASE_URL + `admin/user/getClientChecklistByUserId/${id}`
@@ -251,6 +216,4 @@ export const GantOverview = async (payload) => {
 export const DeleteServiceQuote = async (id) => {
 	return axios.delete(`${BASE_URL}admin/user/deleteQuote/${id}`);
 };
-
-
 

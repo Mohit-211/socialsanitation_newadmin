@@ -1,14 +1,5 @@
-/** @format */
-import React, { useEffect, useState, useRef } from "react";
-import {
-  Card,
-  Spin,
-  Result,
-  Button,
-  Typography,
-  Progress,
-  Space
-} from "antd";
+import { useEffect, useState, useRef } from "react";
+import { Card, Spin, Button, Typography, Progress, Space } from "antd";
 import {
   CheckCircleFilled,
   ClockCircleOutlined,

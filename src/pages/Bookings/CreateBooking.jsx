@@ -1,7 +1,5 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -12,9 +10,7 @@ import {
   InputNumber,
   message,
   Card,
-  Switch,
   Checkbox,
-  Divider,
   Table,
   Modal,
   Row,
@@ -80,7 +76,7 @@ const tdStyle = {
   background: "#fff",
 };
 
-/* ─── label + info tooltip helper ─── */
+/* label + info tooltip helper */
 const LabelWithTip = ({ label, tip }) => (
   <Space size={6} align="center">
     <span>{label}</span>
@@ -93,7 +89,6 @@ const LabelWithTip = ({ label, tip }) => (
 const CreateBooking = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const [isRecurring, setIsRecurring] = useState(false);
   const [bookingType, setBookingType] = useState(null); // null initially
 
   const [recurrenceEndType, setRecurrenceEndType] = useState("after"); // default changed from "never" to "after" (see Ends default below)
@@ -150,8 +145,6 @@ const CreateBooking = () => {
       */
 
       const checklistRes = await GetClientChecklistByUserId(userId);
-
-      console.log("Checklist response:", checklistRes);
 
       const checklistData = checklistRes?.data?.data?.data?.[0] || {};
 
@@ -220,14 +213,13 @@ const CreateBooking = () => {
       const res = await CreateBookingByAdmin(payload);
       if (res.status === 201) {
         message.success("Booking created successfully!");
-        // navigate("/bookings");
         setTimeout(() => {
           navigate(`/editBooking/${res.data?.data?.booking_id}`);
         }, 500);
       } else {
         message.error("Unexpected response. Please try again.");
       }
-    } catch (err) {
+    } catch {
       message.error("Failed to create booking. Please try again.");
     } finally {
       setLoading(false);
@@ -297,6 +289,7 @@ const CreateBooking = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -378,7 +371,7 @@ const CreateBooking = () => {
 
           <Row gutter={16} align="middle">
             {/* Booking Name - 40% */}
-            <Col span={10}>
+            <Col xs={24} md={10}>
               <Form.Item
                 name="booking_name"
                 label="Booking Name"
@@ -391,7 +384,7 @@ const CreateBooking = () => {
             </Col>
 
             {/* User Section - 60% */}
-            <Col span={14}>
+            <Col xs={24} md={14}>
               <Row gutter={8}>
                 <Col span={18}>
                   <Input
@@ -523,7 +516,7 @@ const CreateBooking = () => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item name="address_id" label="Address" required>
                 <Select placeholder="Select address">
                   {addresses.map((addr) => (
@@ -534,7 +527,7 @@ const CreateBooking = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 name="service_id"
                 label="Service"
@@ -572,7 +565,7 @@ const CreateBooking = () => {
 
           {bookingType === "One Time Booking" && (
             <Row gutter={16}>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Form.Item
                   name="date"
                   label="Date"
@@ -587,7 +580,7 @@ const CreateBooking = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Form.Item
                   name="time"
                   label="Time"
@@ -601,7 +594,7 @@ const CreateBooking = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Form.Item
                   name="end_time_by_admin"
                   label="End Time"
@@ -632,7 +625,7 @@ const CreateBooking = () => {
               }}
             >
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="date"
                     label={
@@ -652,7 +645,7 @@ const CreateBooking = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="time"
                     label={
@@ -671,7 +664,7 @@ const CreateBooking = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} md={8}>
                   <Form.Item
                     name="end_time_by_admin"
                     label={
@@ -695,7 +688,7 @@ const CreateBooking = () => {
               </Row>
 
               <Row gutter={8}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     name="recurring_every"
                     label={
@@ -716,7 +709,7 @@ const CreateBooking = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     label={
                       <LabelWithTip
@@ -729,19 +722,6 @@ const CreateBooking = () => {
                       value={displayRecurringType}
                       onChange={(val) => {
                         setDisplayRecurringType(val);
-
-                        // ─── Bi-weekly handling — commented out per manager request ───
-                        // Functionally identical to Weekly + "Repeat every" = 2, which
-                        // was causing confusion for users. To restore: uncomment the
-                        // block below AND the "Bi-weekly" <Option> in the Select below.
-                        //
-                        // if (val === "bi-weekly") {
-                        //   setRecurringType("week");
-                        //   form.setFieldsValue({
-                        //     recurring_type: "week",
-                        //     recurring_every: 2,
-                        //   });
-                        // } else {
 
                         setRecurringType(val);
                         form.setFieldValue("recurring_type", val);
@@ -758,15 +738,10 @@ const CreateBooking = () => {
                           form.setFieldValue("repeat_on_days", []);
                         }
 
-                        // }
                       }}
                     >
                       <Option value="day">Daily</Option>
                       <Option value="week">Weeks</Option>
-                      {/* Bi-weekly temporarily disabled per manager request — technically
-                          identical to Weekly + "Repeat every" = 2, which was creating
-                          confusion. Uncomment to restore this option. */}
-                      {/* <Option value="bi-weekly">Bi-weekly</Option> */}
                       <Option value="month">Months</Option>
                       <Option value="year">Year</Option>
                     </Select>
@@ -823,16 +798,16 @@ const CreateBooking = () => {
                   }}
                 >
                   <Row gutter={16} style={{ marginBottom: 8 }}>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Radio value="never">Never (max 100 entries)</Radio>
                     </Col>
                   </Row>
 
                   <Row gutter={16} align="middle" style={{ marginBottom: 8 }}>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Radio value="on_date">On</Radio>
                     </Col>
-                    <Col span={12}>
+                    <Col xs={24} md={12}>
                       <Form.Item
                         name="recurrence_end_value_date"
                         noStyle
@@ -858,10 +833,10 @@ const CreateBooking = () => {
                   </Row>
 
                   <Row gutter={16} align="middle">
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Radio value="after">After</Radio>
                     </Col>
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Form.Item
                         name="recurrence_end_value_count"
                         noStyle

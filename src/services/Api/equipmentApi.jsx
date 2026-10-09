@@ -1,7 +1,7 @@
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-// ---------- EQUIPMENT ----------
+// EQUIPMENT
 
 // GET all equipments (supports page & limit, defaults to a large limit so everything shows on one page)
 export const GetAllEquipments = (page = 1, limit = 100) => {
@@ -22,7 +22,7 @@ export const DeleteEquipment = (id) => {
   return axios.delete(BASE_URL + `eqipment/delete-equipment/${id}`);
 };
 
-// ---------- ASSIGNMENTS ----------
+// ASSIGNMENTS
 
 // GET all assignments (supports page & limit, defaults to a large limit so everything shows on one page)
 export const GetAllAssignments = (page = 1, limit = 100) => {
@@ -48,7 +48,6 @@ export const UpdateAssignment = (id, formData) => {
 export const GetEmployeeDropdown = () => {
   return axios.get(BASE_URL + `admin/user/employee-dropdown`);
 };
-
 
 // employee equipement histroy
 export const GetAssignmentHistory = (assignmentId) => {

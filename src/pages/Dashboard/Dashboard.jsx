@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   GetUserCount,
   GetServiceCount,
@@ -16,7 +14,7 @@ import "./Dashboard.css";
 import { useNavigate } from "react-router";
 import dayjs from "@/lib/dayjs";
 
-/* ─── helpers ─── */
+/* helpers */
 const toAMPM = (value) => {
   if (!value) return "—";
 
@@ -79,7 +77,7 @@ const getUrgency = (days) => {
 
 const PAGE_SIZE = 5;
 
-/* ─── pulse dot ─── */
+/* pulse dot */
 const PulseDot = ({ color }) => (
   <span
     style={{
@@ -95,7 +93,7 @@ const PulseDot = ({ color }) => (
   />
 );
 
-/* ─── load more / show less control ─── */
+/* load more / show less control */
 const LoadMoreControl = ({ total, visible, onMore, onLess }) => {
   if (total <= PAGE_SIZE) return null;
   const hasMore = visible < total;
@@ -122,7 +120,7 @@ const LoadMoreControl = ({ total, visible, onMore, onLess }) => {
   );
 };
 
-/* ─── stat card ─── */
+/* stat card */
 const StatCard = ({
   label,
   value,
@@ -198,7 +196,7 @@ const StatCard = ({
   );
 };
 
-/* ─── section header ─── */
+/* section header */
 const SectionHeader = ({ dot, dotColor, title, btnLabel, onClick }) => (
   <div
     style={{
@@ -233,9 +231,7 @@ const SectionHeader = ({ dot, dotColor, title, btnLabel, onClick }) => (
   </div>
 );
 
-/* ══════════════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════════════ */
+/* MAIN COMPONENT */
 const Dashboard = () => {
   const navigate = useNavigate();
   const [driverData, setDriverData] = useState([]);
@@ -257,7 +253,7 @@ const Dashboard = () => {
       const result = await GetUpcomingInvoices();
       setUpcomingInvoices(result.data.data || []);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -266,7 +262,7 @@ const Dashboard = () => {
       const result = await GetUpcomingScheduledBookings({});
       setUpcomingBookings(result.data.data.data || []);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -278,7 +274,7 @@ const Dashboard = () => {
       setLiveEmployees(result.data.data.data || []);
       setLastRefresh(new Date());
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -287,7 +283,7 @@ const Dashboard = () => {
       const result = await GetLateAbsentEmployees({});
       setLateEmployees(result.data.data.data || []);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -296,7 +292,7 @@ const Dashboard = () => {
       const result = await GetUserCount(localStorage.getItem("adminToken"));
       setCustomerData(result.data.data);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -305,7 +301,7 @@ const Dashboard = () => {
       const result = await GetDriverCount(localStorage.getItem("adminToken"));
       setDriverData(result.data.data);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -314,7 +310,7 @@ const Dashboard = () => {
       const result = await GetAdminCount(localStorage.getItem("adminToken"));
       setAdminData(result.data.data);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -323,7 +319,7 @@ const Dashboard = () => {
       const result = await GetServiceCount(localStorage.getItem("adminToken"));
       setServiceData(result.data.data);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -341,7 +337,7 @@ const Dashboard = () => {
           getUpcomingInvoices(),
         ]);
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
     };
 
@@ -415,17 +411,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
-          LIVE TRACKING
-      ══════════════════════════════════════════ */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 20,
-          marginBottom: 24,
-        }}
-      >
+      {/* LIVE TRACKING */}
+      <div className="responsive-grid-2" style={{ gap: 20, marginBottom: 24 }}>
         {/* Currently Working */}
         <div
           style={{
@@ -687,9 +674,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-       {/* ══════════════════════════════════════════
-    UPCOMING / OUTGOING INVOICES
-══════════════════════════════════════════ */}
+       {/* UPCOMING / OUTGOING INVOICES */}
       <div
         style={{
           background: "#fff",
@@ -945,9 +930,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ══════════════════════════════════════════
-          UPCOMING BOOKINGS
-      ══════════════════════════════════════════ */}
+      {/* UPCOMING BOOKINGS */}
       <div
         style={{
           background: "#fff",
@@ -1280,11 +1263,7 @@ const Dashboard = () => {
         )}
       </div>
 
-     
-
-      {/* ══════════════════════════════════════════
-          STATS CARDS
-      ══════════════════════════════════════════ */}
+      {/* STATS CARDS */}
       <p
         className="ss-text-label"
         style={{

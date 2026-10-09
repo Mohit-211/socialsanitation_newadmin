@@ -1,5 +1,4 @@
-/** @format */
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, message, Input, Select, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
@@ -30,7 +29,7 @@ const ServiceRequest = () => {
   );
   const years = Array.from({ length: 10 }, (_, i) => dayjs().year() - 5 + i);
 
-  /* ---------------- FETCH INVOICES ---------------- */
+  /* FETCH INVOICES */
 
   const fetchInvoices = async (date = dayjs()) => {
     try {
@@ -52,7 +51,7 @@ const ServiceRequest = () => {
     fetchInvoices(dayjs());
   }, []);
 
-  /* ---------------- SEARCH FILTER ---------------- */
+  /* SEARCH FILTER */
 
   const filteredData = useMemo(() => {
     if (!searchText) return data;
@@ -70,7 +69,7 @@ const ServiceRequest = () => {
     });
   }, [searchText, data]);
 
-  /* ---------------- VIEW PDF ---------------- */
+  /* VIEW PDF */
 
   const handleViewPDF = (record) => {
     const baseUrl = "https://node.socialsanitation.com/api/v1/docs/";
@@ -90,7 +89,7 @@ const ServiceRequest = () => {
     message.warning("PDF not available for this invoice");
   };
 
-  /* ---------------- DELETE ---------------- */
+  /* DELETE */
 
   const handleDelete = (invoiceId) => {
     Modal.confirm({
@@ -113,7 +112,7 @@ const ServiceRequest = () => {
     });
   };
 
-  /* ---------------- TABLE COLUMNS ---------------- */
+  /* TABLE COLUMNS */
 
   const columns = [
     {
@@ -197,7 +196,7 @@ const ServiceRequest = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Stack
+        <Stack useFlexGap
           direction="row"
           spacing={2}
           sx={{
@@ -222,10 +221,10 @@ const ServiceRequest = () => {
             </Typography>
           </Box>
 
-          <Stack
+          <Stack useFlexGap
             direction="row"
             spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: 0 }}
+            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
           >
             <Input
               allowClear

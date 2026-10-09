@@ -1,5 +1,4 @@
 import { Form, Radio } from "antd";
-import React from "react";
 
 const BackgroundCheckConsent = ({ formData, setFormData }) => {
   const [form] = Form.useForm();

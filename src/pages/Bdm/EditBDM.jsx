@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GetAdminById, UpdateAdmin } from "../../services/Api/Api.jsx";
 import { message } from "antd";
@@ -46,9 +44,6 @@ const EditBDM = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // if (!data.name || !data.mobile) {
-    //   return message.warning("Please fill in all required fields");
-    // }
 
     setLoading(true);
     try {
@@ -64,7 +59,7 @@ const EditBDM = () => {
         message.success("BDM details updated successfully");
         navigate("/bdm-list");
       }
-    } catch (err) {
+    } catch {
       message.error("Something went wrong while saving");
     } finally {
       setLoading(false);
@@ -115,6 +110,7 @@ const EditBDM = () => {
           sx={{
             display: "flex",
             justifyContent: "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { DeleteOutlined, EyeOutlined, HistoryOutlined } from "@ant-design/icons";
 import dayjs from "@/lib/dayjs";
 import {
@@ -6,7 +6,7 @@ import {
   GetAllCostCalculations,
 } from "../../services/Api/CalculatorApi";
 
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// TOAST
 const useToast = () => {
   const [toasts, setToasts] = useState([]);
   const show = useCallback((msg, type = "success") => {
@@ -28,7 +28,7 @@ const useToast = () => {
   return { show, ToastContainer };
 };
 
-// ─── VIEW MODAL ───────────────────────────────────────────────────────────────
+// VIEW MODAL
 const ViewModal = ({ record, onClose }) => {
   const customTasks = record.custom_tasks || [];
 
@@ -239,7 +239,7 @@ const ViewModal = ({ record, onClose }) => {
   );
 };
 
-// ─── CONFIRM MODAL ─────────────────────────────────────────────────────────────
+// CONFIRM MODAL
 const ConfirmModal = ({ onConfirm, onCancel }) => (
   <div className="cc-modal-overlay" onClick={onCancel}>
     <div className="cc-modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
@@ -260,7 +260,7 @@ const ConfirmModal = ({ onConfirm, onCancel }) => (
   </div>
 );
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+// MAIN COMPONENT
 const CalculationHistory = () => {
   const { show, ToastContainer } = useToast();
 

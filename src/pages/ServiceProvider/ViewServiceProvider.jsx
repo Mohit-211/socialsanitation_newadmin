@@ -1,7 +1,5 @@
-
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   GetUserById,
@@ -56,7 +54,6 @@ import {
   ClipboardList,
   Wrench,
   UserCog,
-  Clock3,
 } from "lucide-react";
 
 // 🔹 Employee type value -> readable label
@@ -65,18 +62,14 @@ const EMPLOYEE_TYPE_LABELS = {
   1099: "1099 Contractor",
 };
 
-// =========================================================
 // COUNTRIES
-// =========================================================
 
 const COUNTRY_IDS = {
   USA: 233,
   CANADA: 39,
 };
 
-// =========================================================
 // GENERIC "COMING SOON" COMPONENT
-// =========================================================
 
 const ComingSoon = ({ icon, label }) => (
   <Card
@@ -132,9 +125,7 @@ const ViewServiceProvider = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [mainTab, setMainTab] = useState("overview");
 
-  /* ---------------------------------------------------------------- */
   /* Address: state                                                   */
-  /* ---------------------------------------------------------------- */
 
   const [addressModalVisible, setAddressModalVisible] =
     useState(false);
@@ -157,9 +148,7 @@ const ViewServiceProvider = () => {
   const hasAddress =
     (userData?.user_address?.length || 0) >= 1;
 
-  /* ---------------------------------------------------------------- */
   /* Refresh user                                                     */
-  /* ---------------------------------------------------------------- */
 
   const refreshUser = () => {
     GetUserById(id)
@@ -167,7 +156,7 @@ const ViewServiceProvider = () => {
         setUserData(res.data.data);
       })
       .catch((err) => {
-        console.log("error", err);
+        console.error("error", err);
       });
   };
 
@@ -177,13 +166,9 @@ const ViewServiceProvider = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  /* ---------------------------------------------------------------- */
   /* Address: states / cities / geocoding                             */
-  /* ---------------------------------------------------------------- */
 
-  // =========================================================
   // FETCH STATES FOR SELECTED COUNTRY
-  // =========================================================
 
   const fetchStatesForCountry = (countryId) => {
     return StateAPI(countryId)
@@ -196,25 +181,20 @@ const ViewServiceProvider = () => {
         return stateList;
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
         setStates([]);
         return [];
       });
   };
 
-  // =========================================================
   // PREFETCH USA STATES
-  // =========================================================
 
   useEffect(() => {
     fetchStatesForCountry(COUNTRY_IDS.USA);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // =========================================================
   // FETCH CITIES
-  // =========================================================
 
   const fetchCities = (stateId) => {
     return CityAPI(stateId).then((res) => {
@@ -227,9 +207,7 @@ const ViewServiceProvider = () => {
     });
   };
 
-  // =========================================================
   // GEOCODE ADDRESS
-  // =========================================================
 
   const fetchAddressCoordinates = async (address) => {
     if (!address) return;
@@ -255,13 +233,11 @@ const ViewServiceProvider = () => {
         });
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
-  // =========================================================
   // OPEN ADD ADDRESS
-  // =========================================================
 
   const openAddAddress = () => {
     if (hasAddress) return;
@@ -288,9 +264,7 @@ const ViewServiceProvider = () => {
     setAddressModalVisible(true);
   };
 
-  // =========================================================
   // OPEN EDIT ADDRESS
-  // =========================================================
 
   const openEditAddress = (addr) => {
     setEditingAddress(addr);
@@ -360,9 +334,7 @@ const ViewServiceProvider = () => {
     }, 100);
   };
 
-  // =========================================================
   // SAVE ADDRESS
-  // =========================================================
 
   const handleSaveAddress = async () => {
     try {
@@ -444,9 +416,7 @@ const ViewServiceProvider = () => {
     }
   };
 
-  // =========================================================
   // DELETE ADDRESS
-  // =========================================================
 
   const handleDeleteAddress = (addressId) => {
     Modal.confirm({
@@ -479,9 +449,7 @@ const ViewServiceProvider = () => {
     });
   };
 
-  /* ---------------------------------------------------------------- */
   /* Booking                                                           */
-  /* ---------------------------------------------------------------- */
 
   const getData = async (booking_status) => {
     try {
@@ -503,7 +471,7 @@ const ViewServiceProvider = () => {
 
       setBookingData(dataWithIndex);
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
@@ -684,9 +652,7 @@ const ViewServiceProvider = () => {
     userData?.employee_type ||
     "---";
 
-  /* ---------------------------------------------------------------- */
   /* Overview tab content                                               */
-  /* ---------------------------------------------------------------- */
 
   const overviewContent = (
     <Box
@@ -935,7 +901,7 @@ const ViewServiceProvider = () => {
             sx={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fill, minmax(300px, 1fr))",
+                "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
               gap: "16px",
             }}
           >
@@ -997,7 +963,7 @@ const ViewServiceProvider = () => {
                     sx={{ my: 0.5 }}
                   />
 
-                  <Stack
+                  <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }}
                     direction="row"
                     spacing={1}
                   >
@@ -1090,9 +1056,7 @@ const ViewServiceProvider = () => {
     </Box>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Booking tab content                                              */
-  /* ---------------------------------------------------------------- */
 
   const bookingContent = (
     <Card
@@ -1145,9 +1109,7 @@ const ViewServiceProvider = () => {
     </Card>
   );
 
-  /* ---------------------------------------------------------------- */
   /* Attendance tab content                                           */
-  /* ---------------------------------------------------------------- */
 
   const attendanceContent = (
     <Card
@@ -1249,6 +1211,7 @@ const ViewServiceProvider = () => {
             display: "flex",
             justifyContent:
               "space-between",
+            flexWrap: { xs: "wrap", md: "nowrap" },
             alignItems: "center",
             gap: 2,
           }}
@@ -1305,16 +1268,13 @@ const ViewServiceProvider = () => {
         />
       </div>
 
-      {/* ---------------------------------------------------------------- */}
       {/* Add / Edit Address modal                                        */}
-      {/* ---------------------------------------------------------------- */}
 
       {addressModalVisible && (
         <Modal
           title={
-            <Stack
+            <Stack sx={{ alignItems: "center" }}
               direction="row"
-              alignItems="center"
               spacing={1.25}
             >
               <Box
@@ -1386,9 +1346,7 @@ const ViewServiceProvider = () => {
               changedValues,
               allValues,
             ) => {
-              // =================================================
               // COUNTRY CHANGED
-              // =================================================
 
               if (
                 changedValues.country_id
@@ -1418,9 +1376,7 @@ const ViewServiceProvider = () => {
                 return;
               }
 
-              // =================================================
               // STATE CHANGED
-              // =================================================
 
               if (
                 changedValues.state_id
@@ -1439,9 +1395,7 @@ const ViewServiceProvider = () => {
                 );
               }
 
-              // =================================================
               // ADDRESS CHANGED
-              // =================================================
 
               if (
                 changedValues.address

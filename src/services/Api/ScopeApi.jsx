@@ -76,13 +76,7 @@ export const DeleteUserScopeItem = (id) => {
   return axios.delete(`${BASE_URL}/admin/auth/user-scope-item/${id}`);
 };
 
-/* ===========================
-   ESTIMATE SCOPE APIs
-=========================== */
-
-export const GetEstimateScope = (estimateId) => {
-  return axios.get(`${BASE_URL}/admin/auth/estimate-scope/${estimateId}`);
-};
+/* ESTIMATE SCOPE APIs */
 
 export const CreateEstimateSection = (estimateId, data) => {
   return axios.post(

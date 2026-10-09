@@ -1,8 +1,6 @@
-/** @format */
-
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Container } from "react-bootstrap";
-import { Steps, Button } from "antd";
+import { Button } from "antd";
 import PersonalInformation from "./PersonalInformation";
 import EmploymentEligibility from "./EmploymentEligibility";
 import PreviousEmployment from "./PreviousEmployment";
@@ -18,7 +16,6 @@ import "./JobApplication.scss";
 import EmployeeDirectDeposite from "./EmployeeDirectDeposite";
 import { useNavigate, useParams } from "react-router";
 import { GetHiringFormById } from "../../services/Api/HiringFormApi";
-const { Step } = Steps;
 const JobApplication = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
@@ -45,10 +42,9 @@ const JobApplication = () => {
 		GetHiringFormById(id)
 			.then((res) => {
 				setFormData(res.data.data);
-				console.log(res.data.data);
 			})
 			.catch((err) => {
-				console.log(err, "error");
+				console.error(err, "error");
 			});
 	}, [id]);
 
@@ -58,15 +54,6 @@ const JobApplication = () => {
 	return (
 		<Container>
 			<div className="job-application-layout">
-				{/* <div className="stepper-container">
-          <Steps direction="vertical" current={currentStep}>
-            <Step title="Disclosure & Authorization" />
-            <Step title="Personal & Employment Info" />
-            <Step title="Other Details" />
-            <Step title="Non-Compete Agreement" />
-            <Step title="Non-Compete Agreement1" />
-          </Steps>
-        </div> */}
 				<div className="form-content" ref={formRef}>
 					{currentStep === 0 && (
 						<>
@@ -96,7 +83,6 @@ const JobApplication = () => {
 								<div className="Form_section_heading">PERSONAL INFORMATION</div>
 								<PersonalInformation
 									formData={formData.personalInfo}
-									// setFormData={updatePersonalInfo}
 								/>
 							</div>
 							<div className="form_section">

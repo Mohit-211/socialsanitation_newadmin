@@ -1,15 +1,7 @@
-/** @format */
-
 import dayjs from "@/lib/dayjs";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import {
-  EditServiceQuote,
-  GetNextQuoteRef,
-  GetServiceQuoteById,
-  GetUserById,
-} from "../../services/Api/Api";
-import { useContext } from "react";
+import { EditServiceQuote, GetServiceQuoteById, GetUserById } from "../../services/Api/Api";
 import {
   message,
   Spin,
@@ -19,7 +11,6 @@ import {
   Button,
   Select,
   Popconfirm,
-  Modal,
 } from "antd";
 import { DatePicker } from "antd";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
@@ -29,7 +20,6 @@ const { Option } = Select;
 
 const UpdateServiceQuote = () => {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState([]);
   const [userId, setUserId] = useState(null);
@@ -57,7 +47,6 @@ const UpdateServiceQuote = () => {
     ],
     totalAmount: "",
     date: "",
-    // square_payment_url: "",
   });
 
   const loadQuote = async () => {
@@ -109,8 +98,6 @@ const UpdateServiceQuote = () => {
     GetUserById(userId)
       .then((res) => {
         const user = res.data.data;
-
-        setUserData(user);
 
         const primaryAddress = user.user_address?.[0];
 
@@ -173,7 +160,7 @@ const UpdateServiceQuote = () => {
     const updatedItems = formData.items.map((item) => {
       const unitPrice = parseFloat(item.unit_price) || 0;
 
-      let multiplier = 1;
+      let multiplier;
 
       if (item.calculation_type === "hour") {
         multiplier = parseFloat(item.hour) || 1;
@@ -243,8 +230,6 @@ const UpdateServiceQuote = () => {
       items: formData.items,
       date: formData.date,
 
-      // tip: parseFloat(formData.tip || 0),
-      // square_payment_url: formData.square_payment_url,
     };
 
     try {
@@ -362,7 +347,6 @@ const UpdateServiceQuote = () => {
       render: (text, record, index) => (
         <InputNumber
           min={1}
-          // precision={0}
           step={1}
           value={text !== "" ? Number(text) : undefined}
           onChange={(value) => handleItemChange(index, "quantity", value)}
@@ -632,29 +616,6 @@ const UpdateServiceQuote = () => {
         </div>
 
         {/* Square Payment Link Section */}
-        {/* <div
-					style={{
-						marginTop: "40px",
-						textAlign: "center",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: "10px",
-					}}
-				>
-					<strong>Square Payment Link</strong>
-					<Input
-						placeholder="Enter Square Payment Link"
-						style={{ width: "60%" }}
-						value={formData.square_payment_url}
-						onChange={(e) =>
-							setFormData({
-								...formData,
-								square_payment_url: e.target.value,
-							})
-						}
-					/>
-				</div> */}
 
         <div
           className="disclaimer"
@@ -676,13 +637,11 @@ const UpdateServiceQuote = () => {
           contact your representative.
         </div>
 
-        <div className="quote-form">
+        <div className="quote-form" style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             type="primary"
-            style={{ left: "85%" }}
             onClick={handleSubmit}
             loading={isLoading}
-            // disabled={isLoading}
           >
             Update Quote
           </Button>

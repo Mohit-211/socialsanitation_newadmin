@@ -1,21 +1,27 @@
-/** @format */
-
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-	Card,
-	Typography,
-	Spin,
-	Input,
-	Button,
-	Divider,
-	Avatar,
-	message,
-	Modal,
-	Tooltip,
-	Upload,
-	Image,
+  Card,
+  Typography,
+  Spin,
+  Input,
+  Button,
+  Divider,
+  Avatar,
+  message,
+  Modal,
+  Tooltip,
+  Upload,
 } from "antd";
 import "./Groupchat.css";
+import {
+	ArrowLeftOutlined,
+	CloseCircleFilled,
+	EditOutlined,
+	InfoCircleOutlined,
+	PlusOutlined,
+	SmileOutlined,
+	UserOutlined,
+} from "@ant-design/icons";
 import {
 	DeleteGroup,
 	GetGroupParticipants,
@@ -32,18 +38,9 @@ import {
 	get,
 } from "firebase/database";
 import db from "../Chat/Firebase";
-import {
-	CloseCircleFilled,
-	EditOutlined,
-	PlusOutlined,
-	UploadOutlined,
-	UserOutlined,
-} from "@ant-design/icons";
 import { GetAdminProfile } from "../../services/Api/Api";
 import { useNavigate } from "react-router";
-import { InfoCircleOutlined } from "@ant-design/icons";
 import EmojiPicker from "emoji-picker-react";
-import { SmileOutlined } from "@ant-design/icons";
 
 import {
 	getStorage,
@@ -270,7 +267,6 @@ const BDMGroupChat = () => {
 			// Fetch participant names/roles via API
 			const res = await GetGroupParticipants(groupId);
 			setGroupParticipants(res?.data?.data || []);
-			console.log(res?.data?.data, "GROUP");
 			setIsGroupInfoVisible(true);
 		} catch (err) {
 			console.error("Failed to fetch group info", err);
@@ -299,6 +295,7 @@ const BDMGroupChat = () => {
 
 	return (
 		<div
+			className={`chat-layout${selectedGroup ? " chat-layout--open" : ""}`}
 			style={{
 				display: "flex",
 				height: "100vh",
@@ -309,6 +306,7 @@ const BDMGroupChat = () => {
 		>
 			{/* Left Panel: Groups */}
 			<div
+				className="chat-layout__list"
 				style={{
 					width: "30%",
 					background: "#fff",
@@ -416,6 +414,7 @@ const BDMGroupChat = () => {
 
 			{/* Right Panel: Chat */}
 			<div
+				className="chat-layout__conversation"
 				style={{
 					width: "70%",
 					background: "#fff",
@@ -447,6 +446,13 @@ const BDMGroupChat = () => {
 								marginBottom: 16,
 							}}
 						>
+							<Button
+								className="chat-layout__back"
+								type="text"
+								aria-label="Back to chats"
+								icon={<ArrowLeftOutlined />}
+								onClick={() => setSelectedGroup(null)}
+							/>
 							{isEditingGroupName ? (
 								<>
 									<Input
@@ -602,7 +608,6 @@ const BDMGroupChat = () => {
 												{/* Text message fallback */}
 												{msg.message && <Text>{msg.message}</Text>}
 
-												{/* <Text>{msg.message}</Text> */}
 												<Text
 													type="secondary"
 													style={{

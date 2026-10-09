@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "@/lib/dayjs";
 import {
   DatePicker,
@@ -19,7 +17,6 @@ import MuiButton from "@mui/material/Button";
 import {
   CalendarDays,
   Mail,
-  Phone,
   PackageCheck,
   RotateCcw,
   CircleCheck,
@@ -96,7 +93,7 @@ const EmployeeEquipmentRecordsPage = () => {
       setRecords(res?.data?.data?.records || []);
       setPagination(res?.data?.data?.pagination || null);
       setMonthLabel(res?.data?.data?.month?.label || "");
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch employee equipment records.");
     } finally {
       setLoading(false);
@@ -143,7 +140,7 @@ const EmployeeEquipmentRecordsPage = () => {
       return;
     }
 
-    const HEADER_FILL = "2563EB"; // blue, matching the Assignments export
+     // blue, matching the Assignments export
     const SECTION_FILL = "EEF2FF";
     const TABLE_HEADER_FILL = "F1F5F9";
 
@@ -345,18 +342,14 @@ const EmployeeEquipmentRecordsPage = () => {
       {/* ── Header ── */}
 
       <Paper variant="outlined" className="employee-records-page__header-paper">
-        <Stack
+        <Stack useFlexGap
           direction="row"
-          justifyContent="space-between"
           sx={{
             justifyContent: "space-between",
             alignItems: "center",
             flexWrap: { xs: "wrap", md: "nowrap" },
           }}
-          alignItems="center"
           spacing={2}
-          flexWrap="wrap"
-          
         >
           <Box>
             <Typography className="page-title">
@@ -391,7 +384,7 @@ const EmployeeEquipmentRecordsPage = () => {
         variant="outlined"
         className="employee-records-page__controls-paper"
       >
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <Stack useFlexGap sx={{ alignItems: "center", flexWrap: "wrap" }} direction="row" spacing={2}>
           <div className="employee-records-page__month-picker">
             <CalendarDays
               size={16}

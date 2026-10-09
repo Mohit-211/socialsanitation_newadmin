@@ -1,7 +1,6 @@
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-
 export const MyGroups = (adminToken) => {
 	return axios.get(BASE_URL + `firebase/myGroups`, {
 		headers: {

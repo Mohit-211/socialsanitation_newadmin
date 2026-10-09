@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -57,7 +55,7 @@ const renderAddress = (user_address, maxWidth = 240) => {
 
   if (!address) {
     return (
-      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: "#9CA3AF" }}>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "#9CA3AF" }}>
         <MapPin size={14} />
         <span style={{ fontSize: 13 }}>N/A</span>
       </Stack>
@@ -78,8 +76,7 @@ const renderAddress = (user_address, maxWidth = 240) => {
       <Stack
         direction="row"
         spacing={0.75}
-        alignItems="flex-start"
-        sx={{ maxWidth, cursor: "default" }}
+        sx={{ alignItems: "flex-start", maxWidth, cursor: "default" }}
       >
         <MapPin
           size={14}
@@ -138,7 +135,7 @@ const ServiceProvider = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [mapVisible, setMapVisible] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
-  const [employeeLocation, setEmployeeLocation] = useState(null);
+  const [employeeLocation] = useState(null);
 
   // Tracks which employee row's role is mid-update so we can disable
   // just that row's Select and show a small loading state on it.
@@ -207,7 +204,7 @@ const ServiceProvider = () => {
 
       message.success(res.data.message || "Employee type updated");
       getData();
-    } catch (error) {
+    } catch {
       message.error("Failed to update employee type");
     }
   };
@@ -217,7 +214,7 @@ const ServiceProvider = () => {
   // employee-update endpoint, since promoting/reassigning someone doesn't
   // need a hiring form or location on hand.
   const handleRoleChange = async (user_id, value) => {
-    let role_id = value;
+    let role_id;
     let sub_role_id = null;
 
     if (String(value).includes("-")) {
@@ -404,7 +401,7 @@ const ServiceProvider = () => {
       dataIndex: "action",
       width: 220,
       render: (_, record) => (
-        <Stack direction="row" spacing={1} flexWrap="nowrap">
+        <Stack useFlexGap sx={{ flexWrap: "nowrap" }} direction="row" spacing={1}>
           <Tooltip title="Send 2-Week Schedule">
             <IconButton
               size="small"
@@ -489,12 +486,12 @@ const ServiceProvider = () => {
       setData(newData);
       setUserBackupData(newData);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       if (e.response && e.response.status === 401) {
         navigate("/error401");
-        console.log("You do not have access to this page as a sub-admin.");
+        console.error("You do not have access to this page as a sub-admin.");
       } else {
-        console.log("Error loading data. Please try again later.");
+        console.error("Error loading data. Please try again later.");
       }
     } finally {
       setLoading(false);
@@ -621,19 +618,6 @@ const ServiceProvider = () => {
 
     const locationRef = dbRef(db, `drivers/${selectedEmployeeId}/locations`);
 
-    const handleLocationUpdate = (snapshot) => {
-      const data = snapshot.val();
-
-      if (data && data.latitude && data.longitude) {
-        setEmployeeLocation({
-          lat: data.latitude,
-          lng: data.longitude,
-        });
-      } else {
-        setEmployeeLocation(null); // Employee hasn't shared location
-      }
-    };
-
     return () => {
       off(locationRef); // Remove listener when component unmounts or dependency changes
     };
@@ -645,7 +629,6 @@ const ServiceProvider = () => {
   };
 
   const MapModal = ({ position, isLoaded }) => {
-    const [isOpen, setIsOpen] = useState(false);
 
     if (!isLoaded) return <p style={{ textAlign: "center" }}>Loading map...</p>;
 
@@ -657,23 +640,8 @@ const ServiceProvider = () => {
       >
         <Marker
           position={{ lat: position[0], lng: position[1] }}
-          onClick={() => setIsOpen(true)}
         />
 
-        {/* {isOpen && (
-					<InfoWindow
-						position={{ lat: position[0], lng: position[1] }}
-						onCloseClick={() => setIsOpen(false)}
-					>
-						<div>
-							<p>
-								<strong>Current Location</strong>
-							</p>
-							<p>Lat: {position[0]}</p>
-							<p>Lng: {position[1]}</p>
-						</div>
-					</InfoWindow>
-				)} */}
       </GoogleMap>
     );
   };
@@ -696,12 +664,9 @@ const ServiceProvider = () => {
       >
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
           spacing={2}
           useFlexGap
-          flexWrap="wrap"
-          sx={{ width: "100%" }}
+          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
         >
           {/* Left */}
           <Box>
@@ -719,6 +684,7 @@ const ServiceProvider = () => {
             sx={{
               ml: "auto",
               alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
             }}
           >
             <Input

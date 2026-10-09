@@ -1,6 +1,5 @@
-/** @format */
-import React, { useLayoutEffect, useState } from "react";
-import { Form, Input, Button, Upload, message, Card, Select } from "antd";
+import { useState } from "react";
+import { Form, Input, Button, Upload, message, Card } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
@@ -12,22 +11,12 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import MuiButton from "@mui/material/Button";
 import { ArrowLeft } from "lucide-react";
-import { GetAllChecklist } from "../../services/Api/checklistApi";
 
-const { Option } = Select;
 const AddService = () => {
 	const [form] = Form.useForm();
 	const [images, setImages] = useState([]);
 	const [disable, setDisable] = useState(false);
-	const [categoryNameData, setCategoryNameData] = useState([]);
-	const [productCategoryId, setProductCategoryId] = useState("");
 	const navigate = useNavigate();
-
-	useLayoutEffect(() => {
-		GetAllChecklist()
-			.then((res) => setCategoryNameData(res.data.data))
-			.catch((err) => console.log(err));
-	}, []);
 
 	const handleImageUpload = async ({ file, onSuccess, onError }) => {
 		const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -206,30 +195,6 @@ const AddService = () => {
 							{images.length < 5 && <PlusOutlined />}
 						</Upload>
 					</Form.Item>
-
-					{/* <Form.Item
-						label="Checklist"
-						name="productCategoryId"
-						// rules={[
-						// 	{
-						// 		required: true,
-						// 		message: "Please select category!",
-						// 	},
-						// ]}
-					>
-						<Select
-							mode="multiple"
-							placeholder="Select Checklist"
-							value={productCategoryId}
-							onChange={(value) => setProductCategoryId(value)}
-						>
-							{categoryNameData?.map((category) => (
-								<Option key={category.id} value={category.id}>
-									{category?.task}
-								</Option>
-							))}
-						</Select>
-					</Form.Item> */}
 
 					<Form.Item label="Description" name="description">
 						<CKEditor

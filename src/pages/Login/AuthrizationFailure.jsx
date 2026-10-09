@@ -1,4 +1,3 @@
-import React from 'react';
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 import AccessImage from "../../assets/64b5033f93d771001d187639.jpeg";
@@ -15,9 +14,6 @@ const AuthrizationFailure = () => {
     <div className="main_container">
     <img src={AccessImage} alt="Access Denied" className="error_image" />
     <div className="main_box">
-      {/* <div className="error_heading">
-      Authorization failed. Please try to authorize your email with the calendar service again.
-      </div> */}
       <p className="text-muted my-4">
       Authorization failed. Please try to authorize your email with the calendar service again.
       </p>

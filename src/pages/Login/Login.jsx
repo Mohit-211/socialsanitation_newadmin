@@ -1,6 +1,3 @@
-/** @format */
-
-import React from "react";
 import { AdminLogin } from "../../services/Api/Api";
 import "./Login.scss";
 import Button from "@mui/material/Button";
@@ -51,7 +48,7 @@ const Login = () => {
       });
   };
 
-  const onFinishFailed = (errorInfo) => {};
+  const onFinishFailed = () => {};
 
   return (
     <div className="LoginContainer">

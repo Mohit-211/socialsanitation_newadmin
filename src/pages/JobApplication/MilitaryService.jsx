@@ -1,5 +1,5 @@
 import { DatePicker, Form, Input, Radio, Row, Col } from "antd";
-import React, { useState } from "react";
+import { useState } from "react";
 
 const MilitaryService = ({ formData, setFormData }) => {
   const [form] = Form.useForm();
@@ -51,12 +51,12 @@ const MilitaryService = ({ formData, setFormData }) => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item label="From" name="serviceFrom">
                 <DatePicker picker="month" style={{ width: "100%" }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item label="To" name="serviceTo" >
                 <DatePicker picker="month" style={{ width: "100%" }} />
               </Form.Item>

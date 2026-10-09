@@ -1,4 +1,3 @@
-import React from "react";
 import { Col, Form, Input, Row } from "antd";
 
 const References = ({ formData, setFormData }) => {
@@ -23,7 +22,7 @@ const References = ({ formData, setFormData }) => {
         <div key={num} style={{ borderBottom: "1px solid #ddd", paddingBottom: "16px", marginBottom: "16px" }}>
           <h3>Reference {num}</h3>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="First Name"
                 name={['references', num - 1, 'firstName']}
@@ -32,7 +31,7 @@ const References = ({ formData, setFormData }) => {
                 <Input placeholder="First" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="Last Name"
                 name={['references', num - 1, 'lastName']}

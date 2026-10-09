@@ -1,6 +1,4 @@
-/** @format */
-
-import React, { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -15,7 +13,6 @@ import {
   GetServiceById,
   GetReviewsByProductId,
 } from "../../services/Api/ServiceApi";
-import "./Rating.scss";
 
 const ViewService = () => {
   const { id } = useParams();
@@ -29,7 +26,7 @@ const ViewService = () => {
         setServiceData(res.data.data);
       })
       .catch((err) => {
-        console.log(err, "error");
+        console.error(err, "error");
       });
   }, [id]);
 
@@ -39,7 +36,7 @@ const ViewService = () => {
         setReviewData(res.data.data);
       })
       .catch((err) => {
-        console.log(err, "error");
+        console.error(err, "error");
       });
   }, [id]);
 
@@ -173,19 +170,19 @@ const ViewService = () => {
               >
                 {/* Top fields */}
                 <Row gutter={[24, 20]}>
-                  <Col span={12}>
+                  <Col xs={24} md={12}>
                     <Typography sx={fieldLabelSx}>Service Name</Typography>
                     <Typography sx={fieldValueSx}>
                       {serviceData?.name || "--"}
                     </Typography>
                   </Col>
-                  <Col span={6}>
+                  <Col xs={24} sm={12} md={6}>
                     <Typography sx={fieldLabelSx}>Abbreviation</Typography>
                     <Typography sx={fieldValueSx}>
                       {serviceData?.abbreviation || "--"}
                     </Typography>
                   </Col>
-                  <Col span={6}>
+                  <Col xs={24} sm={12} md={6}>
                     <Typography sx={fieldLabelSx}>Price</Typography>
                     <Typography sx={fieldValueSx}>
                       ${serviceData?.price ?? "--"}

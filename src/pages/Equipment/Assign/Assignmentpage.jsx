@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "@/lib/dayjs";
 import {
   Table,
@@ -168,7 +168,7 @@ const AssignmentPage = () => {
     try {
       const res = await GetAllAssignments(1, 100);
       setAssignments(res?.data?.data?.assignments || []);
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch assignments.");
     } finally {
       setLoading(false);
@@ -179,7 +179,7 @@ const AssignmentPage = () => {
     try {
       const res = await GetAssignmentOverview();
       setOverview(res?.data?.data || null);
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch overview.");
     }
   };
@@ -188,7 +188,7 @@ const AssignmentPage = () => {
     try {
       const res = await GetEmployeeDropdown();
       setEmployees(res?.data?.data || []);
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch employees.");
     }
   };
@@ -197,7 +197,7 @@ const AssignmentPage = () => {
     try {
       const res = await GetAllEquipments(1, 100);
       setEquipments(res?.data?.data?.equipments || []);
-    } catch (err) {
+    } catch {
       message.error("Failed to fetch equipments.");
     }
   };
@@ -483,7 +483,7 @@ const AssignmentPage = () => {
       key: "action",
       width: 130, // was 90 — too narrow for two 34px icon buttons + padding
       render: (_, record) => (
-        <Stack direction="row" spacing={1}>
+        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
           <Tooltip title="Update Assignment">
             <IconButton
               size="small"
@@ -540,7 +540,7 @@ const AssignmentPage = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
             <MuiButton
               variant="outlined"
               startIcon={<Download size={17} />}
@@ -582,7 +582,7 @@ const AssignmentPage = () => {
             const Icon = card.icon;
             const isDanger = card.danger && overview[card.key] > 0;
             return (
-              <Col span={4} key={card.key}>
+              <Col xs={12} sm={8} md={4} key={card.key}>
                 <Card
                   size="small"
                   className={
