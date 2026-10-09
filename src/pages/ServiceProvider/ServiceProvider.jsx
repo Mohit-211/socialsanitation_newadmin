@@ -15,6 +15,7 @@ import {
   ResetUserCredentials,
   ToggleLogoutImageRequired,
   UpdateEmployeeType,
+  ChangeEmployeeRole,
   SendTwoWeekSchedule,
 } from "../../services/Api/Api";
 import { useNavigate } from "react-router";
@@ -49,6 +50,86 @@ const actionIconBtn = (color) => ({
   },
 });
 
+// 🔹 Shared "pretty" address renderer: icon + street on top, muted city/state
+// below, truncated with an ellipsis if too long, full text on hover.
+const renderAddress = (user_address, maxWidth = 240) => {
+  const address = user_address?.[0];
+
+  if (!address) {
+    return (
+      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: "#9CA3AF" }}>
+        <MapPin size={14} />
+        <span style={{ fontSize: 13 }}>N/A</span>
+      </Stack>
+    );
+  }
+
+  const street = address?.address || "";
+  const city = address?.user_city?.name || "";
+  const state = address?.user_state?.name || "";
+  // Older addresses predate the country field — shown as USA rather than
+  // blank, consistent with how that's resolved everywhere else in the app.
+  const country = address?.user_country?.name || "USA";
+  const location = [city, state, country].filter(Boolean).join(", ");
+  const fullAddress = [street, location].filter(Boolean).join(", ") || "N/A";
+
+  return (
+    <Tooltip title={fullAddress}>
+      <Stack
+        direction="row"
+        spacing={0.75}
+        alignItems="flex-start"
+        sx={{ maxWidth, cursor: "default" }}
+      >
+        <MapPin
+          size={14}
+          style={{ marginTop: 3, flexShrink: 0, color: "#9CA3AF" }}
+        />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#1a1a1a",
+              lineHeight: 1.35,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {street || "N/A"}
+          </Typography>
+          {location && (
+            <Typography
+              sx={{
+                fontSize: "11.5px",
+                color: "#9ca3af",
+                lineHeight: 1.35,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {location}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </Tooltip>
+  );
+};
+
+// 🔹 Combines role_id + sub_role_id into the single value the Role
+// <Select> below uses — "7", "8", "9-10" (Cleaner), "9-11" (HouseKeeping).
+const getRoleSelectValue = (role_id, sub_role_id) => {
+  if (role_id === 9) {
+    // Default to Cleaner if a legacy row has role_id 9 but no sub_role_id.
+    return `9-${sub_role_id || 10}`;
+  }
+
+  return role_id != null ? String(role_id) : undefined;
+};
+
 const ServiceProvider = () => {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
@@ -58,6 +139,10 @@ const ServiceProvider = () => {
   const [mapVisible, setMapVisible] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
   const [employeeLocation, setEmployeeLocation] = useState(null);
+
+  // Tracks which employee row's role is mid-update so we can disable
+  // just that row's Select and show a small loading state on it.
+  const [updatingRoleId, setUpdatingRoleId] = useState(null);
 
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -96,7 +181,7 @@ const ServiceProvider = () => {
           user_id: selectedUser.id,
           new_email: newEmail,
         },
-        localStorage.getItem("adminToken")
+        localStorage.getItem("adminToken"),
       );
 
       message.success(res.data.message || "New credentials sent successfully!");
@@ -105,7 +190,7 @@ const ServiceProvider = () => {
     } catch (error) {
       console.error("Reset credentials failed:", error);
       message.error(
-        error?.response?.data?.message || "Failed to reset credentials"
+        error?.response?.data?.message || "Failed to reset credentials",
       );
     }
   };
@@ -117,13 +202,50 @@ const ServiceProvider = () => {
           user_id: user_id,
           employee_type: type,
         },
-        localStorage.getItem("adminToken")
+        localStorage.getItem("adminToken"),
       );
 
       message.success(res.data.message || "Employee type updated");
       getData();
     } catch (error) {
       message.error("Failed to update employee type");
+    }
+  };
+
+  // 🔹 Instant role change — mirrors updateEmployeeType above, but hits
+  // the dedicated /change-employee-role/:id endpoint instead of the full
+  // employee-update endpoint, since promoting/reassigning someone doesn't
+  // need a hiring form or location on hand.
+  const handleRoleChange = async (user_id, value) => {
+    let role_id = value;
+    let sub_role_id = null;
+
+    if (String(value).includes("-")) {
+      const [role, subRole] = String(value).split("-");
+
+      role_id = parseInt(role, 10);
+      sub_role_id = parseInt(subRole, 10);
+    } else {
+      role_id = parseInt(value, 10);
+    }
+
+    try {
+      setUpdatingRoleId(user_id);
+
+      const res = await ChangeEmployeeRole(user_id, {
+        role_id,
+        sub_role_id,
+      });
+
+      message.success(res?.data?.message || "Employee role updated");
+      getData();
+    } catch (error) {
+      console.error("Failed to update role:", error);
+      message.error(
+        error?.response?.data?.message || "Failed to update employee role",
+      );
+    } finally {
+      setUpdatingRoleId(null);
     }
   };
 
@@ -135,7 +257,7 @@ const ServiceProvider = () => {
     } catch (error) {
       console.error(error);
       message.error(
-        error?.response?.data?.message || "Failed to send schedule"
+        error?.response?.data?.message || "Failed to send schedule",
       );
     }
   };
@@ -143,7 +265,7 @@ const ServiceProvider = () => {
   const columns = [
     {
       title: "S.No.",
-      width: "5%",
+      width: 60,
       sorter: (a, b) => a.serialNo - b.serialNo,
       render: (_, __, index) => {
         return (
@@ -158,20 +280,48 @@ const ServiceProvider = () => {
       title: "Name",
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
-      width: "8%",
-      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      width: 150,
+      render: (name) => (
+        <Tooltip title={name}>
+          <span
+            style={{
+              fontWeight: 500,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "block",
+              maxWidth: 130,
+            }}
+          >
+            {name}
+          </span>
+        </Tooltip>
+      ),
     },
     {
       title: "Email",
       dataIndex: "email",
-      width: "15%",
+      width: 230,
       render: (email, record) => (
         <Space size={6} align="center">
-          <span>{email}</span>
+          <Tooltip title={email}>
+            <span
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "inline-block",
+                maxWidth: 175,
+                verticalAlign: "middle",
+              }}
+            >
+              {email}
+            </span>
+          </Tooltip>
           <Tooltip title="Reset Email / Password">
             <IconButton
               size="small"
-              sx={{ color: "#FF9800" }}
+              sx={{ color: "#FF9800", flexShrink: 0 }}
               onClick={() => openEditModal(record)}
             >
               <KeyRound size={16} />
@@ -183,11 +333,12 @@ const ServiceProvider = () => {
     {
       title: "Employee Type",
       dataIndex: "employee_type",
-      width: "10%",
+      width: 170,
       render: (employee_type, record) => {
         return (
           <Select
-            value={employee_type}
+            value={employee_type || undefined}
+            placeholder="Select type"
             style={{ width: 150 }}
             onChange={(value) => updateEmployeeType(record.id, value)}
           >
@@ -198,29 +349,37 @@ const ServiceProvider = () => {
       },
     },
     {
-      title: "Type",
+      // 🔹 Previously a plain read-only label. Now an instant-update Select,
+      // same interaction pattern as Employee Type above — pick a new role
+      // and it saves immediately via handleRoleChange, no separate save step.
+      title: "Role",
       dataIndex: "role_id",
-      width: "10%",
+      width: 200,
       render: (role_id, record) => {
-        const { sub_role_id } = record;
+        const value = getRoleSelectValue(role_id, record.sub_role_id);
 
-        if (role_id === 9) {
-          if (sub_role_id === 10) return <strong>CLEANER</strong>;
-          if (sub_role_id === 11) return <strong>HOUSEKEEPING</strong>;
-          return <strong>CLEANER</strong>; // default label for role_id 9
-        }
-
-        const roleMap = {
-          7: "INSPECTOR/SUPERVISOR",
-          8: "QUALITY ASSURANCE TECHNICIAN",
-        };
-
-        return roleMap[role_id] ? <strong>{roleMap[role_id]}</strong> : "-";
+        return (
+          <Select
+            value={value}
+            placeholder="Select role"
+            style={{ width: 190 }}
+            loading={updatingRoleId === record.id}
+            disabled={updatingRoleId === record.id}
+            onChange={(newValue) => handleRoleChange(record.id, newValue)}
+          >
+            <Select.Option value="7">Inspector / Supervisor</Select.Option>
+            <Select.Option value="8">
+              Quality Assurance Technician
+            </Select.Option>
+            <Select.Option value="9-10">Cleaner</Select.Option>
+            <Select.Option value="9-11">HouseKeeping</Select.Option>
+          </Select>
+        );
       },
     },
     {
       title: "Login / Logout Image",
-      width: "10%",
+      width: 150,
       dataIndex: "logout_image_required",
       render: (logout_image_required, record) => (
         <Tooltip title={logout_image_required ? "Required" : "Not Required"}>
@@ -235,11 +394,17 @@ const ServiceProvider = () => {
       ),
     },
     {
+      title: "Address",
+      dataIndex: "user_address",
+      width: 260,
+      render: (user_address) => renderAddress(user_address, 230),
+    },
+    {
       title: "Action",
       dataIndex: "action",
-      width: "18%",
+      width: 220,
       render: (_, record) => (
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} flexWrap="nowrap">
           <Tooltip title="Send 2-Week Schedule">
             <IconButton
               size="small"
@@ -315,7 +480,7 @@ const ServiceProvider = () => {
       setLoading(true);
       let result = await GetAllDriver(
         localStorage.getItem("adminToken"),
-        params
+        params,
       );
       const newData = result.data.data.map((item, index) => ({
         ...item,
@@ -355,19 +520,44 @@ const ServiceProvider = () => {
   };
 
   const onSearch = (searchField) => {
-    const LIST = [...userBackupData];
-    const searchList = [];
+    const searchValue = searchField?.trim().toLowerCase();
 
-    for (let i in LIST) {
-      if (
-        LIST[i]?.user_profile?.name
-          ?.toLowerCase()
-          ?.includes(searchField?.toLowerCase()) ||
-        LIST[i]?.email?.toLowerCase()?.includes(searchField?.toLowerCase())
-      ) {
-        searchList.push(LIST[i]);
-      }
+    if (!searchValue) {
+      setData(userBackupData);
+      return;
     }
+
+    const searchList = userBackupData.filter((employee) => {
+      const name = employee?.user_profile?.name?.toLowerCase() || "";
+
+      const email = employee?.email?.toLowerCase() || "";
+
+      // user_address is an ARRAY
+      const addresses = employee?.user_address || [];
+
+      const addressSearchText = addresses
+        .map((userAddress) => {
+          const address = userAddress?.address?.toLowerCase() || "";
+
+          const state = userAddress?.user_state?.name?.toLowerCase() || "";
+
+          const city = userAddress?.user_city?.name?.toLowerCase() || "";
+
+          // Same USA fallback as renderAddress, so searching "usa" finds
+          // legacy addresses that predate the country field too.
+          const country =
+            userAddress?.user_country?.name?.toLowerCase() || "usa";
+
+          return `${address} ${state} ${city} ${country}`;
+        })
+        .join(" ");
+
+      return (
+        name.includes(searchValue) ||
+        email.includes(searchValue) ||
+        addressSearchText.includes(searchValue)
+      );
+    });
 
     setData(searchList);
   };
@@ -409,7 +599,7 @@ const ServiceProvider = () => {
     try {
       const res = await ToggleLogoutImageRequired(
         user_id,
-        localStorage.getItem("adminToken")
+        localStorage.getItem("adminToken"),
       );
       message.success(res.data.message || "Updated successfully");
       getData();
@@ -417,7 +607,7 @@ const ServiceProvider = () => {
       console.error("Toggle failed:", error);
       message.error(
         error?.response?.data?.message ||
-          "Failed to update logout image setting"
+          "Failed to update logout image setting",
       );
     }
   };
@@ -534,7 +724,7 @@ const ServiceProvider = () => {
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}
-              placeholder="Search by name or email..."
+              placeholder="Search by name, email, address, or country..."
               style={{
                 width: 260,
                 height: 44,
@@ -606,7 +796,7 @@ const ServiceProvider = () => {
         rowSelection={rowSelection}
         bordered
         size="middle"
-        scroll={{ x: 950 }}
+        scroll={{ x: 1420 }}
       />
 
       {mapVisible && (

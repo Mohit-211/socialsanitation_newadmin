@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
 import {
   PlusOutlined,
@@ -12,6 +12,20 @@ import {
   DownOutlined,
   UpOutlined,
 } from "@ant-design/icons";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import "./UserScopeBuilder.scss";
 import {
   GetUserScope,
@@ -21,6 +35,8 @@ import {
   CreateUserScopeItem,
   UpdateUserScopeItem,
   DeleteUserScopeItem,
+  ReorderUserScopeSections,
+  ReorderUserScopeItems,
 } from "../../../services/Api/ScopeApi";
 import { GetClientChecklistByUserId } from "../../../services/Api/BookingApi";
 
@@ -34,7 +50,65 @@ const FreqBadge = ({ label, active, onClick }) => (
   </button>
 );
 
-const UserScopeBuilder = ({ userId, onChange }) => {
+/* ───────────────── SORTABLE SECTION WRAPPER ───────────────── */
+/* dnd-kit requires useSortable() to be called from its own component,
+   not inline inside a .map() — otherwise the hook count changes
+   whenever a section is added/removed and breaks React's rules of hooks. */
+const SortableSection = ({ id, disabled, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ dragHandleProps: { ...attributes, ...listeners } })}
+    </div>
+  );
+};
+
+/* ───────────────── SORTABLE TASK ROW WRAPPER ───────────────── */
+const SortableTaskRow = ({ id, disabled, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ dragHandleProps: { ...attributes, ...listeners } })}
+    </div>
+  );
+};
+
+const UserScopeBuilder = ({
+  userId,
+  onChange,
+  readOnly = false,
+  initialSections = null,
+}) => {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [savingSection, setSavingSection] = useState(null);
@@ -43,13 +117,15 @@ const UserScopeBuilder = ({ userId, onChange }) => {
   const [loadingChecklist, setLoadingChecklist] = useState(false);
   const [clientType, setClientType] = useState("");
 
-  /* Collapse state */
   const [chartCollapsed, setChartCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
 
-  /* Refs */
-  const sectionsEndRef = useRef(null);
-  const sectionRefs = useRef({});
+  // Requires the pointer to move 5px before a drag starts — this is what
+  // lets you click into the title/description inputs normally without
+  // accidentally triggering a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   /* ───────────────── FETCH CHECKLIST ───────────────── */
 
@@ -87,18 +163,24 @@ const UserScopeBuilder = ({ userId, onChange }) => {
       setLoading(true);
       const res = await GetUserScope(userId);
       const data = res?.data?.data?.data || [];
-      const formatted = data.map((section) => ({
-        id: section.id,
-        title: section.title,
-        is_red: section.is_red,
-        items: (section.items || []).map((item) => ({
-          id: item.id,
-          description: item.description,
-          is_daily: item.is_daily,
-          is_weekly: item.is_weekly,
-          is_monthly: item.is_monthly,
-        })),
-      }));
+      const formatted = data
+        .map((section) => ({
+          id: section.id,
+          title: section.title,
+          is_red: section.is_red,
+          order: section.order ?? 0,
+          items: (section.items || [])
+            .map((item) => ({
+              id: item.id,
+              description: item.description,
+              is_daily: item.is_daily,
+              is_weekly: item.is_weekly,
+              is_monthly: item.is_monthly,
+              order: item.order ?? 0,
+            }))
+            .sort((a, b) => a.order - b.order),
+        }))
+        .sort((a, b) => a.order - b.order);
       setSections(formatted);
       if (onChange) onChange(formatted);
     } catch (err) {
@@ -108,11 +190,16 @@ const UserScopeBuilder = ({ userId, onChange }) => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchUserScope();
+useEffect(() => {
+  if (initialSections !== null) {
+    setSections(initialSections || []);
     fetchChecklist();
-  }, [userId]);
+    return;
+  }
+
+  fetchUserScope();
+  fetchChecklist();
+}, [userId, initialSections]);
 
   useEffect(() => {
     if (onChange) onChange(sections);
@@ -153,6 +240,82 @@ const UserScopeBuilder = ({ userId, onChange }) => {
     );
   };
 
+  /* ───────────────── SECTION DRAG END ───────────────── */
+
+  const sectionSortableId = (section) => `section-${section.id}`;
+
+  const handleSectionDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sections.findIndex(
+      (s) => sectionSortableId(s) === active.id,
+    );
+    const newIndex = sections.findIndex(
+      (s) => sectionSortableId(s) === over.id,
+    );
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previousSections = sections;
+    const reordered = arrayMove(sections, oldIndex, newIndex).map(
+      (section, idx) => ({ ...section, order: idx }),
+    );
+
+    setSections(reordered);
+
+    try {
+      await ReorderUserScopeSections(
+        reordered.map((s) => ({ id: s.id, order: s.order })),
+      );
+    } catch (err) {
+      console.log(err);
+      message.error("Failed to save new section order");
+      setSections(previousSections);
+    }
+  };
+
+  /* ───────────────── ITEM DRAG END ───────────────── */
+
+  const itemSortableId = (item) => `item-${item.id || item.tempId}`;
+
+  const handleItemDragEnd = (sectionIndex) => async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const section = sections[sectionIndex];
+    const oldIndex = section.items.findIndex(
+      (i) => itemSortableId(i) === active.id,
+    );
+    const newIndex = section.items.findIndex(
+      (i) => itemSortableId(i) === over.id,
+    );
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previousSections = sections;
+    const reorderedItems = arrayMove(section.items, oldIndex, newIndex).map(
+      (item, idx) => ({ ...item, order: idx }),
+    );
+
+    setSections((prev) =>
+      prev.map((sec, idx) =>
+        idx === sectionIndex ? { ...sec, items: reorderedItems } : sec,
+      ),
+    );
+
+    const savableItems = reorderedItems.filter((i) => i.id);
+    if (savableItems.length === 0) return;
+
+    try {
+      await ReorderUserScopeItems(
+        savableItems.map((i) => ({ id: i.id, order: i.order })),
+      );
+    } catch (err) {
+      console.log(err);
+      message.error("Failed to save new task order");
+      setSections(previousSections);
+    }
+  };
+
   /* ───────────────── CREATE SECTION ───────────────── */
 
   const createSection = async () => {
@@ -165,11 +328,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
       const section = res?.data?.data?.data;
       setSections((prev) => [...prev, { ...section, items: [] }]);
       message.success("Section created");
-
-      /* Scroll to new section after state update */
-      setTimeout(() => {
-        sectionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
     } catch (err) {
       console.log(err);
       message.error("Failed to create section");
@@ -219,7 +377,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
   /* ───────────────── ADD ITEM ───────────────── */
 
   const addItem = (sectionIndex) => {
-    /* Expand the section if collapsed */
     setCollapsedSections((prev) => ({ ...prev, [sectionIndex]: false }));
 
     setSections((prev) =>
@@ -235,6 +392,7 @@ const UserScopeBuilder = ({ userId, onChange }) => {
                   is_daily: false,
                   is_weekly: false,
                   is_monthly: false,
+                  order: section.items.length,
                 },
               ],
             }
@@ -255,7 +413,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
       }
 
       if (!item.id) {
-        /* CREATE */
         const res = await CreateUserScopeItem(section.id, {
           user_scope_section_id: section.id,
           description: item.description,
@@ -277,7 +434,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
         );
         message.success("Task created");
       } else {
-        /* UPDATE */
         await UpdateUserScopeItem(item.id, {
           description: item.description,
           is_daily: item.is_daily,
@@ -319,7 +475,7 @@ const UserScopeBuilder = ({ userId, onChange }) => {
     }
   };
 
-  /* ───────────────── EMPTY ───────────────── */
+  /* ───────────────── EMPTY / LOADING ───────────────── */
 
   if (!userId) {
     return (
@@ -328,8 +484,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
       </div>
     );
   }
-
-  /* ───────────────── LOADING ───────────────── */
 
   if (loading) {
     return (
@@ -343,7 +497,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
 
   return (
     <div className="usb-root">
-      {/* ── HEADER ── */}
       <div className="usb-header">
         <div className="usb-header__left">
           <span className="usb-header__icon">📋</span>
@@ -366,8 +519,7 @@ const UserScopeBuilder = ({ userId, onChange }) => {
         </button>
       </div>
 
-      {/* ── INITIAL CLIENT CHART ── */}
-      <div className="usb-chart-card" style={{marginBottom:"30px"}}>
+      <div className="usb-chart-card" style={{ marginBottom: "30px" }}>
         <button
           className="usb-chart-card__toggle"
           onClick={() => setChartCollapsed((v) => !v)}
@@ -455,7 +607,6 @@ const UserScopeBuilder = ({ userId, onChange }) => {
         )}
       </div>
 
-      {/* ── NO SECTIONS ── */}
       {sections.length === 0 && (
         <div className="usb-empty usb-empty--inner">
           <div className="usb-empty__icon">🗂️</div>
@@ -466,246 +617,311 @@ const UserScopeBuilder = ({ userId, onChange }) => {
         </div>
       )}
 
-      {/* ── SECTIONS ── */}
-      <div className="usb-sections-list">
-        {sections.map((section, sectionIndex) => {
-          const isCollapsed = !!collapsedSections[sectionIndex];
-          const isSavingSection = savingSection === sectionIndex;
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleSectionDragEnd}
+      >
+        <SortableContext
+          items={sections.map(sectionSortableId)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="usb-sections-list">
+            {sections.map((section, sectionIndex) => {
+              const isCollapsed = !!collapsedSections[sectionIndex];
+              const isSavingSection = savingSection === sectionIndex;
 
-          return (
-            <div
-              key={section.id}
-              className={`usb-section-card ${
-                section.is_red ? "usb-section-card--red" : ""
-              }`}
-              ref={(el) => (sectionRefs.current[sectionIndex] = el)}
-            >
-              {/* SECTION HEADER */}
-              <div className="usb-section-card__header">
-                <div className="usb-section-card__drag" title="Drag to reorder">
-                  <HolderOutlined />
-                </div>
-
-                <input
-                  className="usb-section-card__title-input"
-                  value={section.title}
-                  placeholder="Section name…"
-                  onChange={(e) =>
-                    handleSectionChange(sectionIndex, "title", e.target.value)
-                  }
-                />
-
-                <div className="usb-section-card__controls">
-                  {/* Red toggle */}
-                  <label
-                    className="usb-red-toggle"
-                    title="Mark section as high priority"
-                  >
-                    <span className="usb-red-toggle__dot" />
-                    <span className="usb-red-toggle__label">Priority</span>
-                    <Switch
-                      size="small"
-                      checked={section.is_red}
-                      onChange={(val) =>
-                        handleSectionChange(sectionIndex, "is_red", val)
-                      }
-                    />
-                  </label>
-
-                  {/* Save section */}
-                  <Tooltip title="Save section">
-                    <button
-                      className={`usb-btn usb-btn--save ${
-                        isSavingSection ? "usb-btn--loading" : ""
+              return (
+                <SortableSection
+                  key={section.id}
+                  id={sectionSortableId(section)}
+                >
+                  {({ dragHandleProps }) => (
+                    <div
+                      className={`usb-section-card ${
+                        section.is_red ? "usb-section-card--red" : ""
                       }`}
-                      onClick={() => saveSection(section, sectionIndex)}
-                      disabled={isSavingSection}
                     >
-                      <CheckCircleFilled />
-                      <span>Save</span>
-                    </button>
-                  </Tooltip>
-
-                  {/* Delete section */}
-                  <Tooltip title="Delete section">
-                    <button
-                      className="usb-btn usb-btn--danger"
-                      onClick={() => deleteSection(sectionIndex)}
-                    >
-                      <DeleteOutlined />
-                      <span>Delete</span>
-                    </button>
-                  </Tooltip>
-
-                  {/* Collapse toggle */}
-                  <button
-                    className="usb-btn usb-btn--collapse"
-                    onClick={() => toggleSection(sectionIndex)}
-                    title={isCollapsed ? "Expand section" : "Collapse section"}
-                  >
-                    {isCollapsed ? <DownOutlined /> : <UpOutlined />}
-                  </button>
-                </div>
-              </div>
-
-              {/* SECTION BODY */}
-              {!isCollapsed && (
-                <div className="usb-section-card__body">
-                  {(section.items || []).length === 0 && (
-                    <p className="usb-section-card__empty">
-                      No tasks yet — click "Add Task" below.
-                    </p>
-                  )}
-
-                  {(section.items || []).map((item, itemIndex) => {
-                    const isSaved = !!item.id;
-                    const isSavingThis =
-                      savingItem === `${sectionIndex}-${itemIndex}`;
-
-                    return (
-                      <div
-                        key={item.id || item.tempId}
-                        className={`usb-task-row ${
-                          isSaved ? "usb-task-row--saved" : "usb-task-row--new"
-                        }`}
-                      >
-                        {/* Status pill */}
-                        <span
-                          className={`usb-task-status ${
-                            isSaved
-                              ? "usb-task-status--saved"
-                              : "usb-task-status--new"
-                          }`}
-                        >
-                          {isSaved ? "Saved" : "New"}
-                        </span>
-
+                      <div className="usb-section-card__header">
                         <div
-                          className="usb-task-row__drag"
-                          title="Drag to reorder"
+                          className="usb-section-card__drag"
+                          title="Drag to reorder section"
+                          {...dragHandleProps}
                         >
                           <HolderOutlined />
                         </div>
 
                         <input
-                          className="usb-task-row__input"
-                          value={item.description}
-                          placeholder="Describe the task…"
+                          className="usb-section-card__title-input"
+                          value={section.title}
+                          placeholder="Section name…"
                           onChange={(e) =>
-                            handleItemChange(
+                            handleSectionChange(
                               sectionIndex,
-                              itemIndex,
-                              "description",
+                              "title",
                               e.target.value,
                             )
                           }
                         />
 
-                        {/* Frequency badges */}
-                        <div className="usb-task-row__freq">
-                          <FreqBadge
-                            label="D"
-                            active={item.is_daily}
-                            onClick={() =>
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_daily",
-                                !item.is_daily,
-                              )
+                        <div className="usb-section-card__controls">
+                          <label
+                            className="usb-red-toggle"
+                            title="Mark section as high priority"
+                          >
+                            <span className="usb-red-toggle__dot" />
+                            <span className="usb-red-toggle__label">
+                              Priority
+                            </span>
+                            <Switch
+                              size="small"
+                              checked={section.is_red}
+                              onChange={(val) =>
+                                handleSectionChange(sectionIndex, "is_red", val)
+                              }
+                            />
+                          </label>
+
+                          <Tooltip title="Save section">
+                            <button
+                              className={`usb-btn usb-btn--save ${
+                                isSavingSection ? "usb-btn--loading" : ""
+                              }`}
+                              onClick={() => saveSection(section, sectionIndex)}
+                              disabled={isSavingSection}
+                            >
+                              <CheckCircleFilled />
+                              <span>Save</span>
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip title="Delete section">
+                            <button
+                              className="usb-btn usb-btn--danger"
+                              onClick={() => deleteSection(sectionIndex)}
+                            >
+                              <DeleteOutlined />
+                              <span>Delete</span>
+                            </button>
+                          </Tooltip>
+
+                          <button
+                            className="usb-btn usb-btn--collapse"
+                            onClick={() => toggleSection(sectionIndex)}
+                            title={
+                              isCollapsed
+                                ? "Expand section"
+                                : "Collapse section"
                             }
-                          />
-                          <FreqBadge
-                            label="W"
-                            active={item.is_weekly}
-                            onClick={() =>
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_weekly",
-                                !item.is_weekly,
-                              )
-                            }
-                          />
-                          <FreqBadge
-                            label="M"
-                            active={item.is_monthly}
-                            onClick={() =>
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_monthly",
-                                !item.is_monthly,
-                              )
-                            }
-                          />
+                          >
+                            {isCollapsed ? <DownOutlined /> : <UpOutlined />}
+                          </button>
                         </div>
-
-                        {/* Save / Update button */}
-                        <Tooltip
-                          title={isSaved ? "Update task" : "Save new task"}
-                        >
-                          <button
-                            className={`usb-btn ${
-                              isSaved ? "usb-btn--edit" : "usb-btn--save"
-                            } ${isSavingThis ? "usb-btn--loading" : ""}`}
-                            onClick={() =>
-                              saveItem(item, sectionIndex, itemIndex)
-                            }
-                            disabled={isSavingThis}
-                          >
-                            {isSaved ? (
-                              <>
-                                <EditOutlined />
-                                <span>Update</span>
-                              </>
-                            ) : (
-                              <>
-                                <SaveOutlined />
-                                <span>Save</span>
-                              </>
-                            )}
-                          </button>
-                        </Tooltip>
-
-                        {/* Delete task */}
-                        <Tooltip title="Delete task">
-                          <button
-                            className="usb-btn usb-btn--danger"
-                            onClick={() => deleteItem(sectionIndex, itemIndex)}
-                          >
-                            <DeleteOutlined />
-                            <span>Delete</span>
-                          </button>
-                        </Tooltip>
                       </div>
-                    );
-                  })}
 
-                  <button
-                    className="usb-btn-add-task"
-                    onClick={() => addItem(sectionIndex)}
-                  >
-                    <PlusOutlined /> Add Task
-                  </button>
-                </div>
-              )}
+                      {!isCollapsed && (
+                        <div className="usb-section-card__body">
+                          {(section.items || []).length === 0 && (
+                            <p className="usb-section-card__empty">
+                              No tasks yet — click "Add Task" below.
+                            </p>
+                          )}
 
-              {/* Collapsed summary */}
-              {isCollapsed && (
-                <div className="usb-section-card__collapsed-summary">
-                  {section.items?.length || 0} task
-                  {(section.items?.length || 0) !== 1 ? "s" : ""} — click ↑ to
-                  expand
-                </div>
-              )}
-            </div>
-          );
-        })}
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleItemDragEnd(sectionIndex)}
+                          >
+                            <SortableContext
+                              items={(section.items || []).map(itemSortableId)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {(section.items || []).map((item, itemIndex) => {
+                                const isSaved = !!item.id;
+                                const isSavingThis =
+                                  savingItem === `${sectionIndex}-${itemIndex}`;
 
-        {/* Scroll anchor for new sections */}
-        <div ref={sectionsEndRef} />
-      </div>
+                                return (
+                                  <SortableTaskRow
+                                    key={item.id || item.tempId}
+                                    id={itemSortableId(item)}
+                                    disabled={!isSaved}
+                                  >
+                                    {({ dragHandleProps }) => (
+                                      <div
+                                        className={`usb-task-row ${
+                                          isSaved
+                                            ? "usb-task-row--saved"
+                                            : "usb-task-row--new"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`usb-task-status ${
+                                            isSaved
+                                              ? "usb-task-status--saved"
+                                              : "usb-task-status--new"
+                                          }`}
+                                        >
+                                          {isSaved ? "Saved" : "New"}
+                                        </span>
+
+                                        <div
+                                          className="usb-task-row__drag"
+                                          title={
+                                            isSaved
+                                              ? "Drag to reorder task"
+                                              : "Save this task before reordering"
+                                          }
+                                          style={{
+                                            opacity: isSaved ? 1 : 0.4,
+                                            cursor: isSaved
+                                              ? "grab"
+                                              : "not-allowed",
+                                          }}
+                                          {...(isSaved ? dragHandleProps : {})}
+                                        >
+                                          <HolderOutlined />
+                                        </div>
+
+                                        <input
+                                          className="usb-task-row__input"
+                                          value={item.description}
+                                          placeholder="Describe the task…"
+                                          onChange={(e) =>
+                                            handleItemChange(
+                                              sectionIndex,
+                                              itemIndex,
+                                              "description",
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+
+                                        <div className="usb-task-row__freq">
+                                          <FreqBadge
+                                            label="D"
+                                            active={item.is_daily}
+                                            onClick={() =>
+                                              handleItemChange(
+                                                sectionIndex,
+                                                itemIndex,
+                                                "is_daily",
+                                                !item.is_daily,
+                                              )
+                                            }
+                                          />
+                                          <FreqBadge
+                                            label="W"
+                                            active={item.is_weekly}
+                                            onClick={() =>
+                                              handleItemChange(
+                                                sectionIndex,
+                                                itemIndex,
+                                                "is_weekly",
+                                                !item.is_weekly,
+                                              )
+                                            }
+                                          />
+                                          <FreqBadge
+                                            label="M"
+                                            active={item.is_monthly}
+                                            onClick={() =>
+                                              handleItemChange(
+                                                sectionIndex,
+                                                itemIndex,
+                                                "is_monthly",
+                                                !item.is_monthly,
+                                              )
+                                            }
+                                          />
+                                        </div>
+
+                                        <Tooltip
+                                          title={
+                                            isSaved
+                                              ? "Update task"
+                                              : "Save new task"
+                                          }
+                                        >
+                                          <button
+                                            className={`usb-btn ${
+                                              isSaved
+                                                ? "usb-btn--edit"
+                                                : "usb-btn--save"
+                                            } ${
+                                              isSavingThis
+                                                ? "usb-btn--loading"
+                                                : ""
+                                            }`}
+                                            onClick={() =>
+                                              saveItem(
+                                                item,
+                                                sectionIndex,
+                                                itemIndex,
+                                              )
+                                            }
+                                            disabled={isSavingThis}
+                                          >
+                                            {isSaved ? (
+                                              <>
+                                                <EditOutlined />
+                                                <span>Update</span>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <SaveOutlined />
+                                                <span>Save</span>
+                                              </>
+                                            )}
+                                          </button>
+                                        </Tooltip>
+
+                                        <Tooltip title="Delete task">
+                                          <button
+                                            className="usb-btn usb-btn--danger"
+                                            onClick={() =>
+                                              deleteItem(
+                                                sectionIndex,
+                                                itemIndex,
+                                              )
+                                            }
+                                          >
+                                            <DeleteOutlined />
+                                            <span>Delete</span>
+                                          </button>
+                                        </Tooltip>
+                                      </div>
+                                    )}
+                                  </SortableTaskRow>
+                                );
+                              })}
+                            </SortableContext>
+                          </DndContext>
+
+                          <button
+                            className="usb-btn-add-task"
+                            onClick={() => addItem(sectionIndex)}
+                          >
+                            <PlusOutlined /> Add Task
+                          </button>
+                        </div>
+                      )}
+
+                      {isCollapsed && (
+                        <div className="usb-section-card__collapsed-summary">
+                          {section.items?.length || 0} task
+                          {(section.items?.length || 0) !== 1 ? "s" : ""} —
+                          click ↑ to expand
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </SortableSection>
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };

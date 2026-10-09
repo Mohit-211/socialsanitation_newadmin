@@ -17,6 +17,7 @@ import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
+import Box from "@mui/material/Box";
 import {
   DeleteUser,
   GetUsers,
@@ -26,7 +27,6 @@ import {
   GetClosestEmployees,
 } from "../../services/Api/Api";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
 import dayjs from "@/lib/dayjs";
 import {
   GoogleMap,
@@ -81,6 +81,75 @@ const actionIconBtn = (color) => ({
     borderColor: color,
   },
 });
+
+// 🔹 Shared "pretty" address renderer: icon + street on top, muted city/state
+// below, truncated with an ellipsis if too long, full text on hover.
+const renderAddress = (user_address, maxWidth = 220) => {
+  const address = user_address?.[0];
+
+  if (!address) {
+    return (
+      <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: "#9CA3AF" }}>
+        <MapPin size={14} />
+        <span style={{ fontSize: 13 }}>N/A</span>
+      </Stack>
+    );
+  }
+
+  const street = address?.address || "";
+  const city = address?.user_city?.name || "";
+  const state = address?.user_state?.name || "";
+  // Older addresses predate the country field — shown as USA rather than
+  // blank, consistent with how that's resolved everywhere else in the app.
+  const country = address?.user_country?.name || "USA";
+  const location = [city, state, country].filter(Boolean).join(", ");
+  const fullAddress = [street, location].filter(Boolean).join(", ") || "N/A";
+
+  return (
+    <Tooltip title={fullAddress}>
+      <Stack
+        direction="row"
+        spacing={0.75}
+        alignItems="flex-start"
+        sx={{ maxWidth, cursor: "default" }}
+      >
+        <MapPin
+          size={14}
+          style={{ marginTop: 3, flexShrink: 0, color: "#9CA3AF" }}
+        />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#1a1a1a",
+              lineHeight: 1.35,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {street || "N/A"}
+          </Typography>
+          {location && (
+            <Typography
+              sx={{
+                fontSize: "11.5px",
+                color: "#9ca3af",
+                lineHeight: 1.35,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {location}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </Tooltip>
+  );
+};
 
 const User = () => {
   const navigate = useNavigate();
@@ -326,27 +395,55 @@ const User = () => {
     {
       title: "S.No.",
       dataIndex: "index",
-      width: 50,
+      width: 60,
       sorter: (a, b) => a.index - b.index,
     },
     {
       title: "Name",
       dataIndex: ["user_profile", "name"],
       sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
-      width: 130,
-      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      width: 150,
+      render: (name) => (
+        <Tooltip title={name}>
+          <span
+            style={{
+              fontWeight: 500,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "block",
+              maxWidth: 130,
+            }}
+          >
+            {name}
+          </span>
+        </Tooltip>
+      ),
     },
     {
       title: "Email",
       dataIndex: "email",
-      width: 210,
+      width: 220,
       render: (email, record) => (
         <Space size={6} align="center">
-          <span>{email}</span>
+          <Tooltip title={email}>
+            <span
+              style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "inline-block",
+                maxWidth: 165,
+                verticalAlign: "middle",
+              }}
+            >
+              {email}
+            </span>
+          </Tooltip>
           <Tooltip title="Reset Email / Password">
             <IconButton
               size="small"
-              sx={{ color: "#FF9800" }}
+              sx={{ color: "#FF9800", flexShrink: 0 }}
               onClick={() => openEditModal(record)}
             >
               <KeyRound size={16} />
@@ -358,7 +455,7 @@ const User = () => {
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: 150,
+      width: 160,
       render: (assigned_to, record) => {
         return (
           <Select
@@ -375,17 +472,23 @@ const User = () => {
       },
     },
     {
+      title: "Address",
+      dataIndex: "user_address",
+      width: 260,
+      render: (user_address) => renderAddress(user_address, 230),
+    },
+    {
       title: "Account Created On",
       dataIndex: "created_at",
-      width: 150,
+      width: 170,
       render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
     },
     {
       title: "Action",
       dataIndex: "action",
-      width: 260,
+      width: 300,
       render: (_, record) => (
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} flexWrap="nowrap">
           <Tooltip title="View Nearby Employees">
             <IconButton
               size="small"
@@ -523,19 +626,43 @@ const User = () => {
   };
 
   const onSearch = (searchField) => {
-    const LIST = [...userBackupData];
-    const searchList = [];
+    const searchValue = searchField?.trim().toLowerCase();
 
-    for (let i in LIST) {
-      if (
-        LIST[i]?.user_profile?.name
-          ?.toLowerCase()
-          ?.includes(searchField?.toLowerCase()) ||
-        LIST[i]?.email?.toLowerCase()?.includes(searchField?.toLowerCase())
-      ) {
-        searchList.push(LIST[i]);
-      }
+    if (!searchValue) {
+      setData(userBackupData);
+      return;
     }
+
+    const searchList = userBackupData.filter((client) => {
+      const name = client?.user_profile?.name?.toLowerCase() || "";
+
+      const email = client?.email?.toLowerCase() || "";
+
+      const addresses = client?.user_address || [];
+
+      const addressSearchText = addresses
+        .map((userAddress) => {
+          const address = userAddress?.address?.toLowerCase() || "";
+
+          const state = userAddress?.user_state?.name?.toLowerCase() || "";
+
+          const city = userAddress?.user_city?.name?.toLowerCase() || "";
+
+          // Same USA fallback as renderAddress, so searching "usa" finds
+          // legacy addresses that predate the country field too.
+          const country =
+            userAddress?.user_country?.name?.toLowerCase() || "usa";
+
+          return `${address} ${state} ${city} ${country}`;
+        })
+        .join(" ");
+
+      return (
+        name.includes(searchValue) ||
+        email.includes(searchValue) ||
+        addressSearchText.includes(searchValue)
+      );
+    });
 
     setData(searchList);
   };
@@ -659,7 +786,7 @@ const User = () => {
             <Input
               allowClear
               prefix={<Search size={18} color="#9CA3AF" />}
-              placeholder="Search..."
+              placeholder="Search by name, email, address, or country..."
               style={{
                 width: 260,
                 height: 44,
@@ -729,7 +856,7 @@ const User = () => {
         loading={loading}
         onChange={handleTableChange}
         rowSelection={rowSelection}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1420 }}
         size="middle"
       />
 

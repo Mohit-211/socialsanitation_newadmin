@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import "./invoice.css";
 import { useNavigate, useParams } from "react-router";
-import { ChevronDown, Info } from "lucide-react";
+import { ChevronDown, GripVertical, Info } from "lucide-react";
 import {
   message,
   Spin,
@@ -26,12 +26,13 @@ import {
 } from "../../services/Api/InvoiceApi";
 import SignatureField from "../Customer/SignatureField";
 
-const { Option } = Select;
-
 // Converts "2:00 pm", "14:05", "2pm" etc into minutes-since-midnight.
 // Returns null if it can't confidently parse the text.
 const parseClockTimeToMinutes = (raw) => {
-  const cleaned = raw.trim().toLowerCase().replace(/\s*:\s*/g, ":");
+  const cleaned = raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s*:\s*/g, ":");
   const match = cleaned.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
 
   if (!match) return null;
@@ -90,6 +91,45 @@ const parseHourRangeToDecimal = (rawInput) => {
   return Math.round((diff / 60) * 100) / 100;
 };
 
+// Static option lists — kept as plain arrays instead of <Select.Option>
+// children since antd v6 deprecates the children API in favor of `options`.
+const REF_TYPE_OPTIONS = [
+  { value: "RHK", label: "RHK (Residential - Housekeeping)" },
+  { value: "RM", label: "RM (Residential - Maintenance)" },
+  { value: "RFM", label: "RFM (Residential - Floor Maintenance)" },
+  { value: "CHK", label: "CHK (Commercial - Housekeeping)" },
+  { value: "CM", label: "CM (Commercial - Maintenance)" },
+  { value: "CFM", label: "CFM (Commercial - Floor Maintenance)" },
+];
+
+const FREQUENCY_OPTIONS = [
+  { value: "One-Time", label: "One-Time" },
+  { value: "Weekly", label: "Weekly" },
+  { value: "Bi-Weekly", label: "Bi-Weekly" },
+  { value: "Monthly", label: "Monthly" },
+  { value: "Quarterly", label: "Quarterly" },
+  { value: "Yearly", label: "Yearly" },
+];
+
+const CALCULATION_TYPE_OPTIONS = [
+  { value: "na", label: "N/A" },
+  { value: "sqft", label: "Sqft" },
+  { value: "hour", label: "Hour" },
+];
+
+const IS_RECURRING_OPTIONS = [
+  { value: false, label: "No" },
+  { value: true, label: "Yes" },
+];
+
+const RECURRING_FREQUENCY_OPTIONS = [
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "BIWEEKLY", label: "Bi-Weekly" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "QUARTERLY", label: "Quarterly" },
+  { value: "YEARLY", label: "Yearly" },
+];
+
 const ServiceQuoteForm = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -116,6 +156,7 @@ const ServiceQuoteForm = () => {
     toCompany: "",
     address1: "",
     address2: "",
+    event_name: "",
 
     items: [
       {
@@ -152,6 +193,10 @@ const ServiceQuoteForm = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  // NEW: tracks which row is currently the drop target, purely for the
+  // visual highlight — the reorder logic itself is unchanged.
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
     GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
@@ -164,9 +209,7 @@ const ServiceQuoteForm = () => {
   const applyAddressToForm = (addr) => {
     setFormData((prev) => ({
       ...prev,
-      address1: addr?.address_1
-        ? `${addr.address_1}, ${addr.city || ""}`
-        : "",
+      address1: addr?.address_1 ? `${addr.address_1}, ${addr.city || ""}` : "",
       address2: `${addr?.state || ""}${addr?.country ? ", " + addr.country : ""}`,
     }));
   };
@@ -222,6 +265,49 @@ const ServiceQuoteForm = () => {
       ...formData,
       items: updatedItems,
     });
+  };
+
+  const handleDragStart = (index) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (index !== dragOverIndex) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (dropIndex) => {
+    if (draggedItemIndex === null || draggedItemIndex === dropIndex) {
+      setDraggedItemIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const updatedItems = [...formData.items];
+
+    const draggedItem = updatedItems[draggedItemIndex];
+
+    updatedItems.splice(draggedItemIndex, 1);
+    updatedItems.splice(dropIndex, 0, draggedItem);
+
+    setFormData((prev) => ({
+      ...prev,
+      items: updatedItems,
+    }));
+
+    setIsDirty(true);
+    setDraggedItemIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // NEW: clears the drag visuals if a drag ends without a drop (e.g. Esc,
+  // or dropped outside the table). Purely cosmetic — reorder still only
+  // happens in handleDrop.
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDragOverIndex(null);
   };
 
   const addItem = () => {
@@ -356,6 +442,7 @@ const ServiceQuoteForm = () => {
         to_company_name: formData.toCompany,
         address_1: formData.address1,
         address_2: formData.address2,
+       event_name: formData.event_name?.trim() || null,
 
         signature: formData.signature,
 
@@ -432,15 +519,38 @@ const ServiceQuoteForm = () => {
   };
 
   const columns = [
+    // NEW: explicit drag handle column so the reorder affordance is visible
+    // instead of relying on the whole row silently being draggable.
+    {
+      title: "",
+      key: "drag_handle",
+      width: 36,
+      render: () => (
+        <div
+          title="Drag to reorder"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            color: "#a3a9b3",
+            cursor: "grab",
+          }}
+        >
+          <GripVertical size={16} />
+        </div>
+      ),
+    },
     {
       title: "Description / Service",
       dataIndex: "description",
       key: "description",
+      width: 300,
       render: (text, record, index) => (
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: 8, minWidth: 0 }}>
           <Select
             placeholder="Select service"
-            style={{ width: "70%" }}
+            style={{ flex: "1 1 55%", minWidth: 0 }}
             value={record.service_id || undefined}
             onChange={(value) => {
               const selectedService = services.find((s) => s.id === value);
@@ -457,17 +567,12 @@ const ServiceQuoteForm = () => {
               );
             }}
             allowClear
-          >
-            {services.map((s) => (
-              <Option key={s.id} value={s.id}>
-                {s.name}
-              </Option>
-            ))}
-          </Select>
+            options={services.map((s) => ({ value: s.id, label: s.name }))}
+          />
 
           <Input
             placeholder="Or type description"
-            style={{ width: "50%" }}
+            style={{ flex: "1 1 45%", minWidth: 0 }}
             value={record.description}
             onChange={(e) =>
               handleItemChange(index, "description", e.target.value)
@@ -485,6 +590,7 @@ const ServiceQuoteForm = () => {
       ),
       dataIndex: "frequency",
       key: "frequency",
+      width: 140,
       render: (text, record, index) => (
         <Select
           value={text || undefined}
@@ -492,20 +598,15 @@ const ServiceQuoteForm = () => {
           style={{ width: "100%" }}
           onChange={(value) => handleItemChange(index, "frequency", value)}
           allowClear
-        >
-          <Option value="One-Time">One-Time</Option>
-          <Option value="Weekly">Weekly</Option>
-          <Option value="Bi-Weekly">Bi-Weekly</Option>
-          <Option value="Monthly">Monthly</Option>
-          <Option value="Quarterly">Quarterly</Option>
-          <Option value="Yearly">Yearly</Option>
-        </Select>
+          options={FREQUENCY_OPTIONS}
+        />
       ),
     },
     {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
+      width: 90,
       render: (text, record, index) => (
         <InputNumber
           min={1}
@@ -523,6 +624,7 @@ const ServiceQuoteForm = () => {
       title: "Type",
       dataIndex: "calculation_type",
       key: "calculation_type",
+      width: 100,
       render: (text, record, index) => (
         <Select
           value={record.calculation_type || "sqft"}
@@ -546,11 +648,8 @@ const ServiceQuoteForm = () => {
               handleItemChange(index, "hour", "");
             }
           }}
-        >
-          <Option value="na">N/A</Option>
-          <Option value="sqft">Sqft</Option>
-          <Option value="hour">Hour</Option>
-        </Select>
+          options={CALCULATION_TYPE_OPTIONS}
+        />
       ),
     },
 
@@ -624,6 +723,7 @@ const ServiceQuoteForm = () => {
       title: "Unit Price",
       dataIndex: "unit_price",
       key: "unit_price",
+      width: 130,
       render: (text, record, index) => (
         <InputNumber
           min={0}
@@ -641,12 +741,15 @@ const ServiceQuoteForm = () => {
       title: "Amount ($)",
       dataIndex: "amount",
       key: "amount",
+      width: 120,
       render: (text) => (
         <Input disabled={isLocked} value={formatAmount(text)} readOnly />
       ),
     },
     {
       title: "Action",
+      key: "action",
+      width: 90,
       render: (_, __, index) => (
         <Popconfirm
           title="Delete this item?"
@@ -677,7 +780,7 @@ const ServiceQuoteForm = () => {
         <div className="invoice-meta-container">
           {/* ROW 1 — REF TYPE + REF NO */}
 
-          <div className="meta-table">
+          <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
             <div>
               <strong>
                 REF TYPE <span style={{ color: "red" }}>*</span>:
@@ -711,26 +814,17 @@ const ServiceQuoteForm = () => {
                     }
                   }
                 }}
-              >
-                <Option value="RHK">RHK (Residential - Housekeeping)</Option>
-                <Option value="RM">RM (Residential - Maintenance)</Option>
-                <Option value="RFM">
-                  RFM (Residential - Floor Maintenance)
-                </Option>
-                <Option value="CHK">CHK (Commercial - Housekeeping)</Option>
-                <Option value="CM">CM (Commercial - Maintenance)</Option>
-                <Option value="CFM">
-                  CFM (Commercial - Floor Maintenance)
-                </Option>
-              </Select>
+                options={REF_TYPE_OPTIONS}
+              />
             </div>
 
-            <div style={{ marginTop: "25px" }}>
+            <div>
               <strong>
                 REF # <span style={{ color: "red" }}>*</span>:
               </strong>
 
               <Input
+                style={{ marginTop: 5 }}
                 value={formData.ref}
                 placeholder="Enter reference number"
                 onChange={(e) => {
@@ -776,7 +870,7 @@ const ServiceQuoteForm = () => {
 
           {/* ROW 2 — ALL DATES */}
 
-          <div className="meta-table">
+          <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
             <div>
               <strong>
                 BILLING DATE<span style={{ color: "red" }}>*</span>
@@ -833,7 +927,7 @@ const ServiceQuoteForm = () => {
           </div>
 
           {/* ROW 3 — RECURRING */}
-          <div className="meta-table">
+          <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
             <div>
               <strong>IS RECURRING INVOICE?</strong>
               <Select
@@ -844,10 +938,8 @@ const ServiceQuoteForm = () => {
                   setIsDirty(true);
                   setFormData((prev) => ({ ...prev, is_recurring: value }));
                 }}
-              >
-                <Option value={false}>No</Option>
-                <Option value={true}>Yes</Option>
-              </Select>
+                options={IS_RECURRING_OPTIONS}
+              />
             </div>
 
             <div
@@ -866,13 +958,8 @@ const ServiceQuoteForm = () => {
                     recurring_frequency: value,
                   }))
                 }
-              >
-                <Option value="WEEKLY">Weekly</Option>
-                <Option value="BIWEEKLY">Bi-Weekly</Option>
-                <Option value="MONTHLY">Monthly</Option>
-                <Option value="QUARTERLY">Quarterly</Option>
-                <Option value="YEARLY">Yearly</Option>
-              </Select>
+                options={RECURRING_FREQUENCY_OPTIONS}
+              />
             </div>
 
             <div
@@ -920,7 +1007,10 @@ const ServiceQuoteForm = () => {
           </div>
         </div>
 
-        <div className="address-table" style={{ marginBottom: 24 }}>
+        <div
+          className="address-table"
+          style={{ gap: 24, marginBottom: 24, alignItems: "start" }}
+        >
           <div>
             <strong>FROM:</strong>
             <br />
@@ -938,25 +1028,19 @@ const ServiceQuoteForm = () => {
             <Select
               showSearch
               placeholder="Select Client"
-              style={{ width: "100%", marginBottom: 10 }}
-              optionFilterProp="children"
+              style={{ width: "100%", marginTop: 5 }}
+              optionFilterProp="label"
               onChange={handleUserChange}
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {users.map((user) => (
-                <Option key={user.id} value={user.id}>
-                  {user.name}
-                </Option>
-              ))}
-            </Select>
+              options={users.map((user) => ({
+                value: user.id,
+                label: user.name,
+              }))}
+            />
           </div>
           <div>
             <strong>
               TO: <span style={{ color: "red" }}>*</span>
             </strong>
-            <br />
 
             {/* NEW: address selector — only shown when the client has more
                 than one address on file. Single-address clients skip
@@ -965,50 +1049,63 @@ const ServiceQuoteForm = () => {
             {addresses.length > 1 && (
               <Select
                 placeholder="Select address"
-                style={{ width: "100%", marginBottom: 8 }}
+                style={{ width: "100%", marginTop: 5, marginBottom: 8 }}
                 value={selectedAddressId || undefined}
                 loading={loadingAddresses}
                 onChange={handleAddressSelect}
-              >
-                {addresses.map((addr) => (
-                  <Option key={addr.id} value={addr.id}>
-                    {`${addr.address_1 || "—"}${addr.city ? ", " + addr.city : ""}${addr.state ? ", " + addr.state : ""}`}
-                  </Option>
-                ))}
-              </Select>
+                options={addresses.map((addr) => ({
+                  value: addr.id,
+                  label: `${addr.address_1 || "—"}${addr.city ? ", " + addr.city : ""}${addr.state ? ", " + addr.state : ""}`,
+                }))}
+              />
             )}
 
-            <Input
-              placeholder="Company Name"
-              value={formData.toCompany}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, toCompany: e.target.value }))
-              }
-            />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                marginTop: addresses.length > 1 ? 0 : 5,
+              }}
+            >
+              <Input
+                placeholder="Company Name"
+                value={formData.toCompany}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    toCompany: e.target.value,
+                  }))
+                }
+              />
 
-            <br />
+              <Input
+                placeholder="Address 1"
+                value={formData.address1}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address1: e.target.value,
+                  }))
+                }
+              />
 
-            <Input
-              placeholder="Address 1"
-              value={formData.address1}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, address1: e.target.value }))
-              }
-            />
-
-            <br />
-
-            <Input
-              placeholder="Address 2"
-              value={formData.address2}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, address2: e.target.value }))
-              }
-            />
+              <Input
+                placeholder="Address 2"
+                value={formData.address2}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address2: e.target.value,
+                  }))
+                }
+              />
+            </div>
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
             <Input
+              style={{ marginTop: 5 }}
               disabled={isLocked}
               value={formatAmount(formData.totalAmount)}
               readOnly
@@ -1016,19 +1113,83 @@ const ServiceQuoteForm = () => {
           </div>
         </div>
 
-        <Table
-          dataSource={formData.items.map((item, idx) => ({
-            ...item,
-            key: idx,
-          }))}
-          columns={columns}
-          pagination={false}
-          footer={() => (
-            <div style={{ textAlign: "right", fontWeight: "bold" }}>
-               Total: ${formatAmount(formData.totalAmount)}
-            </div>
-          )}
-        />
+        <div style={{ marginBottom: 20 }}>
+          <strong>EVENT NAME</strong>
+
+          <Input
+            style={{ width: "100%", marginTop: 5 }}
+            placeholder="Enter event name"
+            value={formData.event_name}
+            onChange={(e) => {
+              setIsDirty(true);
+
+              setFormData((prev) => ({
+                ...prev,
+                event_name: e.target.value,
+              }));
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <span style={{ fontSize: 12, color: "#888" }}>
+            Drag <GripVertical size={12} style={{ verticalAlign: "middle" }} />{" "}
+            to reorder items
+          </span>
+        </div>
+
+        <div
+          style={{
+            overflowX: "auto",
+            border: "1px solid #eef0f2",
+            borderRadius: 8,
+          }}
+        >
+          <Table
+            size="small"
+            tableLayout="fixed"
+            scroll={{ x: 1200 }}
+            dataSource={formData.items.map((item, idx) => ({
+              ...item,
+              key: idx,
+            }))}
+            columns={columns}
+            pagination={false}
+            onRow={(_, index) => ({
+              draggable: true,
+
+              onDragStart: () => handleDragStart(index),
+
+              onDragOver: (e) => handleDragOver(e, index),
+
+              onDrop: () => handleDrop(index),
+
+              onDragEnd: handleDragEnd,
+
+              style: {
+                cursor: "grab",
+                opacity: draggedItemIndex === index ? 0.5 : 1,
+                backgroundColor:
+                  dragOverIndex === index && draggedItemIndex !== index
+                    ? "#f0f7ff"
+                    : undefined,
+                transition: "background-color 0.15s ease, opacity 0.15s ease",
+              },
+            })}
+            footer={() => (
+              <div style={{ textAlign: "right", fontWeight: "bold" }}>
+                Total: ${formatAmount(formData.totalAmount)}
+              </div>
+            )}
+          />
+        </div>
 
         <div style={{ marginTop: 16, marginBottom: 16 }}>
           <Button onClick={addItem} style={{ marginRight: 8 }}>

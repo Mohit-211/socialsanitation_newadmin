@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -44,6 +44,8 @@ import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 
+const PAGE_SIZE = 100;
+
 const actionIconBtn = (color) => ({
   width: 32,
   height: 32,
@@ -59,8 +61,9 @@ const actionIconBtn = (color) => ({
 const Bookings = () => {
   const navigate = useNavigate();
   const [bookingData, setBookingData] = useState([]);
-  const [originalData, setOriginalData] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const requestIdRef = useRef(0);
 
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("PENDING");
@@ -68,7 +71,8 @@ const Bookings = () => {
   const [tableParams, setTableParams] = useState({
     pagination: {
       current: 1,
-      pageSize: 100,
+      pageSize: PAGE_SIZE,
+      total: 0,
     },
     sortField: null,
     sortOrder: null,
@@ -102,25 +106,46 @@ const Bookings = () => {
     }
   };
 
-  const getData = async (booking_status, period) => {
+  const getData = async (booking_status, period, page = 1, search = "") => {
+    const requestId = ++requestIdRef.current; // ignore stale responses
     try {
       setLoading(true);
+      // Ask for one extra row — if it comes back, there is a next page
       const result = await GetUserBooking(
         localStorage.getItem("adminToken"),
         booking_status,
         period,
+        page,
+        PAGE_SIZE + 1,
+        search,
       );
-      const newData = result.data.data.map((item, index) => ({
+      if (requestId !== requestIdRef.current) return;
+
+      const allRows = result.data.data || [];
+
+      // Deleted the last row on the last page → step back one page
+      if (allRows.length === 0 && page > 1) {
+        getData(booking_status, period, page - 1, search);
+        return;
+      }
+
+      const hasMore = allRows.length > PAGE_SIZE;
+      const rows = allRows.slice(0, PAGE_SIZE);
+      const total = hasMore
+        ? page * PAGE_SIZE + 1
+        : (page - 1) * PAGE_SIZE + rows.length;
+
+      const newData = rows.map((item, index) => ({
         ...item,
-        index: index + 1,
+        index: (page - 1) * PAGE_SIZE + index + 1,
       }));
       setBookingData(newData);
-      setOriginalData(newData);
-      // Re-apply any active search term to the freshly loaded tab data
-      if (searchText.trim()) {
-        applySearch(searchText, newData);
-      }
+      setTableParams((prev) => ({
+        ...prev,
+        pagination: { ...prev.pagination, current: page, total },
+      }));
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       console.error(e);
       if (e.response && e.response.status === 401) {
         navigate("/error401");
@@ -128,14 +153,21 @@ const Bookings = () => {
         console.error("Error loading data. Please try again later.");
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
+  // Debounce typing so we don't hit the API on every keystroke
   useEffect(() => {
-    getData(activeTab, nestedTab);
+    const t = setTimeout(() => setDebouncedSearch(searchText.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchText]);
+
+  // Tab / period / search change → reload from page 1
+  useEffect(() => {
+    getData(activeTab, nestedTab, 1, debouncedSearch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, nestedTab]);
+  }, [activeTab, nestedTab, debouncedSearch]);
 
   const navigateToViewBooking = (id) => {
     navigate(`/viewBooking/${id}`);
@@ -146,12 +178,15 @@ const Bookings = () => {
   };
 
   const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
+    setTableParams((prev) => ({
+      ...prev,
       filters,
       sortField: sorter.field,
       sortOrder: sorter.order,
-    });
+    }));
+    if (pagination.current !== tableParams.pagination.current) {
+      getData(activeTab, nestedTab, pagination.current, debouncedSearch);
+    }
   };
 
   const tabsContent = [
@@ -216,8 +251,7 @@ const Bookings = () => {
       dataIndex: "date",
       key: "date",
       width: 120,
-      render: (date) =>
-        dayjs(date).utcOffset(0, true).format("ddd, MM/DD/YYYY"),
+      render: (date) => dayjs.utc(date).format("ddd, MM/DD/YYYY"),
     },
     {
       title: "Employee Assigned",
@@ -389,7 +423,12 @@ const Bookings = () => {
             message.success(
               res?.data?.message || "Booking deleted successfully",
             );
-            getData(activeTab, nestedTab);
+            getData(
+              activeTab,
+              nestedTab,
+              tableParams.pagination.current,
+              debouncedSearch,
+            );
           } else {
             message.warning(res?.data?.message || "Unexpected response");
           }
@@ -409,28 +448,8 @@ const Bookings = () => {
     navigate("/monthlyCalendar");
   };
 
-  const applySearch = (value, sourceData = originalData) => {
-    if (!value.trim()) {
-      setBookingData(sourceData);
-      return;
-    }
-
-    const search = value.toLowerCase();
-
-    const filtered = sourceData.filter((item) => {
-      return (
-        item.booking_name?.toLowerCase().includes(search) ||
-        item.client_name?.toLowerCase().includes(search) ||
-        item.booking_user?.user_profile?.name?.toLowerCase().includes(search)
-      );
-    });
-
-    setBookingData(filtered);
-  };
-
   const onSearch = (value) => {
     setSearchText(value);
-    applySearch(value);
   };
 
   return (
@@ -571,7 +590,7 @@ const Bookings = () => {
             columns={columns}
             rowKey={(record) => record.id}
             dataSource={bookingData}
-            pagination={tableParams.pagination}
+            pagination={{ ...tableParams.pagination, showSizeChanger: false }}
             onChange={handleTableChange}
             bordered
             size="middle"

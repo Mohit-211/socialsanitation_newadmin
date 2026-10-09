@@ -32,10 +32,26 @@ export const DeleteInspection = async (id) => {
   });
 };
 
+export const ReopenInspection = (inspectionId, payload) => {
+  return axios.post(
+    BASE_URL + `inspection/${inspectionId}/reopen`,
+    payload,
+    { headers: adminAuthHeaders() },
+  );
+};
+
 
 export const ReviewInspectionItem = (itemId, payload) => {
   return axios.put(
     BASE_URL + `inspection/reviewInspectionItem/${itemId}`,
+    payload,
+    { headers: adminAuthHeaders() },
+  );
+};
+
+export const ReviewInspectionSection = (sectionReviewId, payload) => {
+  return axios.put(
+    BASE_URL + `inspection/reviewInspectionSection/${sectionReviewId}`,
     payload,
     { headers: adminAuthHeaders() },
   );

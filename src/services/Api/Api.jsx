@@ -123,15 +123,31 @@ export const GetUserById = async (id) => {
   return await axios.get(BASE_URL + "admin/user/getUserById?id=" + id);
 };
 
+export const GetEmployeeHiringForms = async (employeeId) => {
+  return await axios.get(`${BASE_URL}admin/user/employee-hiring-forms`, {
+    params: { employee_id: employeeId },
+  });
+};
+
+export const GetEmployeeEquipment = async (employeeId) => {
+  return await axios.get(
+    `${BASE_URL}eqipment/employee/${employeeId}/equipment`,
+  );
+};
+
+export const GetEmployeeInspections = async (employeeId) => {
+  return await axios.get(`${BASE_URL}inspection/employee/${employeeId}`, {});
+};
+
 export const GetClosestEmployeesByAddress = async (addressId) => {
   return await axios.get(
-    BASE_URL + "admin/user/get-closest-employees-by-address/" + addressId
+    BASE_URL + "admin/user/get-closest-employees-by-address/" + addressId,
   );
 };
 
 export const DeleteUserAddress = async (addressId) => {
   return await axios.delete(
-    BASE_URL + "admin/user/delete-user-address/" + addressId
+    BASE_URL + "admin/user/delete-user-address/" + addressId,
   );
 };
 
@@ -147,6 +163,35 @@ export const AddUser = async (data) => {
       "x-access-token": `${localStorage.getItem("adminToken")}`,
     },
   });
+};
+
+export const GetHiringFormsByEmail = async (email, name) => {
+  return await axios.get(`${BASE_URL}form/hiring-forms-by-email`, {
+    params: {
+      ...(email ? { email } : {}),
+      ...(name ? { name } : {}),
+    },
+    headers: {
+      "Content-Type": "application/json",
+      "x-access-token": `${localStorage.getItem("adminToken")}`,
+    },
+  });
+};
+
+export const ChangeEmployeeRole = async (id, { role_id, sub_role_id }) => {
+  return await axios.post(
+    `${BASE_URL}admin/user/change-employee-role/${id}`,
+    {
+      role_id,
+      sub_role_id,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": `${localStorage.getItem("adminToken")}`,
+      },
+    },
+  );
 };
 
 export const SendReview = async (data) => {

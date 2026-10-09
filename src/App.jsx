@@ -102,6 +102,10 @@ import UpdateServiceProvider from "./pages/ServiceProvider/UpdateServiceProvider
 import EmployeeEquipmentRecordsPage from "./pages/Equipment/EmployeeRecords/EmployeeEquipmentRecordsPage.jsx";
 import ClientInspections from "./pages/Inspection/ClientInspections.jsx";
 import InspectionDetail from "./pages/Inspection/InspectionDetail.jsx";
+import ClientScopeOfWork from "./pages/PdfGeneration/UserScopeBuilder/ClientScopeOfWork.jsx";
+import PayPalTest from "./pages/PayPalTest.jsx";
+import CashAppTest from "./pages/cashApp.jsx";
+import GooglePayTest from "./pages/GooglePayTest.jsx";
 
 function App() {
   return (
@@ -256,7 +260,15 @@ function App() {
             path="/clientInspections/:id"
             element={<ClientInspections />}
           />
+
+           <Route
+            path="/client-scope/:id"
+            element={<ClientScopeOfWork />}
+          />
           <Route path="/inspection/:id" element={<InspectionDetail />} />
+          <Route path="/paypal" element={<PayPalTest />} />
+          <Route path="/cashapp" element={<CashAppTest />} />
+          <Route path="/googlepay" element={<GooglePayTest />} />
         </Route>
       </Routes>
     </Router>

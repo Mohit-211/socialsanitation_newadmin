@@ -2,10 +2,7 @@
 
 .invoice-form {
 	font-family: Arial, sans-serif;
-	/* padding: 10px; */
 	font-size: 12px;
-	/* max-width: 900px;
-    margin: auto; */
 }
 
 .invoice-form-container {
@@ -95,7 +92,6 @@
 }
 
 .disclaimer {
-	margin-top: 60px;
 	margin-top: 20px;
 	font-size: 12px;
 	padding: 20px;
@@ -103,7 +99,7 @@
 	color: #333;
 }
 
-.ant-select-suffix{
+.ant-select-suffix {
 	visibility: hidden !important;
 }
 
@@ -144,4 +140,133 @@
 .actionIconBtnSuccess:hover {
 	background: #eaf6ea;
 	border-color: #2e7d32;
+}
+
+/* ================= CSV IMPORT / HISTORICAL INVOICES ================= */
+
+.invoice-number-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.csv-badge-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.csv-pdf-btn {
+	font-size: 12px !important;
+	text-transform: none !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	color: #2563eb !important;
+}
+
+.csv-pending-banner {
+	margin-bottom: 16px;
+}
+
+.csv-client-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 8px 0;
+}
+
+.csv-client-chip {
+	background: #fff7ed;
+	border: 1px solid #fed7aa;
+	border-radius: 6px;
+	padding: 2px 8px;
+	font-size: 12px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.csv-result-summary {
+	display: flex;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.csv-stat {
+	flex: 1;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 10px;
+	text-align: center;
+	font-size: 13px;
+	color: #374151;
+}
+
+.csv-stat strong {
+	display: block;
+	font-size: 22px;
+	line-height: 1.2;
+}
+
+.csv-stat-ok strong {
+	color: #2e7d32;
+}
+
+.csv-stat-skip strong {
+	color: #6b7280;
+}
+
+.csv-stat-fail strong {
+	color: #ef6c00;
+}
+
+.csv-result-section {
+	margin-bottom: 16px;
+}
+
+.csv-result-section h4 {
+	margin: 0 0 6px;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.csv-result-section ul {
+	margin: 0;
+	padding-left: 20px;
+	font-size: 13px;
+	line-height: 1.7;
+}
+
+.csv-format-box,
+.csv-instructions-box {
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 16px;
+}
+
+.csv-format-box {
+	background: #f8fafc;
+	border: 1px solid #e5e7eb;
+}
+
+.csv-format-sample {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 12px;
+	font-size: 12px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	margin: 0;
+}
+
+.csv-instructions-box {
+	background: #fff7ed;
+	border: 1px solid #fed7aa;
+}
+
+.csv-instructions-box ul {
+	margin: 0;
+	padding-left: 20px;
+	font-size: 13px;
+	line-height: 1.8;
 }

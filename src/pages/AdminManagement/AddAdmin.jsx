@@ -356,7 +356,7 @@ const AddAdmin = () => {
                 status: "finish",
                 icon: <SolutionOutlined />,
                 description:
-                  "This role has access to day-to-day operations across the admin panel, excluding Estimates, Invoices, the Calculator, and BDM management.",
+                  "This role has access to day-to-day operations across the admin panel, excluding Estimates, the Calculator, and BDM management.",
               },
             ]}
           />

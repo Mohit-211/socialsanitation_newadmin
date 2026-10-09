@@ -26,6 +26,7 @@ import "./GenerateEstimate.scss";
 import { GetAllBDMS, GetBDMByUserId, AssignUser } from "../../services/Api/bdm";
 import SignatureField from "../Customer/SignatureField";
 import EstimateScopeBuilder from "./EstimateScopeBuilder/EstimateScopeBuilder";
+import { GetUserScopeView } from "../../services/Api/ScopeApi";
 
 const { Option } = Select;
 
@@ -45,6 +46,28 @@ const UpdateServiceEstimate = () => {
   const [selectedBDM, setSelectedBDM] = useState(null);
   const [scopeSections, setScopeSections] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [hasUserScope, setHasUserScope] = useState(false);
+
+const fetchUserScopeView = async (userId) => {
+  try {
+    setScopeLoading(true);
+
+    const res = await GetUserScopeView(userId);
+
+    const sections = res?.data?.data?.data || [];
+
+    console.log("CURRENT USER SCOPE:", sections);
+
+    setScopeSections(sections);
+    setHasUserScope(Array.isArray(sections) && sections.length > 0);
+  } catch (error) {
+    console.log("Failed to fetch user scope:", error);
+    setScopeSections([]);
+    setHasUserScope(false);
+  } finally {
+    setScopeLoading(false);
+  }
+};
 
   const [activeTab, setActiveTab] = useState("1");
   const navigate = useNavigate();
@@ -98,6 +121,7 @@ const UpdateServiceEstimate = () => {
 
   const handleUserChange = async (userId) => {
     setSelectedUserId(userId);
+    await fetchUserScopeView(userId);
     const user = users.find((u) => u.id === userId);
     if (!user) return;
 
@@ -198,18 +222,13 @@ const UpdateServiceEstimate = () => {
         signature: data.signature || "",
       });
 
-    let scope = data.scope_sections || [];
-
-while (typeof scope === "string") {
-  scope = JSON.parse(scope);
-}
-
-console.log("scope from estimate", scope);
-console.log(Array.isArray(scope));
-console.log(typeof scope);
-
-setScopeSections(scope);
-      setScopeLoading(false);
+      if (data.user_id) {
+        await fetchUserScopeView(data.user_id);
+      } else {
+        setScopeSections([]);
+        setHasUserScope(false);
+        setScopeLoading(false);
+      }
 
       if (data.user_id) {
         const bdmRes = await GetBDMByUserId(data.user_id);
@@ -485,14 +504,49 @@ setScopeSections(scope);
             <div className="ge-scope-loading">
               <span>Loading scope of work…</span>
             </div>
-          ) : (
-            // ✅ Pass sections and setSections directly — no internal state in ScopeBuilder
+          ) : hasUserScope ? (
             <EstimateScopeBuilder
               estimateId={id}
               userId={selectedUserId}
               sections={scopeSections}
               onChange={setScopeSections}
             />
+          ) : (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "50px 20px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 18,
+                  fontWeight: 500,
+                  marginBottom: 16,
+                }}
+              >
+                No User Scope
+              </p>
+
+              <p
+                style={{
+                  color: "#999",
+                  marginBottom: 20,
+                }}
+              >
+                This client does not have a Scope of Work yet.
+              </p>
+
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (!selectedUserId) return;
+                  navigate(`/editUser/${selectedUserId}`);
+                }}
+              >
+                Edit Client Scope
+              </Button>
+            </div>
           )}
         </div>
       ),

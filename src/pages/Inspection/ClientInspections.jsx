@@ -23,6 +23,7 @@ import {
   Clock,
   TrendingUp,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import {
@@ -35,7 +36,7 @@ import "./ClientInspections.scss";
 
 const { Option } = Select;
 
-// 🔹 Same circular icon-button pattern used across User.jsx / AssignmentPage.jsx
+// Same circular icon-button pattern used across User.jsx / AssignmentPage.jsx
 const actionIconBtn = (color) => ({
   width: 30,
   height: 30,
@@ -55,12 +56,15 @@ const ROLE_LABELS = {
   9: "CLEANER",
 };
 
+// Keys match the backend status values exactly.
 const STATUS_CONFIG = {
   ASSIGNED: { color: "#2563EB", bg: "#EFF6FF", label: "Assigned" },
   IN_PROGRESS: { color: "#D97706", bg: "#FFFBEB", label: "In Progress" },
-  EMPLOYEE_SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
-  BDM_REVIEWING: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
+  SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
+  UNDER_REVIEW: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
+  REOPENED: { color: "#EA580C", bg: "#FFF7ED", label: "Reopened" },
   COMPLETED: { color: "#16A34A", bg: "#F0FDF4", label: "Completed" },
+  CANCELLED: { color: "#EF4444", bg: "#FEF2F2", label: "Cancelled" },
 };
 
 const statusStyle = (status) =>
@@ -82,7 +86,9 @@ const StatCard = ({ icon, label, value, color }) => (
   >
     <Box sx={{ color, display: "flex" }}>{icon}</Box>
     <Box>
-      <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1 }}>
+      <Typography
+        sx={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1 }}
+      >
         {value}
       </Typography>
       <Typography sx={{ fontSize: 12, color: "#9ca3af" }}>{label}</Typography>
@@ -142,10 +148,12 @@ const ClientInspections = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Only block dates that already have an inspection for this client —
-  // today and every future date beyond that stay fully selectable.
+  // Only block dates that already have an inspection for this client.
   const takenDates = useMemo(
-    () => new Set(inspections.map((i) => dayjs(i.inspection_date).format("YYYY-MM-DD"))),
+    () =>
+      new Set(
+        inspections.map((i) => dayjs(i.inspection_date).format("YYYY-MM-DD")),
+      ),
     [inspections],
   );
 
@@ -154,12 +162,23 @@ const ClientInspections = () => {
     return takenDates.has(current.format("YYYY-MM-DD"));
   };
 
+  // Reopened inspections count as pending (score is cleared on reopen,
+  // so they're also excluded from the average until completed again).
   const stats = useMemo(() => {
-    const completed = inspections.filter((i) => i.status === "COMPLETED").length;
-    const pending = inspections.length - completed;
-    const scored = inspections.filter((i) => i.score !== null && i.score !== undefined);
+    const completed = inspections.filter(
+      (i) => i.status === "COMPLETED",
+    ).length;
+    const pending = inspections.filter(
+      (i) => !["COMPLETED", "CANCELLED"].includes(i.status),
+    ).length;
+    const scored = inspections.filter(
+      (i) =>
+        i.status === "COMPLETED" && i.score !== null && i.score !== undefined,
+    );
     const avgScore = scored.length
-      ? (scored.reduce((sum, i) => sum + Number(i.score), 0) / scored.length).toFixed(1)
+      ? (
+          scored.reduce((sum, i) => sum + Number(i.score), 0) / scored.length
+        ).toFixed(1)
       : "—";
     return { total: inspections.length, completed, pending, avgScore };
   }, [inspections]);
@@ -190,7 +209,9 @@ const ClientInspections = () => {
     } catch (error) {
       console.error("Error creating inspection:", error);
       const backendMessage = error?.response?.data?.message;
-      setCreateError(backendMessage || "Failed to create inspection. Please try again.");
+      setCreateError(
+        backendMessage || "Failed to create inspection. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -253,7 +274,13 @@ const ClientInspections = () => {
       </Paper>
 
       {/* Quick stats */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2.5 }} useFlexGap flexWrap="wrap">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ mb: 2.5 }}
+        useFlexGap
+        flexWrap="wrap"
+      >
         <StatCard
           icon={<ClipboardList size={20} />}
           label="Total Inspections"
@@ -280,10 +307,11 @@ const ClientInspections = () => {
         />
       </Stack>
 
-      {/* Toolbar — New Inspection sits right above the card grid */}
+      {/* Toolbar */}
       <div className="inspection-toolbar">
         <span className="inspection-toolbar__label">
-          {inspections.length} inspection{inspections.length === 1 ? "" : "s"} on record
+          {inspections.length} inspection{inspections.length === 1 ? "" : "s"}{" "}
+          on record
         </span>
         <Button
           variant="contained"
@@ -306,7 +334,13 @@ const ClientInspections = () => {
           sx={{ borderRadius: "10px", borderColor: "#eef0f2", py: 8 }}
         >
           <Empty
-            image={<ClipboardList size={48} color="#d1d5db" style={{ margin: "0 auto" }} />}
+            image={
+              <ClipboardList
+                size={48}
+                color="#d1d5db"
+                style={{ margin: "0 auto" }}
+              />
+            }
             description={
               <span style={{ color: "#9ca3af" }}>
                 No inspections yet for this client
@@ -328,6 +362,9 @@ const ClientInspections = () => {
         >
           {inspections.map((item) => {
             const st = statusStyle(item.status);
+            const isReopened = item.status === "REOPENED";
+            const reopenCount = Number(item.reopen_count || 0);
+
             return (
               <Paper
                 key={item.id}
@@ -337,30 +374,62 @@ const ClientInspections = () => {
                 sx={{
                   p: 2.25,
                   borderRadius: "10px",
-                  borderColor: "#eef0f2",
+                  borderColor: isReopened ? "#fed7aa" : "#eef0f2",
                   cursor: "pointer",
                   transition: "border-color 0.15s ease, box-shadow 0.15s ease",
                   "&:hover": {
-                    borderColor: "#d6d9de",
+                    borderColor: isReopened ? "#fdba74" : "#d6d9de",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                   },
                 }}
               >
                 <div className="inspection-card__top-row">
-                  <Box
-                    sx={{
-                      px: 1.25,
-                      py: 0.4,
-                      borderRadius: "6px",
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      letterSpacing: "0.02em",
-                      color: st.color,
-                      background: st.bg,
-                    }}
-                  >
-                    {st.label.toUpperCase()}
-                  </Box>
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <Box
+                      sx={{
+                        px: 1.25,
+                        py: 0.4,
+                        borderRadius: "6px",
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        letterSpacing: "0.02em",
+                        color: st.color,
+                        background: st.bg,
+                      }}
+                    >
+                      {String(st.label).toUpperCase()}
+                    </Box>
+
+                    {/* History marker — stays visible after re-completion */}
+                    {reopenCount > 0 && !isReopened && (
+                      <Tooltip
+                        title={
+                          item.reopen_remark
+                            ? `Last reopened: ${item.reopen_remark}`
+                            : "This inspection was reopened before"
+                        }
+                      >
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.4,
+                            px: 0.9,
+                            py: 0.3,
+                            borderRadius: "6px",
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: "#c2410c",
+                            background: "#fff7ed",
+                            border: "1px solid #fed7aa",
+                          }}
+                        >
+                          <RotateCcw size={11} />
+                          Reopened ×{reopenCount}
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </Stack>
 
                   <Tooltip title="Delete Inspection">
                     <IconButton
@@ -404,24 +473,56 @@ const ClientInspections = () => {
                       {item.employee?.name || "Unassigned"}
                     </Typography>
                   </Stack>
+                  {isReopened && item.reopen_remark && (
+                    <Stack direction="row" spacing={0.9} alignItems="flex-start">
+                      <RotateCcw
+                        size={14}
+                        color="#ea580c"
+                        style={{ marginTop: 2, flexShrink: 0 }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: 12.5,
+                          color: "#c2410c",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {item.reopen_remark}
+                      </Typography>
+                    </Stack>
+                  )}
                 </Stack>
 
                 <div className="inspection-card__footer">
-                  {item.score !== null && item.score !== undefined ? (
+                  {item.status === "COMPLETED" &&
+                  item.score !== null &&
+                  item.score !== undefined ? (
                     <Stack direction="row" spacing={0.6} alignItems="center">
                       <Award size={14} color="#16A34A" />
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
+                      <Typography
+                        sx={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}
+                      >
                         {item.score}/10
                       </Typography>
                     </Stack>
                   ) : (
                     <Typography sx={{ fontSize: 12.5, color: "#c1c5cb" }}>
-                      Not rated
+                      {isReopened ? "Re-grading pending" : "Not rated"}
                     </Typography>
                   )}
 
-                  <Stack direction="row" spacing={0.25} alignItems="center" sx={{ color: "#6366F1" }}>
-                    <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>View</Typography>
+                  <Stack
+                    direction="row"
+                    spacing={0.25}
+                    alignItems="center"
+                    sx={{ color: "#6366F1" }}
+                  >
+                    <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>
+                      View
+                    </Typography>
                     <ChevronRight size={15} />
                   </Stack>
                 </div>
@@ -521,7 +622,8 @@ const ClientInspections = () => {
           format="MM/DD/YYYY"
         />
         <Typography sx={{ fontSize: 11.5, color: "#9ca3af", mt: 0.75 }}>
-          Dates already booked for this client are disabled — today and all other dates are open.
+          Dates already booked for this client are disabled — today and all
+          other dates are open.
         </Typography>
       </Modal>
     </Box>

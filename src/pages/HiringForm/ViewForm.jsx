@@ -46,6 +46,57 @@ const SECTION_META = {
   directDeposit: { title: "Direct Deposit", icon: Landmark },
 };
 
+// ---------------------------------------------------------------------------
+// Address field grouping
+//
+// "country" was added to the hiring form after streetAddress/aptSuite/
+// city/state/zipCode already existed, so on the raw JSON it lands at the
+// very end of personalInfo — after employmentType, signature, etc. — far
+// from the rest of the address. This reorders any of these keys that are
+// present so they render together, in a sensible reading order, wherever
+// the first one of them would have appeared.
+// ---------------------------------------------------------------------------
+const ADDRESS_KEY_ORDER = [
+  "streetAddress",
+  "aptSuite",
+  "city",
+  "state",
+  "zipCode",
+  "country",
+];
+
+const groupAddressFields = (entries) => {
+  const addressEntries = [];
+  const restEntries = [];
+  let firstAddressIndex = -1;
+
+  entries.forEach(([key, value], index) => {
+    if (ADDRESS_KEY_ORDER.includes(key)) {
+      addressEntries.push([key, value]);
+      if (firstAddressIndex === -1) firstAddressIndex = restEntries.length;
+    } else {
+      restEntries.push([key, value]);
+    }
+  });
+
+  // Need at least two address-ish fields present for grouping to matter —
+  // a single stray field (e.g. just "country" with no other address data)
+  // doesn't need to move anywhere.
+  if (addressEntries.length < 2) {
+    return entries;
+  }
+
+  const orderedAddressEntries = ADDRESS_KEY_ORDER
+    .map((key) => addressEntries.find(([k]) => k === key))
+    .filter(Boolean);
+
+  return [
+    ...restEntries.slice(0, firstAddressIndex),
+    ...orderedAddressEntries,
+    ...restEntries.slice(firstAddressIndex),
+  ];
+};
+
 // A field is only ever treated as a date if BOTH:
 //  1) its key name suggests a date, AND
 //  2) its value actually matches a real date pattern (ISO timestamp or MM-DD-YYYY)
@@ -339,7 +390,7 @@ const SectionCard = ({ sectionName, data }) => {
   }
 
   // Standard key/value object section
-  const entries = Object.entries(data).filter(([key, value]) => {
+  const filteredEntries = Object.entries(data).filter(([key, value]) => {
     // Skip the empty / default employmentEligibility placeholder nested inside personalInfo
     if (
       sectionName === "personalInfo" &&
@@ -362,6 +413,10 @@ const SectionCard = ({ sectionName, data }) => {
     }
     return true;
   });
+
+  // Groups streetAddress/aptSuite/city/state/zipCode/country together —
+  // see groupAddressFields above for why this is needed.
+  const entries = groupAddressFields(filteredEntries);
 
   return (
     <Paper

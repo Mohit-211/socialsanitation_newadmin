@@ -1,11 +1,10 @@
 /** @format */
 
 import { Box } from "@mui/material";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AddUser, CityAPI, StateAPI } from "../../services/Api/Api";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +20,6 @@ import {
   InputNumber,
   Button as AntButton,
 } from "antd";
-import { debounce } from "lodash";
 
 // ---- table style tokens (kept local so this file is self-contained) ----
 const tableWrapStyle = {
@@ -50,24 +48,43 @@ const tdStyle = {
   background: "#fff",
 };
 
+// Static — never changes, so this doesn't need to be component state.
+const COUNTRIES = [
+  { id: 233, name: "USA" },
+  { id: 39, name: "Canada" },
+];
+
 const AddCustomer = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [sqft, setSqft] = useState("");
-  const [serviceDays, setServiceDays] = useState("");
-  const [address, setAddress] = useState("");
   const [disable, setDisable] = useState(false);
   const [userType, setUserType] = useState("residential");
-  const [assignedTo, setAssignedTo] = useState(null);
+
+  // =========================================================
+  // LOCATION — Country/State/City are owned ENTIRELY by the Form
+  // now (name="country"/"state"/"city"). Previously these Selects
+  // were double-controlled — bound to the Form via `name` AND
+  // manually driven by external `value`/`onChange` React state at
+  // the same time. Antd's Form ends up with a stale internal value
+  // that never matches what's actually shown on screen, which is
+  // why `values.country`/`values.address` etc. were coming through
+  // empty when the form was submitted. Reading the live selection
+  // via Form.useWatch (below) instead of a parallel state removes
+  // that desync entirely.
+  //
+  // Lat/long and the Google Maps preview have been dropped — the
+  // backend never required them for a client's address (it falls
+  // back to null), so they were pure complexity for no benefit, and
+  // were part of the same double-controlled-input bug on the
+  // Address field itself.
+  // =========================================================
 
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  const [selectedState, setSelectedState] = useState(null);
-  const [selectedCity, setSelectedCity] = useState(null);
-  const [coordinates, setCoordinates] = useState({ lat: null, lng: null });
   const [totalCount, setTotalCount] = useState(0);
+
+  const watchedCountry = Form.useWatch("country", form);
+  const watchedState = Form.useWatch("state", form);
 
   const [commercialAreas, setCommercialAreas] = useState([
     { name: "Entrance / Lobby Areas", editable: false },
@@ -79,11 +96,36 @@ const AddCustomer = () => {
     { name: "All Areas / Hallways", editable: false },
   ]);
 
+  // Fetch states whenever the selected country changes (including the
+  // initial value on first render, since Form.useWatch reports that too).
   useEffect(() => {
-    StateAPI(233)
+    if (!watchedCountry) {
+      setStates([]);
+      return;
+    }
+
+    StateAPI(watchedCountry)
       .then((res) => setStates(res?.data?.data?.all_state || []))
-      .catch((err) => console.log("Error fetching states:", err));
-  }, []);
+      .catch((err) => {
+        console.log("Error fetching states:", err);
+        setStates([]);
+      });
+  }, [watchedCountry]);
+
+  // Fetch cities whenever the selected state changes.
+  useEffect(() => {
+    if (!watchedState) {
+      setCities([]);
+      return;
+    }
+
+    CityAPI(watchedState)
+      .then((res) => setCities(res?.data?.data?.all_city || []))
+      .catch((err) => {
+        console.log("Error fetching cities:", err);
+        setCities([]);
+      });
+  }, [watchedState]);
 
   const carpetPercentage = Form.useWatch("carpet_percentage", form) || 0;
   const concretePercentage = Form.useWatch("concrete_percentage", form) || 0;
@@ -96,112 +138,6 @@ const AddCustomer = () => {
     Number(vctLvtPercentage) +
     Number(tilePercentage);
 
-  const handleStateChange = (stateId) => {
-    setSelectedState(stateId);
-    setSelectedCity(null);
-    setCities([]);
-    setCoordinates({ lat: null, lng: null });
-
-    CityAPI(stateId)
-      .then((res) => {
-        const newCities = res?.data?.data?.all_city || [];
-        setCities(newCities);
-      })
-      .catch((err) => {
-        console.log("Error fetching cities:", err);
-        setCities([]);
-      });
-  };
-
-  const fetchCoordinates = useCallback(async (address) => {
-    if (!address) return;
-
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-      const data = await res.json();
-
-      if (data.status === "OK") {
-        const location = data.results[0].geometry.location;
-        setCoordinates({ lat: location.lat, lng: location.lng });
-      } else {
-        setCoordinates({ lat: null, lng: null }); // reset if not found
-      }
-    } catch (error) {
-      console.error("Error fetching coordinates:", error);
-      setCoordinates({ lat: null, lng: null });
-    }
-  }, []);
-
-  const debouncedFetchCoordinates = useMemo(
-    () => debounce(fetchCoordinates, 1000),
-    [fetchCoordinates],
-  );
-
-  useEffect(() => {
-    debouncedFetchCoordinates(address);
-  }, [address, debouncedFetchCoordinates]);
-
-  const mapRef = React.useRef(null);
-  const markerRef = React.useRef(null);
-  const mapInstance = React.useRef(null);
-
-  useEffect(() => {
-    if (!window.google) {
-      const script = document.createElement("script");
-      script.src =
-        "https://maps.googleapis.com/maps/api/js?key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o&libraries=places";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        console.log("Google Maps script loaded");
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    if (
-      !coordinates.lat ||
-      !coordinates.lng ||
-      typeof window.google === "undefined" ||
-      !mapRef.current
-    )
-      return;
-
-    // Initialize map only once
-    if (!mapInstance.current) {
-      mapInstance.current = new window.google.maps.Map(mapRef.current, {
-        center: coordinates,
-        zoom: 16,
-      });
-    } else {
-      mapInstance.current.setCenter(coordinates);
-    }
-
-    // Clear old marker
-    if (markerRef.current) {
-      markerRef.current.setMap(null);
-    }
-
-    // Add new draggable marker
-    markerRef.current = new window.google.maps.Marker({
-      position: coordinates,
-      map: mapInstance.current,
-      draggable: true,
-    });
-
-    markerRef.current.addListener("dragend", (event) => {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      setCoordinates({ lat, lng });
-    });
-  }, [coordinates]);
-
   const handleSubmit = async (values) => {
     setDisable(true);
 
@@ -211,12 +147,14 @@ const AddCustomer = () => {
         email,
         sqft,
         walkaround_minutes,
+        service_days,
 
         carpet_percentage,
         concrete_percentage,
         vct_lvt_percentage,
         tile_percentage,
 
+        country,
         state,
         city,
         address,
@@ -230,10 +168,9 @@ const AddCustomer = () => {
         return;
       }
 
-      // Check if address is partially filled
-      if (address && (!selectedState || !selectedCity)) {
+      if (address && (!country || !state || !city)) {
         message.error(
-          "Please select both state and city if address is provided",
+          "Please select country, state and city if address is provided",
         );
         setDisable(false);
         return;
@@ -245,32 +182,45 @@ const AddCustomer = () => {
         Number(vct_lvt_percentage || 0) +
         Number(tile_percentage || 0);
 
-      if (totalFloorPercentage !== 100) {
+      const hasFloorComposition =
+        Number(carpet_percentage || 0) > 0 ||
+        Number(concrete_percentage || 0) > 0 ||
+        Number(vct_lvt_percentage || 0) > 0 ||
+        Number(tile_percentage || 0) > 0;
+
+      if (hasFloorComposition && totalFloorPercentage !== 100) {
         message.error("Floor composition must total 100%");
         setDisable(false);
         return;
       }
+
       const payload = {
         name,
         email,
         role_id: 6,
-        client_type: userType, // ✅ send to backend
+        client_type: userType,
         assigned_to,
         checklist: {
           estimated_sqft: sqft,
           walkaround_minutes,
-          service_days: serviceDays,
+          service_days,
 
           carpet_percentage,
           concrete_percentage,
           vct_lvt_percentage,
           tile_percentage,
 
-          address,
-          state_id: selectedState,
-          city_id: selectedCity,
-          address_lat: coordinates.lat,
-          address_long: coordinates.lng,
+          // Address is optional for a client. When provided, country/
+          // state/city are required alongside it (validated above).
+          // Lat/long are no longer collected here — the backend treats
+          // them as optional and defaults to null.
+          address: address || null,
+          country_id: country || null,
+          state_id: state || null,
+          city_id: city || null,
+          address_lat: null,
+          address_long: null,
+
           details: details.map((item, index) => ({
             service_area: serviceAreas[index], // ✅ dynamic based on userType
             ...item,
@@ -408,7 +358,23 @@ const AddCustomer = () => {
           borderColor: "#eef0f2",
         }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          onValuesChange={(changedValues) => {
+            // Switching country invalidates whatever state/city were
+            // picked for the old one.
+            if (changedValues.country) {
+              form.setFieldsValue({ state: undefined, city: undefined });
+            }
+
+            // Switching state invalidates whatever city was picked.
+            if (changedValues.state) {
+              form.setFieldsValue({ city: undefined });
+            }
+          }}
+        >
           {/* Client Type — full width row on its own */}
           <Row>
             <Col span={24}>
@@ -437,7 +403,7 @@ const AddCustomer = () => {
                 name="name"
                 rules={[{ required: true, message: "Please enter name" }]}
               >
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+                <Input />
               </Form.Item>
             </Col>
 
@@ -447,10 +413,7 @@ const AddCustomer = () => {
                 name="email"
                 rules={[{ required: true, message: "Please enter email" }]}
               >
-                <Input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <Input />
               </Form.Item>
             </Col>
 
@@ -462,11 +425,7 @@ const AddCustomer = () => {
                   { required: true, message: "Please select account manager" },
                 ]}
               >
-                <Select
-                  placeholder="Select Account Manager"
-                  onChange={(value) => setAssignedTo(value)}
-                  value={assignedTo}
-                >
+                <Select placeholder="Select Account Manager">
                   <Select.Option value={2}>Marco Williams</Select.Option>
                   <Select.Option value={5}>Yovanna C</Select.Option>
                 </Select>
@@ -475,18 +434,55 @@ const AddCustomer = () => {
 
             <Col span={6}>
               <Form.Item label="Estimated Sq/Ft" name="sqft">
-                <Input
-                  type="number"
-                  min={0}
-                  value={sqft}
-                  onChange={(e) => setSqft(e.target.value)}
-                />
+                <Input type="number" min={0} />
               </Form.Item>
             </Col>
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={12}>
+            <Col span={6}>
+              <Form.Item
+                label="Country"
+                name="country"
+                initialValue={COUNTRIES[0].id}
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const addr = getFieldValue("address");
+                      if (!addr || value) return Promise.resolve();
+
+                      return Promise.reject(
+                        new Error(
+                          "Country is required when address is provided",
+                        ),
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <Select
+                  showSearch
+                  placeholder="Select Country"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                  filterSort={(optionA, optionB) =>
+                    optionA.children
+                      .toLowerCase()
+                      .localeCompare(optionB.children.toLowerCase())
+                  }
+                >
+                  {COUNTRIES.map((country) => (
+                    <Select.Option key={country.id} value={country.id}>
+                      {country.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col span={6}>
               <Form.Item
                 label="State"
                 name="state"
@@ -495,6 +491,7 @@ const AddCustomer = () => {
                     validator(_, value) {
                       const addr = getFieldValue("address");
                       if (!addr || value) return Promise.resolve();
+
                       return Promise.reject(
                         new Error("State is required when address is provided"),
                       );
@@ -504,8 +501,7 @@ const AddCustomer = () => {
               >
                 <Select
                   showSearch
-                  value={selectedState}
-                  onChange={handleStateChange}
+                  disabled={!watchedCountry}
                   placeholder="Select State"
                   optionFilterProp="children"
                   filterOption={(input, option) =>
@@ -526,13 +522,11 @@ const AddCustomer = () => {
               </Form.Item>
             </Col>
 
-            <Col span={12}>
+            <Col span={6}>
               <Form.Item label="City" name="city">
                 <Select
                   showSearch
-                  value={selectedCity}
-                  onChange={(val) => setSelectedCity(val)}
-                  disabled={!selectedState}
+                  disabled={!watchedState}
                   placeholder="Select City"
                   optionFilterProp="children"
                   filterOption={(input, option) =>
@@ -552,38 +546,10 @@ const AddCustomer = () => {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
 
-          <Row gutter={[24, 24]}>
-            <Col span={12}>
+            <Col span={6}>
               <Form.Item label="Address" name="address">
-                <Input.TextArea
-                  rows={5}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter complete address including city/state"
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item label="Map Preview">
-                {!window.google ? (
-                  <div style={{ color: "red" }}>
-                    Google Maps script not loaded
-                  </div>
-                ) : (
-                  <div
-                    ref={mapRef}
-                    style={{
-                      border: "1px solid #d9d9d9",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      height: "280px",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-                    }}
-                  />
-                )}
+                <Input placeholder="Street address" />
               </Form.Item>
             </Col>
           </Row>

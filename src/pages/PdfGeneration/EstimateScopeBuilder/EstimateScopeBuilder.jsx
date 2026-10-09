@@ -41,7 +41,6 @@ const EstimateScopeBuilder = ({
   onChange,
 }) => {
   const [sections, setSections] = useState(initialSections);
-  const [loading, setLoading] = useState(false);
   const [savingSection, setSavingSection] = useState(null);
   const [savingItem, setSavingItem] = useState(null);
   const [clientChecklist, setClientChecklist] = useState([]);
@@ -89,60 +88,15 @@ const EstimateScopeBuilder = ({
     }
   };
 
-  /* ───────────────── FETCH USER SCOPE ───────────────── */
-
-  const fetchEstimateScope = async () => {
-    try {
-      setLoading(true);
-      const res = await GetEstimateScope(estimateId);
-      const data = res?.data?.data?.data || [];
-
-      console.log("API data:", data);
-      console.log("Is Array:", Array.isArray(data));
-
-      const formatted = Array.isArray(data)
-        ? data.map((section) => ({
-            id: section.id,
-            title: section.title,
-            is_red: section.is_red,
-            items: (section.items || []).map((item) => ({
-              id: item.id,
-              description: item.description,
-              is_daily: item.is_daily,
-              is_weekly: item.is_weekly,
-              is_monthly: item.is_monthly,
-            })),
-          }))
-        : [];
-
-      console.log("formatted", formatted);
-      console.log("formatted constructor", formatted.constructor.name);
-      console.log("formatted array?", Array.isArray(formatted));
-
-      setSections(formatted);
-      if (onChange) onChange(formatted);
-    } catch (err) {
-      console.log(err);
-      message.error("Failed to load estimate scope");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     setSections(initialSections);
   }, [initialSections]);
 
   useEffect(() => {
-    if (estimateId) {
-      fetchEstimateScope();
-    }
-
     if (userId) {
       fetchChecklist();
     }
-  }, [estimateId, userId]);
-
+  }, [userId]);
   useEffect(() => {
     if (onChange) onChange(sections);
   }, [sections]);
@@ -334,9 +288,9 @@ const EstimateScopeBuilder = ({
     try {
       const item = sections[sectionIndex].items[itemIndex];
       if (item.id) {
-       await DeleteEstimateItem(item.id, {
-  estimate_id: estimateId,
-});
+        await DeleteEstimateItem(item.id, {
+          estimate_id: estimateId,
+        });
       }
       setSections((prev) =>
         prev.map((section, idx) =>
@@ -361,16 +315,6 @@ const EstimateScopeBuilder = ({
     return (
       <div className="usb-empty">
         <Empty description="Select a client first" />
-      </div>
-    );
-  }
-
-  /* ───────────────── LOADING ───────────────── */
-
-  if (loading) {
-    return (
-      <div className="usb-loading">
-        <Spin size="large" />
       </div>
     );
   }

@@ -400,16 +400,11 @@ const MainLayout = () => {
                             icon: <FaFilePdf />,
                             label: "Contracts",
                           },
-                          // NEW: Invoices hidden for Operations Administrator
-                          ...(!isOperationsAdmin
-                            ? [
-                                {
+                          {
                                   key: "/all-invoices",
                                   icon: <FaFileInvoiceDollar />,
                                   label: "Invoices",
                                 },
-                              ]
-                            : []),
                         ],
                       },
                       {
@@ -471,28 +466,24 @@ const MainLayout = () => {
                           },
                         ],
                       },
-                      // NEW: entire FINANCE group (Quotes / Invoice Analytics)
-                      // hidden for Operations Administrator
-                      ...(!isOperationsAdmin
-                        ? [
-                            {
-                              type: "group",
-                              label: "FINANCE",
-                              children: [
-                                {
-                                  key: "/invoices",
-                                  icon: <FaFileInvoiceDollar />,
-                                  label: "Quotes",
-                                },
-                                {
-                                  key: "/invoiceAnalytics",
-                                  icon: <TbBrandCashapp />,
-                                  label: "Invoice Analytics",
-                                },
-                              ],
-                            },
-                          ]
-                        : []),
+
+                      {
+                        type: "group",
+                        label: "FINANCE",
+                        children: [
+                          {
+                            key: "/invoices",
+                            icon: <FaFileInvoiceDollar />,
+                            label: "Quotes",
+                          },
+                          {
+                            key: "/invoiceAnalytics",
+                            icon: <TbBrandCashapp />,
+                            label: "Invoice Analytics",
+                          },
+                        ],
+                      },
+
                       {
                         type: "group",
                         label: "COMMUNICATION",

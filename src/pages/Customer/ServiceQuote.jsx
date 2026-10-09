@@ -32,6 +32,8 @@ import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
 
 const { Option } = Select;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ServiceQuoteForm = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState([]);
@@ -46,6 +48,7 @@ const ServiceQuoteForm = () => {
     toCompany: "",
     address1: "",
     address2: "",
+    cc_email: "",
     tip: "",
     items: [
       {
@@ -71,6 +74,9 @@ const ServiceQuoteForm = () => {
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
 
+  // CC email is locked when the user record already has one from the API
+  const isCcLocked = !!userData?.cc_email;
+
   const loadDraftById = async () => {
     setIsLoading(true);
     try {
@@ -78,7 +84,7 @@ const ServiceQuoteForm = () => {
       const draft = res.data.data;
       if (!draft) return;
 
-      setFormData({
+      setFormData((prev) => ({
         ref: draft.ref_no || "",
         reference_type: draft.ref_type || "",
         serviceDates: draft.service_dates ? dayjs(draft.service_dates) : null,
@@ -86,6 +92,8 @@ const ServiceQuoteForm = () => {
         toCompany: draft.to_company_name || "",
         address1: draft.address_1 || "",
         address2: draft.address_2 || "",
+        // keep the value already on the form (user API value) if the draft has none
+        cc_email: draft.cc_email ?? prev.cc_email ?? "",
         items: draft.service_quote_item?.length
           ? draft.service_quote_item.map((i) => ({
               description: i.description,
@@ -111,7 +119,7 @@ const ServiceQuoteForm = () => {
         totalAmount: draft.total_due || "",
         date: draft.date ? dayjs(draft.date) : null,
         signature: draft.signature || "",
-      });
+      }));
 
       setSelectedDraftId(draft.id);
       setQuoteStatus(draft.status);
@@ -151,6 +159,8 @@ const ServiceQuoteForm = () => {
         setFormData((prev) => ({
           ...prev,
           toCompany: user.user_profile?.name || "",
+          // API value is authoritative; otherwise keep whatever is on the form
+          cc_email: user.cc_email || prev.cc_email || "",
           address1: primaryAddress
             ? `${primaryAddress.address || ""}, ${
                 primaryAddress.user_city?.name || ""
@@ -264,6 +274,13 @@ const ServiceQuoteForm = () => {
       return;
     }
 
+    // CC email is optional, but if entered it must be a valid email
+    const ccEmail = (formData.cc_email || "").trim();
+    if (ccEmail && !EMAIL_REGEX.test(ccEmail)) {
+      message.error("Please enter a valid CC email address.");
+      return;
+    }
+
     // ✅ Validate total amount before proceeding
     const totalAmount = parseFloat(formData.totalAmount) || 0;
     if (totalAmount <= 0) {
@@ -285,6 +302,7 @@ const ServiceQuoteForm = () => {
       signature: formData.signature,
       items: formData.items,
       date: formData.date,
+      cc_email: ccEmail,
 
       // tip: parseFloat(formData.tip || 0),
       // square_payment_url: formData.square_payment_url,
@@ -559,6 +577,7 @@ const ServiceQuoteForm = () => {
       to_company_name: formData.toCompany,
       address_1: formData.address1,
       address_2: formData.address2,
+      cc_email: (formData.cc_email || "").trim(),
       items: formData.items,
       date: formData.date,
       signature: formData.signature,
@@ -667,6 +686,7 @@ const ServiceQuoteForm = () => {
                 primaryAddress.user_country?.name || ""
               }`
             : "",
+          cc_email: userData?.cc_email || "",
 
           items: [
             {
@@ -741,33 +761,6 @@ const ServiceQuoteForm = () => {
             )}
           </div>
         </div>
-
-        {/* <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-					<Button onClick={() => handleBack()}>← Back</Button>
-
-					{drafts.length > 0 && (
-						<Select
-							style={{ minWidth: 260 }}
-							value={selectedDraftId}
-							placeholder="Select Draft"
-							onChange={(id) => loadDraftById(id)}
-						>
-							{drafts.map((d) => (
-								<Option key={d.id} value={d.id}>
-									{d.ref_type}-{d.ref_no} ({d.status})
-								</Option>
-							))}
-						</Select>
-					)}
-
-					{quoteStatus === "DRAFT" && selectedDraftId && (
-						<Button danger onClick={handleDeleteDraft}>
-							Delete Draft & Start Fresh
-						</Button>
-					)}
-
-					
-				</div> */}
 
         <div className="meta-table" style={{ marginBottom: 28 }}>
           <div>
@@ -866,6 +859,7 @@ const ServiceQuoteForm = () => {
             <br />
             Tampa FL 33610
           </div>
+
           <div>
             <strong>
               TO: <span style={{ color: "red" }}>*</span>
@@ -903,7 +897,28 @@ const ServiceQuoteForm = () => {
               }}
               style={{ marginTop: 8 }}
             />
+
+            {/* CC Email (optional) */}
+            <div style={{ marginTop: 12 }}>
+              <strong>CC EMAIL:</strong>
+              <Input
+                disabled={isLocked || isCcLocked}
+                placeholder="CC Email (optional)"
+                value={formData.cc_email}
+                onChange={(e) => {
+                  setIsDirty(true);
+                  setFormData({ ...formData, cc_email: e.target.value });
+                }}
+                style={{ marginTop: 5 }}
+              />
+              {isCcLocked && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  CC email is set on the customer profile.
+                </div>
+              )}
+            </div>
           </div>
+
           <div>
             <strong>TOTAL DUE:</strong>
             <Input

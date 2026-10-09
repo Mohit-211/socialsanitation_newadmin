@@ -27,7 +27,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, ClipboardList } from "lucide-react";
 import { IoLocationOutline } from "react-icons/io5";
 import {
   GetUserById,
@@ -38,6 +38,10 @@ import {
   EditAddress,
   DeleteUserAddress,
 } from "../../services/Api/Api";
+import {
+  CheckUserScopeExists,
+  GetUserScope,
+} from "../../services/Api/ScopeApi";
 
 const tableWrapStyle = {
   border: "1px solid #e5e7eb",
@@ -65,45 +69,95 @@ const tdStyle = {
   background: "#fff",
 };
 
+// =========================================================
+// COUNTRIES
+//
+// Client addresses predate the country field — older checklists and
+// UserAddress rows with no country on file are treated as USA, same
+// convention used on the employee side of this app.
+// =========================================================
+
+const COUNTRY_IDS = {
+  USA: 233,
+  CANADA: 39,
+};
+
+const COUNTRIES = [
+  { id: COUNTRY_IDS.USA, name: "USA" },
+  { id: COUNTRY_IDS.CANADA, name: "Canada" },
+];
+
 const UpdateCustomer = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  const [coordinates, setCoordinates] = useState({ lat: null, lng: null });
   const [loading, setLoading] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
-  const [clientType, setClientType] = useState("residential");
+  const [clientType, setClientType] = useState("commercial");
   const [totalCount, setTotalCount] = useState(0);
 
   const [addressModalVisible, setAddressModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [addressForm] = Form.useForm();
+  const [addressStates, setAddressStates] = useState([]);
+  const [addressCities, setAddressCities] = useState([]);
   const [addressCoordinates, setAddressCoordinates] = useState({
     lat: null,
     lng: null,
   });
 
-  const [commercialAreas, setCommercialAreas] = useState([
-    { name: "Entrance / Lobby Areas", editable: false },
-    { name: "Restrooms", editable: false },
-    { name: "Kitchen Areas", editable: false },
-    { name: "Office Areas", editable: false },
-    { name: "Classrooms / Conference Rooms", editable: false },
-    { name: "Group / Common Rooms", editable: false },
-    { name: "All Areas / Hallways", editable: false },
-  ]);
+  const [scopeModalVisible, setScopeModalVisible] = useState(false);
+  const [checkingScope, setCheckingScope] = useState(false);
+
+  const [scopeExists, setScopeExists] = useState(false);
+
+  const DEFAULT_COMMERCIAL_AREAS = [
+    "Entrance / Lobby Areas",
+    "Restrooms",
+    "Kitchen Areas",
+    "Office Areas",
+    "Classrooms / Conference Rooms",
+    "Group / Common Rooms",
+    "All Areas / Hallways",
+  ];
+
+  const [commercialAreas, setCommercialAreas] = useState(
+    DEFAULT_COMMERCIAL_AREAS.map((name) => ({
+      name,
+      editable: false,
+    })),
+  );
 
   const navigateToUser = () => {
     navigate("/users");
   };
 
+  // =========================================================
+  // MAIN FORM — COUNTRY/STATE FETCHING
+  //
+  // Replaces a mount-time `StateAPI(233)` call that always fetched
+  // USA states regardless of what the client's checklist actually
+  // had on file, and never refetched when the admin changed country.
+  // =========================================================
+
+  const watchedCountryId = Form.useWatch("country_id", form);
+  const watchedStateId = Form.useWatch("state_id", form);
+
   useEffect(() => {
-    StateAPI(233).then((res) => {
-      setStates(res?.data?.data?.all_state || []);
-    });
-  }, []);
+    if (!watchedCountryId) {
+      setStates([]);
+      return;
+    }
+
+    StateAPI(watchedCountryId)
+      .then((res) => setStates(res?.data?.data?.all_state || []))
+      .catch((err) => {
+        console.log("Error fetching states:", err);
+        setStates([]);
+      });
+  }, [watchedCountryId]);
 
   const carpetPercentage = Form.useWatch("carpet_percentage", form) || 0;
   const concretePercentage = Form.useWatch("concrete_percentage", form) || 0;
@@ -124,24 +178,18 @@ const UpdateCustomer = () => {
     });
   };
 
-  const fetchCoordinates = async (address) => {
-    if (!address) return;
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-      const data = await res.json();
-      if (data.status === "OK") {
-        const location = data.results[0].geometry.location;
-        setCoordinates({ lat: location.lat, lng: location.lng });
-        setAddressCoordinates({ lat: location.lat, lng: location.lng });
-      }
-    } catch (err) {
-      console.log(err);
+  // Re-fetch cities whenever the main form's state changes (covers both
+  // the initial load, via the effect below, and the admin picking a
+  // different state via onValuesChange).
+  useEffect(() => {
+    if (!watchedStateId) {
+      setCities([]);
+      return;
     }
-  };
+
+    fetchCities(watchedStateId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedStateId]);
 
   const refreshUser = () => {
     GetUserById(id).then((res) => {
@@ -153,63 +201,127 @@ const UpdateCustomer = () => {
   useEffect(() => {
     GetUserById(id).then((res) => {
       const data = res.data.data;
+
       const checklist = data?.user_client_checklist?.[0];
       const details = checklist?.user_client_checklist_details || [];
+
+      const country_id = checklist?.country_id || COUNTRY_IDS.USA;
       const state_id = checklist?.state_id;
-      const userTypeFromBackend = data?.client_type || "residential";
+
+      // If client_type is missing, treat as commercial
+      const userTypeFromBackend =
+        data?.client_type && data.client_type.trim() !== ""
+          ? data.client_type.toLowerCase()
+          : "commercial";
+
       setClientType(userTypeFromBackend);
+
       const serviceAreas = getServiceAreasByType(userTypeFromBackend);
+
+      // =========================================================
+      // INITIAL CLIENT CHART
+      // =========================================================
+
       if (userTypeFromBackend === "commercial") {
-        setCommercialAreas(
-          details.map((detail) => ({
-            name: detail.service_area,
-            editable:
-              detail.service_area.includes("Restrooms") &&
-              detail.service_area !== "Restrooms",
-          })),
-        );
+        if (details.length > 0) {
+          // Existing checklist details
+          setCommercialAreas(
+            details.map((detail) => ({
+              name: detail.service_area,
+              editable:
+                detail.service_area.includes("Restrooms") &&
+                detail.service_area !== "Restrooms",
+            })),
+          );
+        } else {
+          // No checklist details -> show default commercial rows
+          setCommercialAreas(
+            DEFAULT_COMMERCIAL_AREAS.map((name) => ({
+              name,
+              editable: false,
+            })),
+          );
+        }
       }
 
-      // Merge: ensure each default area has a row, even if empty
-      const mergedChecklist = details.map((detail) => ({
-        service_area: detail.service_area,
+      // =========================================================
+      // BUILD CHECKLIST DETAILS
+      // =========================================================
 
-        // Residential
-        num_desks_trash_cans: detail?.num_desks_trash_cans || 0,
+      const mergedChecklist =
+        details.length > 0
+          ? details.map((detail) => ({
+              service_area: detail.service_area,
 
-        // Commercial
-        stalls: detail?.stalls || 0,
-        sinks: detail?.sinks || 0,
-        restrooms: detail?.restrooms || 0,
+              num_desks_trash_cans: Number(detail?.num_desks_trash_cans || 0),
 
-        flooring_type: detail?.flooring_type || null,
+              stalls: Number(detail?.stalls || 0),
 
-        special_requests: detail?.special_requests || "",
-      }));
+              sinks: Number(detail?.sinks || 0),
+
+              restrooms: Number(detail?.restrooms || 0),
+
+              flooring_type: detail?.flooring_type || null,
+
+              special_requests: detail?.special_requests || "",
+            }))
+          : serviceAreas.map((area) => ({
+              service_area: area,
+
+              num_desks_trash_cans: 0,
+
+              stalls: 0,
+
+              sinks: 0,
+
+              restrooms: 0,
+
+              flooring_type: null,
+
+              special_requests: "",
+            }));
+
+      // =========================================================
+      // FORM
+      // =========================================================
 
       form.setFieldsValue({
         name: data?.user_profile?.name,
-        client_type: data?.client_type,
+
+        client_type: userTypeFromBackend,
+
         email: data?.email,
+        cc_email: data?.cc_email || "",
+
         sqft: checklist?.estimated_sqft,
+
         service_days: checklist?.service_days,
+
         walkaround_minutes: checklist?.walkaround_minutes,
 
         carpet_percentage: Number(checklist?.carpet_percentage || 0),
+
         concrete_percentage: Number(checklist?.concrete_percentage || 0),
+
         vct_lvt_percentage: Number(checklist?.vct_lvt_percentage || 0),
+
         tile_percentage: Number(checklist?.tile_percentage || 0),
+
         address: checklist?.address,
+
+        country_id,
+
         state_id,
+
         city_id: checklist?.city_id,
+
         details: mergedChecklist,
       });
-      // ✅ calculate total after data load
+
       setTimeout(() => {
         calculateTotal();
       }, 0);
-      if (state_id) fetchCities(state_id);
-      if (checklist?.address) fetchCoordinates(checklist.address);
+
       setUserAddresses(data?.user_address || []);
     });
   }, [id, form]);
@@ -218,6 +330,7 @@ const UpdateCustomer = () => {
     setLoading(true);
     const payload = {
       name: values.name,
+      cc_email: values.cc_email?.trim() || "",
       client_type: clientType,
       checklist: {
         estimated_sqft: values.sqft,
@@ -230,10 +343,14 @@ const UpdateCustomer = () => {
         tile_percentage: values.tile_percentage,
 
         address: values.address,
+        // Was missing entirely — the backend had nowhere to read a
+        // client's country from on this path, even though it already
+        // accepts one.
+        country_id: values.country_id,
         state_id: values.state_id,
         city_id: values.city_id,
-        address_lat: coordinates.lat,
-        address_long: coordinates.lng,
+        address_lat: null,
+        address_long: null,
         details: values.details || [],
       },
     };
@@ -246,7 +363,13 @@ const UpdateCustomer = () => {
       Number(values.vct_lvt_percentage || 0) +
       Number(values.tile_percentage || 0);
 
-    if (totalFloorPercentage !== 100) {
+    const hasFloorComposition =
+      Number(values.carpet_percentage || 0) > 0 ||
+      Number(values.concrete_percentage || 0) > 0 ||
+      Number(values.vct_lvt_percentage || 0) > 0 ||
+      Number(values.tile_percentage || 0);
+
+    if (hasFloorComposition && totalFloorPercentage !== 100) {
       message.error("Floor composition must total 100%");
       setLoading(false);
       return;
@@ -264,9 +387,63 @@ const UpdateCustomer = () => {
     }
   };
 
+  // =========================================================
+  // ADD ADDRESS MODAL — COUNTRY/STATE FETCHING
+  //
+  // Separate state lists from the main form's, since this modal has
+  // its own Country selection independent of the checklist's.
+  // =========================================================
+
+  const fetchAddressStatesForCountry = (countryId) => {
+    return StateAPI(countryId)
+      .then((res) => {
+        const stateList = res?.data?.data?.all_state || [];
+        setAddressStates(stateList);
+        return stateList;
+      })
+      .catch((err) => {
+        console.log("Error fetching states:", err);
+        setAddressStates([]);
+        return [];
+      });
+  };
+
+  const fetchAddressCities = (stateId) => {
+    return CityAPI(stateId).then((res) => {
+      const citiesList = res?.data?.data?.all_city || [];
+      setAddressCities(citiesList);
+      return citiesList;
+    });
+  };
+
+  const fetchCoordinates = async (address) => {
+    if (!address) return;
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          address,
+        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
+      );
+      const data = await res.json();
+      if (data.status === "OK") {
+        const location = data.results[0].geometry.location;
+        setAddressCoordinates({ lat: location.lat, lng: location.lng });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const openAddAddress = () => {
     setEditingAddress(null);
     addressForm.resetFields();
+
+    // Default to USA — the admin can switch to Canada, which reloads
+    // the State dropdown for that country (see onValuesChange below).
+    addressForm.setFieldsValue({ country_id: COUNTRY_IDS.USA });
+    fetchAddressStatesForCountry(COUNTRY_IDS.USA);
+    setAddressCities([]);
+
     setAddressCoordinates({ lat: null, lng: null });
     setAddressModalVisible(true);
   };
@@ -275,11 +452,16 @@ const UpdateCustomer = () => {
     setEditingAddress(addr);
     setAddressModalVisible(true);
 
+    // Existing addresses predate the country field on some rows —
+    // treated as USA, same convention used everywhere else.
+    const addressCountryId = addr.country_id || COUNTRY_IDS.USA;
+
     setTimeout(() => {
       addressForm.resetFields();
 
       addressForm.setFieldsValue({
         address: addr.address,
+        country_id: addressCountryId,
         state_id: addr.state_id,
       });
 
@@ -288,7 +470,11 @@ const UpdateCustomer = () => {
         lng: addr.address_long,
       });
 
-      fetchCities(addr.state_id).then(() => {
+      fetchAddressStatesForCountry(addressCountryId).then(() => {
+        addressForm.setFieldsValue({ state_id: addr.state_id });
+      });
+
+      fetchAddressCities(addr.state_id).then(() => {
         addressForm.setFieldsValue({
           city_id: addr.city_id,
         });
@@ -306,7 +492,9 @@ const UpdateCustomer = () => {
       address: values.address,
       state_id: values.state_id,
       city_id: values.city_id,
-      country_id: 233,
+      // Was hardcoded to USA (233) regardless of what the admin actually
+      // selected — now takes whichever country the Select above was set to.
+      country_id: values.country_id,
       address_lat: addressCoordinates.lat,
       address_long: addressCoordinates.lng,
     };
@@ -407,6 +595,64 @@ const UpdateCustomer = () => {
     setTotalCount(total);
   };
 
+  const checkScopeExists = async () => {
+    if (!id) return;
+
+    try {
+      const res = await CheckUserScopeExists(id);
+
+      setScopeExists(res?.data?.data?.exists === true);
+    } catch (error) {
+      console.error("Failed to check scope existence:", error);
+      setScopeExists(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+
+    checkScopeExists();
+  }, [id]);
+
+  const handleScopeOfWork = async () => {
+    if (!id) return;
+
+    try {
+      setCheckingScope(true);
+
+      // Always call this API.
+      // It validates the current Initial Client Chart
+      // even when a scope already exists.
+      await GetUserScope(id);
+
+      if (scopeExists) {
+        navigate(`/client-scope/${id}`);
+        return;
+      }
+
+      setScopeExists(true);
+
+      message.success(
+        "Client Scope of Work generated successfully. Redirecting...",
+      );
+
+      setTimeout(() => {
+        navigate(`/client-scope/${id}`);
+      }, 1000);
+    } catch (err) {
+      console.log("Scope of Work error:", err);
+
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.data?.message ||
+        "Unable to generate Scope of Work.";
+
+      message.error(errorMessage);
+    } finally {
+      setCheckingScope(false);
+    }
+  };
+
   return (
     <Box>
       <Paper
@@ -474,8 +720,16 @@ const UpdateCustomer = () => {
           form={form}
           onFinish={handleSave}
           onValuesChange={(changed) => {
-            if (changed.address) fetchCoordinates(changed.address);
-            if (changed.state_id) fetchCities(changed.state_id);
+            if (changed.country_id) {
+              // Switching country invalidates whatever state/city were
+              // picked for the old one.
+              form.setFieldsValue({ state_id: undefined, city_id: undefined });
+              setCities([]);
+            }
+
+            if (changed.state_id) {
+              form.setFieldsValue({ city_id: undefined });
+            }
           }}
         >
           <Row>
@@ -498,7 +752,7 @@ const UpdateCustomer = () => {
           </Row>
 
           <Row gutter={[24, 24]}>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item
                 name="name"
                 label="Full Name"
@@ -507,17 +761,22 @@ const UpdateCustomer = () => {
                 <Input />
               </Form.Item>
             </Col>
-            <Col span={6}>
+
+            <Col span={8}>
               <Form.Item name="email" label="Email">
                 <Input disabled />
               </Form.Item>
             </Col>
-            <Col span={6}>
-              <Form.Item name="sqft" label="Estimated Sq/Ft">
-                <Input type="number" min={0} />
+
+            <Col span={8}>
+              <Form.Item name="cc_email" label="CC Email">
+                <Input placeholder="Enter CC email" type="email" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+          </Row>
+
+          <Row gutter={[24, 24]}>
+            <Col span={8}>
               <Form.Item
                 name="walkaround_minutes"
                 label="Walkaround Time (Minutes)"
@@ -525,7 +784,135 @@ const UpdateCustomer = () => {
                 <Input type="number" min={0} />
               </Form.Item>
             </Col>
+
+            <Col span={8}>
+              <Form.Item name="sqft" label="Estimated Sq/Ft">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
           </Row>
+
+          {/* =================================================
+              CLIENT LOCATION (checklist-level) — previously these
+              values were loaded into the form and resubmitted
+              unchanged on every save, but had no actual input to
+              edit them. Now a real, editable Country/State/City/
+              Address block, same simple pattern as Add Client.
+          ================================================== */}
+
+          {/* <Row gutter={[24, 24]}>
+            <Col span={6}>
+              <Form.Item
+                name="country_id"
+                label="Country"
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const addr = getFieldValue("address");
+                      if (!addr || value) return Promise.resolve();
+
+                      return Promise.reject(
+                        new Error(
+                          "Country is required when address is provided",
+                        ),
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <Select
+                  showSearch
+                  placeholder="Select Country"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                  filterSort={(optionA, optionB) =>
+                    optionA.children
+                      .toLowerCase()
+                      .localeCompare(optionB.children.toLowerCase())
+                  }
+                >
+                  {COUNTRIES.map((country) => (
+                    <Select.Option key={country.id} value={country.id}>
+                      {country.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col span={6}>
+              <Form.Item
+                name="state_id"
+                label="State"
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const addr = getFieldValue("address");
+                      if (!addr || value) return Promise.resolve();
+
+                      return Promise.reject(
+                        new Error("State is required when address is provided"),
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <Select
+                  showSearch
+                  disabled={!watchedCountryId}
+                  placeholder="Select State"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                  filterSort={(optionA, optionB) =>
+                    optionA.children
+                      .toLowerCase()
+                      .localeCompare(optionB.children.toLowerCase())
+                  }
+                >
+                  {states.map((s) => (
+                    <Select.Option key={s.id} value={s.id}>
+                      {s.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col span={6}>
+              <Form.Item name="city_id" label="City">
+                <Select
+                  showSearch
+                  disabled={!watchedStateId}
+                  placeholder="Select City"
+                  optionFilterProp="children"
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().includes(input.toLowerCase())
+                  }
+                  filterSort={(optionA, optionB) =>
+                    optionA.children
+                      .toLowerCase()
+                      .localeCompare(optionB.children.toLowerCase())
+                  }
+                >
+                  {cities.map((c) => (
+                    <Select.Option key={c.id} value={c.id}>
+                      {c.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col span={6}>
+              <Form.Item name="address" label="Address">
+                <Input placeholder="Street address" />
+              </Form.Item>
+            </Col>
+          </Row> */}
 
           {/* Client Addresses Card */}
           <Paper
@@ -617,7 +1004,8 @@ const UpdateCustomer = () => {
                         }}
                       >
                         {addr.address}, {addr.user_city?.name},{" "}
-                        {addr.user_state?.name}, {addr.user_country?.name}
+                        {addr.user_state?.name},{" "}
+                        {addr.user_country?.name || "USA"}
                       </MuiTypography>
                     </Box>
 
@@ -776,57 +1164,94 @@ const UpdateCustomer = () => {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
+                alignItems: "flex-start",
+                marginBottom: "4px",
+                gap: "16px",
+                flexWrap: "wrap",
               }}
             >
-              <label style={{ fontSize: "16px", fontWeight: 600 }}>
-                Initial Client Chart
-              </label>
-
-              {clientType === "commercial" && (
-                <AntButton
-                  type="primary"
-                  onClick={() => {
-                    const restroomCount = commercialAreas.filter((area) =>
-                      area.name.includes("Restrooms"),
-                    ).length;
-
-                    const restroomName = `Restrooms ${restroomCount + 1}`;
-
-                    // Add visible row
-                    setCommercialAreas((prev) => [
-                      ...prev,
-                      {
-                        name: restroomName,
-                        editable: true,
-                      },
-                    ]);
-
-                    // Add form row
-                    const details = form.getFieldValue("details") || [];
-
-                    form.setFieldsValue({
-                      details: [
-                        ...details,
-                        {
-                          service_area: restroomName,
-                          stalls: 0,
-                          sinks: 0,
-                          restrooms: 0,
-                          flooring_type: null,
-                          special_requests: "",
-                        },
-                      ],
-                    });
+              <div>
+                <label style={{ fontSize: "16px", fontWeight: 600 }}>
+                  Initial Client Chart
+                </label>
+                {/* 🔹 Short heads-up note per request — flags that this
+                    chart feeds the scope of work, which in turn drives
+                    the Estimate PDF and Inspection Sheets. */}
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    marginTop: "4px",
+                    maxWidth: "520px",
                   }}
                 >
-                  + Add Rooms
+                  Note: The Scope of Work below is also used to generate this
+                  client's Estimate PDF and Inspection Sheets — keep it up to
+                  date.
+                </div>
+              </div>
+
+              <Stack direction="row" spacing={1} alignItems="center">
+                <AntButton
+                  type="primary"
+                  loading={checkingScope}
+                  icon={
+                    <ClipboardList
+                      size={14}
+                      style={{ verticalAlign: "middle", marginRight: 6 }}
+                    />
+                  }
+                  onClick={handleScopeOfWork}
+                >
+                  {scopeExists
+                    ? "View Scope of Work"
+                    : "Generate Scope of Work"}
                 </AntButton>
-              )}
+
+                {clientType === "commercial" && (
+                  <AntButton
+                    type="primary"
+                    onClick={() => {
+                      const restroomCount = commercialAreas.filter((area) =>
+                        area.name.includes("Restrooms"),
+                      ).length;
+
+                      const restroomName = `Restrooms ${restroomCount + 1}`;
+
+                      // Add visible row
+                      setCommercialAreas((prev) => [
+                        ...prev,
+                        {
+                          name: restroomName,
+                          editable: true,
+                        },
+                      ]);
+
+                      // Add form row
+                      const details = form.getFieldValue("details") || [];
+
+                      form.setFieldsValue({
+                        details: [
+                          ...details,
+                          {
+                            service_area: restroomName,
+                            stalls: 0,
+                            sinks: 0,
+                            restrooms: 0,
+                            flooring_type: null,
+                            special_requests: "",
+                          },
+                        ],
+                      });
+                    }}
+                  >
+                    + Add Rooms
+                  </AntButton>
+                )}
+              </Stack>
             </div>
 
-            <div style={tableWrapStyle}>
+            <div style={{ ...tableWrapStyle, marginTop: "12px" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
@@ -1197,7 +1622,7 @@ const UpdateCustomer = () => {
             setAddressModalVisible(false);
             setEditingAddress(null);
             addressForm.resetFields();
-            setCities([]);
+            setAddressCities([]);
             setAddressCoordinates({ lat: null, lng: null });
           }}
           onOk={handleSaveAddress}
@@ -1208,16 +1633,32 @@ const UpdateCustomer = () => {
             form={addressForm}
             layout="vertical"
             onValuesChange={(changedValues, allValues) => {
+              if (changedValues.country_id) {
+                // Switching country invalidates whatever state/city were
+                // picked for the old one — clear both and reload states
+                // for the newly selected country.
+                addressForm.setFieldsValue({
+                  state_id: undefined,
+                  city_id: undefined,
+                });
+
+                setAddressCities([]);
+
+                fetchAddressStatesForCountry(changedValues.country_id);
+              }
+
               if (changedValues.state_id) {
                 addressForm.setFieldsValue({ city_id: undefined }); // reset city
-                fetchCities(changedValues.state_id);
+                fetchAddressCities(changedValues.state_id);
               }
               if (changedValues.address) {
                 // Build full address string for geocoding
                 const fullAddress = `${changedValues.address}, ${
-                  states.find((s) => s.id === allValues.state_id)?.name || ""
+                  addressStates.find((s) => s.id === allValues.state_id)
+                    ?.name || ""
                 }, ${
-                  cities.find((c) => c.id === allValues.city_id)?.name || ""
+                  addressCities.find((c) => c.id === allValues.city_id)?.name ||
+                  ""
                 }`;
                 fetchCoordinates(fullAddress);
               }
@@ -1230,6 +1671,21 @@ const UpdateCustomer = () => {
               rules={[{ required: true, message: "Please enter the address" }]}
             >
               <Input placeholder="Enter address" />
+            </Form.Item>
+
+            {/* Country Select */}
+            <Form.Item
+              name="country_id"
+              label="Country"
+              rules={[{ required: true, message: "Please select a country" }]}
+            >
+              <Select placeholder="Select Country">
+                {COUNTRIES.map((country) => (
+                  <Select.Option key={country.id} value={country.id}>
+                    {country.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             {/* State Select with Search */}
@@ -1251,7 +1707,7 @@ const UpdateCustomer = () => {
                     .localeCompare(optionB.children.toLowerCase())
                 }
               >
-                {states.map((s) => (
+                {addressStates.map((s) => (
                   <Select.Option key={s.id} value={s.id}>
                     {s.name}
                   </Select.Option>
@@ -1279,7 +1735,7 @@ const UpdateCustomer = () => {
                     .localeCompare(optionB.children.toLowerCase())
                 }
               >
-                {cities.map((c) => (
+                {addressCities.map((c) => (
                   <Select.Option key={c.id} value={c.id}>
                     {c.name}
                   </Select.Option>

@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { GenerateServiceEstimate } from "../../services/Api/Api";
 import { GetAllUserName } from "../../services/Api/InvoiceApi";
 
-import { getScope } from "../../services/Api/ScopeApi";
+import { getScope, GetUserScopeView } from "../../services/Api/ScopeApi";
 import "./GenerateEstimate.scss";
 import { GetAllBDMS, GetBDMByUserId, AssignUser } from "../../services/Api/bdm";
 import UserScopeBuilder from "./UserScopeBuilder/UserScopeBuilder";
@@ -42,11 +42,64 @@ const GenerateEstimate = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBDM, setSelectedBDM] = useState(null);
   const [scopeSections, setScopeSections] = useState([]);
-
+  const [selectedUserScope, setSelectedUserScope] = useState([]);
+  const [hasUserScope, setHasUserScope] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
   const navigate = useNavigate();
 
   const formatDate = (date) => (date ? dayjs(date).format("MM/DD/YYYY") : null);
+
+  const fetchUserScopeView = async (userId) => {
+    if (!userId) {
+      setSelectedUserScope([]);
+      setHasUserScope(false);
+      return;
+    }
+
+    try {
+      const res = await GetUserScopeView(userId);
+
+      const data = res?.data?.data?.data || [];
+
+      const formatted = data
+        .map((section) => ({
+          id: section.id,
+          title: section.title,
+          is_red: section.is_red,
+          order: section.order ?? 0,
+
+          items: (section.items || [])
+            .map((item) => ({
+              id: item.id,
+              description: item.description,
+              is_daily: item.is_daily,
+              is_weekly: item.is_weekly,
+              is_monthly: item.is_monthly,
+              order: item.order ?? 0,
+            }))
+            .sort((a, b) => a.order - b.order),
+        }))
+        .sort((a, b) => a.order - b.order);
+
+      setSelectedUserScope(formatted);
+      setScopeSections(formatted);
+      setHasUserScope(formatted.length > 0);
+    } catch (err) {
+      console.log("Failed to fetch user scope:", err);
+
+      setSelectedUserScope([]);
+      setScopeSections([]);
+      setHasUserScope(false);
+    }
+  };
+
+  const goToEditClient = () => {
+    const userId = form.getFieldValue("user_id");
+
+    if (!userId) return;
+
+    navigate(`/editUser/${userId}`);
+  };
 
   const onFinish = async (values) => {
     try {
@@ -72,7 +125,7 @@ const GenerateEstimate = () => {
       });
 
       const signingUrl = res?.data?.data?.data?.signingUrl;
-      if (res.status === 200 ) {
+      if (res.status === 200) {
         // window.open(signingUrl, "_blank");
         message.success("PDF generated successfully");
         navigate("/pdf-generation");
@@ -145,6 +198,8 @@ const GenerateEstimate = () => {
     } catch (err) {
       console.log(err);
     }
+
+    await fetchUserScopeView(userId);
   };
 
   const fetchBDMs = async () => {
@@ -447,16 +502,29 @@ const GenerateEstimate = () => {
       ),
       children: (
         <div className="ge-scope-tab">
-          {scopeLoading ? (
-            <div className="ge-scope-loading">
-              <span>Loading scope of work…</span>
+          {!form.getFieldValue("user_id") ? (
+            <div className="ge-scope-message">
+              <p>Please select a client first.</p>
             </div>
-          ) : (
-            // ✅ Pass sections and setSections directly — no internal state in ScopeBuilder
+          ) : hasUserScope ? (
             <UserScopeBuilder
               userId={form.getFieldValue("user_id")}
               onChange={setScopeSections}
+              readOnly={true}
+              initialSections={selectedUserScope}
             />
+          ) : (
+            <div className="ge-scope-message">
+              <p>
+                This client does not have a Scope of Work yet. Please go to Edit
+                Client and complete the Initial Client Chart and generate the
+                Scope of Work first.
+              </p>
+
+              <Button type="primary" onClick={goToEditClient}>
+                Edit Client
+              </Button>
+            </div>
           )}
         </div>
       ),

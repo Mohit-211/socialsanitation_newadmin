@@ -3,28 +3,38 @@ import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
 // ****************************************** USER BOOKING *****************************************
-export const GetUserBooking = async (adminToken, booking_status, period) => {
-	let config = {
-		booking_status: booking_status,
-		period: period,
-	};
-	try {
-		const res = await axios.post(
-			BASE_URL + "admin/booking/getAllBookings",
-			config,
-			{
-				headers: {
-					"x-access-token": `${adminToken}`,
-					"Content-Type": "multipart/form-data",
-				},
-			}
-		);
+export const GetUserBooking = async (
+  adminToken,
+  booking_status,
+  period,
+  page = 1,
+  limit = 500, // high enough to load upcoming list for client-side paging
+  search = ""
+) => {
+  const config = {
+    booking_status,
+    period,
+    page,
+    limit,
+  };
+  if (search && search.trim()) config.search = search.trim();
 
-		return res;
-	} catch (error) {
-		console.error("Error fetching users:", error);
-		throw error;
-	}
+  try {
+    const res = await axios.post(
+      BASE_URL + "admin/booking/getAllBookings",
+      config,
+      {
+        headers: {
+          "x-access-token": `${adminToken}`,
+          "Content-Type": "application/json", // better than multipart for JSON body
+        },
+      }
+    );
+    return res;
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    throw error;
+  }
 };
 
 export const GetBookingRequestCount = async () => {
