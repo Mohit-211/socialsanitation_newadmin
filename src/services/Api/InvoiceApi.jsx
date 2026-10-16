@@ -219,3 +219,12 @@ export const ReorderInvoiceItems = async (invoiceId, items) => {
     throw error;
   }
 };
+
+export const SendInvoiceBalance = async (invoiceId) => {
+  try {
+    return await axios.post(`${BASE_URL}invoice/${invoiceId}/send-balance`);
+  } catch (error) {
+    console.error("Error sending invoice balance:", error);
+    throw error;
+  }
+};

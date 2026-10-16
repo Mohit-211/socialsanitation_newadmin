@@ -119,6 +119,14 @@ const RECURRING_FREQUENCY_OPTIONS = [
   { value: "YEARLY", label: "Yearly" },
 ];
 
+const DEFAULT_DEPOSIT_PERCENTAGE = 25;
+
+// Payment stages where the backend rejects changes to total / deposit terms.
+const TERMS_LOCKED_STAGES = ["DEPOSIT_PAID", "BALANCE_PENDING", "COMPLETED"];
+
+// Payment stages where the balance has already gone out, so its date is final.
+const BALANCE_DATE_LOCKED_STAGES = ["BALANCE_PENDING", "COMPLETED"];
+
 const EditInvoice = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -135,6 +143,12 @@ const EditInvoice = () => {
     recurring_frequency: "MONTHLY",
     recurring_end_date: null,
     recurring_max_occurrences: null,
+
+    // Deposit: partial payment now, remaining balance sent on balance_date
+    deposit_required: false,
+    deposit_percentage: DEFAULT_DEPOSIT_PERCENTAGE,
+    balance_date: null,
+    payment_stage: null,
 
     billing_date: null,
     service_start: null,
@@ -168,7 +182,7 @@ const EditInvoice = () => {
     date: null,
   });
 
-   // DRAFT | SAVED
+  // DRAFT | SAVED
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   // tracks which row is currently the drop target, purely for the
   // visual highlight — the reorder + API-persist logic is unchanged.
@@ -220,6 +234,15 @@ const EditInvoice = () => {
           ? dayjs(recurring.end_date, "YYYY-MM-DD")
           : null,
         recurring_max_occurrences: recurring?.max_occurrences ?? null,
+
+        // deposit state, loaded from the saved invoice
+        deposit_required: !!inv.deposit_required,
+        deposit_percentage:
+          inv.deposit_percentage ?? DEFAULT_DEPOSIT_PERCENTAGE,
+        balance_date: inv.balance_due_date
+          ? dayjs(inv.balance_due_date, "YYYY-MM-DD")
+          : null,
+        payment_stage: inv.payment_stage || null,
 
         billing_date: inv.billing_date
           ? dayjs(inv.billing_date, "YYYY-MM-DD")
@@ -421,9 +444,50 @@ const EditInvoice = () => {
     return number.toFixed(6).replace(/\.?0+$/, "");
   };
 
+  /* DEPOSIT */
+
+  const depositTermsLocked = TERMS_LOCKED_STAGES.includes(formData.payment_stage);
+  const balanceDateLocked = BALANCE_DATE_LOCKED_STAGES.includes(
+    formData.payment_stage,
+  );
+
+  const handleDepositToggle = (checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      deposit_required: checked,
+      deposit_percentage: checked
+        ? prev.deposit_percentage || DEFAULT_DEPOSIT_PERCENTAGE
+        : DEFAULT_DEPOSIT_PERCENTAGE,
+      balance_date: checked ? prev.balance_date : null,
+    }));
+  };
+
+  // deposit preview amounts (display only)
+  const totalNumber = parseFloat(formData.totalAmount) || 0;
+  const depositPct = Number(formData.deposit_percentage) || DEFAULT_DEPOSIT_PERCENTAGE;
+  const depositPreview = formatAmount((totalNumber * depositPct) / 100);
+  const balancePreview = formatAmount(
+    totalNumber - (totalNumber * depositPct) / 100,
+  );
+
   /* UPDATE */
 
   const handleSubmit = async () => {
+    if (formData.deposit_required) {
+      if (!formData.balance_date) {
+        message.error("Please select the date for the remaining balance.");
+        return;
+      }
+
+      if (
+        formData.billing_date &&
+        !formData.balance_date.isAfter(formData.billing_date, "day")
+      ) {
+        message.error("The balance date must be after the billing date.");
+        return;
+      }
+    }
+
     try {
       setIsLoading(true);
 
@@ -450,6 +514,13 @@ const EditInvoice = () => {
             : null,
         recurring_max_occurrences: formData.is_recurring
           ? formData.recurring_max_occurrences
+          : null,
+
+        // deposit fields — backend's updateInvoice reads these directly off `body`
+        deposit_required: !!formData.deposit_required,
+        deposit_percentage: formData.deposit_required ? depositPct : null,
+        balance_date: formData.deposit_required
+          ? formData.balance_date.format("YYYY-MM-DD")
           : null,
 
         to_company_name: formData.toCompany,
@@ -483,8 +554,10 @@ const EditInvoice = () => {
       message.success("Invoice updated successfully");
 
       setTimeout(() => navigate("/all-invoices"), 1000);
-    } catch {
-      message.error("Update failed");
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message || "Update failed",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -937,6 +1010,57 @@ const EditInvoice = () => {
                 Max 10 occurrences
               </div>
             </div>
+          </div>
+
+          {/* ROW 4 — DEPOSIT (PARTIAL NOW, BALANCE ON BALANCE DATE) */}
+          <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
+            <div>
+              <strong>DEPOSIT OPTION</strong>
+              <div style={{ marginTop: 5 }}>
+                <Checkbox
+                  checked={formData.deposit_required}
+                  onChange={(e) => handleDepositToggle(e.target.checked)}
+                  disabled={depositTermsLocked}
+                >
+                  Collect {depositPct}% now, balance later
+                </Checkbox>
+              </div>
+              {formData.deposit_required && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  Due now: ${depositPreview} &nbsp;|&nbsp; Balance: $
+                  {balancePreview}
+                </div>
+              )}
+              {depositTermsLocked && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  Deposit terms are locked because payment has started.
+                </div>
+              )}
+            </div>
+
+            {formData.deposit_required && (
+              <div>
+                <strong>
+                  BALANCE DATE ({100 - depositPct}%){" "}
+                  <span style={{ color: "red" }}>*</span>
+                </strong>
+                <DatePicker
+                  value={formData.balance_date}
+                  onChange={(d) =>
+                    setFormData((prev) => ({ ...prev, balance_date: d }))
+                  }
+                  format="MM-DD-YYYY"
+                  style={{ width: "100%", marginTop: 5 }}
+                  placeholder="Date balance is sent"
+                  disabled={balanceDateLocked}
+                />
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  {balanceDateLocked
+                    ? "Balance has already been sent."
+                    : "Balance invoice goes to the client on this date"}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

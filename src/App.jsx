@@ -102,6 +102,7 @@ import ClientScopeOfWork from "./pages/PdfGeneration/UserScopeBuilder/ClientScop
 import PayPalTest from "./pages/PayPalTest.jsx";
 import CashAppTest from "./pages/cashApp.jsx";
 import GooglePayTest from "./pages/GooglePayTest.jsx";
+import Teams from "./pages/Teams/Teams.jsx";
 
 function App() {
   return (
@@ -121,6 +122,7 @@ function App() {
         />
         <Route path="/chats" element={<ChatUI />} />
         <Route path="/group-chats" element={<BDMGroupChat />} />
+        <Route path="/teams" element={<Teams />} />
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/reset-password" element={<ChangePassword />} />

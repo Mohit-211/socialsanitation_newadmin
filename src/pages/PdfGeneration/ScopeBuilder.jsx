@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Switch, message } from "antd";
+import { Modal, Switch, message } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -22,6 +22,11 @@ import {
 
 import "./ScopeBuilder.scss";
 
+const CLIENT_TYPES = [
+  { label: "Commercial", value: "commercial" },
+  { label: "Residential", value: "residential" },
+];
+
 const FreqBadge = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -32,7 +37,9 @@ const FreqBadge = ({ label, active, onClick }) => (
 );
 
 const ScopeBuilder = () => {
+  const [clientType, setClientType] = useState("commercial");
   const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [savingSection, setSavingSection] = useState(null);
   const [savingItem, setSavingItem] = useState(null);
 
@@ -40,19 +47,26 @@ const ScopeBuilder = () => {
   const [dirtySections, setDirtySections] = useState(new Set());
   // Track which items have unsaved changes (by key = `${sectionKey}-${itemKey}`)
   const [dirtyItems, setDirtyItems] = useState(new Set());
-  // Track which sections are in "editing" mode after being saved
-  // Track which items are in "editing" mode after being saved
   // Track collapsed sections
   const [collapsedSections, setCollapsedSections] = useState(new Set());
 
   // Refs map for scrolling to new section title inputs
   const sectionRefs = useRef({});
+  // Guards against out-of-order responses when switching client type quickly
+  const requestIdRef = useRef(0);
 
   /* FETCH */
 
-  const fetchScope = async () => {
+  const fetchScope = async (type) => {
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+
     try {
-      const res = await getScope();
+      const res = await getScope(type);
+
+      // A newer request has been made since this one; ignore this response
+      if (requestId !== requestIdRef.current) return;
+
       const sectionsArray = res?.data?.data?.data || [];
 
       const formatted = sectionsArray.map((section) => ({
@@ -70,14 +84,47 @@ const ScopeBuilder = () => {
 
       setSections(formatted);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error(err);
       message.error("Failed to load scope");
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchScope();
-  }, []);
+    fetchScope(clientType);
+  }, [clientType]);
+
+  /* CLIENT TYPE SWITCH */
+
+  const hasUnsavedChanges = dirtySections.size > 0 || dirtyItems.size > 0;
+
+  const switchClientType = (type) => {
+    setDirtySections(new Set());
+    setDirtyItems(new Set());
+    setCollapsedSections(new Set());
+    setSections([]);
+    setClientType(type);
+  };
+
+  const handleClientTypeChange = (type) => {
+    if (type === clientType) return;
+
+    if (hasUnsavedChanges) {
+      Modal.confirm({
+        title: "Discard unsaved changes?",
+        content: `You have unsaved changes in ${clientType} scope. Switching to ${type} will discard them.`,
+        okText: "Discard",
+        okButtonProps: { danger: true },
+        cancelText: "Stay",
+        onOk: () => switchClientType(type),
+      });
+      return;
+    }
+
+    switchClientType(type);
+  };
 
   /* HELPERS */
 
@@ -238,6 +285,7 @@ const ScopeBuilder = () => {
         const res = await createSection({
           title: section.title,
           is_red: section.is_red,
+          client_type: clientType,
         });
 
         const saved =
@@ -407,6 +455,9 @@ const ScopeBuilder = () => {
   const isSectionCollapsed = (section) =>
     collapsedSections.has(getSectionKey(section));
 
+  const clientLabel =
+    CLIENT_TYPES.find((t) => t.value === clientType)?.label || "";
+
   /* UI */
 
   return (
@@ -418,7 +469,7 @@ const ScopeBuilder = () => {
           <div>
             <h2 className="scope-header__title">Scope of Work</h2>
             <p className="scope-header__sub">
-              {sections.length} sections ·{" "}
+              {clientLabel} · {sections.length} sections ·{" "}
               {sections.reduce((acc, s) => acc + (s.items?.length || 0), 0)} tasks
             </p>
           </div>
@@ -429,11 +480,33 @@ const ScopeBuilder = () => {
         </button>
       </div>
 
+      {/* CLIENT TYPE TOGGLE */}
+      <div className="client-type-toggle" role="tablist">
+        {CLIENT_TYPES.map((type) => (
+          <button
+            key={type.value}
+            role="tab"
+            aria-selected={clientType === type.value}
+            className={`client-type-toggle__btn ${
+              clientType === type.value ? "client-type-toggle__btn--active" : ""
+            }`}
+            onClick={() => handleClientTypeChange(type.value)}
+          >
+            {type.label}
+          </button>
+        ))}
+      </div>
+
+      {/* LOADING */}
+      {loading && <div className="scope-loading">Loading scope…</div>}
+
       {/* EMPTY */}
-      {sections.length === 0 && (
+      {!loading && sections.length === 0 && (
         <div className="scope-empty">
           <div className="scope-empty__icon">🗂️</div>
-          <p className="scope-empty__text">No sections yet. Start by adding one.</p>
+          <p className="scope-empty__text">
+            No {clientLabel.toLowerCase()} sections yet. Start by adding one.
+          </p>
           <button className="btn-add-section" onClick={addSection}>
             <PlusOutlined /> Add First Section
           </button>
@@ -441,238 +514,240 @@ const ScopeBuilder = () => {
       )}
 
       {/* LIST */}
-      <div className="sections-list">
-        {sections.map((section, sectionIndex) => {
-          const sectionKey = getSectionKey(section);
-          const collapsed = isSectionCollapsed(section);
-          const sectionSaved = isSectionSaved(section);
-          const sectionDirty = isSectionDirty(section);
+      {!loading && (
+        <div className="sections-list">
+          {sections.map((section, sectionIndex) => {
+            const sectionKey = getSectionKey(section);
+            const collapsed = isSectionCollapsed(section);
+            const sectionSaved = isSectionSaved(section);
+            const sectionDirty = isSectionDirty(section);
 
-          return (
-            <div
-              key={sectionKey}
-              className={`section-card ${section.is_red ? "section-card--red" : ""} ${
-                collapsed ? "section-card--collapsed" : ""
-              }`}
-            >
-              {/* SECTION HEADER */}
-              <div className="section-card__header">
-                <div className="section-card__drag">
-                  <HolderOutlined />
-                </div>
+            return (
+              <div
+                key={sectionKey}
+                className={`section-card ${section.is_red ? "section-card--red" : ""} ${
+                  collapsed ? "section-card--collapsed" : ""
+                }`}
+              >
+                {/* SECTION HEADER */}
+                <div className="section-card__header">
+                  <div className="section-card__drag">
+                    <HolderOutlined />
+                  </div>
 
-                <input
-                  className="section-card__title-input"
-                  value={section.title}
-                  placeholder="Section title..."
-                  ref={(el) => {
-                    sectionRefs.current[sectionKey] = el;
-                  }}
-                  readOnly={sectionSaved}
-                  onChange={(e) =>
-                    handleSectionChange(sectionIndex, "title", e.target.value)
-                  }
-                />
+                  <input
+                    className="section-card__title-input"
+                    value={section.title}
+                    placeholder="Section title..."
+                    ref={(el) => {
+                      sectionRefs.current[sectionKey] = el;
+                    }}
+                    readOnly={sectionSaved}
+                    onChange={(e) =>
+                      handleSectionChange(sectionIndex, "title", e.target.value)
+                    }
+                  />
 
-                <div className="section-card__controls">
-                  <label className="red-toggle">
-                    <span className="red-toggle__label">Red</span>
-                    <Switch
-                      size="small"
-                      checked={section.is_red}
-                      disabled={sectionSaved}
-                      onChange={(value) =>
-                        handleSectionChange(sectionIndex, "is_red", value)
-                      }
-                    />
-                  </label>
+                  <div className="section-card__controls">
+                    <label className="red-toggle">
+                      <span className="red-toggle__label">Red</span>
+                      <Switch
+                        size="small"
+                        checked={section.is_red}
+                        disabled={sectionSaved}
+                        onChange={(value) =>
+                          handleSectionChange(sectionIndex, "is_red", value)
+                        }
+                      />
+                    </label>
 
-                  {/* SAVE / EDIT BUTTON */}
-                  {sectionSaved ? (
-                    <button
-                      className="btn-icon btn-edit"
-                      title="Edit section"
-                      onClick={() => enterEditSection(section)}
-                    >
-                      <EditOutlined />
-                    </button>
-                  ) : (
-                    <button
-                      className={`btn-icon btn-save ${
-                        savingSection === sectionIndex ? "btn-save--saving" : ""
-                      } ${sectionDirty ? "btn-save--dirty" : ""}`}
-                      title={section.id ? "Update section" : "Save section"}
-                      onClick={() => saveSection(section, sectionIndex)}
-                    >
-                      {savingSection === sectionIndex ? (
-                        <span className="btn-spinner" />
-                      ) : (
-                        <SaveOutlined />
-                      )}
-                    </button>
-                  )}
-
-                  <button
-                    className="btn-icon btn-delete"
-                    title="Delete section"
-                    onClick={() => deleteSectionHandler(sectionIndex)}
-                  >
-                    <DeleteOutlined />
-                  </button>
-
-                  {/* COLLAPSE TOGGLE */}
-                  <button
-                    className={`btn-icon btn-collapse ${collapsed ? "btn-collapse--collapsed" : ""}`}
-                    title={collapsed ? "Expand section" : "Collapse section"}
-                    onClick={() => toggleCollapse(section)}
-                  >
-                    {collapsed ? <DownOutlined /> : <UpOutlined />}
-                  </button>
-                </div>
-              </div>
-
-              {/* ITEMS — hidden when collapsed */}
-              {!collapsed && (
-                <div className="section-card__body">
-                  {(section.items || []).length === 0 && (
-                    <p className="section-card__empty">No tasks yet.</p>
-                  )}
-
-                  {(section.items || []).map((item, itemIndex) => {
-                    const itemSaved = isItemSaved(section, item);
-                    const itemDirty = isItemDirty(section, item);
-
-                    return (
-                      <div
-                        key={String(item.id || item.tempId)}
-                        className={`task-row ${itemSaved ? "task-row--saved" : ""}`}
+                    {/* SAVE / EDIT BUTTON */}
+                    {sectionSaved ? (
+                      <button
+                        className="btn-icon btn-edit"
+                        title="Edit section"
+                        onClick={() => enterEditSection(section)}
                       >
-                        <div className="task-row__drag">
-                          <HolderOutlined />
-                        </div>
-
-                        <input
-                          className="task-row__input"
-                          value={item.description}
-                          placeholder="Task description..."
-                          readOnly={itemSaved}
-                          onChange={(e) =>
-                            handleItemChange(
-                              sectionIndex,
-                              itemIndex,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                        />
-
-                        <div className="task-row__freq">
-                          <FreqBadge
-                            label="D"
-                            active={item.is_daily}
-                            onClick={() => {
-                              if (itemSaved) enterEditItem(section, item);
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_daily",
-                                !item.is_daily
-                              );
-                            }}
-                          />
-                          <FreqBadge
-                            label="W"
-                            active={item.is_weekly}
-                            onClick={() => {
-                              if (itemSaved) enterEditItem(section, item);
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_weekly",
-                                !item.is_weekly
-                              );
-                            }}
-                          />
-                          <FreqBadge
-                            label="M"
-                            active={item.is_monthly}
-                            onClick={() => {
-                              if (itemSaved) enterEditItem(section, item);
-                              handleItemChange(
-                                sectionIndex,
-                                itemIndex,
-                                "is_monthly",
-                                !item.is_monthly
-                              );
-                            }}
-                          />
-                        </div>
-
-                        {/* SAVE / EDIT BUTTON */}
-                        {itemSaved ? (
-                          <button
-                            className="btn-icon btn-edit"
-                            title="Edit task"
-                            onClick={() => enterEditItem(section, item)}
-                          >
-                            <EditOutlined />
-                          </button>
+                        <EditOutlined />
+                      </button>
+                    ) : (
+                      <button
+                        className={`btn-icon btn-save ${
+                          savingSection === sectionIndex ? "btn-save--saving" : ""
+                        } ${sectionDirty ? "btn-save--dirty" : ""}`}
+                        title={section.id ? "Update section" : "Save section"}
+                        onClick={() => saveSection(section, sectionIndex)}
+                      >
+                        {savingSection === sectionIndex ? (
+                          <span className="btn-spinner" />
                         ) : (
-                          <button
-                            className={`btn-icon btn-save ${
-                              savingItem === `${sectionIndex}-${itemIndex}`
-                                ? "btn-save--saving"
-                                : ""
-                            } ${itemDirty ? "btn-save--dirty" : ""}`}
-                            title={item.id ? "Update task" : "Save task"}
-                            onClick={() => saveItem(item, sectionIndex, itemIndex)}
-                          >
-                            {savingItem === `${sectionIndex}-${itemIndex}` ? (
-                              <span className="btn-spinner" />
-                            ) : (
-                              <SaveOutlined />
-                            )}
-                          </button>
+                          <SaveOutlined />
                         )}
+                      </button>
+                    )}
 
-                        <button
-                          className="btn-icon btn-delete"
-                          title="Delete task"
-                          onClick={() => deleteItemHandler(sectionIndex, itemIndex)}
+                    <button
+                      className="btn-icon btn-delete"
+                      title="Delete section"
+                      onClick={() => deleteSectionHandler(sectionIndex)}
+                    >
+                      <DeleteOutlined />
+                    </button>
+
+                    {/* COLLAPSE TOGGLE */}
+                    <button
+                      className={`btn-icon btn-collapse ${collapsed ? "btn-collapse--collapsed" : ""}`}
+                      title={collapsed ? "Expand section" : "Collapse section"}
+                      onClick={() => toggleCollapse(section)}
+                    >
+                      {collapsed ? <DownOutlined /> : <UpOutlined />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ITEMS — hidden when collapsed */}
+                {!collapsed && (
+                  <div className="section-card__body">
+                    {(section.items || []).length === 0 && (
+                      <p className="section-card__empty">No tasks yet.</p>
+                    )}
+
+                    {(section.items || []).map((item, itemIndex) => {
+                      const itemSaved = isItemSaved(section, item);
+                      const itemDirty = isItemDirty(section, item);
+
+                      return (
+                        <div
+                          key={String(item.id || item.tempId)}
+                          className={`task-row ${itemSaved ? "task-row--saved" : ""}`}
                         >
-                          <DeleteOutlined />
-                        </button>
-                      </div>
-                    );
-                  })}
+                          <div className="task-row__drag">
+                            <HolderOutlined />
+                          </div>
 
-                  <button
-                    className="btn-add-task"
-                    onClick={() => addItem(sectionIndex)}
-                  >
-                    <PlusOutlined /> Add Task
-                  </button>
-                </div>
-              )}
+                          <input
+                            className="task-row__input"
+                            value={item.description}
+                            placeholder="Task description..."
+                            readOnly={itemSaved}
+                            onChange={(e) =>
+                              handleItemChange(
+                                sectionIndex,
+                                itemIndex,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                          />
 
-              {/* Collapsed summary pill */}
-              {collapsed && (
-                <div className="section-card__collapsed-bar">
-                  <span className="section-card__collapsed-count">
-                    {section.items?.length || 0} task{section.items?.length !== 1 ? "s" : ""}
-                  </span>
-                  <button
-                    className="section-card__collapsed-expand"
-                    onClick={() => toggleCollapse(section)}
-                  >
-                    Click to expand
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                          <div className="task-row__freq">
+                            <FreqBadge
+                              label="D"
+                              active={item.is_daily}
+                              onClick={() => {
+                                if (itemSaved) enterEditItem(section, item);
+                                handleItemChange(
+                                  sectionIndex,
+                                  itemIndex,
+                                  "is_daily",
+                                  !item.is_daily
+                                );
+                              }}
+                            />
+                            <FreqBadge
+                              label="W"
+                              active={item.is_weekly}
+                              onClick={() => {
+                                if (itemSaved) enterEditItem(section, item);
+                                handleItemChange(
+                                  sectionIndex,
+                                  itemIndex,
+                                  "is_weekly",
+                                  !item.is_weekly
+                                );
+                              }}
+                            />
+                            <FreqBadge
+                              label="M"
+                              active={item.is_monthly}
+                              onClick={() => {
+                                if (itemSaved) enterEditItem(section, item);
+                                handleItemChange(
+                                  sectionIndex,
+                                  itemIndex,
+                                  "is_monthly",
+                                  !item.is_monthly
+                                );
+                              }}
+                            />
+                          </div>
+
+                          {/* SAVE / EDIT BUTTON */}
+                          {itemSaved ? (
+                            <button
+                              className="btn-icon btn-edit"
+                              title="Edit task"
+                              onClick={() => enterEditItem(section, item)}
+                            >
+                              <EditOutlined />
+                            </button>
+                          ) : (
+                            <button
+                              className={`btn-icon btn-save ${
+                                savingItem === `${sectionIndex}-${itemIndex}`
+                                  ? "btn-save--saving"
+                                  : ""
+                              } ${itemDirty ? "btn-save--dirty" : ""}`}
+                              title={item.id ? "Update task" : "Save task"}
+                              onClick={() => saveItem(item, sectionIndex, itemIndex)}
+                            >
+                              {savingItem === `${sectionIndex}-${itemIndex}` ? (
+                                <span className="btn-spinner" />
+                              ) : (
+                                <SaveOutlined />
+                              )}
+                            </button>
+                          )}
+
+                          <button
+                            className="btn-icon btn-delete"
+                            title="Delete task"
+                            onClick={() => deleteItemHandler(sectionIndex, itemIndex)}
+                          >
+                            <DeleteOutlined />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    <button
+                      className="btn-add-task"
+                      onClick={() => addItem(sectionIndex)}
+                    >
+                      <PlusOutlined /> Add Task
+                    </button>
+                  </div>
+                )}
+
+                {/* Collapsed summary pill */}
+                {collapsed && (
+                  <div className="section-card__collapsed-bar">
+                    <span className="section-card__collapsed-count">
+                      {section.items?.length || 0} task{section.items?.length !== 1 ? "s" : ""}
+                    </span>
+                    <button
+                      className="section-card__collapsed-expand"
+                      onClick={() => toggleCollapse(section)}
+                    >
+                      Click to expand
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

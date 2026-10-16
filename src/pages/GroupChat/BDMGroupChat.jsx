@@ -1,33 +1,28 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Card,
-  Typography,
-  Spin,
-  Input,
-  Button,
-  Divider,
-  Avatar,
-  message,
-  Modal,
-  Tooltip,
-  Upload,
+	Typography,
+	Spin,
+	Input,
+	Button,
+	Divider,
+	Avatar,
+	message,
+	Modal,
+	Tooltip,
+	Upload,
+	Empty,
 } from "antd";
-import "./Groupchat.css";
 import {
 	ArrowLeftOutlined,
 	CloseCircleFilled,
 	EditOutlined,
+	FilePdfOutlined,
 	InfoCircleOutlined,
-	PlusOutlined,
+	PaperClipOutlined,
+	SendOutlined,
 	SmileOutlined,
-	UserOutlined,
+	TeamOutlined,
 } from "@ant-design/icons";
-import {
-	DeleteGroup,
-	GetGroupParticipants,
-	MyGroups,
-	UpdateGroupName,
-} from "../../services/Api/GroupChatApi";
 import {
 	ref as dbRef,
 	onValue,
@@ -37,28 +32,68 @@ import {
 	serverTimestamp,
 	get,
 } from "firebase/database";
-import db from "../Chat/Firebase";
-import { GetAdminProfile } from "../../services/Api/Api";
-import { useNavigate } from "react-router";
-import EmojiPicker from "emoji-picker-react";
-
 import {
 	getStorage,
 	ref as storageRef,
 	uploadBytes,
 	getDownloadURL,
 } from "firebase/storage";
-const storage = getStorage();
+import { useNavigate } from "react-router";
+import EmojiPicker from "emoji-picker-react";
+import {
+	DeleteGroup,
+	GetGroupParticipants,
+	MyGroups,
+	UpdateGroupName,
+} from "../../services/Api/GroupChatApi";
+import { GetAdminProfile } from "../../services/Api/Api";
+import db from "../Chat/Firebase";
+import "./GroupChat.scss";
 
+const storage = getStorage();
 const { Text } = Typography;
 const { TextArea } = Input;
+
+const TEXTAREA_ID = "chat-message-textarea";
+const ACCEPTED_TYPES = "image/*,video/*,application/pdf";
+const MAX_FILE_SIZE_MB = { image: 10, video: 50, pdf: 20 };
+const PLACEHOLDER = { image: "📷 Photo", video: "🎬 Video" };
+
+const formatTime = (timestamp) =>
+	new Date(timestamp).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+
+const formatFileSize = (bytes) => {
+	if (!bytes) return "";
+	if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const initial = (name) => (name || "U")[0].toUpperCase();
+
+const getFileKind = (file) => {
+	if (file.type.startsWith("image/")) return "image";
+	if (file.type.startsWith("video/")) return "video";
+	if (file.type === "application/pdf") return "pdf";
+	return null;
+};
+
+const isAllowedFile = (file) => {
+	const kind = getFileKind(file);
+	return Boolean(kind) && file.size / (1024 * 1024) <= MAX_FILE_SIZE_MB[kind];
+};
+
+const focusTextArea = () =>
+	setTimeout(() => document.getElementById(TEXTAREA_ID)?.focus(), 0);
 
 const BDMGroupChat = () => {
 	const navigate = useNavigate();
 	const [groups, setGroups] = useState([]);
+	const [loadingGroups, setLoadingGroups] = useState(true);
 	const [selectedGroup, setSelectedGroup] = useState(null);
 	const [messages, setMessages] = useState([]);
-	const [loadingGroups, setLoadingGroups] = useState(true);
 	const [newMessage, setNewMessage] = useState("");
 	const [sending, setSending] = useState(false);
 	const [userData, setUserData] = useState(null);
@@ -67,105 +102,17 @@ const BDMGroupChat = () => {
 	const [isGroupInfoVisible, setIsGroupInfoVisible] = useState(false);
 	const [groupParticipants, setGroupParticipants] = useState([]);
 	const [groupCreatedAt, setGroupCreatedAt] = useState(null);
-	const [selectedImages, setSelectedImages] = useState([]);
-	const [uploadingImages, setUploadingImages] = useState(false);
+	const [selectedFiles, setSelectedFiles] = useState([]);
 	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-	const messagesEndRef = useRef(null);
+	const messagesRef = useRef(null);
 
 	const token = localStorage.getItem("adminToken");
 	const roleId = localStorage.getItem("roleId");
-	useEffect(() => {
-		const token = localStorage.getItem("adminToken");
-
-		const fetchProfileAndGroups = async () => {
-			try {
-				const result = await GetAdminProfile(token);
-				setUserData(result.data?.data); // adjust based on your API response
-				fetchGroups();
-			} catch (error) {
-				console.error("Failed to fetch admin profile:", error);
-			}
-		};
-
-		fetchProfileAndGroups();
-	}, []);
-
-	useEffect(() => {
-		fetchGroups();
-	}, []);
-
-	const handleBeforeUpload = (file, fileList) => {
-		setSelectedImages((prev) => [...prev, ...fileList]);
-
-		// Wait a tick, then focus the text area
-		setTimeout(() => {
-			document.getElementById("chat-message-textarea")?.focus();
-		}, 0);
-
-		return false; // Prevent auto upload
-	};
-
-	const removeImage = (index) => {
-		setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-	};
-
-	const handleSend = async () => {
-		if (!newMessage.trim() && selectedImages.length === 0) return;
-
-		setSending(true);
-		setUploadingImages(true);
-
-		try {
-			// Upload all images first
-			const uploadedUrls = [];
-
-			for (const file of selectedImages) {
-				const imagePath = `group_uploads/${
-					selectedGroup.groupId
-				}/${Date.now()}_${file.name}`;
-				const imageRef = storageRef(storage, imagePath);
-				await uploadBytes(imageRef, file);
-				const downloadURL = await getDownloadURL(imageRef);
-				uploadedUrls.push(downloadURL);
-			}
-
-			// Send a single message per image or bundle them
-			for (const url of uploadedUrls) {
-				await push(dbRef(db, `GroupChats/${selectedGroup.groupId}/messages`), {
-					sender:
-						roleId === "1" ? `admin_${userData.id}` : `bdm_${userData.id}`,
-
-					sender_name: userData.name,
-					message: "📷 Photo",
-					image_url: url,
-					timestamp: serverTimestamp(),
-				});
-			}
-
-			// Send text message if available
-			if (newMessage.trim()) {
-				await push(dbRef(db, `GroupChats/${selectedGroup.groupId}/messages`), {
-					sender:
-						roleId === "1" ? `admin_${userData.id}` : `bdm_${userData.id}`,
-
-					sender_name: userData.name,
-					message: newMessage.trim(),
-					timestamp: serverTimestamp(),
-				});
-			}
-
-			// Clear after send
-			setSelectedImages([]);
-			setNewMessage("");
-		} catch (err) {
-			console.error("Send error:", err);
-			message.error("Failed to send message or image.");
-		} finally {
-			setSending(false);
-			setUploadingImages(false);
-		}
-	};
+	const groupId = selectedGroup?.groupId;
+	const senderKey = userData
+		? `${roleId === "1" ? "admin" : "bdm"}_${userData.id}`
+		: null;
 
 	const fetchGroups = async () => {
 		try {
@@ -174,16 +121,12 @@ const BDMGroupChat = () => {
 
 			const enrichedGroups = await Promise.all(
 				groupsFromApi.map(async (group) => {
-					const messagesSnap = await get(
+					const snap = await get(
 						dbRef(db, `GroupChats/${group.groupId}/messages`)
 					);
-					const messagesData = messagesSnap.val() || {};
-					const messagesList = Object.values(messagesData);
-
-					const sortedMessages = messagesList.sort(
+					const lastMsg = Object.values(snap.val() || {}).sort(
 						(a, b) => (a.timestamp || 0) - (b.timestamp || 0)
-					);
-					const lastMsg = sortedMessages[sortedMessages.length - 1];
+					).at(-1);
 
 					return {
 						...group,
@@ -201,52 +144,150 @@ const BDMGroupChat = () => {
 		}
 	};
 
-	const fetchMessagesLive = (groupId) => {
-		const messageRef = query(
+	// Load profile and groups once.
+	useEffect(() => {
+		GetAdminProfile(token)
+			.then((result) => setUserData(result.data?.data))
+			.catch((error) => console.error("Failed to fetch admin profile:", error));
+		// Async fetch: state is only set after the request resolves.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		fetchGroups();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Live messages for the open group. The cleanup detaches the Firebase
+	// listener when the group changes or the page unmounts — without it,
+	// listeners pile up and keep firing after leaving the page.
+	useEffect(() => {
+		if (!groupId) return undefined;
+		const messageQuery = query(
 			dbRef(db, `GroupChats/${groupId}/messages`),
 			orderByChild("timestamp")
 		);
-		onValue(messageRef, (snapshot) => {
+		const unsubscribe = onValue(messageQuery, (snapshot) => {
 			const data = snapshot.val() || {};
-			const parsed = Object.entries(data).map(([id, msg]) => ({
-				id,
-				...msg,
-			}));
-			setMessages(parsed);
+			setMessages(Object.entries(data).map(([id, msg]) => ({ id, ...msg })));
 		});
-	};
+		return unsubscribe;
+	}, [groupId]);
 
+	// Scroll only the message pane (scrollIntoView would also scroll the page).
 	useEffect(() => {
-		if (messagesEndRef.current) {
-			messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-		}
+		const el = messagesRef.current;
+		if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
 	}, [messages]);
 
+	// Preview URLs are created once per file list and released afterwards.
+	const filePreviews = useMemo(
+		() =>
+			selectedFiles.map((file) => ({
+				kind: getFileKind(file),
+				name: file.name,
+				url: URL.createObjectURL(file),
+			})),
+		[selectedFiles]
+	);
+	useEffect(
+		() => () => filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url)),
+		[filePreviews]
+	);
+
+	const handleBeforeUpload = (file, fileList) => {
+		// Called once per file; add the whole batch only on its first file.
+		if (file === fileList[0]) {
+			setSelectedFiles((prev) => [
+				...prev,
+				...fileList.filter(isAllowedFile),
+			]);
+			focusTextArea();
+		}
+		if (!isAllowedFile(file)) {
+			const kind = getFileKind(file);
+			message.error(
+				kind
+					? `${file.name} is larger than ${MAX_FILE_SIZE_MB[kind]} MB.`
+					: `${file.name} is not a supported file type.`
+			);
+		}
+		return false; // Prevent auto upload
+	};
+
+	const removeFile = (index) => {
+		setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const canSend = newMessage.trim() || selectedFiles.length > 0;
+
+	const handleSend = async () => {
+		if (!canSend || sending) return;
+
+		setSending(true);
+		const messagesPath = dbRef(db, `GroupChats/${groupId}/messages`);
+		const base = { sender: senderKey, sender_name: userData.name };
+
+		try {
+			for (const file of selectedFiles) {
+				const kind = getFileKind(file);
+				const fileRef = storageRef(
+					storage,
+					`group_uploads/${groupId}/${Date.now()}_${file.name}`
+				);
+				await uploadBytes(fileRef, file, { contentType: file.type });
+				const url = await getDownloadURL(fileRef);
+
+				await push(messagesPath, {
+					...base,
+					type: kind,
+					message:
+						kind === "pdf" ? `📄 ${file.name}` : PLACEHOLDER[kind],
+					file_url: url,
+					file_name: file.name,
+					file_size: file.size,
+					// Kept for images so older consumers of image_url still work.
+					...(kind === "image" && { image_url: url }),
+					timestamp: serverTimestamp(),
+				});
+			}
+
+			if (newMessage.trim()) {
+				await push(messagesPath, {
+					...base,
+					message: newMessage.trim(),
+					timestamp: serverTimestamp(),
+				});
+			}
+
+			setSelectedFiles([]);
+			setNewMessage("");
+		} catch (err) {
+			console.error("Send error:", err);
+			message.error("Failed to send message or file.");
+		} finally {
+			setSending(false);
+		}
+	};
+
 	const handleGroupClick = (group) => {
+		if (group.groupId !== groupId) {
+			setMessages([]);
+			setIsEditingGroupName(false);
+			setShowEmojiPicker(false);
+		}
 		setSelectedGroup(group);
-		fetchMessagesLive(group.groupId);
 	};
 
 	const handleUpdateGroupName = async () => {
-		try {
-			const payload = {
-				groupId: selectedGroup.groupId,
-				newName: editedGroupName.trim(),
-			};
+		const newName = editedGroupName.trim();
+		if (!newName) return;
 
-			const res = await UpdateGroupName(token, payload);
+		try {
+			const res = await UpdateGroupName(token, { groupId, newName });
 
 			if (res.status === 200) {
 				message.success("Group name updated successfully");
 				setIsEditingGroupName(false);
-
-				// Update local UI
-				setSelectedGroup((prev) => ({
-					...prev,
-					name: editedGroupName.trim(),
-				}));
-
-				fetchGroups(); // Refresh group list
+				setSelectedGroup((prev) => ({ ...prev, name: newName }));
+				fetchGroups();
 			} else {
 				message.error("Failed to update group name");
 			}
@@ -256,15 +297,11 @@ const BDMGroupChat = () => {
 		}
 	};
 
-	const fetchGroupDetails = async (groupId) => {
+	const fetchGroupDetails = async () => {
 		try {
-			const groupRef = dbRef(db, `GroupChats/${groupId}`);
-			const snapshot = await get(groupRef);
-			const groupData = snapshot.val();
+			const snapshot = await get(dbRef(db, `GroupChats/${groupId}`));
+			setGroupCreatedAt(snapshot.val()?.created_at);
 
-			setGroupCreatedAt(groupData?.created_at);
-
-			// Fetch participant names/roles via API
 			const res = await GetGroupParticipants(groupId);
 			setGroupParticipants(res?.data?.data || []);
 			setIsGroupInfoVisible(true);
@@ -273,7 +310,7 @@ const BDMGroupChat = () => {
 		}
 	};
 
-	const handleDeleteGroup = async (groupId) => {
+	const handleDeleteGroup = async () => {
 		if (!groupId) return;
 
 		try {
@@ -282,8 +319,8 @@ const BDMGroupChat = () => {
 			if (res.status === 200) {
 				message.success("Group deleted successfully");
 				setIsGroupInfoVisible(false);
-				setSelectedGroup(null); // clear chat view
-				await fetchGroups(); // refresh group list
+				setSelectedGroup(null);
+				await fetchGroups();
 			} else {
 				message.error("Failed to delete group");
 			}
@@ -293,519 +330,330 @@ const BDMGroupChat = () => {
 		}
 	};
 
+	// Resolves a message to its attachment, if any. Messages sent before
+	// this update only carry image_url, so they fall back to type "image".
+	const renderAttachment = (msg) => {
+		const url = msg.file_url || msg.image_url;
+		if (!url) return null;
+
+		const type = msg.type || "image";
+
+		if (type === "video") {
+			return (
+				<video
+					className="group-chat__video"
+					src={url}
+					controls
+					preload="metadata"
+				/>
+			);
+		}
+
+		if (type === "pdf") {
+			return (
+				<a
+					className="group-chat__file"
+					href={url}
+					target="_blank"
+					rel="noreferrer"
+				>
+					<span className="group-chat__file-icon">
+						<FilePdfOutlined />
+					</span>
+					<span className="group-chat__file-info">
+						<span className="group-chat__file-name">
+							{msg.file_name || "Document.pdf"}
+						</span>
+						<span className="group-chat__file-meta">
+							PDF{msg.file_size ? ` · ${formatFileSize(msg.file_size)}` : ""}
+						</span>
+					</span>
+				</a>
+			);
+		}
+
+		return (
+			<a href={url} target="_blank" rel="noreferrer">
+				<img className="group-chat__image" src={url} alt="Uploaded" />
+			</a>
+		);
+	};
+
+	const renderGroupList = () => {
+		if (loadingGroups) {
+			return (
+				<div className="group-chat__center">
+					<Spin />
+				</div>
+			);
+		}
+		if (groups.length === 0) {
+			return (
+				<div className="group-chat__center">
+					<Empty description="No groups yet" />
+				</div>
+			);
+		}
+		return groups.map((group) => (
+			<button
+				type="button"
+				key={group.groupId}
+				className={`group-chat__item${
+					group.groupId === groupId ? " group-chat__item--active" : ""
+				}`}
+				onClick={() => handleGroupClick(group)}
+			>
+				<Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+				<div className="group-chat__item-body">
+					<div className="group-chat__item-top">
+						<span className="group-chat__item-name">{group.name}</span>
+						{group.last_message_time && (
+							<span className="group-chat__item-time">
+								{formatTime(group.last_message_time)}
+							</span>
+						)}
+					</div>
+					<span className="group-chat__item-preview">
+						{group.last_message || "No messages yet."}
+					</span>
+				</div>
+			</button>
+		));
+	};
+
+	const renderHeader = () => (
+		<div className="group-chat__header">
+			<Button
+				className="chat-layout__back"
+				type="text"
+				aria-label="Back to chats"
+				icon={<ArrowLeftOutlined />}
+				onClick={() => setSelectedGroup(null)}
+			/>
+			<Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+
+			{isEditingGroupName ? (
+				<div className="group-chat__rename">
+					<Input
+						autoFocus
+						value={editedGroupName}
+						onChange={(e) => setEditedGroupName(e.target.value)}
+						onPressEnter={handleUpdateGroupName}
+					/>
+					<Button
+						type="primary"
+						onClick={handleUpdateGroupName}
+						disabled={!editedGroupName.trim()}
+					>
+						Save
+					</Button>
+					<Button onClick={() => setIsEditingGroupName(false)}>Cancel</Button>
+				</div>
+			) : (
+				<>
+					<h2 className="group-chat__title">{selectedGroup.name}</h2>
+					<Tooltip title="Rename group">
+						<Button
+							type="text"
+							icon={<EditOutlined />}
+							onClick={() => {
+								setEditedGroupName(selectedGroup.name);
+								setIsEditingGroupName(true);
+							}}
+						/>
+					</Tooltip>
+					<Tooltip title="Group Info">
+						<Button
+							type="text"
+							className="group-chat__header-end"
+							icon={<InfoCircleOutlined />}
+							onClick={fetchGroupDetails}
+						/>
+					</Tooltip>
+				</>
+			)}
+		</div>
+	);
+
+	const renderMessages = () => (
+		<div className="group-chat__messages" ref={messagesRef}>
+			{messages.length === 0 ? (
+				<div className="group-chat__center">
+					<Text type="secondary">No messages yet.</Text>
+				</div>
+			) : (
+				messages.map((msg) => {
+					const isSender = msg.sender === senderKey;
+					const attachment = renderAttachment(msg);
+					return (
+						<div
+							key={msg.id}
+							className={`group-chat__row${
+								isSender ? " group-chat__row--mine" : ""
+							}`}
+						>
+							{!isSender && (
+								<Avatar size="small" className="group-chat__msg-avatar">
+									{initial(msg.sender_name)}
+								</Avatar>
+							)}
+							<div className="group-chat__bubble">
+								{!isSender && (
+									<span className="group-chat__sender">
+										{msg.sender_name || msg.sender}
+									</span>
+								)}
+								{attachment}
+								{msg.message && !attachment && (
+									<span className="group-chat__text">{msg.message}</span>
+								)}
+								<span className="group-chat__time">
+									{msg.timestamp ? formatTime(msg.timestamp) : "Sending..."}
+								</span>
+							</div>
+						</div>
+					);
+				})
+			)}
+		</div>
+	);
+
+	const renderComposer = () => (
+		<div className="group-chat__composer">
+			{selectedFiles.length > 0 && (
+				<div className="group-chat__previews">
+					{filePreviews.map((preview, index) => (
+						<div key={preview.url} className="group-chat__preview">
+							{preview.kind === "image" && (
+								<img src={preview.url} alt="preview" />
+							)}
+							{preview.kind === "video" && (
+								<video
+									className="group-chat__preview-media"
+									src={preview.url}
+									muted
+									preload="metadata"
+								/>
+							)}
+							{preview.kind === "pdf" && (
+								<div className="group-chat__preview-file">
+									<FilePdfOutlined />
+									<span className="group-chat__preview-name">
+										{preview.name}
+									</span>
+								</div>
+							)}
+							<CloseCircleFilled
+								className="group-chat__preview-remove"
+								onClick={() => removeFile(index)}
+							/>
+						</div>
+					))}
+				</div>
+			)}
+
+			{showEmojiPicker && (
+				<div className="group-chat__emoji">
+					<EmojiPicker
+						theme="light"
+						onEmojiClick={(emojiData) => {
+							setNewMessage((prev) => prev + emojiData.emoji);
+							setShowEmojiPicker(false);
+							focusTextArea();
+						}}
+					/>
+				</div>
+			)}
+
+			<div className="group-chat__input-row">
+				<Upload
+					multiple
+					accept={ACCEPTED_TYPES}
+					showUploadList={false}
+					beforeUpload={handleBeforeUpload}
+				>
+					<Tooltip title="Attach Images, Videos or PDFs">
+						<Button shape="circle" type="text" icon={<PaperClipOutlined />} />
+					</Tooltip>
+				</Upload>
+				<Tooltip title="Add Emoji">
+					<Button
+						shape="circle"
+						type="text"
+						icon={<SmileOutlined />}
+						onClick={() => setShowEmojiPicker((open) => !open)}
+					/>
+				</Tooltip>
+
+				<TextArea
+					id={TEXTAREA_ID}
+					className="group-chat__textarea"
+					autoSize={{ minRows: 1, maxRows: 5 }}
+					placeholder="Type a message"
+					value={newMessage}
+					onChange={(e) => setNewMessage(e.target.value)}
+					onPressEnter={(e) => {
+						if (!e.shiftKey) {
+							e.preventDefault();
+							handleSend();
+						}
+					}}
+				/>
+
+				<Button
+					type="primary"
+					shape="circle"
+					icon={<SendOutlined />}
+					aria-label="Send"
+					onClick={handleSend}
+					loading={sending}
+					disabled={!canSend}
+				/>
+			</div>
+		</div>
+	);
+
 	return (
 		<div
-			className={`chat-layout${selectedGroup ? " chat-layout--open" : ""}`}
-			style={{
-				display: "flex",
-				height: "100vh",
-				padding: 20,
-				gap: 20,
-				background: "#f0f2f5",
-			}}
+			className={`group-chat chat-layout${
+				selectedGroup ? " chat-layout--open" : ""
+			}`}
 		>
-			{/* Left Panel: Groups */}
-			<div
-				className="chat-layout__list"
-				style={{
-					width: "30%",
-					background: "#fff",
-					border: "1px solid #ddd",
-					borderRadius: 8,
-					padding: 16,
-					overflowY: "auto",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "row",
-						justifyContent: "space-between",
-					}}
-				>
-					<h2 style={{ fontSize: 18, fontWeight: "600", marginBottom: 20 }}>
-						Chats
-					</h2>
-					<div>
-						<Button
-							onClick={() => navigate("/")}
-							style={{
-								backgroundColor: "#d9d9d9",
-								border: "none",
-								borderRadius: 6,
-								padding: "4px 12px",
-								fontWeight: 500,
-							}}
-						>
-							← Back to Dashboard
-						</Button>
-					</div>
+			{/* Left panel: groups — scrolls on its own */}
+			<aside className="group-chat__panel group-chat__list chat-layout__list">
+				<div className="group-chat__list-header">
+					<h2 className="group-chat__title">Chats</h2>
+					<Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
+						Dashboard
+					</Button>
 				</div>
-				{loadingGroups ? (
-					<Spin />
-				) : (
-					<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-						{groups.map((group) => (
-							<Card
-								key={group.groupId}
-								style={{
-									cursor: "pointer",
-									borderColor:
-										selectedGroup?.groupId === group.groupId
-											? "#1890ff"
-											: "#f0f0f0",
-									backgroundColor:
-										selectedGroup?.groupId === group.groupId
-											? "#e6f7ff"
-											: "#fff",
-								}}
-								onClick={() => handleGroupClick(group)}
-								bodyStyle={{ padding: 12 }}
-							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-									}}
-								>
-									<div
-										style={{ display: "flex", alignItems: "center", gap: 10 }}
-									>
-										<Avatar
-											style={{ backgroundColor: "#87d068" }}
-											icon={<UserOutlined />}
-										/>
-										<div>
-											<Text strong>{group.name}</Text>
-											<p
-												style={{
-													fontSize: 12,
-													color: "#888",
-													marginBottom: 0,
-													marginTop: 4,
-													maxWidth: 150,
-													whiteSpace: "nowrap",
-													overflow: "hidden",
-													textOverflow: "ellipsis",
-												}}
-											>
-												{group.last_message || "No messages yet."}
-											</p>
-										</div>
-									</div>
-									{group.last_message_time && (
-										<Text style={{ fontSize: 12, color: "#999" }}>
-											{new Date(group.last_message_time).toLocaleTimeString(
-												[],
-												{
-													hour: "2-digit",
-													minute: "2-digit",
-												}
-											)}
-										</Text>
-									)}
-								</div>
-							</Card>
-						))}
-					</div>
-				)}
-			</div>
+				<div className="group-chat__list-scroll">{renderGroupList()}</div>
+			</aside>
 
-			{/* Right Panel: Chat */}
-			<div
-				className="chat-layout__conversation"
-				style={{
-					width: "70%",
-					background: "#fff",
-					borderRadius: 8,
-					padding: 20,
-					display: "flex",
-					flexDirection: "column",
-					border: "1px solid #ddd",
-				}}
-			>
-				{!selectedGroup ? (
-					<div
-						style={{
-							flex: 1,
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							color: "#999",
-						}}
-					>
-						<p>Select a group to start chatting.</p>
-					</div>
-				) : (
+			{/* Right panel: conversation — only the messages scroll */}
+			<section className="group-chat__panel group-chat__conversation chat-layout__conversation">
+				{selectedGroup ? (
 					<>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								marginBottom: 16,
-							}}
-						>
-							<Button
-								className="chat-layout__back"
-								type="text"
-								aria-label="Back to chats"
-								icon={<ArrowLeftOutlined />}
-								onClick={() => setSelectedGroup(null)}
-							/>
-							{isEditingGroupName ? (
-								<>
-									<Input
-										style={{ maxWidth: 300, marginRight: 8 }}
-										value={editedGroupName}
-										onChange={(e) => setEditedGroupName(e.target.value)}
-										onPressEnter={async () => {
-											await handleUpdateGroupName();
-										}}
-									/>
-									<Button
-										type="primary"
-										size="small"
-										onClick={handleUpdateGroupName}
-										disabled={!editedGroupName.trim()}
-									>
-										Save
-									</Button>
-									<Button
-										style={{ marginLeft: 6 }}
-										size="small"
-										onClick={() => setIsEditingGroupName(false)}
-									>
-										Cancel
-									</Button>
-								</>
-							) : (
-								<>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "row",
-											justifyContent: "space-between",
-											width: "100%",
-										}}
-									>
-										<div
-											style={{
-												display: "flex",
-												flexDirection: "row",
-												justifyContent: "space-between",
-											}}
-										>
-											<h2
-												style={{ fontSize: 16, fontWeight: "600", margin: 0 }}
-											>
-												{selectedGroup?.name}
-											</h2>
-											<EditOutlined
-												style={{
-													marginLeft: 10,
-													cursor: "pointer",
-													color: "#1890ff",
-												}}
-												onClick={() => {
-													setEditedGroupName(selectedGroup?.name);
-													setIsEditingGroupName(true);
-												}}
-											/>
-										</div>
-										<div>
-											<Tooltip title="Group Info">
-												<InfoCircleOutlined
-													style={{
-														marginLeft: 10,
-														cursor: "pointer",
-														color: "#1890ff",
-													}}
-													onClick={() =>
-														fetchGroupDetails(selectedGroup?.groupId)
-													}
-												/>
-											</Tooltip>
-										</div>
-									</div>
-								</>
-							)}
-						</div>
-
-						<Divider style={{ margin: "0 0 16px 0" }} />
-						<div
-							style={{
-								flex: 1,
-								overflowY: "auto",
-								paddingRight: 10,
-								marginBottom: 16,
-								display: "flex",
-								flexDirection: "column",
-								gap: 12,
-							}}
-						>
-							{messages.length === 0 ? (
-								<p style={{ textAlign: "center", color: "#aaa" }}>
-									No messages yet.
-								</p>
-							) : (
-								messages.map((msg) => {
-									const expectedSenderKey =
-										userData?.role_id === 1
-											? `admin_${userData.id}`
-											: `bdm_${userData.id}`;
-
-									const isSender = msg.sender === expectedSenderKey;
-
-									const bubbleStyles = {
-										alignSelf: isSender ? "flex-end" : "flex-start",
-										backgroundColor: isSender ? "#DCF8C6" : "#f1f0f0",
-										padding: "10px 14px",
-										borderRadius: 16,
-										borderTopLeftRadius: isSender ? 16 : 4,
-										borderTopRightRadius: isSender ? 4 : 16,
-										maxWidth: "70%",
-										display: "flex",
-										flexDirection: "column",
-									};
-
-									return (
-										<div
-											key={msg.id}
-											style={{
-												display: "flex",
-												flexDirection: isSender ? "row-reverse" : "row",
-												gap: 10,
-												alignItems: "flex-end",
-											}}
-										>
-											{!isSender && (
-												<Avatar
-													size="small"
-													style={{ backgroundColor: "#ccc" }}
-												>
-													{(msg.sender_name || "U")[0].toUpperCase()}
-												</Avatar>
-											)}
-
-											<div style={bubbleStyles}>
-												<Text style={{ fontWeight: 500, marginBottom: 4 }}>
-													{msg.sender_name || msg.sender}
-												</Text>
-												{/* 🔍 If there's an image, show it */}
-												{msg.image_url && (
-													<img
-														src={msg.image_url}
-														alt="Uploaded"
-														style={{
-															maxWidth: 200,
-															borderRadius: 8,
-															marginBottom: 8,
-														}}
-													/>
-												)}
-
-												{/* Text message fallback */}
-												{msg.message && <Text>{msg.message}</Text>}
-
-												<Text
-													type="secondary"
-													style={{
-														fontSize: 10,
-														marginTop: 4,
-														textAlign: "right",
-													}}
-												>
-													{msg.timestamp
-														? new Date(msg.timestamp).toLocaleTimeString([], {
-																hour: "2-digit",
-																minute: "2-digit",
-														  })
-														: "Sending..."}
-												</Text>
-											</div>
-										</div>
-									);
-								})
-							)}
-
-							{/* ✅ Invisible anchor for scrolling */}
-							<div ref={messagesEndRef} />
-						</div>
-
-						<div style={{ display: "flex", gap: 8 }}>
-							<Upload
-								multiple
-								accept="image/*"
-								showUploadList={false}
-								beforeUpload={handleBeforeUpload}
-							>
-								<Tooltip title="Attach Images">
-									<Button
-										icon={<PlusOutlined />}
-										style={{
-											width: 30,
-											height: 30,
-											borderRadius: "50%",
-											padding: 0,
-											background: "rgb(240, 240, 240)",
-											border: "none",
-										}}
-									/>
-								</Tooltip>
-							</Upload>
-
-							<Tooltip title="Add Emoji">
-								<Button
-									icon={<SmileOutlined />}
-									style={{
-										width: 30,
-										height: 30,
-										borderRadius: "50%",
-										padding: 0,
-										background: "rgb(240, 240, 240)",
-										border: "none",
-										alignSelf: "center",
-									}}
-									onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-								/>
-							</Tooltip>
-
-							{/* TextArea with emoji picker below */}
-							<div style={{ position: "relative", flex: 1 }}>
-								<TextArea
-									id="chat-message-textarea"
-									rows={selectedImages.length > 0 ? 6 : 2}
-									placeholder="Type a message"
-									value={newMessage}
-									onChange={(e) => setNewMessage(e.target.value)}
-									onPressEnter={(e) => {
-										if (!e.shiftKey) {
-											e.preventDefault();
-											if (newMessage.trim() || selectedImages.length > 0) {
-												handleSend();
-											}
-										}
-									}}
-								/>
-
-								{/* Emoji Picker */}
-								{showEmojiPicker && (
-									<div
-										style={{
-											position: "absolute",
-											bottom: 50,
-											left: 0,
-											zIndex: 10,
-										}}
-									>
-										<EmojiPicker
-											onEmojiClick={(emojiData) => {
-												setNewMessage((prev) => prev + emojiData.emoji);
-												setShowEmojiPicker(false);
-												// ✅ Refocus the TextArea
-												setTimeout(() => {
-													document
-														.getElementById("chat-message-textarea")
-														?.focus();
-												}, 0);
-											}}
-											theme="light"
-										/>
-									</div>
-								)}
-
-								{/* Image preview stays the same */}
-								{selectedImages.length > 0 && (
-									<div
-										style={{
-											position: "absolute",
-											top: "50%",
-											left: 12,
-											transform: "translateY(-50%)",
-											background: "rgba(255, 255, 255, 0.95)",
-											padding: "8px 12px",
-											borderRadius: 8,
-											boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-											display: "flex",
-											gap: 8,
-											flexWrap: "wrap",
-											zIndex: 2,
-											maxWidth: "calc(100% - 40px)",
-										}}
-									>
-										{selectedImages.map((file, index) => (
-											<div
-												key={`${file.name}_${index}`}
-												style={{
-													position: "relative",
-													display: "inline-block",
-												}}
-											>
-												<img
-													src={URL.createObjectURL(file)}
-													alt="preview"
-													style={{
-														width: 60,
-														height: 60,
-														objectFit: "cover",
-														borderRadius: 6,
-														border: "1px solid #ccc",
-													}}
-												/>
-												<CloseCircleFilled
-													onClick={() => removeImage(index)}
-													style={{
-														position: "absolute",
-														top: -6,
-														right: -6,
-														color: "#ff4d4f",
-														cursor: "pointer",
-														fontSize: 14,
-														background: "#fff",
-														borderRadius: "50%",
-													}}
-												/>
-											</div>
-										))}
-									</div>
-								)}
-							</div>
-
-							<Button
-								style={{
-									alignSelf: "center",
-									backgroundColor: "#f0f0f0",
-									color: "#333",
-									border: "none",
-									borderRadius: 6,
-									padding: "6px 16px",
-								}}
-								type="primary"
-								onClick={handleSend}
-								loading={sending}
-								disabled={
-									(selectedImages.length === 0 && !newMessage.trim()) ||
-									uploadingImages
-								}
-							>
-								Send
-							</Button>
-						</div>
+						{renderHeader()}
+						{renderMessages()}
+						{renderComposer()}
 					</>
+				) : (
+					<div className="group-chat__center">
+						<Empty
+							image={Empty.PRESENTED_IMAGE_SIMPLE}
+							description="Select a group to start chatting."
+						/>
+					</div>
 				)}
-			</div>
+			</section>
 
 			<Modal
 				title="Group Info"
 				open={isGroupInfoVisible}
 				onCancel={() => setIsGroupInfoVisible(false)}
 				footer={[
-					<Button
-						key="delete"
-						danger
-						onClick={() => handleDeleteGroup(selectedGroup?.groupId)}
-					>
+					<Button key="delete" danger onClick={handleDeleteGroup}>
 						Delete Group
 					</Button>,
 					<Button key="close" onClick={() => setIsGroupInfoVisible(false)}>
@@ -813,42 +661,26 @@ const BDMGroupChat = () => {
 					</Button>,
 				]}
 			>
-				<p style={{ marginBottom: 8 }}>
+				<p>
 					<strong>Group Name:</strong> {selectedGroup?.name}
 				</p>
-				<p style={{ marginBottom: 16 }}>
+				<p>
 					<strong>Created At:</strong>{" "}
 					{groupCreatedAt ? new Date(groupCreatedAt).toLocaleString() : "N/A"}
 				</p>
 
 				<Divider style={{ margin: "12px 0" }} />
 
-				<h4 style={{ marginBottom: 12 }}>Participants</h4>
-				<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+				<h4>Participants</h4>
+				<div className="group-chat__participants">
 					{groupParticipants.map((p) => (
-						<div
-							key={p.key}
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: 12,
-								padding: "8px 12px",
-								border: "1px solid #f0f0f0",
-								borderRadius: 6,
-								background: "#fafafa",
-							}}
-						>
-							<Avatar
-								style={{
-									backgroundColor: "#1890ff",
-									verticalAlign: "middle",
-								}}
-							>
-								{(p.name || "U")[0].toUpperCase()}
+						<div key={p.key} className="group-chat__participant">
+							<Avatar className="group-chat__participant-avatar">
+								{initial(p.name)}
 							</Avatar>
 							<div>
-								<div style={{ fontWeight: 500 }}>{p.name}</div>
-								<div style={{ fontSize: 12, color: "#888" }}>{p.role}</div>
+								<div className="group-chat__participant-name">{p.name}</div>
+								<div className="group-chat__participant-role">{p.role}</div>
 							</div>
 						</div>
 					))}

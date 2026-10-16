@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   Eye,
   Upload,
+  Send,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
@@ -36,6 +37,7 @@ import {
   MarkInvoicePaidByACH,
   ImportInvoicesCSV,
   UploadHistoricalInvoicePDF,
+  SendInvoiceBalance,
 } from "../../services/Api/InvoiceApi";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -46,6 +48,7 @@ import "./invoice.css";
 const CLIENTS_ROUTE = "/users"; // change to your add-client route
 const PENDING_CLIENTS_KEY = "csvPendingClients";
 const PAID_STATUSES = ["PAID", "CHECK_PAID", "CASH_PAID", "ACH_PAID"];
+const DEPOSIT_RECEIVED_STAGES = ["DEPOSIT_PAID", "BALANCE_PENDING"];
 
 const HISTORICAL_CSV_SAMPLE = [
   "invoice_number,client_name,address_1,address_2,billing_date,service_start,service_end,due_date,signing_date",
@@ -76,6 +79,12 @@ const ordinalSuffix = (n) => {
   if (j === 3 && k !== 13) return "rd";
   return "th";
 };
+
+// True only after the 25% deposit has been received and the invoice is not fully paid.
+const isDepositReceived = (record) =>
+  !!record.deposit_required &&
+  DEPOSIT_RECEIVED_STAGES.includes(record.payment_stage) &&
+  !PAID_STATUSES.includes(record.payment_status);
 
 const AllInvoices = () => {
   const navigate = useNavigate();
@@ -110,6 +119,36 @@ const AllInvoices = () => {
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [payModalInvoiceId, setPayModalInvoiceId] = useState(null);
   const [payModalLoading, setPayModalLoading] = useState(null); // "check" | "ach" | null
+
+  // Send balance now
+  const [balanceLoadingId, setBalanceLoadingId] = useState(null);
+
+  const canSendBalanceNow = (record) =>
+    !!record.deposit_required &&
+    record.payment_stage === "DEPOSIT_PAID" &&
+    !record.balance_sent_at;
+
+  const handleSendBalanceNow = (record) => {
+    Modal.confirm({
+      title: "Send balance invoice now?",
+      content: `Send the remaining $${Number(record.balance_amount || 0).toFixed(2)} balance to the client now? The scheduled balance date will be skipped.`,
+      okText: "Send now",
+      onOk: async () => {
+        try {
+          setBalanceLoadingId(record.id);
+          await SendInvoiceBalance(record.id);
+          message.success("Balance invoice sent to client");
+          fetchInvoices(getSelectedDate());
+        } catch (error) {
+          message.error(
+            error?.response?.data?.message || "Failed to send balance invoice",
+          );
+        } finally {
+          setBalanceLoadingId(null);
+        }
+      },
+    });
+  };
 
   /* PENDING CLIENTS (saved in this browser) */
 
@@ -355,6 +394,26 @@ const AllInvoices = () => {
         const status = record.payment_status;
         const isPaid = PAID_STATUSES.includes(status);
 
+        // Deposit received, balance not yet paid
+        if (isDepositReceived(record)) {
+          const balanceSent = record.payment_stage === "BALANCE_PENDING";
+
+          const balanceText = balanceSent
+            ? "Balance sent"
+            : record.balance_due_date
+              ? `Balance $${Number(record.balance_amount || 0).toFixed(2)} due ${dayjs(record.balance_due_date, "YYYY-MM-DD").format("MM-DD-YYYY")}`
+              : `Balance $${Number(record.balance_amount || 0).toFixed(2)}`;
+
+          return (
+            <div>
+              <span style={{ color: "#2e7d32", fontWeight: 600 }}>
+                Deposit Paid
+              </span>
+              <div style={{ fontSize: 11, color: "#888" }}>{balanceText}</div>
+            </div>
+          );
+        }
+
         const labels = {
           PAID: "Paid",
           CHECK_PAID: "Check Paid",
@@ -424,6 +483,19 @@ const AllInvoices = () => {
                 onClick={() => openPayModal(record.id)}
               >
                 <CheckCircle2 size={16} />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {canSendBalanceNow(record) && (
+            <Tooltip title="Send balance invoice now">
+              <IconButton
+                size="small"
+                sx={actionIconBtn("#2563EB")}
+                disabled={balanceLoadingId === record.id}
+                onClick={() => handleSendBalanceNow(record)}
+              >
+                <Send size={16} />
               </IconButton>
             </Tooltip>
           )}
@@ -793,7 +865,8 @@ const AllInvoices = () => {
         }}
       >
         <Stack spacing={2}>
-          <Stack useFlexGap
+          <Stack
+            useFlexGap
             direction="row"
             spacing={2}
             sx={{
@@ -818,10 +891,15 @@ const AllInvoices = () => {
               </Typography>
             </Box>
 
-            <Stack useFlexGap
+            <Stack
+              useFlexGap
               direction="row"
               spacing={1.5}
-              sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: "wrap" }}
+              sx={{
+                alignItems: "center",
+                flexShrink: { xs: 1, md: 0 },
+                flexWrap: "wrap",
+              }}
             >
               <MuiButton
                 variant="outlined"
@@ -859,7 +937,8 @@ const AllInvoices = () => {
             </Stack>
           </Stack>
 
-          <Stack useFlexGap
+          <Stack
+            useFlexGap
             direction="row"
             spacing={1.5}
             sx={{

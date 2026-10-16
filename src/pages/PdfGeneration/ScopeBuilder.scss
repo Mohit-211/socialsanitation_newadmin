@@ -586,3 +586,48 @@ $transition:     all 0.18s ease;
     display: none;
   }
 }
+
+// ─── Client type toggle (Commercial / Residential) ────────
+.client-type-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: $bg-card;
+  border: 1.5px solid $border;
+  border-radius: $radius-sm;
+
+  &__btn {
+    padding: 7px 18px;
+    border: none;
+    border-radius: $radius-xs;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: $transition;
+
+    &:hover {
+      color: $blue;
+    }
+
+    &--active {
+      background: $blue;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba($blue, .35);
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+}
+
+// ─── Loading state ────────────────────────────────────────
+.scope-loading {
+  text-align: center;
+  padding: 48px 0;
+  font-size: 14px;
+  color: $text-secondary;
+}

@@ -19,6 +19,9 @@ import {
   GetClosestEmployeesByAddress,
   DeleteUserAddress,
 } from "../../services/Api/Api";
+import {
+  CheckUserScopeExists,
+} from "../../services/Api/ScopeApi";
 import Card from "@mui/material/Card";
 import { Table, Tag, message, Modal, Tabs, Input, Select, Form } from "antd";
 import EditIcon from "@mui/icons-material/Edit";
@@ -44,6 +47,7 @@ import {
   IoLocationOutline,
   IoNavigateOutline,
   IoRefreshOutline,
+  IoClipboardOutline,
 } from "react-icons/io5";
 import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import "./Customers.css";
@@ -382,6 +386,35 @@ const NEARBY_CLIENT_COLOR = "#667eea";
 const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
 const NEARBY_SELECTED_COLOR = "#FB8C00";
 
+/* Initial Client Chart helpers (read-only view)                       */
+
+const COMMERCIAL_DEFAULT_AREAS = [
+  "Entrance / Lobby Areas",
+  "Restrooms",
+  "Kitchen Areas",
+  "Office Areas",
+  "Classrooms / Conference Rooms",
+  "Group / Common Rooms",
+  "All Areas / Hallways",
+];
+
+const RESIDENTIAL_DEFAULT_AREAS = [
+  "Entrance / Lobby Areas",
+  "Bathrooms",
+  "Kitchen",
+  "Bedrooms",
+  "Dining Room",
+  "Living Room",
+  "Foyer",
+];
+
+const FLOORING_COMPOSITION_FIELDS = [
+  { label: "Carpet", key: "carpet_percentage" },
+  { label: "Concrete", key: "concrete_percentage" },
+  { label: "VCT/LVT", key: "vct_lvt_percentage" },
+  { label: "Tile", key: "tile_percentage" },
+];
+
 const ViewCustomer = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -398,30 +431,33 @@ const ViewCustomer = () => {
 
   const [creatingInvoiceId, setCreatingInvoiceId] = useState(null);
 
-const handleCreateInvoiceFromQuote = async (quote) => {
-  setCreatingInvoiceId(quote.id);
-  try {
-    const res = await CreateInvoice({ quote_id: quote.id });
+  /* Initial Client Chart + Scope of Work (view only)                   */
+  const [scopeExists, setScopeExists] = useState(false);
 
-    message.success("Invoice created successfully");
+  const handleCreateInvoiceFromQuote = async (quote) => {
+    setCreatingInvoiceId(quote.id);
+    try {
+      const res = await CreateInvoice({ quote_id: quote.id });
 
-    const newInvoiceId = res?.data?.data?.id;
+      message.success("Invoice created successfully");
 
-    // Refresh quotes so invoice_created / invoice_id reflect the new state
-    await fetchQuotes();
+      const newInvoiceId = res?.data?.data?.id;
 
-    if (newInvoiceId) {
-      navigate(`/edit-invoice/${newInvoiceId}`);
+      // Refresh quotes so invoice_created / invoice_id reflect the new state
+      await fetchQuotes();
+
+      if (newInvoiceId) {
+        navigate(`/edit-invoice/${newInvoiceId}`);
+      }
+    } catch (error) {
+      console.error("Create invoice error:", error);
+      message.error(
+        error?.response?.data?.message || "Failed to create invoice",
+      );
+    } finally {
+      setCreatingInvoiceId(null);
     }
-  } catch (error) {
-    console.error("Create invoice error:", error);
-    message.error(
-      error?.response?.data?.message || "Failed to create invoice",
-    );
-  } finally {
-    setCreatingInvoiceId(null);
-  }
-};
+  };
 
   /* Address: edit modal state                                          */
   const [addressModalVisible, setAddressModalVisible] = useState(false);
@@ -766,6 +802,18 @@ const handleCreateInvoiceFromQuote = async (quote) => {
       });
   }, [id]);
 
+  /* Scope of Work existence check (view only — never generates)        */
+  const checkScopeExists = async () => {
+    if (!id) return;
+    try {
+      const res = await CheckUserScopeExists(id);
+      setScopeExists(res?.data?.data?.exists === true);
+    } catch (error) {
+      console.error("Failed to check scope existence:", error);
+      setScopeExists(false);
+    }
+  };
+
   const getData = async (booking_status) => {
     try {
       const formData = { id: id, booking_status };
@@ -800,6 +848,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
       fetchContractAgreements();
       fetchServiceEstimates();
       fetchServiceRequests();
+      checkScopeExists();
     }
   }, [id]);
 
@@ -967,7 +1016,7 @@ const handleCreateInvoiceFromQuote = async (quote) => {
     margin: 0,
   };
 
-  /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
+    /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
   const bookingStatusTabItems = [
     { label: "All", key: "all" },
     { label: "Ongoing", key: "ONGOING" },
@@ -986,6 +1035,305 @@ const handleCreateInvoiceFromQuote = async (quote) => {
       </div>
     ),
   }));
+
+  /* Initial Client Chart: derived read-only data                       */
+  const clientChecklist = userData?.user_client_checklist?.[0];
+  const checklistDetails = clientChecklist?.user_client_checklist_details || [];
+  const chartClientType =
+    userData?.client_type && userData.client_type.trim() !== ""
+      ? userData.client_type.toLowerCase()
+      : "commercial";
+  const isCommercialChart = chartClientType === "commercial";
+
+  const chartRows =
+    checklistDetails.length > 0
+      ? checklistDetails.map((detail) => ({
+          service_area: detail.service_area,
+          num_desks_trash_cans: Number(detail?.num_desks_trash_cans || 0),
+          stalls: Number(detail?.stalls || 0),
+          sinks: Number(detail?.sinks || 0),
+          restrooms: Number(detail?.restrooms || 0),
+          flooring_type: detail?.flooring_type || null,
+          special_requests: detail?.special_requests || "",
+        }))
+      : (isCommercialChart
+          ? COMMERCIAL_DEFAULT_AREAS
+          : RESIDENTIAL_DEFAULT_AREAS
+        ).map((area) => ({
+          service_area: area,
+          num_desks_trash_cans: 0,
+          stalls: 0,
+          sinks: 0,
+          restrooms: 0,
+          flooring_type: null,
+          special_requests: "",
+        }));
+
+  const chartTotalCount = chartRows.reduce(
+    (sum, row) =>
+      sum +
+      row.num_desks_trash_cans +
+      row.stalls +
+      row.sinks +
+      row.restrooms,
+    0,
+  );
+
+  const floorCompositionTotal = FLOORING_COMPOSITION_FIELDS.reduce(
+    (sum, f) => sum + Number(clientChecklist?.[f.key] || 0),
+    0,
+  );
+
+  const renderCountCell = (value) => (
+    <span style={{ fontWeight: 500, color: value ? "#1a1a1a" : "#c4c9d4" }}>
+      {value || 0}
+    </span>
+  );
+
+  const chartThStyle = {
+    textAlign: "left",
+    padding: "12px 14px",
+    background: "#fafafa",
+    borderBottom: "1px solid #e5e7eb",
+    borderRight: "1px solid #e5e7eb",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#374151",
+    verticalAlign: "top",
+  };
+
+  const chartTdStyle = {
+    padding: "12px 14px",
+    borderBottom: "1px solid #e5e7eb",
+    borderRight: "1px solid #e5e7eb",
+    verticalAlign: "middle",
+    background: "#fff",
+    fontSize: "14px",
+    color: "#2c3e50",
+  };
+
+  const initialClientChartContent = (
+    <Card
+      style={{
+        borderRadius: "16px",
+        border: "1px solid #e8e8e8",
+        padding: "28px",
+        marginBottom: "24px",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          flexWrap: { xs: "wrap", md: "nowrap" },
+          rowGap: 1.5,
+          alignItems: "center",
+          mb: 2.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IoClipboardOutline style={{ fontSize: 18, color: "#667eea" }} />
+          <span style={{ ...infoLabelStyle, marginBottom: 0 }}>
+            Initial Client Chart
+          </span>
+        </Box>
+
+        <Stack useFlexGap direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <span
+            style={{
+              fontSize: "12px",
+              color: "#6b7280",
+              background: "#f5f7fa",
+              border: "1px solid #e5e7eb",
+              borderRadius: "20px",
+              padding: "4px 12px",
+              fontWeight: 600,
+            }}
+          >
+            Total Count: {chartTotalCount}
+          </span>
+          <span
+            style={{
+              fontSize: "12px",
+              color: floorCompositionTotal === 100 ? "#15803d" : "#dc2626",
+              background: floorCompositionTotal === 100 ? "#ecfdf5" : "#fef2f2",
+              border:
+                floorCompositionTotal === 100
+                  ? "1px solid #bbf7d0"
+                  : "1px solid #fecaca",
+              borderRadius: "20px",
+              padding: "4px 12px",
+              fontWeight: 600,
+            }}
+          >
+            Floor Composition: {floorCompositionTotal}% / 100%
+          </span>
+        </Stack>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 3,
+          flexWrap: "wrap",
+          mb: 2.5,
+          fontSize: "13px",
+          color: "#374151",
+        }}
+      >
+        {FLOORING_COMPOSITION_FIELDS.map((f) => (
+          <span key={f.key}>
+            <span style={{ color: "#6b7280" }}>{f.label}:</span>{" "}
+            <strong>{Number(clientChecklist?.[f.key] || 0)}%</strong>
+          </span>
+        ))}
+      </Box>
+
+      <div
+        style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "10px",
+          overflowX: "auto",
+        }}
+      >
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ ...chartThStyle, minWidth: 200 }}>Service Area</th>
+              {isCommercialChart ? (
+                <>
+                  <th style={chartThStyle}>
+                    # of Trash Cans
+                    <br />
+                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                      or Stalls
+                    </small>
+                  </th>
+                  <th style={chartThStyle}>
+                    # of Desks
+                    <br />
+                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                      or Sinks
+                    </small>
+                  </th>
+                  <th style={chartThStyle}>
+                    # of Rooms
+                    <br />
+                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                      or Restrooms
+                    </small>
+                  </th>
+                </>
+              ) : (
+                <th style={chartThStyle}>
+                  # of Desks / Trash Cans (Big Buildings)
+                  <br />
+                  <strong>OR</strong>
+                  <br /># of Restrooms
+                </th>
+              )}
+              <th style={chartThStyle}>
+                Type of Flooring
+                <br />
+                <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                  (Carpet, Hard Floor, VCT)
+                </small>
+              </th>
+              <th style={{ ...chartThStyle, borderRight: "none" }}>
+                Special Requests / Hot Spots
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {chartRows.map((row, index) => (
+              <tr key={`${row.service_area}-${index}`}>
+                <td style={chartTdStyle}>
+                  <strong>{row.service_area}</strong>
+                </td>
+                {isCommercialChart ? (
+                  <>
+                    <td style={chartTdStyle}>{renderCountCell(row.stalls)}</td>
+                    <td style={chartTdStyle}>{renderCountCell(row.sinks)}</td>
+                    <td style={chartTdStyle}>
+                      {renderCountCell(row.restrooms)}
+                    </td>
+                  </>
+                ) : (
+                  <td style={chartTdStyle}>
+                    {renderCountCell(row.num_desks_trash_cans)}
+                  </td>
+                )}
+                <td style={chartTdStyle}>
+                  {row.flooring_type ? (
+                    <Tag color="geekblue" style={{ margin: 0 }}>
+                      {row.flooring_type}
+                    </Tag>
+                  ) : (
+                    <span style={{ color: "#c4c9d4" }}>—</span>
+                  )}
+                </td>
+                <td
+                  style={{
+                    ...chartTdStyle,
+                    borderRight: "none",
+                    color: row.special_requests ? "#2c3e50" : "#c4c9d4",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {row.special_requests || "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Divider sx={{ my: 2.5 }} />
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: { xs: "wrap", md: "nowrap" },
+          rowGap: 1.5,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <div style={{ fontSize: "15px", fontWeight: 600, color: "#1a1a1a" }}>
+            Client Scope of Work
+          </div>
+          <div style={{ fontSize: "12.5px", color: "#9ca3af", marginTop: 4 }}>
+            {scopeExists
+              ? "A scope of work has been generated for this client."
+              : "No scope of work has been generated for this client yet."}
+          </div>
+        </Box>
+
+        {scopeExists && (
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<IoDocumentTextOutline size={15} />}
+            onClick={() => navigate(`/client-scope/${id}`)}
+            sx={{
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 600,
+              height: 36,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #5a6fd8 0%, #6a4392 100%)",
+              },
+            }}
+          >
+            View Scope of Work
+          </Button>
+        )}
+      </Box>
+    </Card>
+  );
 
   /* Overview tab content                                               */
   const overviewContent = (
@@ -1163,6 +1511,9 @@ const handleCreateInvoiceFromQuote = async (quote) => {
           </p>
         )}
       </Card>
+
+      {/* Initial Client Chart + Scope of Work (view only) */}
+      {initialClientChartContent}
 
       <Card
         style={{

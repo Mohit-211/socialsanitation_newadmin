@@ -1,0 +1,99 @@
+// Team-only styles. Shared layout, bubbles, composer and participant rows
+// come from GroupChat.scss, which Teams.jsx imports.
+
+$border: #eaecf0;
+$muted: #8c8c8c;
+
+.team-chat {
+	&__toolbar {
+		padding: 12px 16px 0;
+	}
+
+	&__new-btn.ant-btn {
+		width: 100%;
+		height: 40px;
+		border-radius: 10px;
+		font-weight: 600;
+	}
+
+	&__heading {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	&__subtitle {
+		font-size: 12px;
+		color: $muted;
+	}
+
+	// Modal content is portalled outside .team-chat, so these rules
+	// are emitted at the top level by Sass.
+	&__modal-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 12px 0;
+	}
+
+	&__search {
+		flex: 1;
+	}
+
+	&__modal-count {
+		margin-bottom: 8px;
+		font-size: 12px;
+		color: $muted;
+	}
+
+	&__member-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		max-height: 50vh;
+		overflow-y: auto;
+	}
+
+	&__member-info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__member-name {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		font-weight: 500;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+    	&__option {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	&__option-avatar.ant-avatar {
+		flex-shrink: 0;
+		background: #1677ff;
+	}
+
+	&__option-name {
+		flex: 1;
+		min-width: 0;
+		color: #1f1f1f;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	&__option-tag.ant-tag {
+		flex-shrink: 0;
+		margin-inline-end: 0;
+	}
+}

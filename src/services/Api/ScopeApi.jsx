@@ -1,9 +1,11 @@
 import axios from "../axiosInstance";
 import { BASE_URL } from "../Host";
 
-// GET ALL
-export const getScope = () => {
-  return axios.get(`${BASE_URL}/admin/auth/scope`);
+// GET ALL (by client type: "commercial" | "residential")
+export const getScope = (clientType = "commercial") => {
+  return axios.get(`${BASE_URL}/admin/auth/scope`, {
+    params: { client_type: clientType },
+  });
 };
 
 export const GetUserScopeView = (userId) => {
@@ -14,7 +16,7 @@ export const downloadScopeOfWorkPDF = (userId) => {
   return axios.get(`${BASE_URL}admin/auth/scope-of-work-pdf/${userId}`);
 };
 
-// CREATE SECTION
+// CREATE SECTION  (data should include client_type)
 export const createSection = (data) => {
   return axios.post(`${BASE_URL}/admin/auth/scope/section`, data);
 };

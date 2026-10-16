@@ -128,6 +128,8 @@ const RECURRING_FREQUENCY_OPTIONS = [
   { value: "YEARLY", label: "Yearly" },
 ];
 
+const DEPOSIT_PERCENTAGE = 25;
+
 const ServiceQuoteForm = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -142,6 +144,10 @@ const ServiceQuoteForm = () => {
     recurring_frequency: "MONTHLY",
     recurring_end_date: null,
     recurring_max_occurrences: null,
+
+    // Deposit: 25% now, remaining 75% sent on balance_date
+    deposit_required: false,
+    balance_date: null,
 
     billing_date: null,
     service_start: null,
@@ -408,6 +414,19 @@ const ServiceQuoteForm = () => {
       return;
     }
 
+    // deposit validation
+    if (formData.deposit_required) {
+      if (!formData.balance_date) {
+        message.error("Please select the date for the remaining 75% balance.");
+        return;
+      }
+
+      if (!formData.balance_date.isAfter(formData.billing_date, "day")) {
+        message.error("The balance date must be after the billing date.");
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -434,7 +453,7 @@ const ServiceQuoteForm = () => {
         to_company_name: formData.toCompany,
         address_1: formData.address1,
         address_2: formData.address2,
-       event_name: formData.event_name?.trim() || null,
+        event_name: formData.event_name?.trim() || null,
 
         signature: formData.signature,
 
@@ -449,6 +468,15 @@ const ServiceQuoteForm = () => {
             : null,
         recurring_max_occurrences: formData.is_recurring
           ? formData.recurring_max_occurrences
+          : null,
+
+        // deposit fields
+        deposit_required: !!formData.deposit_required,
+        deposit_percentage: formData.deposit_required
+          ? DEPOSIT_PERCENTAGE
+          : null,
+        balance_date: formData.deposit_required
+          ? formData.balance_date.format("YYYY-MM-DD")
           : null,
 
         items: formData.items.map((item) => ({
@@ -502,6 +530,14 @@ const ServiceQuoteForm = () => {
 
   const onQuoteDateChange = (date) => {
     setFormData((prev) => ({ ...prev, date }));
+  };
+
+  const handleDepositToggle = (checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      deposit_required: checked,
+      balance_date: checked ? prev.balance_date : null,
+    }));
   };
 
   const columns = [
@@ -748,6 +784,15 @@ const ServiceQuoteForm = () => {
     },
   ];
 
+  // deposit preview amounts (display only)
+  const totalNumber = parseFloat(formData.totalAmount) || 0;
+  const depositPreview = formatAmount(
+    ((totalNumber * DEPOSIT_PERCENTAGE) / 100).toFixed(2),
+  );
+  const balancePreview = formatAmount(
+    (totalNumber - (totalNumber * DEPOSIT_PERCENTAGE) / 100).toFixed(2),
+  );
+
   return (
     <Spin spinning={isLoading}>
       <div className="invoice-form-container">
@@ -984,6 +1029,49 @@ const ServiceQuoteForm = () => {
                 Max 10 occurrences
               </div>
             </div>
+          </div>
+
+          {/* ROW 4 — DEPOSIT (25% NOW, 75% ON BALANCE DATE) */}
+          <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
+            <div>
+              <strong>DEPOSIT OPTION</strong>
+              <div style={{ marginTop: 5 }}>
+                <Checkbox
+                  checked={formData.deposit_required}
+                  onChange={(e) => handleDepositToggle(e.target.checked)}
+                  disabled={isLocked}
+                >
+                  Collect 25% now, balance later
+                </Checkbox>
+              </div>
+              {formData.deposit_required && (
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  Due now: ${depositPreview} &nbsp;|&nbsp; Balance: $
+                  {balancePreview}
+                </div>
+              )}
+            </div>
+
+            {formData.deposit_required && (
+              <div>
+                <strong>
+                  BALANCE DATE (75%) <span style={{ color: "red" }}>*</span>
+                </strong>
+                <DatePicker
+                  value={formData.balance_date}
+                  onChange={(d) =>
+                    setFormData((prev) => ({ ...prev, balance_date: d }))
+                  }
+                  format="MM-DD-YYYY"
+                  style={{ width: "100%", marginTop: 5 }}
+                  placeholder="Date balance is sent"
+                  disabled={isLocked}
+                />
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  Balance invoice goes to the client on this date
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

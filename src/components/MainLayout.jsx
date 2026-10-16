@@ -323,6 +323,7 @@ const getMenuItems = (roleId) => {
         ...(roleId === 5
           ? [{ key: "/chats", icon: <IoMdChatboxes />, label: "Chat" }]
           : []),
+        { key: "/teams", icon: <FaUsers />, label: "Teams" },
         { key: "/group-chats", icon: <PiChatsFill />, label: "Group Chat" },
       ],
     },
@@ -372,7 +373,9 @@ const MainLayout = () => {
   useEffect(() => {
     const getData = async () => {
       try {
-        const result = await GetAdminProfile(localStorage.getItem("adminToken"));
+        const result = await GetAdminProfile(
+          localStorage.getItem("adminToken"),
+        );
         if (result.status === 200) {
           setIdData(result.data.data);
         }
@@ -461,7 +464,9 @@ const MainLayout = () => {
   }
 
   const sidebarCollapsed = isMobile ? !mobileMenuOpen : collapsed;
-  const MenuToggleIcon = sidebarCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined;
+  const MenuToggleIcon = sidebarCollapsed
+    ? MenuUnfoldOutlined
+    : MenuFoldOutlined;
 
   const toggleSidebar = () => {
     if (isMobile) setMobileMenuOpen((open) => !open);
@@ -534,7 +539,11 @@ const MainLayout = () => {
           />
 
           <Box
-            sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2.5 } }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 1, sm: 2.5 },
+            }}
           >
             <MuiButton
               variant="contained"
