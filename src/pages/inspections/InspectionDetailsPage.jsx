@@ -162,7 +162,7 @@ const InspectionDetailsPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [inspection, setInspection] = useState(null);
 
   // Item review modal
@@ -216,23 +216,24 @@ const InspectionDetailsPage = () => {
     });
   };
 
-  const fetchInspection = async ({ silent } = {}) => {
-    try {
-      if (!silent) setLoading(true);
-      const res = await getInspection(id);
-      const raw = res?.data?.data?.data ?? res?.data?.data;
-      const record = Array.isArray(raw) ? raw[0] : raw;
-      setInspection(record || null);
-    } catch (error) {
-      console.error("Error fetching inspection:", error);
-      message.error("Failed to fetch inspection");
-    } finally {
-      if (!silent) setLoading(false);
-    }
+  // State is set once the request settles, so the opening load can run in an effect.
+  const loadInspection = () =>
+    getInspection(id)
+      .then((res) => {
+        const raw = res?.data?.data;
+        setInspection((Array.isArray(raw) ? raw[0] : raw) || null);
+      })
+      .catch(() => message.error("Couldn't load the inspection"))
+      .finally(() => setLoading(false));
+
+  const fetchInspection = ({ silent } = {}) => {
+    if (!silent) setLoading(true);
+    return loadInspection();
   };
 
   useEffect(() => {
-    fetchInspection();
+    loadInspection();
+    // Loaded for each inspection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

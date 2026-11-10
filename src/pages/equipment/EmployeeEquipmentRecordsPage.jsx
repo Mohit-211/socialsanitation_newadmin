@@ -74,35 +74,34 @@ const EmployeeEquipmentRecordsPage = () => {
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sendingAssignmentId, setSendingAssignmentId] = useState(null);
 
-  const fetchRecords = async () => {
+  // Loads the month's records; sets state only once the request settles.
+  const loadRecords = () =>
+    listMonthlyEquipment({ month: selectedMonth, page, limit: pageSize, search: searchTerm })
+      .then((res) => {
+        setRecords(res?.data?.data?.items || []);
+        setPagination(res?.data?.data?.pagination || null);
+        setMonthLabel(res?.data?.data?.month?.label || "");
+      })
+      .catch(() => message.error("Couldn't load the equipment records."))
+      .finally(() => setLoading(false));
+
+  const fetchRecords = () => {
     setLoading(true);
-    try {
-      const res = await listMonthlyEquipment({
-        month: selectedMonth,
-        page,
-        limit: pageSize,
-        search: searchTerm,
-      });
-      setRecords(res?.data?.data?.items || []);
-      setPagination(res?.data?.data?.pagination || null);
-      setMonthLabel(res?.data?.data?.month?.label || "");
-    } catch {
-      message.error("Failed to fetch employee equipment records.");
-    } finally {
-      setLoading(false);
-    }
+    return loadRecords();
   };
 
   useEffect(() => {
-    fetchRecords();
+    loadRecords();
+    // Reloads when the month or page changes; the search runs on demand.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, page]);
 
   const handleMonthChange = (date) => {
     if (!date) return;
+    setLoading(true);
     setSelectedMonth(date.format("YYYY-MM"));
     setPage(1);
   };
@@ -491,7 +490,10 @@ const EmployeeEquipmentRecordsPage = () => {
             current={pagination.page}
             pageSize={pagination.limit}
             total={pagination.total}
-            onChange={(p) => setPage(p)}
+            onChange={(p) => {
+              setLoading(true);
+              setPage(p);
+            }}
             showSizeChanger={false}
           />
         </div>

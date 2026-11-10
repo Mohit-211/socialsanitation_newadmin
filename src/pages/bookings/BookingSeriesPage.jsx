@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { Button, Card, Space, Spin, Table, message } from "antd";
+import { Alert, Button, Card, Space, Spin, Table, message } from "antd";
 import { ArrowLeft, Eye } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
@@ -105,18 +105,27 @@ const BookingSeriesPage = () => {
               Visits are booked 4 weeks ahead, through {formatDate(series.booked_through)}; each night adds the next day.
             </p>
           </Card>
-          <BookingForm
-            key={`${series.id}-${series.updated_at}`}
-            mode="series"
-            isGuest={Boolean(series.guest)}
-            initialValues={{
-              ...bookingValues(series),
-              client_name: series.client?.name || series.client?.email,
-              from: fromApiDate(from),
-            }}
-            submitLabel="Change the Series From This Date"
-            onSubmit={submit}
-          />
+          {series.status === "ended" ? (
+            <Alert
+              type="info"
+              showIcon
+              className="form-card"
+              title="This repeating booking has ended, so it has no visits left to change. Extend it to book more."
+            />
+          ) : (
+            <BookingForm
+              key={`${series.id}-${series.updated_at}`}
+              mode="series"
+              isGuest={Boolean(series.guest)}
+              initialValues={{
+                ...bookingValues(series),
+                client_name: series.client?.name || series.client?.email,
+                from: fromApiDate(from),
+              }}
+              submitLabel="Change the Series From This Date"
+              onSubmit={submit}
+            />
+          )}
         </>
       )}
     </>

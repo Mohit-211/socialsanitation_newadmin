@@ -34,7 +34,7 @@ Configuration lives in `.env`, which is gitignored. `.env.example` lists every v
 | ----------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
 | `VITE_API_URL`                      | Yes      | The backend's address with no path, such as `https://api.socialsanitation.com`. The panel calls its `/api/v2` paths and opens uploaded files from it. |
 | `VITE_GOOGLE_MAPS_API_KEY`          | Yes      | Google Maps: client and employee maps, guest booking address lookup, geocoding.                |
-| `VITE_FIREBASE_API_KEY`             | Yes      | The Firebase web app. Realtime Database powers chat; Storage holds chat attachments.            |
+| `VITE_FIREBASE_API_KEY`             | Yes      | The Firebase web app. The chat screens read messages live from its Realtime Database.          |
 | `VITE_FIREBASE_AUTH_DOMAIN`         | Yes      | Firebase                                                                                       |
 | `VITE_FIREBASE_DATABASE_URL`        | Yes      | Firebase                                                                                       |
 | `VITE_FIREBASE_PROJECT_ID`          | Yes      | Firebase                                                                                       |
@@ -54,7 +54,15 @@ Code reads these values only through `src/config/env.js`. Don't use `import.meta
 
 1. Set the variables above in your hosting or CI settings. The build fails if a required one is missing.
 2. Run `npm run build` and serve the `dist/` folder.
-3. The app uses browser routing, so configure the host to serve `index.html` for any path that isn't a file.
+3. The app uses browser routing, so configure the host to serve `index.html` for any path that isn't a file. That includes `/checkout`, where Square sends clients after paying an invoice.
+
+### Going live at panel.socialsanitation.com
+
+- Build with `VITE_API_URL=https://api.socialsanitation.com`.
+- The backend must allow the panel's address, `https://panel.socialsanitation.com`, in `ACCESSDOMAINS` (CORS). If it sets `ADMIN_ORIGINS` or `WEB_ORIGINS`, the panel's address goes in those too: the panel calls `/api/v2/admin`, `/api/v2/auth` and `/api/v2/web` (places, payment status).
+- Set the backend's `ADMIN_BASE_URL=https://panel.socialsanitation.com`. Square's payment redirect (`/checkout`) and the links in the office's emails are built from it.
+- Files uploaded before the move are still linked as `/api/v1/images/<name>` on the API's address, so the API must keep serving that path.
+- Restrict the Google Maps key to the panel's address; the address lookups on the employee and booking forms use it.
 
 ## Tech stack
 
@@ -63,9 +71,9 @@ Code reads these values only through `src/config/env.js`. Don't use `import.meta
 | UI components     | [antd](https://ant.design) 6, themed from the design tokens in `src/index.css`       |
 | Icons             | [lucide-react](https://lucide.dev)                                                   |
 | Routing           | [react-router](https://reactrouter.com) 8. Import from `react-router`; `react-router-dom` no longer exists. |
-| Rich text         | [Tiptap](https://tiptap.dev), wrapped in `src/components/RichTextEditor.jsx`         |
+| Rich text         | [Tiptap](https://tiptap.dev), wrapped in `src/components/RichTextEditor.jsx`. Images are off unless a page passes `onUploadImage` (the blog does). |
 | HTTP              | axios, through the shared clients in `src/services/httpClient.js`                    |
-| Chat              | Firebase Realtime Database and Storage                                               |
+| Chat              | Firebase Realtime Database for live messages; messages and files are sent through the API |
 | Maps              | `@react-google-maps/api`                                                             |
 | Dates             | dayjs, with its plugins registered in `src/lib/dayjs.js`                             |
 
@@ -104,6 +112,14 @@ public/
 ├── favicon.ico, favicon.png, apple-touch-icon.png
 └── forms/                Standalone HTML forms, served as-is outside the React app
 ```
+
+## The client page
+
+A client's page (`/viewUser/:id`) is where the office works a client from first enquiry to paid invoice, without going back to separate lists. Its tabs follow the order of the work: enquiries, client sheets, scopes of work, calculations, estimates, quotes, service requests, contracts, bookings and invoices.
+
+- Every "New" button opens its form with the client already chosen, and saving comes back to the client's tab (`?clientId=` on the form's address; see `src/pages/clients/clientFlow.js`).
+- Each step hands on to the next with what it knows: price a scope in the calculator, make an estimate or quote from a calculation, a quote from an estimate, an invoice from a quote or a contract.
+- Opening a document from the client page and saving it also comes back there.
 
 ## Conventions
 

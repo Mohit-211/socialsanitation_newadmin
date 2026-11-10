@@ -102,7 +102,7 @@ const ClientInspectionsPage = () => {
   const { id } = useParams();
   const location = useLocation();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [inspections, setInspections] = useState([]);
   const [employees, setEmployees] = useState([]);
 
@@ -115,37 +115,31 @@ const ClientInspectionsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [createError, setCreateError] = useState(null);
 
-  const fetchInspections = async () => {
-    try {
-      setLoading(true);
-      const res = await listClientInspections(Number(id));
-      const all = res?.data?.data?.items || [];
-      setInspections(
-        [...all].sort(
-          (a, b) => new Date(b.created_at) - new Date(a.created_at),
+  // The client's inspections, newest first; state is set once the request settles.
+  const loadInspections = () =>
+    listClientInspections(Number(id))
+      .then((res) =>
+        setInspections(
+          [...(res?.data?.data?.items || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
         ),
-      );
-    } catch (error) {
-      console.error("Error fetching inspections:", error);
-      message.error("Failed to fetch inspections");
-    } finally {
-      setLoading(false);
-    }
+      )
+      .catch(() => message.error("Couldn't load the inspections"))
+      .finally(() => setLoading(false));
+
+  const fetchInspections = () => {
+    setLoading(true);
+    return loadInspections();
   };
 
-  const fetchEmployees = async () => {
-    try {
-      const res = await listEmployeeNames();
-      setEmployees(res?.data?.data?.items || []);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-      message.error("Failed to fetch employees");
-    }
-  };
+  const fetchEmployees = () =>
+    listEmployeeNames()
+      .then((res) => setEmployees(res?.data?.data?.items || []))
+      .catch(() => message.error("Couldn't load the employees"));
 
   useEffect(() => {
-    fetchInspections();
+    loadInspections();
     fetchEmployees();
+    // Loaded for each client.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

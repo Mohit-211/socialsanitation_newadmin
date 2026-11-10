@@ -61,7 +61,7 @@ const parseEquipmentCSV = (csvText) => {
 const EquipmentPage = () => {
   const [equipments, setEquipments] = useState([]);
   const [filteredEquipments, setFilteredEquipments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,22 +74,25 @@ const EquipmentPage = () => {
 
   const [form] = Form.useForm();
 
-  const fetchEquipments = async () => {
+  // Sets state only once the request settles, so the opening load can run in an effect.
+  const loadEquipments = () =>
+    listEquipment({ page: 1, limit: 500 })
+      .then((res) => {
+        const list = res?.data?.data?.items || [];
+        setEquipments(list);
+        setFilteredEquipments(list);
+      })
+      .catch(() => message.error("Couldn't load the equipment."))
+      .finally(() => setLoading(false));
+
+  const fetchEquipments = () => {
     setLoading(true);
-    try {
-      const res = await listEquipment({ page: 1, limit: 500 });
-      const list = res?.data?.data?.items || [];
-      setEquipments(list);
-      setFilteredEquipments(list);
-    } catch {
-      message.error("Failed to fetch equipments.");
-    } finally {
-      setLoading(false);
-    }
+    return loadEquipments();
   };
 
   useEffect(() => {
-    fetchEquipments();
+    loadEquipments();
+    // Loaded once on opening.
   }, []);
 
   const handleSearch = (value) => {

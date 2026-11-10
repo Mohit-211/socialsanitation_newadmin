@@ -118,7 +118,7 @@ const EquipmentAssignmentsPage = () => {
   const [overview, setOverview] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [equipments, setEquipments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -144,50 +144,39 @@ const EquipmentAssignmentsPage = () => {
     setHistoryModal({ open: false, assignmentId: null, equipmentName: "" });
   };
 
-  const fetchAssignments = async () => {
+  // Sets state only once the request settles, so the opening load can run in an effect.
+  const loadAssignments = () =>
+    listAssignments({ page: 1, limit: 500 })
+      .then((res) => setAssignments(res?.data?.data?.items || []))
+      .catch(() => message.error("Couldn't load the assignments."))
+      .finally(() => setLoading(false));
+
+  const fetchOverview = () =>
+    getAssignmentsOverview()
+      .then((res) => setOverview(res?.data?.data || null))
+      .catch(() => message.error("Couldn't load the overview."));
+
+  const fetchEmployees = () =>
+    listEmployeeNames()
+      .then((res) => setEmployees(res?.data?.data?.items || []))
+      .catch(() => message.error("Couldn't load the employees."));
+
+  const fetchEquipments = () =>
+    listEquipment({ page: 1, limit: 500 })
+      .then((res) => setEquipments(res?.data?.data?.items || []))
+      .catch(() => message.error("Couldn't load the equipment."));
+
+  const fetchAssignments = () => {
     setLoading(true);
-    try {
-      const res = await listAssignments({ page: 1, limit: 500 });
-      setAssignments(res?.data?.data?.items || []);
-    } catch {
-      message.error("Failed to fetch assignments.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOverview = async () => {
-    try {
-      const res = await getAssignmentsOverview();
-      setOverview(res?.data?.data || null);
-    } catch {
-      message.error("Failed to fetch overview.");
-    }
-  };
-
-  const fetchEmployees = async () => {
-    try {
-      const res = await listEmployeeNames();
-      setEmployees(res?.data?.data?.items || []);
-    } catch {
-      message.error("Failed to fetch employees.");
-    }
-  };
-
-  const fetchEquipments = async () => {
-    try {
-      const res = await listEquipment({ page: 1, limit: 500 });
-      setEquipments(res?.data?.data?.items || []);
-    } catch {
-      message.error("Failed to fetch equipments.");
-    }
+    return loadAssignments();
   };
 
   useEffect(() => {
-    fetchAssignments();
+    loadAssignments();
     fetchOverview();
     fetchEmployees();
     fetchEquipments();
+    // Loaded once on opening.
   }, []);
 
   const openAssignModal = () => {

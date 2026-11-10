@@ -11,7 +11,7 @@ import IconAction from "@/components/IconAction";
 const TrainingVideosPage = () => {
 	const navigate = useNavigate();
 	const [data, setData] = useState([]);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
 	const [tableParams, setTableParams] = useState({
@@ -77,28 +77,23 @@ const TrainingVideosPage = () => {
 		},
 	];
 
-	const getData = async () => {
-		try {
-			setLoading(true);
-			const result = await listVideos();
-			const newData = (result.data.data?.items || []).map((item, index) => ({
-				...item,
-				index: index + 1,
-			}));
-			setData(newData);
-		} catch (e) {
-			if (e.response && e.response.status === 403) {
-				navigate("/error401");
-			} else {
-				console.error("Error loading data.");
-			}
-		} finally {
-			setLoading(false);
-		}
+	// The videos, numbered; state is set once the request settles.
+	const loadData = () =>
+		listVideos()
+			.then((result) =>
+				setData((result.data.data?.items || []).map((item, index) => ({ ...item, index: index + 1 }))),
+			)
+			.catch((error) => message.error(errorMessage(error, "Couldn't load the videos")))
+			.finally(() => setLoading(false));
+
+	const getData = () => {
+		setLoading(true);
+		return loadData();
 	};
 
 	useEffect(() => {
-		getData();
+		loadData();
+		// Loaded once on opening.
 	}, []);
 
 	const handleTableChange = (pagination, filters, sorter) => {

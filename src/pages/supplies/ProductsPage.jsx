@@ -12,7 +12,7 @@ const ProductsPage = () => {
 	const navigate = useNavigate();
 	const [data, setData] = useState([]);
 	const [userBackupData, setUserBackupData] = useState([]);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [tableParams, setTableParams] = useState({
@@ -119,37 +119,26 @@ const ProductsPage = () => {
 	};
 
 	// Get all users
-	const getData = async () => {
-		try {
-			setLoading(true);
-			const result = await listProducts({ page: 1, limit: 500 });
-			const newData = (result.data.data?.items || []).map((item, index) => ({
-				...item,
-				index: index + 1,
-			}));
-			setData(newData);
-			setUserBackupData(newData);
-		} catch (e) {
-			console.error(e);
-			if (e.response && e.response.status === 401) {
-				navigate("/error401");
-				console.error("You do not have access to this page as a sub-admin.");
-			} else {
-				console.error("Error loading data. Please try again later.");
-			}
-		} finally {
-			setLoading(false);
-		}
+	// Every product, numbered; state is set once the request settles.
+	const loadData = () =>
+		listProducts({ page: 1, limit: 500 })
+			.then((result) => {
+				const newData = (result.data.data?.items || []).map((item, index) => ({ ...item, index: index + 1 }));
+				setData(newData);
+				setUserBackupData(newData);
+			})
+			.catch((error) => message.error(errorMessage(error, "Couldn't load the supplies")))
+			.finally(() => setLoading(false));
+
+	const getData = () => {
+		setLoading(true);
+		return loadData();
 	};
 
 	useEffect(() => {
-		getData({
-			page: tableParams.pagination.current,
-			pageSize: tableParams.pagination.pageSize,
-			sortField: tableParams.sortField,
-			sortOrder: tableParams.sortOrder,
-		});
-	}, [tableParams]);
+		loadData();
+		// Loaded once on opening; the table pages through the loaded list.
+	}, []);
 
 	const handleTableChange = (pagination, filters, sorter) => {
 		setTableParams({

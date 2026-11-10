@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Modal, Spin, Empty, message } from "antd";
+import { useState } from "react";
+import { Modal, Spin, Empty } from "antd";
 import {
   History,
   CheckCircle2,
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import "./AssignmentHistoryModal.scss";
 import { getAssignmentHistory } from "@/services/api/equipmentApi";
+import { dataOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 
 const STATUS_META = {
   ASSIGNED: { color: "var(--color-primary-strong)", bg: "var(--color-primary-soft)", label: "Assigned" },
@@ -87,33 +89,14 @@ const formatDateTime = (dateStr) => {
 };
 
 const AssignmentHistoryModal = ({ open, onClose, assignmentId, equipmentName }) => {
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
 
-  useEffect(() => {
-    if (open && assignmentId) {
-      fetchHistory();
-    } else if (!open) {
-      setData(null);
-      setPreviewImg(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, assignmentId]);
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const res = await getAssignmentHistory(assignmentId);
-      setData(res?.data?.data || null);
-    } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Failed to fetch assignment history."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  // The open assignment's history; a different assignment loads afresh.
+  const { data: loaded, loading } = useApiQuery(() => getAssignmentHistory(assignmentId).then(dataOf), [assignmentId], {
+    skip: !open || !assignmentId,
+    errorText: "Couldn't load the assignment's history",
+  });
+  const data = loaded?.assignment?.id === assignmentId ? loaded : null;
 
   const assignment = data?.assignment || {};
   const signatures = data?.history || [];
@@ -136,7 +119,10 @@ const AssignmentHistoryModal = ({ open, onClose, assignmentId, equipmentName }) 
           </div>
         }
         open={open}
-        onCancel={onClose}
+        onCancel={() => {
+          setPreviewImg(null);
+          onClose();
+        }}
         footer={null}
         className="assignment-history__modal"
         width={560}
