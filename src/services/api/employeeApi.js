@@ -60,10 +60,3 @@ export const toggleEmployeeLogoutImage = (id) => httpClient.post(`/employees/${i
 
 /** filterType (TODAY, WEEK, MONTH or CUSTOM, with start_date and end_date). data.items: one row a day. */
 export const listEmployeeAttendance = (id, params) => httpClient.get(`/employees/${id}/attendance`, { params });
-
-/** Hiring forms by email or name, newest first, with the applicant's address. */
-export const findHiringForms = ({ email, name }) =>
-  httpClient.get("/hiring-applications/matches", { params: { email: email || undefined, name: name || undefined } });
-
-/** One hiring form: its applicant and PDF. */
-export const getHiringApplication = (id) => httpClient.get(`/hiring-applications/${id}`);

@@ -34,14 +34,16 @@ import { useNavigate } from "react-router";
 import EmojiPicker from "emoji-picker-react";
 import { getProfile } from "@/services/api/authApi";
 import {
-  AddTeamMembers,
-  CreateTeam,
-  DeleteTeam,
-  GetMyTeams,
-  GetTeamCandidates,
-  RemoveTeamMember,
-  SendTeamMessage,
+  addTeamMembers,
+  createTeam,
+  deleteTeam,
+  listTeamCandidates,
+  listTeams,
+  removeTeamMember,
 } from "@/services/api/teamApi";
+import { sendGroupMessage } from "@/services/api/groupChatApi";
+import { itemsOf } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 import db from "@/lib/firebase";
 import "./GroupChatPage.scss";
 import "./TeamsPage.scss";
@@ -52,7 +54,6 @@ const { TextArea } = Input;
 const TEXTAREA_ID = "team-message-textarea";
 const ACCEPTED_TYPES = "image/*,video/*,application/pdf";
 const MAX_FILE_SIZE_MB = { image: 10, video: 50, pdf: 20 };
-const TEAM_CREATOR_ROLES = [1, 3, 5];
 
 // Mirrors the backend role names, used for members in the team list.
 const ROLE_LABELS = {
@@ -97,16 +98,11 @@ const isAllowedFile = (file) => {
   return Boolean(kind) && file.size / (1024 * 1024) <= MAX_FILE_SIZE_MB[kind];
 };
 
-const getRoleLabel = (roleId) => ROLE_LABELS[Number(roleId)] || "Employee";
+// A member's role in words: what the API saved, or the old role number.
+const getRoleLabel = (member) => member?.role || ROLE_LABELS[Number(member?.role_id)] || "Employee";
 
-// Mirrors the backend getParticipantKey. Used only to recognise the
-// logged-in user; participant keys otherwise come from the API.
-const getParticipantKey = (id, roleId) => {
-  if (roleId === 5) return `bdm_${id}`;
-  if (roleId === 1 || roleId === 3) return `admin_${id}`;
-  if (roleId === 6) return `user_${id}`;
-  return `employee_${id}`;
-};
+// The users.id a member key names (admin_5, employee_12; older bdm_ keys too).
+const idOfKey = (key) => Number(String(key).split("_")[1]) || null;
 
 // Option for the participant dropdown. The label includes the role so
 // searching by role also works. The IDs are never shown.
@@ -115,7 +111,7 @@ const toOption = (participant) => ({
   label: `${participant.name} ${participant.role}`,
   name: participant.name,
   role: participant.role,
-  participantType: participant.participantType,
+  participantType: participant.participant_type,
 });
 
 const ParticipantOption = ({ name, role, participantType }) => (
@@ -162,11 +158,10 @@ const TeamsPage = () => {
 
   const messagesRef = useRef(null);
 
-  const token = localStorage.getItem("adminToken");
   const groupId = selectedTeam?.groupId;
-  const myRoleId = Number(userData?.role_id);
-  const myKey = userData ? getParticipantKey(userData.id, myRoleId) : null;
-  const canCreate = TEAM_CREATOR_ROLES.includes(myRoleId);
+  // Admins are users: their key is admin_<users.id>.
+  const myKey = userData ? `admin_${userData.id}` : null;
+  const canCreate = useCan(PERMISSION.MANAGE_TEAMS);
   const isCreator = Boolean(teamData && myKey && teamData.createdBy === myKey);
   const teamName = teamData?.name || selectedTeam?.name;
 
@@ -194,7 +189,7 @@ const TeamsPage = () => {
     return members.filter(
       (member) =>
         (member.name || "").toLowerCase().includes(query) ||
-        getRoleLabel(member.role_id).toLowerCase().includes(query),
+        getRoleLabel(member).toLowerCase().includes(query),
     );
   }, [members, memberSearch]);
 
@@ -211,17 +206,17 @@ const TeamsPage = () => {
     [candidates, myKey, memberKeys],
   );
 
-  // Converts selected dropdown keys into the { id, role_id } shape the API expects.
+  // The picked people as the user ids the API takes.
   const toParticipantIds = (keys) =>
     keys
       .map((key) => candidatesByKey.get(key))
       .filter(Boolean)
-      .map(({ id, role_id }) => ({ id, role_id }));
+      .map((person) => person.id);
 
   const fetchTeams = async () => {
     try {
-      const res = await GetMyTeams(token);
-      setTeams(res.data?.data?.teams || []);
+      const res = await listTeams();
+      setTeams(itemsOf(res).map((team) => ({ ...team, groupId: team.id })));
     } catch (error) {
       console.error("Failed to fetch teams:", error);
     } finally {
@@ -237,7 +232,6 @@ const TeamsPage = () => {
     // Async fetch: state is only set after the request resolves.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTeams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Live team node (name, members, messages) for the open team. The cleanup
@@ -296,7 +290,7 @@ const TeamsPage = () => {
     if (candidates.length > 0) return;
     setLoadingCandidates(true);
     try {
-      setCandidates(await GetTeamCandidates(token));
+      setCandidates(itemsOf(await listTeamCandidates()));
     } catch (error) {
       console.error("Failed to load participants:", error);
       message.error(apiError(error, "Failed to load participants"));
@@ -330,7 +324,7 @@ const TeamsPage = () => {
 
     setCreating(true);
     try {
-      const res = await CreateTeam(token, {
+      const res = await createTeam({
         name: values.name.trim(),
         participantIds: toParticipantIds(values.participants || []),
       });
@@ -341,8 +335,8 @@ const TeamsPage = () => {
       createForm.resetFields();
       await fetchTeams();
 
-      if (created?.groupId) {
-        handleTeamClick({ groupId: created.groupId, name: created.name });
+      if (created?.id) {
+        handleTeamClick({ groupId: created.id, name: created.name });
       }
     } catch (error) {
       console.error("Failed to create team:", error);
@@ -357,10 +351,7 @@ const TeamsPage = () => {
 
     setAddingMembers(true);
     try {
-      await AddTeamMembers(token, {
-        groupId,
-        participantIds: toParticipantIds(addSelection),
-      });
+      await addTeamMembers(groupId, toParticipantIds(addSelection));
       message.success("Members added");
       setAddOpen(false);
       setAddSelection([]);
@@ -374,11 +365,7 @@ const TeamsPage = () => {
 
   const handleRemoveMember = async (member) => {
     try {
-      await RemoveTeamMember(token, {
-        groupId,
-        participantId: member.id,
-        role_id: member.role_id,
-      });
+      await removeTeamMember(groupId, member.id ?? idOfKey(member.key));
       message.success(`${member.name} removed from team`);
     } catch (error) {
       console.error("Failed to remove member:", error);
@@ -389,7 +376,7 @@ const TeamsPage = () => {
   const handleDeleteTeam = async () => {
     setDeleting(true);
     try {
-      await DeleteTeam(token, groupId);
+      await deleteTeam(groupId);
       message.success("Team deleted");
       setMembersOpen(false);
       setSelectedTeam(null);
@@ -432,11 +419,7 @@ const TeamsPage = () => {
 
     setSending(true);
     try {
-      await SendTeamMessage(token, {
-        groupId,
-        message: newMessage.trim(),
-        files: selectedFiles,
-      });
+      await sendGroupMessage(groupId, { message: newMessage.trim(), files: selectedFiles });
       setSelectedFiles([]);
       setNewMessage("");
     } catch (error) {
@@ -908,7 +891,7 @@ const TeamsPage = () => {
                       {isTeamCreator && <Tag color="processing">Creator</Tag>}
                     </div>
                     <div className="group-chat__participant-role">
-                      {getRoleLabel(member.role_id)}
+                      {getRoleLabel(member)}
                     </div>
                   </div>
                   {isCreator && !isTeamCreator && (

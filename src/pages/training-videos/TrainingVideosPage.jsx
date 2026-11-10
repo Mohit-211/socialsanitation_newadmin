@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button, Table, Modal, Space, message } from "antd";
 import { useNavigate } from "react-router";
-import { DeleteVideos, GetVideos } from "@/services/api/trainingVideoApi";
+import { deleteVideo, listVideos } from "@/services/api/trainingVideoApi";
+import { errorMessage } from "@/services/apiResult";
 import dayjs from "@/lib/dayjs";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -79,8 +80,8 @@ const TrainingVideosPage = () => {
 	const getData = async () => {
 		try {
 			setLoading(true);
-			let result = await GetVideos(localStorage.getItem("adminToken"));
-			const newData = result.data.data.map((item, index) => ({
+			const result = await listVideos();
+			const newData = (result.data.data?.items || []).map((item, index) => ({
 				...item,
 				index: index + 1,
 			}));
@@ -120,11 +121,12 @@ const TrainingVideosPage = () => {
 			cancelText: "No",
 			onOk: async () => {
 				try {
-					await DeleteVideos(brandIds, localStorage.getItem("adminToken"));
-					message.success("Video(s) deleted successfully");
+					for (const videoId of brandIds) await deleteVideo(videoId);
+					message.success(brandIds.length > 1 ? "Videos deleted" : "Video deleted");
 					getData();
-				} catch {
-					message.error("Error deleting Video(s)");
+				} catch (error) {
+					message.error(errorMessage(error, "Couldn't delete the video"));
+					getData();
 				}
 			},
 		});

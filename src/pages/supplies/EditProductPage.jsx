@@ -2,7 +2,8 @@ import { useLayoutEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Card, Flex, Form, Input, Button, message } from "antd";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { GetProductById, UpdateProduct } from "@/services/api/productApi";
+import { getProduct, updateProduct } from "@/services/api/productApi";
+import { errorMessage } from "@/services/apiResult";
 import PageHeader from "@/components/PageHeader";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -20,7 +21,7 @@ const EditProductPage = () => {
 	// Fetch Product Data
 	useLayoutEffect(() => {
 		if (id) {
-			GetProductById(id)
+			getProduct(id)
 				.then((res) => {
 					const data = res.data.data;
 					setProductData(data);
@@ -51,22 +52,12 @@ const EditProductPage = () => {
 		formData.append("quantity", productData?.quantity || "");
 		formData.append("description", productData?.description || "");
 
-		UpdateProduct(id, formData)
-			.then((res) => {
-				if (res.status === 200) {
-					message.success("Product updated successfully!");
-					navigate("/supplies/list");
-				}
+		updateProduct(id, formData)
+			.then(() => {
+				message.success("Product saved");
+				navigate("/supplies/list");
 			})
-			.catch((err) => {
-				if (err.response && err.response.status === 401) {
-					message.error("Token expired!");
-					localStorage.removeItem("adminToken");
-					setTimeout(() => navigate("/login"), 1000);
-				} else {
-					message.error("Something went wrong");
-				}
-			});
+			.catch((err) => message.error(errorMessage(err, "Couldn't save the product")));
 	};
 
 	return (

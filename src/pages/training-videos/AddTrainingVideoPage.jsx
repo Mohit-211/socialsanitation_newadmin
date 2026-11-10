@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Card, Form, Input, Space, message } from "antd";
 import { ArrowLeft, Check, X } from "lucide-react";
 import { useNavigate } from "react-router";
-import { CreateVideos } from "@/services/api/trainingVideoApi";
+import { createVideo } from "@/services/api/trainingVideoApi";
 import PageHeader from "@/components/PageHeader";
 
 const AddTrainingVideoPage = () => {
@@ -21,8 +21,8 @@ const AddTrainingVideoPage = () => {
         };
 
         try {
-            const response = await CreateVideos(payload);
-            if (response.status === 201) {
+            const response = await createVideo(payload);
+            if (response.status < 300) {
                 message.success("Video created successfully");
                 setTimeout(() => navigate("/training-videos"), 1000);
             }

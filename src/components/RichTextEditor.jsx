@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extensions";
 import { TableKit } from "@tiptap/extension-table";
-import { Button, Input, Popover, Select, Space, Tooltip } from "antd";
+import Image from "@tiptap/extension-image";
+import { Button, Input, Popover, Select, Space, Tooltip, message } from "antd";
 import {
   Bold,
+  Image as ImageIcon,
   Italic,
   Link2,
   List,
@@ -106,7 +108,11 @@ const RichTextEditor = ({
   placeholder = "Write a description…",
   minHeight = 200,
   disabled = false,
+  // Optional: (file) => Promise<url>. Turns on images (the blog uploads them first).
+  onUploadImage,
 }) => {
+  const imageInput = useRef(null);
+  const [uploading, setUploading] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -116,6 +122,7 @@ const RichTextEditor = ({
       Placeholder.configure({ placeholder }),
       // Keeps tables that older descriptions may contain.
       TableKit.configure({ table: { resizable: false } }),
+      ...(onUploadImage ? [Image.configure({ inline: false })] : []),
     ],
     content: value || "",
     editable: !disabled,
@@ -162,6 +169,19 @@ const RichTextEditor = ({
   if (!editor || !state) return null;
 
   const run = (command) => () => command(editor.chain().focus()).run();
+
+  const insertImage = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await onUploadImage(file);
+      if (url) editor.chain().focus().setImage({ src: url, alt: file.name }).run();
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Couldn't upload the image");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const setBlock = (block) => {
     const chain = editor.chain().focus();
@@ -235,6 +255,27 @@ const RichTextEditor = ({
             onClick={run((c) => c.setHorizontalRule())}
           />
           <LinkControl editor={editor} active={state.link} />
+          {onUploadImage && (
+            <>
+              <ToolbarButton
+                icon={ImageIcon}
+                label={uploading ? "Uploading…" : "Image"}
+                disabled={uploading}
+                onClick={() => imageInput.current?.click()}
+              />
+              <input
+                ref={imageInput}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  insertImage(file);
+                }}
+              />
+            </>
+          )}
           <span className="rte__divider" />
           <ToolbarButton
             icon={Undo2}

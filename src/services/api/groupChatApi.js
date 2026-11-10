@@ -1,37 +1,29 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const MyGroups = (adminToken) => {
-	return httpClient.get(API_BASE_URL + `firebase/myGroups`, {
-		headers: {
-			"x-access-token": `${adminToken}`,
-			"Content-Type": "multipart/form-data",
-		},
-	});
+// Group chats (and teams, which are groups the office makes). Messages live
+// in Firebase under GroupChats/<id>; sending through the API stores them with
+// the sender's name and uploads the files.
+
+/** data.items: id, name, is_team, created_at, last_message, last_message_time, last_message_by, unread_count. */
+export const listGroups = () => httpClient.get("/groups");
+
+const uploadField = (file) => {
+  if (file.type?.startsWith("image/")) return "images";
+  if (file.type?.startsWith("video/")) return "videos";
+  return "docs";
 };
 
-export const UpdateGroupName = (adminToken, formdata) => {
-    return httpClient.put(API_BASE_URL + `/firebase/updateGroupName`,formdata, {
-        headers: {
-            "x-access-token": `${adminToken}`,
-            "Content-Type": "multipart/form-data",
-        },
-    });
+/** A message and files (images, videos, PDFs). */
+export const sendGroupMessage = (groupId, { message, files = [] }) => {
+  const form = new FormData();
+  if (message) form.append("message", message);
+  for (const file of files) form.append(uploadField(file), file);
+  return httpClient.post(`/groups/${groupId}/messages`, form);
 };
 
-//get products byid
-export const GetGroupParticipants = async (id) => {
-  return await httpClient.get(API_BASE_URL + `firebase/getGroupParticipants/${id}`);
-};
+export const listGroupParticipants = (groupId) => httpClient.get(`/groups/${groupId}/participants`);
 
-export const DeleteGroup = async (adminToken,id) => {
-  return await httpClient.delete(API_BASE_URL + `firebase/deleteGroup/${id}`,
-	{
-		headers: {
-            "x-access-token": `${adminToken}`,
-            "Content-Type": "multipart/form-data",
-        },
-	}
-	
-  );
-};
+export const renameGroup = (groupId, name) => httpClient.patch(`/groups/${groupId}`, { name });
+
+/** Super Admin only. */
+export const deleteGroup = (groupId) => httpClient.delete(`/groups/${groupId}`);

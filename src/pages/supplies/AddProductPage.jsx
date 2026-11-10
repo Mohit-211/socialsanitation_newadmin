@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Form, Input, Button, message, Card } from "antd";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { CreateProduct } from "@/services/api/productApi";
+import { createProduct } from "@/services/api/productApi";
 import PageHeader from "@/components/PageHeader";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -21,7 +21,7 @@ const AddProductPage = () => {
 			formData.append("quantity", quantity);
 			formData.append("description", description || "");
 
-			const response = await CreateProduct(formData);
+			const response = await createProduct(formData);
 
 			if (response.status === 201) {
 				message.success("Product added successfully!");

@@ -28,6 +28,9 @@ import {
   Link2,
   ListChecks,
   LogOut,
+  Mail,
+  MessageCircle,
+  Newspaper,
   MessageSquare,
   MessageSquareText,
   MessageSquareWarning,
@@ -264,9 +267,16 @@ const getMenuItems = ({ isSuperAdmin }) => {
       type: "group",
       label: "COMMUNICATION",
       children: [
+        { key: "/chats", icon: icon(MessageCircle), label: "Chats" },
         { key: "/teams", icon: icon(UsersRound), label: "Teams" },
         { key: "/group-chats", icon: icon(MessagesSquare), label: "Group Chat" },
+        { key: "/contact-messages", icon: icon(Mail), label: "Contact Messages" },
       ],
+    },
+    {
+      type: "group",
+      label: "WEBSITE",
+      children: [{ key: "/blog", icon: icon(Newspaper), label: "Blog" }],
     },
     {
       type: "group",

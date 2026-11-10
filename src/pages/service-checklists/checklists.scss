@@ -1,0 +1,38 @@
+// Checklist screens (service and daily): the task list in the form and the
+// tasks shown under a list row.
+
+.checklist-form__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-5);
+}
+
+.checklist-form__task {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+
+  .ant-form-item {
+    margin-bottom: 0;
+  }
+}
+
+.checklist-form__task-input {
+  flex: 1;
+}
+
+.checklist-tasks {
+  margin: 0;
+  padding-left: var(--space-5);
+  columns: 2 280px;
+}
+
+.checklist-page__form {
+  max-width: 760px;
+}
+
+.checklist-title-card {
+  margin-bottom: var(--space-4);
+}

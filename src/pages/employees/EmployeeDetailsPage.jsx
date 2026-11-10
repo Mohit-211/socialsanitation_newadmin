@@ -10,12 +10,8 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { PERMISSION, useCan } from "@/lib/session";
 import { listAddresses } from "@/services/api/addressApi";
 import { listEmployeeBookings, sendTwoWeekSchedule } from "@/services/api/bookingApi";
-import {
-  deleteEmployee,
-  getEmployee,
-  getHiringApplication,
-  toggleEmployeeLogoutImage,
-} from "@/services/api/employeeApi";
+import { deleteEmployee, getEmployee, toggleEmployeeLogoutImage } from "@/services/api/employeeApi";
+import { getHiringApplication } from "@/services/api/hiringFormApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { formatDate, formatTime } from "@/utils/datetime";
 import EmployeeAttendance from "./components/EmployeeAttendance";

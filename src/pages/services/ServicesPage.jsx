@@ -1,217 +1,112 @@
-import { useEffect, useState } from "react";
-import { Table, message, Input, Modal, Button, Space } from "antd";
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { GetServices, DeleteService } from "@/services/api/serviceApi";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { Button, Input, Modal, Rate, Space, Table, Tooltip, message } from "antd";
+import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { PERMISSION, useCan } from "@/lib/session";
+import { deleteService, listServices } from "@/services/api/serviceApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
 import "./ServicesPage.scss";
 
+// Every service the company offers: what it is, its rating, its checklists.
 const ServicesPage = () => {
   const navigate = useNavigate();
-  const [serviceData, setServiceData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 100,
-    },
-    sortField: null,
-    sortOrder: null,
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const [search, setSearch] = useState("");
+  const { data: services, loading, reload } = useApiQuery(() => listServices().then(itemsOf), [], {
+    initial: [],
+    errorText: "Couldn't load the services",
   });
+  const shown = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return (services || []).filter(
+      (service) => !needle || `${service.name} ${service.abbreviation} ${service.description}`.toLowerCase().includes(needle),
+    );
+  }, [services, search]);
+
+  const confirmDelete = (service) =>
+    Modal.confirm({
+      title: `Delete "${service.name}"?`,
+      content: "It can no longer be booked. This can't be undone.",
+      okText: "Delete",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          await deleteService(service.id);
+          message.success("Service deleted");
+          reload();
+        } catch (error) {
+          message.error(errorMessage(error, "Couldn't delete the service"));
+        }
+      },
+    });
 
   const columns = [
     {
-      title: "S.No.",
-      dataIndex: "index",
-      width: 60,
-      sorter: (a, b) => a.index - b.index,
-    },
-    {
-      title: "Name",
+      title: "Service",
       dataIndex: "name",
-      width: 170,
+      sorter: (a, b) => (a.name || "").localeCompare(b.name || ""),
+      render: (name, service) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/viewService/${service.id}`)}>
+          {name}
+        </Button>
+      ),
     },
-    {
-      title: "Abbreviation",
-      dataIndex: "abbreviation",
-      width: 120,
-    },
-    {
-      title: "Price",
-      dataIndex: "price",
-      width: 140,
-      render: (value) => `Starting Price: $${value}`,
-    },
+    { title: "Abbreviation", dataIndex: "abbreviation" },
     {
       title: "Description",
       dataIndex: "description",
-      width: 220,
-      render: (text) => {
-        const words = text?.split(" ");
-        const truncatedText =
-          words?.length > 10 ? words.slice(0, 10).join(" ") + "..." : text;
-
-        return <div dangerouslySetInnerHTML={{ __html: truncatedText }} />;
-      },
+      render: (text) => (
+        <Tooltip title={text}>
+          <span className="services-list__description">{text || "—"}</span>
+        </Tooltip>
+      ),
     },
     {
-      title: "Action",
-      dataIndex: "action",
-      width: 150,
-      render: (_, record) => (
-        <Space size={4} wrap>
-          <IconAction
-            icon={Eye}
-            title="View Service"
-            onClick={(event) => navigateToViewService(event, record.id)}
-          />
-
-          <IconAction
-            icon={Pencil}
-            title="Edit Service"
-            onClick={(event) => navigateToEditService(event, record.id)}
-          />
-
-          <IconAction
-            icon={Trash2}
-            title="Delete Service"
-            danger
-            onClick={() => handleDelete(record.id)}
-          />
+      title: "Rating",
+      dataIndex: "average_rating",
+      sorter: (a, b) => (a.average_rating || 0) - (b.average_rating || 0),
+      render: (rating) => (rating ? <Rate disabled allowHalf value={Number(rating)} /> : <span className="text-subtle">No reviews</span>),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 140,
+      render: (_, service) => (
+        <Space size={4}>
+          <IconAction icon={Eye} title="Open" onClick={() => navigate(`/viewService/${service.id}`)} />
+          <IconAction icon={Pencil} title="Edit" onClick={() => navigate(`/editService/${service.id}`)} />
+          {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(service)} />}
         </Space>
       ),
     },
   ];
 
-  const getData = async (params = {}) => {
-    try {
-      setLoading(true);
-      let result = await GetServices(
-        localStorage.getItem("adminToken"),
-        params,
-      );
-      const newData = result.data.data.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }));
-      setServiceData(newData);
-      setFilteredData(newData); // Initialize filtered data
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 401) {
-        navigate("/error401");
-      } else {
-        console.error("Error loading data. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-    });
-  };
-
-  useEffect(() => {
-    getData({
-      page: tableParams.pagination.current,
-      pageSize: tableParams.pagination.pageSize,
-      sortField: tableParams.sortField,
-      sortOrder: tableParams.sortOrder,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableParams]);
-
-  const handleDelete = (id) => {
-    Modal.confirm({
-      title: "Confirm",
-      content: "Are you sure you want to delete this service?",
-      okText: "Yes, Delete",
-      okType: "danger",
-      cancelText: "No",
-      onOk: async () => {
-        try {
-          const res = await DeleteService(id);
-          message.success(res?.data?.message || "Service deleted successfully");
-          getData();
-        } catch (error) {
-          console.error(error);
-          message.error("Failed to delete service");
-        }
-      },
-    });
-  };
-
-  const navigateToAddService = () => {
-    navigate("/addService");
-  };
-
-  const navigateToViewService = (event, id) => {
-    navigate(`/viewService/${id}`);
-  };
-
-  const navigateToEditService = (event, id) => {
-    navigate(`/editService/${id}`);
-  };
-
-  const onSearch = (searchField) => {
-    setSearchTerm(searchField);
-    const filteredList = serviceData.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchField.toLowerCase()) ||
-        item.abbreviation.toLowerCase().includes(searchField.toLowerCase()),
-    );
-    setFilteredData(filteredList); // Set the filtered data to state
-  };
-
   return (
-    <div className="service-page">
+    <div>
       <PageHeader
-        title="SERVICE MANAGEMENT"
-        subtitle="View, delete, edit and add Service"
+        title="SERVICES"
+        subtitle="What clients can book. Prices are agreed per client, on quotes and contracts."
         actions={
-          <>
+          <Space wrap>
             <Input
               allowClear
               size="large"
-              prefix={<Search size={16} color="var(--color-text-subtle)" />}
-              placeholder="Search..."
-              className="service-page__search"
-              value={searchTerm}
-              onChange={(e) => onSearch(e.target.value)}
+              className="services-list__search"
+              prefix={<Search size={16} className="text-subtle" />}
+              placeholder="Search services"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <Button
-              type="primary"
-              size="large"
-              icon={<Plus size={16} />}
-              onClick={navigateToAddService}
-            >
+            <Button type="primary" size="large" icon={<Plus size={16} />} onClick={() => navigate("/addService")}>
               Add Service
             </Button>
-          </>
+          </Space>
         }
       />
-
-      <Table
-        className="service-table"
-        columns={columns}
-        rowKey={(record) => record.id}
-        dataSource={filteredData}
-        pagination={tableParams.pagination}
-        loading={loading}
-        onChange={handleTableChange}
-        bordered
-        size="middle"
-        scroll={{ x: 860 }}
-      />
+      <Table rowKey="id" size="middle" loading={loading} columns={columns} dataSource={shown} pagination={{ pageSize: 50 }} scroll={{ x: "max-content" }} />
     </div>
   );
 };

@@ -458,3 +458,10 @@
 		padding: 0 !important;
 	}
 }
+
+// Several files on one message (sent through the API)
+.group-chat__attachments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

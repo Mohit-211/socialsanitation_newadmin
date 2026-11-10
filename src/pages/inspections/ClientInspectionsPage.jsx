@@ -29,21 +29,14 @@ import {
 import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
-import {
-  CreateInspection,
-  GetMyInspections,
-  DeleteInspection,
-} from "@/services/api/inspectionApi";
-import { GetEmployeeDropdown } from "@/services/api/equipmentApi";
+import { createInspection, deleteInspection, listClientInspections } from "@/services/api/inspectionApi";
+import { listEmployeeNames } from "@/services/api/employeeApi";
 import "./ClientInspectionsPage.scss";
 
 const { Option } = Select;
 
-const ROLE_LABELS = {
-  7: "INSPECTOR/SUPERVISOR",
-  8: "QUALITY ASSURANCE TECHNICIAN",
-  9: "CLEANER",
-};
+// An employee's roles, in words.
+const rolesText = (employee) => (employee.roles || []).map((role) => role.name).join(", ");
 
 // Keys match the backend status values exactly.
 const STATUS_CONFIG = {
@@ -125,8 +118,8 @@ const ClientInspectionsPage = () => {
   const fetchInspections = async () => {
     try {
       setLoading(true);
-      const res = await GetMyInspections(Number(id));
-      const all = res?.data?.data?.data || res?.data?.data || [];
+      const res = await listClientInspections(Number(id));
+      const all = res?.data?.data?.items || [];
       setInspections(
         [...all].sort(
           (a, b) => new Date(b.created_at) - new Date(a.created_at),
@@ -142,8 +135,8 @@ const ClientInspectionsPage = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await GetEmployeeDropdown();
-      setEmployees(res?.data?.data || []);
+      const res = await listEmployeeNames();
+      setEmployees(res?.data?.data?.items || []);
     } catch (error) {
       console.error("Error fetching employees:", error);
       message.error("Failed to fetch employees");
@@ -206,7 +199,7 @@ const ClientInspectionsPage = () => {
     }
     try {
       setSubmitting(true);
-      await CreateInspection({
+      await createInspection({
         user_id: Number(id),
         employee_id: selectedEmployeeId,
         inspection_date: selectedDate.format("YYYY-MM-DD"),
@@ -234,7 +227,7 @@ const ClientInspectionsPage = () => {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await DeleteInspection(inspectionRecord.id);
+          await deleteInspection(inspectionRecord.id);
           message.success("Inspection deleted successfully");
           fetchInspections();
         } catch (error) {
@@ -476,9 +469,9 @@ const ClientInspectionsPage = () => {
             <Option
               key={emp.id}
               value={emp.id}
-              label={`${emp.name} ${ROLE_LABELS[emp.role_id] || ""}`}
+              label={`${emp.name} ${rolesText(emp)}`}
             >
-              {emp.name} ({ROLE_LABELS[emp.role_id] || "N/A"})
+              {emp.name} ({rolesText(emp) || "No role"})
             </Option>
           ))}
         </Select>

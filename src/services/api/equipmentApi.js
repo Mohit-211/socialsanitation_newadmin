@@ -1,75 +1,36 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-// EQUIPMENT
+// Equipment: what the company lends its crew, who has it, and what came back.
+// Lists come in data.items with data.pagination (limit 15 by default, up to 500).
 
-// GET all equipments (supports page & limit, defaults to a large limit so everything shows on one page)
-export const GetAllEquipments = (page = 1, limit = 100) => {
-  return httpClient.get(API_BASE_URL + `eqipment/get-all-equipments`, {
-    params: { page, limit },
-  });
-};
+/** Query: page, limit, search. Each: id, name, quantity. */
+export const listEquipment = (params) => httpClient.get("/equipment", { params });
 
-export const CreateEquipment = (formData) => {
-  return httpClient.post(API_BASE_URL + `eqipment/create-equipment`, formData);
-};
+/** name and quantity, both required. */
+export const createEquipment = (equipment) => httpClient.post("/equipment", equipment);
 
-export const UpdateEquipment = (id, formData) => {
-  return httpClient.put(API_BASE_URL + `eqipment/update-equipment/${id}`, formData);
-};
+export const updateEquipment = (id, changes) => httpClient.patch(`/equipment/${id}`, changes);
 
-export const DeleteEquipment = (id) => {
-  return httpClient.delete(API_BASE_URL + `eqipment/delete-equipment/${id}`);
-};
+/** Needs records.delete. */
+export const deleteEquipment = (id) => httpClient.delete(`/equipment/${id}`);
 
-// ASSIGNMENTS
+/** Query: page, limit, search. Each with employee, equipment, quantities, dates, status and signature. */
+export const listAssignments = (params) => httpClient.get("/equipment-assignments", { params });
 
-// GET all assignments (supports page & limit, defaults to a large limit so everything shows on one page)
-export const GetAllAssignments = (page = 1, limit = 100) => {
-  return httpClient.get(API_BASE_URL + `eqipment/get-all-assignments`, {
-    params: { page, limit },
-  });
-};
+/** Stock and assignment totals. */
+export const getAssignmentsOverview = () => httpClient.get("/equipment-assignments/overview");
 
-export const GetAssignmentOverview = () => {
-  return httpClient.get(API_BASE_URL + `eqipment/assignment-overview`);
-};
+/** employee_id, equipment_id, assigned_quantity, all required; expected_return_date as YYYY-MM-DD. */
+export const assignEquipment = (assignment) => httpClient.post("/equipment-assignments", assignment);
 
-// body: { employee_id, equipment_id, assigned_quantity, expected_return_date }
-export const AssignEquipment = (formData) => {
-  return httpClient.post(API_BASE_URL + `eqipment/assign-equipment`, formData);
-};
+/** returned_quantity (required), remarks. */
+export const updateAssignment = (id, changes) => httpClient.patch(`/equipment-assignments/${id}`, changes);
 
-// body: { returned_quantity, remarks }
-export const UpdateAssignment = (id, formData) => {
-  return httpClient.put(API_BASE_URL + `eqipment/update-assignment/${id}`, formData);
-};
+/** { assignment, history }: each signature and return. */
+export const getAssignmentHistory = (id) => httpClient.get(`/equipment-assignments/${id}/history`);
 
-export const GetEmployeeDropdown = () => {
-  return httpClient.get(API_BASE_URL + `admin/user/employee-dropdown`);
-};
+/** Emails the employee the assignment's form to sign. */
+export const sendAssignmentForm = (id) => httpClient.post(`/equipment-assignments/${id}/send-form`);
 
-// employee equipement histroy
-export const GetAssignmentHistory = (assignmentId) => {
-  return httpClient.get(API_BASE_URL + `eqipment/assignment/${assignmentId}/history`);
-};
-
-export const GetMonthlyEquipmentRecords = ({
-  month,
-  page = 1,
-  limit = 10,
-  search = "",
-} = {}) => {
-  return httpClient.get(API_BASE_URL + "eqipment/employee/equipment-records", {
-    params: {
-      month,
-      page,
-      limit,
-      search: search || undefined,
-    },
-  });
-};
-
-export const SendAssignmentFormEmail = (assignmentId) => {
-  return httpClient.post(API_BASE_URL + `eqipment/assignment/${assignmentId}/form/send`);
-};
+/** month (like 2026-11) required; page, limit, search. data.items: employee, summary, assignments. */
+export const listMonthlyEquipment = (params) => httpClient.get("/equipment-assignments/monthly", { params });

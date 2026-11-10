@@ -36,13 +36,13 @@ import {
 } from "lucide-react";
 import "./EquipmentAssignmentsPage.scss";
 import {
-  AssignEquipment,
-  GetAllAssignments,
-  GetAllEquipments,
-  GetAssignmentOverview,
-  GetEmployeeDropdown,
-  UpdateAssignment,
+  assignEquipment,
+  listAssignments,
+  listEquipment,
+  getAssignmentsOverview,
+  updateAssignment,
 } from "@/services/api/equipmentApi";
+import { listEmployeeNames } from "@/services/api/employeeApi";
 import AssignmentHistoryModal from "./components/AssignmentHistoryModal";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
@@ -51,11 +51,8 @@ import { saveXlsx, excelStyles } from "@/utils/excel";
 const { Text } = AntTypography;
 const { Option } = Select;
 
-const ROLE_LABELS = {
-  7: "INSPECTOR/SUPERVISOR",
-  8: "QUALITY ASSURANCE TECHNICIAN",
-  9: "CLEANER",
-};
+// An employee's roles, in words.
+const rolesText = (employee) => (employee.roles || []).map((role) => role.name).join(", ");
 
 const STATUS_META = {
   ASSIGNED: {
@@ -150,8 +147,8 @@ const EquipmentAssignmentsPage = () => {
   const fetchAssignments = async () => {
     setLoading(true);
     try {
-      const res = await GetAllAssignments(1, 100);
-      setAssignments(res?.data?.data?.assignments || []);
+      const res = await listAssignments({ page: 1, limit: 500 });
+      setAssignments(res?.data?.data?.items || []);
     } catch {
       message.error("Failed to fetch assignments.");
     } finally {
@@ -161,7 +158,7 @@ const EquipmentAssignmentsPage = () => {
 
   const fetchOverview = async () => {
     try {
-      const res = await GetAssignmentOverview();
+      const res = await getAssignmentsOverview();
       setOverview(res?.data?.data || null);
     } catch {
       message.error("Failed to fetch overview.");
@@ -170,8 +167,8 @@ const EquipmentAssignmentsPage = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await GetEmployeeDropdown();
-      setEmployees(res?.data?.data || []);
+      const res = await listEmployeeNames();
+      setEmployees(res?.data?.data?.items || []);
     } catch {
       message.error("Failed to fetch employees.");
     }
@@ -179,8 +176,8 @@ const EquipmentAssignmentsPage = () => {
 
   const fetchEquipments = async () => {
     try {
-      const res = await GetAllEquipments(1, 100);
-      setEquipments(res?.data?.data?.equipments || []);
+      const res = await listEquipment({ page: 1, limit: 500 });
+      setEquipments(res?.data?.data?.items || []);
     } catch {
       message.error("Failed to fetch equipments.");
     }
@@ -233,11 +230,11 @@ const EquipmentAssignmentsPage = () => {
         employee_id: values.employee_id,
         equipment_id: values.equipment_id,
         assigned_quantity: values.assigned_quantity,
-        expected_return_date: values.expected_return_date.format("MM-DD-YYYY"),
+        expected_return_date: values.expected_return_date.format("YYYY-MM-DD"),
       };
 
       setSubmitting(true);
-      await AssignEquipment(payload);
+      await assignEquipment(payload);
       message.success("Equipment assigned successfully.");
       closeAssignModal();
       fetchAssignments();
@@ -260,7 +257,7 @@ const EquipmentAssignmentsPage = () => {
       };
 
       setSubmitting(true);
-      await UpdateAssignment(editingRecord.id, payload);
+      await updateAssignment(editingRecord.id, payload);
       message.success("Assignment updated successfully.");
       closeUpdateModal();
       fetchAssignments();
@@ -560,9 +557,9 @@ const EquipmentAssignmentsPage = () => {
                 <Option
                   key={emp.id}
                   value={emp.id}
-                  label={`${emp.name} ${ROLE_LABELS[emp.role_id] || ""}`}
+                  label={`${emp.name} ${rolesText(emp)}`}
                 >
-                  {emp.name} ({ROLE_LABELS[emp.role_id] || "N/A"})
+                  {emp.name} ({rolesText(emp) || "No role"})
                 </Option>
               ))}
             </Select>

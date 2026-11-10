@@ -3,7 +3,8 @@ import { Table, Space, message, Modal, Tooltip, Input, Button } from "antd";
 import { useNavigate } from "react-router";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-import { DeleteProduct, GetProduct } from "@/services/api/productApi";
+import { deleteProduct, listProducts } from "@/services/api/productApi";
+import { errorMessage } from "@/services/apiResult";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 
@@ -105,12 +106,13 @@ const ProductsPage = () => {
 			cancelText: "No",
 			onOk: async () => {
 				try {
-					await DeleteProduct(userIds);
-					message.success("Product(s) deleted successfully");
+					// One at a time: the API deletes a product by its id.
+					for (const productId of userIds) await deleteProduct(productId);
+					message.success(userIds.length > 1 ? "Products deleted" : "Product deleted");
 					getData();
 				} catch (error) {
-					console.error("Error deleting product(s):", error);
-					message.error("Error deleting product(s)");
+					message.error(errorMessage(error, "Couldn't delete the product"));
+					getData();
 				}
 			},
 		});
@@ -120,8 +122,8 @@ const ProductsPage = () => {
 	const getData = async () => {
 		try {
 			setLoading(true);
-			let result = await GetProduct();
-			const newData = result.data.data.map((item, index) => ({
+			const result = await listProducts({ page: 1, limit: 500 });
+			const newData = (result.data.data?.items || []).map((item, index) => ({
 				...item,
 				index: index + 1,
 			}));

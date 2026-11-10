@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import "./AssignmentHistoryModal.scss";
-import { GetAssignmentHistory } from "@/services/api/equipmentApi";
+import { getAssignmentHistory } from "@/services/api/equipmentApi";
 
 const STATUS_META = {
   ASSIGNED: { color: "var(--color-primary-strong)", bg: "var(--color-primary-soft)", label: "Assigned" },
@@ -104,7 +104,7 @@ const AssignmentHistoryModal = ({ open, onClose, assignmentId, equipmentName }) 
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const res = await GetAssignmentHistory(assignmentId);
+      const res = await getAssignmentHistory(assignmentId);
       setData(res?.data?.data || null);
     } catch (error) {
       message.error(

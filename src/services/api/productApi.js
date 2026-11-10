@@ -1,53 +1,24 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetProduct = async () => {
-	try {
-		const res = await httpClient.get(API_BASE_URL + "product/getAllProducts");
-		return res;
-	} catch (error) {
-		console.error("Error fetching users:", error);
-		throw error;
-	}
-};
+// Supplies: products the crew can ask the office to restock. Lists come in
+// data.items with data.pagination (limit 15 by default, up to 500).
 
-export const GetProductById = async (id) => {
-	return await httpClient.get(API_BASE_URL + `product/getProductById/${id}`);
-};
+/** Query: page, limit, search. Each: id, name, description, quantity, images, created_at. */
+export const listProducts = (params) => httpClient.get("/products", { params });
 
-export const CreateProduct = async (formData) => {
-	return await httpClient.post(API_BASE_URL + "product/createProduct", formData, {});
-};
+export const getProduct = (id) => httpClient.get(`/products/${id}`);
 
-export const UpdateProduct = async (id, formData) => {
-	return await httpClient.put(
-		API_BASE_URL + `product/updateProductById/${id}`,
-		formData,
-		{}
-	);
-};
+/** Multipart: name and quantity (required), description, images. */
+export const createProduct = (formData) => httpClient.post("/products", formData);
 
-export const DeleteProduct = async (product_id) => {
-	return httpClient.post(API_BASE_URL + "product/deleteProduct", {
-		product_id,
-	});
-};
+/** Multipart: name, description, quantity, images, remove_image_ids. */
+export const updateProduct = (id, formData) => httpClient.patch(`/products/${id}`, formData);
 
-export const GetAllRequestsByAdmin = async () => {
-	try {
-		const res = await httpClient.get(API_BASE_URL + "product/getAllRequestsByAdmin");
-		return res;
-	} catch (error) {
-		console.error("Error fetching users:", error);
-		throw error;
-	}
-};
+/** Needs records.delete. */
+export const deleteProduct = (id) => httpClient.delete(`/products/${id}`);
 
-export const UpdateRequestStatus = async (id, formData) => {
-    return await httpClient.post(API_BASE_URL + `product/updateRequestStatus/${id}`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** Query: page, limit. Each with employee (name, email), product and images. */
+export const listRestockRequests = (params) => httpClient.get("/product-requests", { params });
+
+/** status: Pending, Approved or Rejected. */
+export const answerRestockRequest = (id, status) => httpClient.patch(`/product-requests/${id}`, { status });

@@ -32,15 +32,15 @@ import {
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import {
-  GetInspectionById,
-  ReviewInspectionItem,
-  ReviewInspectionSection,
-  UploadBDMInspectionItemImage,
-  CompleteInspection,
-  SendInspectionToClient,
-  ReopenInspection,
+  addInspectionItemImages,
+  completeInspection,
+  getInspection,
+  reopenInspection,
+  reviewInspectionItem,
+  reviewInspectionSection,
+  sendInspectionToClient,
 } from "@/services/api/inspectionApi";
-import { IMAGE_BASE_URL } from "@/config/env";
+import { imageUrl } from "@/utils/files";
 import { cssVar } from "@/theme/antdTheme";
 import PageHeader from "@/components/PageHeader";
 import "./InspectionDetailsPage.scss";
@@ -219,7 +219,7 @@ const InspectionDetailsPage = () => {
   const fetchInspection = async ({ silent } = {}) => {
     try {
       if (!silent) setLoading(true);
-      const res = await GetInspectionById(id);
+      const res = await getInspection(id);
       const raw = res?.data?.data?.data ?? res?.data?.data;
       const record = Array.isArray(raw) ? raw[0] : raw;
       setInspection(record || null);
@@ -257,13 +257,13 @@ const InspectionDetailsPage = () => {
 
     try {
       setReviewSubmitting(true);
-      await ReviewInspectionItem(reviewingItem.id, {
+      await reviewInspectionItem(reviewingItem.id, {
         bdm_status: reviewStatus,
         bdm_remark: reviewRemark,
       });
 
       if (reviewFiles.length > 0) {
-        await UploadBDMInspectionItemImage(reviewingItem.id, reviewFiles);
+        await addInspectionItemImages(reviewingItem.id, reviewFiles);
       }
 
       message.success("Review saved");
@@ -295,7 +295,7 @@ const InspectionDetailsPage = () => {
 
     try {
       setSectionSubmitting(true);
-      await ReviewInspectionSection(reviewingSection.review.id, {
+      await reviewInspectionSection(reviewingSection.review.id, {
         status: sectionStatus,
         remark: sectionRemark,
       });
@@ -325,7 +325,7 @@ const InspectionDetailsPage = () => {
   const handleCompleteInspection = async () => {
     try {
       setCompleteSubmitting(true);
-      await CompleteInspection(id, { overall_remark: completionRemark });
+      await completeInspection(id, { overall_remark: completionRemark });
       message.success("Inspection completed");
       setCompleteModalVisible(false);
       await fetchInspection();
@@ -352,7 +352,7 @@ const InspectionDetailsPage = () => {
 
     try {
       setReopenSubmitting(true);
-      await ReopenInspection(id, { remark: reopenRemark });
+      await reopenInspection(id, { remark: reopenRemark });
       message.success("Inspection reopened");
       setReopenModalVisible(false);
       await fetchInspection();
@@ -376,7 +376,7 @@ const InspectionDetailsPage = () => {
       onOk: async () => {
         try {
           setSendingToClient(true);
-          await SendInspectionToClient(id);
+          await sendInspectionToClient(id);
           message.success("Report sent to client");
           await fetchInspection({ silent: true });
         } catch (error) {
@@ -523,7 +523,7 @@ const InspectionDetailsPage = () => {
             {images.map((img) => (
               <div key={img.id} className="timeline-entry__image-wrap">
                 <Image
-                  src={`${IMAGE_BASE_URL}${img.image}`}
+                  src={imageUrl(img.image)}
                   width={56}
                   height={56}
                   style={{

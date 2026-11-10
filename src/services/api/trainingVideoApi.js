@@ -1,41 +1,15 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetVideos = async () => {
-  const res = await httpClient.get(API_BASE_URL + "trendingVideos/getAllTrendingVideos");
-  return res;
-};
+// Training videos the crew watch in the app: a title and a link.
 
-export const GetVideoById = async (id) => {
-  return await httpClient.get(
-    API_BASE_URL + `trendingVideos/findTrendingVideoById/${id}`,
-  );
-};
+/** data.items: id, title, video_link, created_at. */
+export const listVideos = () => httpClient.get("/videos");
 
-export const CreateVideos = (formData, adminToken) => {
-  return httpClient.post(API_BASE_URL + `trendingVideos/createTrendingVideo`, formData, {
-    headers: {
-      "x-access-token": `${adminToken}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+export const getVideo = (id) => httpClient.get(`/videos/${id}`);
 
-export const UpdateVideo = async (id, formData) => {
-  return await httpClient.put(
-    API_BASE_URL + `trendingVideos/updateTrendingVideo/${id}`,
-    formData,
-    {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    },
-  );
-};
+/** title and video_link. */
+export const createVideo = (video) => httpClient.post("/videos", video);
 
-export const DeleteVideos = (heading_id) => {
-  return httpClient.post(API_BASE_URL + `trendingVideos/deleteTrendingVideo`, {
-    heading_id: heading_id,
-  });
-};
+export const updateVideo = (id, changes) => httpClient.patch(`/videos/${id}`, changes);
+
+export const deleteVideo = (id) => httpClient.delete(`/videos/${id}`);

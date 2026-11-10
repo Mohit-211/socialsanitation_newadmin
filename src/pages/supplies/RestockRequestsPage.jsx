@@ -6,11 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 import "./RestockRequestsPage.scss";
 
-import {
-    GetAllRequestsByAdmin,
-    UpdateRequestStatus,
-} from "@/services/api/productApi";
-import { uploadUrl } from "@/utils/files";
+import { answerRestockRequest, listRestockRequests } from "@/services/api/productApi";
 
 
 const RestockRequestsPage = () => {
@@ -38,7 +34,7 @@ const RestockRequestsPage = () => {
 
     const handleStatusChange = async (id, status) => {
         try {
-            await UpdateRequestStatus(id, { status });
+            await answerRestockRequest(id, status);
             message.success("Status updated successfully");
             getData();
         } catch {
@@ -46,8 +42,8 @@ const RestockRequestsPage = () => {
         }
     };
 
-    const showImageModal = (fileUri, fileName) => {
-        setModalImageSrc(uploadUrl(fileUri, fileName));
+    const showImageModal = (url) => {
+        setModalImageSrc(url);
         setIsModalVisible(true);
     };
 
@@ -74,20 +70,20 @@ const RestockRequestsPage = () => {
         },
         {
             title: "Employee Name",
-            dataIndex: ["requested_user", "user_profile", "name"],
+            dataIndex: ["employee", "name"],
             width: "20%",
             filterIcon: <User size={14} />, // Add filter icon
             onFilter: (value, record) =>
-                record.requested_user?.user_profile?.name?.toLowerCase().includes(value.toLowerCase()),
+                record.employee?.name?.toLowerCase().includes(value.toLowerCase()),
             render: (text) => text || "--",
         },
         {
             title: "Product",
-            dataIndex: ["requested_product", "name"],
+            dataIndex: ["product", "name"],
             width: "25%",
             filterIcon: <ShoppingCart size={14} />, // Add filter icon
             onFilter: (value, record) =>
-                record.requested_product?.name?.toLowerCase().includes(value.toLowerCase()),
+                record.product?.name?.toLowerCase().includes(value.toLowerCase()),
         },
         {
             title: "Requested Qty",
@@ -151,8 +147,8 @@ const RestockRequestsPage = () => {
     const getData = async () => {
         try {
             setLoading(true);
-            const result = await GetAllRequestsByAdmin();
-            const newData = result.data.data.map((item, index) => ({
+            const result = await listRestockRequests({ page: 1, limit: 500 });
+            const newData = (result.data.data?.items || []).map((item, index) => ({
                 ...item,
                 index: index + 1,
             }));
@@ -180,11 +176,11 @@ const RestockRequestsPage = () => {
 
         const filtered = userBackupData.filter(
             (item) =>
-                item.requested_user?.user_profile?.name
+                item.employee?.name
                     ?.toLowerCase()
                     .includes(lower) ||
-                item.requested_user?.email?.toLowerCase().includes(lower) ||
-                item.requested_product?.name?.toLowerCase().includes(lower) ||
+                item.employee?.email?.toLowerCase().includes(lower) ||
+                item.product?.name?.toLowerCase().includes(lower) ||
                 item.id?.toString().includes(lower) // Search by ID too
         );
         setData(filtered);
@@ -226,7 +222,7 @@ const RestockRequestsPage = () => {
             {/* Request Details Drawer */}
             <Drawer
                 title={<span className="inventory-request__drawer-title">Request Details</span>}
-                size={selectedRequest?.product_request_attachments?.length ? 550 : 400} // Dynamic width
+                size={selectedRequest?.images?.length ? 550 : 400} // Dynamic width
                 placement="right"
                 onClose={() => setOpenDrawer(false)}
                 open={openDrawer}
@@ -253,8 +249,8 @@ const RestockRequestsPage = () => {
                         </h3>
 
                         <div className="inventory-request__section-body">
-                            <p>Name: {selectedRequest?.requested_user?.user_profile?.name || 'N/A'}</p>
-                            <p>Email: {selectedRequest?.requested_user?.email || 'N/A'}</p>
+                            <p>Name: {selectedRequest?.employee?.name || 'N/A'}</p>
+                            <p>Email: {selectedRequest?.employee?.email || 'N/A'}</p>
                         </div>
 
                         <Divider style={{ margin: '10px 0' }} />
@@ -265,7 +261,7 @@ const RestockRequestsPage = () => {
                         </h3>
 
                         <div className="inventory-request__section-body">
-                            <p>Product: {selectedRequest?.requested_product?.name || 'N/A'}</p>
+                            <p>Product: {selectedRequest?.product?.name || 'N/A'}</p>
                             <p>Requested Quantity: <Tag color="processing" className="inventory-request__qty-tag">{selectedRequest?.requested_quantity}</Tag></p>
 
                             <p className="inventory-request__current-status">
@@ -290,19 +286,19 @@ const RestockRequestsPage = () => {
 
                         {/* Attachments Section */}
                         <h3 className="inventory-request__section-title inventory-request__section-title--attachments">
-                            <FileImage size={16} /> Attachments ({selectedRequest?.product_request_attachments?.length || 0})
+                            <FileImage size={16} /> Attachments ({selectedRequest?.images?.length || 0})
                         </h3>
 
-                        {selectedRequest?.product_request_attachments?.length ? (
+                        {selectedRequest?.images?.length ? (
                             <div className="inventory-request__attachments">
-                                {selectedRequest.product_request_attachments.map((img) => (
+                                {selectedRequest.images.map((img) => (
                                     <div
                                         key={img.id}
-                                        onClick={() => showImageModal(img.file_uri, img.file_name)} // Click handler to open modal
+                                        onClick={() => showImageModal(img.url)} // Click handler to open modal
                                         className="inventory-request__attachment"
                                     >
                                         <img
-                                            src={uploadUrl(img.file_uri, img.file_name)}
+                                            src={img.url}
                                             alt="attachment"
                                             crossOrigin="anonymous"
                                         />

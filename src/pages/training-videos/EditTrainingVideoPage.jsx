@@ -2,7 +2,7 @@ import { useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Form, Card, Button, Input, Space, message } from "antd";
 import { ArrowLeft, Check, X } from "lucide-react";
-import { GetVideoById, UpdateVideo } from "@/services/api/trainingVideoApi";
+import { getVideo, updateVideo } from "@/services/api/trainingVideoApi";
 import PageHeader from "@/components/PageHeader";
 
 const EditTrainingVideoPage = () => {
@@ -13,7 +13,7 @@ const EditTrainingVideoPage = () => {
   const navigate = useNavigate();
 
   useLayoutEffect(() => {
-    GetVideoById(id)
+    getVideo(id)
       .then((res) => {
         const data = res.data.data;
         setTitle(data?.title || "");
@@ -33,7 +33,7 @@ const EditTrainingVideoPage = () => {
     setDisable(true);
 
     try {
-      const res = await UpdateVideo(id, payload); // PUT/PATCH API call
+      const res = await updateVideo(id, payload);
       if (res.status === 200) {
         message.success("Video updated successfully!");
         setTimeout(() => navigate("/training-videos"), 1000);

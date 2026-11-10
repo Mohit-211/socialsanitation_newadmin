@@ -21,10 +21,10 @@ import {
 } from "lucide-react";
 import "./EquipmentPage.scss";
 import {
-  GetAllEquipments,
-  CreateEquipment,
-  UpdateEquipment,
-  DeleteEquipment,
+  listEquipment,
+  createEquipment,
+  updateEquipment,
+  deleteEquipment,
 } from "@/services/api/equipmentApi";
 import PageHeader from "@/components/PageHeader";
 
@@ -77,8 +77,8 @@ const EquipmentPage = () => {
   const fetchEquipments = async () => {
     setLoading(true);
     try {
-      const res = await GetAllEquipments();
-      const list = res?.data?.data?.equipments || [];
+      const res = await listEquipment({ page: 1, limit: 500 });
+      const list = res?.data?.data?.items || [];
       setEquipments(list);
       setFilteredEquipments(list);
     } catch {
@@ -136,10 +136,10 @@ const EquipmentPage = () => {
       setSubmitting(true);
 
       if (editingRecord) {
-        await UpdateEquipment(editingRecord.id, payload);
+        await updateEquipment(editingRecord.id, payload);
         message.success("Equipment updated successfully.");
       } else {
-        await CreateEquipment(payload);
+        await createEquipment(payload);
         message.success("Equipment created successfully.");
       }
 
@@ -161,7 +161,7 @@ const EquipmentPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await DeleteEquipment(id);
+      await deleteEquipment(id);
       message.success("Equipment deleted successfully.");
       fetchEquipments();
     } catch {
@@ -224,7 +224,7 @@ const EquipmentPage = () => {
 
     for (const row of parsedRows) {
       try {
-        await CreateEquipment({ name: row.name, quantity: row.quantity });
+        await createEquipment({ name: row.name, quantity: row.quantity });
         successCount += 1;
       } catch {
         failCount += 1;

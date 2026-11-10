@@ -1,29 +1,13 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetAllReports = async (adminToken) => {
-	try {
-		const res = await httpClient.get(API_BASE_URL + "report/getAllReport", {
-			headers: {
-				"x-access-token": adminToken,
-				"timezone":"Asia/Kolkata",
-				"Content-Type": "application/json",
-			},
-		});
+// Reports (complaints) clients and employees send about a visit.
 
-		return res.data; 
-	} catch (error) {
-		console.error("Error fetching service categories:", error);
-		throw error;
-	}
-};
+/**
+ * Query: page, limit. Each: type, reason, status, reported_by (name, email),
+ * booking (date, service, images: every photo of the visit) and images (the
+ * photos sent with the report).
+ */
+export const listReports = (params) => httpClient.get("/reports", { params });
 
-export const UpdateReport = async (formData) => {
-	return await httpClient.post(API_BASE_URL + "report/updateReportStatus", formData, {
-		headers: {
-			"x-access-token": `${localStorage.getItem("adminToken")}`,
-			"Content-Type": "multipart/form-data",
-		},
-	});
-};
-
+/** status: COMPLETED or PENDING. */
+export const setReportStatus = (id, status) => httpClient.patch(`/reports/${id}`, { status });

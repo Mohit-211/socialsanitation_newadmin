@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import dayjs from "@/lib/dayjs";
-import { Button, Spin } from "antd";
+import { Button, Space, Spin } from "antd";
 import {
   ArrowLeft,
   User,
@@ -15,8 +15,10 @@ import {
   ScrollText,
   Landmark,
   ClipboardList,
+  FileText,
 } from "lucide-react";
-import { GetHiringFormById } from "@/services/api/hiringFormApi";
+import { getHiringApplication } from "@/services/api/hiringFormApi";
+import { dataOf } from "@/services/apiResult";
 import PageHeader from "@/components/PageHeader";
 import "./HiringFormDetailsPage.scss";
 
@@ -334,6 +336,7 @@ const HiringFormDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [sections, setSections] = useState([]);
+  const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -344,13 +347,14 @@ const HiringFormDetailsPage = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await GetHiringFormById(id);
-        const submissions = res.data?.data?.details_form_submission || [];
-        const parsed = submissions.map((item) => ({
-          sectionName: item.section_name,
-          data: JSON.parse(item.data),
+        const application = dataOf(await getHiringApplication(id));
+        // form_data: every section by name (older answers may still be JSON text)
+        const parsed = Object.entries(application?.form_data || {}).map(([sectionName, data]) => ({
+          sectionName,
+          data: typeof data === "string" ? JSON.parse(data) : data || {},
         }));
         setSections(parsed);
+        setApplication(application);
       } catch (err) {
         console.error("Failed to fetch form data:", err);
         setError("Failed to load this hiring form. Please try again.");
@@ -365,16 +369,19 @@ const HiringFormDetailsPage = () => {
   return (
     <div className="hiring-view">
       <PageHeader
-        title="EMPLOYEE HIRING FORM MANAGEMENT"
-        subtitle="View Employee Hiring Form"
+        title={(application?.applicant_name || "HIRING APPLICATION").toUpperCase()}
+        subtitle={application?.applicant_email || "One hiring application, section by section"}
         actions={
-          <Button
-            size="large"
-            icon={<ArrowLeft size={16} />}
-            onClick={navigateToHiringForms}
-          >
-            Return to Hiring Forms
-          </Button>
+          <Space wrap>
+            {application?.pdf_url && (
+              <Button size="large" icon={<FileText size={16} />} onClick={() => window.open(application.pdf_url, "_blank", "noopener")}>
+                PDF
+              </Button>
+            )}
+            <Button size="large" icon={<ArrowLeft size={16} />} onClick={navigateToHiringForms}>
+              All Applications
+            </Button>
+          </Space>
         }
       />
 
@@ -405,6 +412,21 @@ const HiringFormDetailsPage = () => {
             data={section.data}
           />
         ))}
+
+      {!loading && (application?.attachments || []).length > 0 && (
+        <div className="surface hiring-view__message">
+          <strong>Files Sent with the Application</strong>
+          <ul className="hiring-view__files">
+            {application.attachments.map((file) => (
+              <li key={file.id}>
+                <a href={file.url} target="_blank" rel="noopener noreferrer">
+                  {file.file_name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

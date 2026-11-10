@@ -1,307 +1,133 @@
-import { useEffect, useState } from "react";
-import { Table, Input, Modal, message, Space, Button } from "antd";
-import { Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
-import dayjs from "@/lib/dayjs";
-import {
-  DeleteHiringForm,
-  GetAllHiringForm,
-} from "@/services/api/hiringFormApi";
+import { Input, Modal, Select, Space, Table, Tag, Tooltip, message } from "antd";
+import { Eye, FileText, RotateCw, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import "./HiringFormsPage.scss";
+import IconAction from "@/components/IconAction";
+import { usePagedList } from "@/hooks/usePagedList";
+import { PERMISSION, useCan } from "@/lib/session";
+import {
+  deleteHiringApplication,
+  listHiringApplications,
+  retryHiringApplication,
+} from "@/services/api/hiringFormApi";
+import { errorMessage } from "@/services/apiResult";
+import { formatDateTime } from "@/utils/datetime";
 
+const PROCESSING = {
+  pending: { label: "Being made", color: "gold" },
+  done: { label: "Ready", color: "green" },
+  failed: { label: "Failed", color: "red" },
+};
+
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Being made" },
+  { value: "done", label: "Ready" },
+  { value: "failed", label: "Failed" },
+];
+
+// Hiring applications from the website, newest first. Each one's PDF and
+// emails are made by a worker; one that kept failing can be tried again.
 const HiringFormsPage = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 100,
-    },
-    sortField: null,
-    sortOrder: null,
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const list = usePagedList((query) => listHiringApplications(query), {
+    limit: 20,
+    errorText: "Couldn't load the hiring applications",
   });
 
-  // 🔹 Shared helper — pulls the personalInfo submission once so every
-  // getter below stays cheap and consistent.
-  const getPersonalInfo = (record) => {
-    const personalInfoSubmission = record.details_form_submission?.find(
-      (sub) => sub.section_name === "personalInfo",
-    );
-    if (!personalInfoSubmission) return null;
+  const retry = async (application) => {
     try {
-      return JSON.parse(personalInfoSubmission.data);
-    } catch {
-      return null;
+      await retryHiringApplication(application.id);
+      message.success("Trying again: its PDF and emails follow shortly");
+      list.reload();
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't try again"));
     }
   };
 
-  // Coerces any value (string, number, null, undefined, etc.) into a
-  // trimmed string, so callers never crash on a non-string field.
-  const safeTrim = (value) =>
-    typeof value === "string" ? value.trim() : String(value ?? "").trim();
-
-  const getFullName = (record) => {
-    const info = getPersonalInfo(record);
-    if (!info) return "";
-    const { firstName = "", middleName = "", lastName = "" } = info;
-    return [safeTrim(firstName), safeTrim(middleName), safeTrim(lastName)]
-      .filter(Boolean)
-      .join(" ");
-  };
-
-  const getEmail = (record) => {
-    const info = getPersonalInfo(record);
-    return info?.email ? safeTrim(info.email) : "";
-  };
-
-  // The hiring form only started collecting a country recently — older
-  // submissions simply don't have the field. Every one of those was
-  // filled out before Canada was an option, so they were all USA.
-  const getCountry = (record) => {
-    const info = getPersonalInfo(record);
-    const raw = info?.country ? safeTrim(info.country) : "";
-    return raw || "USA";
-  };
-
-  // Combines street + apt/suite + city + state + zip into one display
-  // string. This is the only address stored on the hiring form — the
-  // "policy" (Florida non-compete) section repeats the same values into
-  // the agreement text, it isn't a separate address. Country is shown
-  // in its own column rather than folded in here, so it stays easy to
-  // scan and sort on its own.
-  const getFullAddress = (record) => {
-    const info = getPersonalInfo(record);
-    if (!info) return "";
-    const {
-      streetAddress = "",
-      aptSuite = "",
-      city = "",
-      state = "",
-      zipCode = "",
-    } = info;
-    const street = safeTrim(streetAddress);
-    const apt = safeTrim(aptSuite);
-    const cityStr = safeTrim(city);
-    const stateStr = safeTrim(state);
-    const zip = safeTrim(zipCode);
-
-    const line1 = [street, apt ? `#${apt}` : ""].filter(Boolean).join(" ");
-    const line2 = [cityStr, stateStr].filter(Boolean).join(", ");
-    return [line1, [line2, zip].filter(Boolean).join(" ")]
-      .filter(Boolean)
-      .join(", ");
-  };
-
-  // Unified delete handler — always sends an array of ids to the API,
-  // e.g. { ids: [12, 15, 18, 21] }. Works for both single-row delete
-  // and bulk delete from the selection toolbar.
-  const handleDelete = (ids) => {
-    const count = ids.length;
+  const confirmDelete = (application) =>
     Modal.confirm({
-      title: count > 1 ? "Delete Forms" : "Delete Form",
-      content:
-        count > 1
-          ? `Are you sure you want to delete these ${count} forms?`
-          : "Are you sure you want to delete this form?",
+      title: `Delete ${application.applicant_name || "this"}'s application?`,
+      content: "Its answers and files go too. This can't be undone.",
       okText: "Delete",
-      okButtonProps: { danger: true },
+      okType: "danger",
       onOk: async () => {
-        await DeleteHiringForm(ids);
-        message.success(count > 1 ? "Forms deleted" : "Form deleted");
-        setSelectedRowKeys((prev) => prev.filter((key) => !ids.includes(key)));
-        getData();
+        try {
+          await deleteHiringApplication(application.id);
+          message.success("Application deleted");
+          list.reload();
+        } catch (error) {
+          message.error(errorMessage(error, "Couldn't delete the application"));
+        }
       },
     });
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedRowKeys.length === 0) return;
-    handleDelete(selectedRowKeys);
-  };
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys) => setSelectedRowKeys(keys),
-  };
 
   const columns = [
+    { title: "Sent", dataIndex: "submitted_at", render: (date) => formatDateTime(date) },
+    { title: "Applicant", dataIndex: "applicant_name", render: (name) => name || "—" },
+    { title: "Email", dataIndex: "applicant_email", render: (email) => email || "—" },
+    { title: "Language", dataIndex: "language", render: (language) => (language || "—").toUpperCase() },
     {
-      title: "S.No.",
-      dataIndex: "index",
-      width: "5%",
-      sorter: (a, b) => a.index - b.index,
+      title: "PDF and Emails",
+      dataIndex: "processing_status",
+      render: (status) => {
+        const tag = PROCESSING[status];
+        return tag ? <Tag color={tag.color}>{tag.label}</Tag> : <span className="text-subtle">Before the worker</span>;
+      },
     },
     {
-      title: "User's Name",
-      dataIndex: "details_form_submission",
-      render: (_, record) => getFullName(record) || "N/A",
-      sorter: (a, b) => getFullName(a).localeCompare(getFullName(b)),
-      width: "17%",
-    },
-    {
-      title: "Email",
-      dataIndex: "details_form_submission",
-      render: (_, record) => getEmail(record) || "N/A",
-      width: "18%",
-    },
-    {
-      title: "Address",
-      dataIndex: "details_form_submission",
-      render: (_, record) => getFullAddress(record) || "N/A",
-      width: "22%",
-    },
-    {
-      title: "Country",
-      dataIndex: "details_form_submission",
-      render: (_, record) => getCountry(record),
-      sorter: (a, b) => getCountry(a).localeCompare(getCountry(b)),
-      width: "10%",
-    },
-    {
-      title: "Date",
-      dataIndex: "created_at",
-      width: "18%",
-      render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      render: (_, record) => (
-        <Space size="middle">
-          <Button
-            onClick={(event) => navigateToEditService(event, record.id)}
-            size="small"
-          >
-            View Form
-          </Button>
-          <Button
-            danger
-            size="small"
-            onClick={() => handleDelete([record.id])}
-          >
-            Delete
-          </Button>
+      title: "Actions",
+      key: "actions",
+      width: 170,
+      render: (_, application) => (
+        <Space size={4}>
+          <IconAction icon={Eye} title="Open" onClick={() => navigate(`/view-form/${application.id}`)} />
+          {application.pdf_url && (
+            <IconAction icon={FileText} title="PDF" onClick={() => window.open(application.pdf_url, "_blank", "noopener")} />
+          )}
+          {application.processing_status === "failed" && (
+            <Tooltip title="Ten tries failed; the office was told">
+              <span>
+                <IconAction icon={RotateCw} title="Try again" onClick={() => retry(application)} />
+              </span>
+            </Tooltip>
+          )}
+          {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(application)} />}
         </Space>
       ),
     },
   ];
 
-  const getData = async (params = {}) => {
-    try {
-      setLoading(true);
-      let result = await GetAllHiringForm(
-        localStorage.getItem("adminToken"),
-        params,
-      );
-      const newData = result.data.data.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }));
-      setData(newData);
-      setFilteredData(newData);
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 401) {
-        navigate("/error401");
-        console.error("You do not have access to this page as a sub-admin.");
-      } else {
-        console.error("Error loading data. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getData({
-      page: tableParams.pagination.current,
-      pageSize: tableParams.pagination.pageSize,
-      sortField: tableParams.sortField,
-      sortOrder: tableParams.sortOrder,
-    });
-  }, [tableParams]);
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-    });
-  };
-
-  const navigateToEditService = (event, id) => {
-    navigate(`/view-form/${id}`);
-  };
-
-  // 🔍 Filter data when search changes — matches name, email, country, or
-  // ANY part of the address (street, apt/suite, city, state, or zip),
-  // since getFullAddress() concatenates the address parts into one
-  // searchable string and getCountry() covers country separately.
-  useEffect(() => {
-    const lowerSearch = searchText.toLowerCase();
-    const filtered = data.filter((item) => {
-      const name = getFullName(item).toLowerCase();
-      const email = getEmail(item).toLowerCase();
-      const address = getFullAddress(item).toLowerCase();
-      const country = getCountry(item).toLowerCase();
-      return (
-        name.includes(lowerSearch) ||
-        email.includes(lowerSearch) ||
-        address.includes(lowerSearch) ||
-        country.includes(lowerSearch)
-      );
-    });
-    setFilteredData(filtered);
-  }, [searchText, data]);
-
   return (
-    <div>
+    <>
       <PageHeader
-        className="hiring-forms__header"
-        title="EMPLOYEE HIRING FORM MANAGEMENT"
-        subtitle="View Employee Hiring Form"
+        title="HIRING APPLICATIONS"
+        subtitle="Sent from the website. Add an employee from one on Add Employee."
         actions={
-          <>
-            {selectedRowKeys.length > 0 && (
-              <Button
-                danger
-                type="primary"
-                size="large"
-                icon={<Trash2 size={16} />}
-                onClick={handleBulkDelete}
-              >
-                Delete Selected ({selectedRowKeys.length})
-              </Button>
-            )}
-
+          <Space wrap>
             <Input
               allowClear
               size="large"
-              className="hiring-forms__search"
-              placeholder="Search by name, email, address, or country..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              prefix={<Search size={16} className="text-subtle" />}
+              placeholder="Search by name or email"
+              value={list.searchText}
+              onChange={(e) => list.setSearchText(e.target.value)}
+              style={{ width: 260 }}
             />
-          </>
+            <Select
+              allowClear
+              size="large"
+              placeholder="Any status"
+              value={list.filters.status}
+              onChange={(value) => list.setFilter("status", value)}
+              options={STATUS_OPTIONS}
+              style={{ width: 160 }}
+            />
+          </Space>
         }
       />
-
-      <Table
-        columns={columns}
-        rowKey={(record) => record.id}
-        dataSource={filteredData}
-        pagination={tableParams.pagination}
-        loading={loading}
-        onChange={handleTableChange}
-        rowSelection={rowSelection}
-      />
-    </div>
+      <Table rowKey="id" size="middle" columns={columns} scroll={{ x: "max-content" }} {...list.tableProps} />
+    </>
   );
 };
 

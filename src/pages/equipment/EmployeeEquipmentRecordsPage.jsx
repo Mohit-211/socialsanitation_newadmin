@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 import "./EmployeeEquipmentRecordsPage.scss";
 import {
-  GetMonthlyEquipmentRecords,
-  SendAssignmentFormEmail,
+  listMonthlyEquipment,
+  sendAssignmentForm,
 } from "@/services/api/equipmentApi";
 import PageHeader from "@/components/PageHeader";
 import { saveXlsx, excelStyles } from "@/utils/excel";
@@ -80,13 +80,13 @@ const EmployeeEquipmentRecordsPage = () => {
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const res = await GetMonthlyEquipmentRecords({
+      const res = await listMonthlyEquipment({
         month: selectedMonth,
         page,
         limit: pageSize,
         search: searchTerm,
       });
-      setRecords(res?.data?.data?.records || []);
+      setRecords(res?.data?.data?.items || []);
       setPagination(res?.data?.data?.pagination || null);
       setMonthLabel(res?.data?.data?.month?.label || "");
     } catch {
@@ -116,7 +116,7 @@ const EmployeeEquipmentRecordsPage = () => {
   const handleSendAssignmentEmail = async (assignment, employeeName) => {
     try {
       setSendingAssignmentId(assignment.id);
-      await SendAssignmentFormEmail(assignment.id);
+      await sendAssignmentForm(assignment.id);
       message.success(
         `Sent to ${employeeName} · ${assignment.equipment?.name || "equipment"} record.`,
       );

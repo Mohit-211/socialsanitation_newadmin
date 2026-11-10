@@ -23,41 +23,28 @@ import {
 	Smile,
 	Users,
 } from "lucide-react";
-import {
-	ref as dbRef,
-	onValue,
-	query,
-	orderByChild,
-	push,
-	serverTimestamp,
-	get,
-} from "firebase/database";
-import {
-	getStorage,
-	ref as storageRef,
-	uploadBytes,
-	getDownloadURL,
-} from "firebase/storage";
+import { ref as dbRef, onValue, query, orderByChild, get } from "firebase/database";
 import { useNavigate } from "react-router";
 import EmojiPicker from "emoji-picker-react";
 import {
-	DeleteGroup,
-	GetGroupParticipants,
-	MyGroups,
-	UpdateGroupName,
+	deleteGroup,
+	listGroupParticipants,
+	listGroups,
+	renameGroup,
+	sendGroupMessage,
 } from "@/services/api/groupChatApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 import { getProfile } from "@/services/api/authApi";
 import db from "@/lib/firebase";
 import "./GroupChatPage.scss";
 
-const storage = getStorage();
 const { Text } = Typography;
 const { TextArea } = Input;
 
 const TEXTAREA_ID = "chat-message-textarea";
 const ACCEPTED_TYPES = "image/*,video/*,application/pdf";
 const MAX_FILE_SIZE_MB = { image: 10, video: 50, pdf: 20 };
-const PLACEHOLDER = { image: "📷 Photo", video: "🎬 Video" };
 
 const formatTime = (timestamp) =>
 	new Date(timestamp).toLocaleTimeString([], {
@@ -107,38 +94,19 @@ const GroupChatPage = () => {
 
 	const messagesRef = useRef(null);
 
-	const token = localStorage.getItem("adminToken");
-	const roleId = localStorage.getItem("roleId");
+	const canDelete = useCan(PERMISSION.DELETE_RECORDS);
 	const groupId = selectedGroup?.groupId;
-	const senderKey = userData
-		? `${roleId === "1" ? "admin" : "bdm"}_${userData.id}`
-		: null;
+	// Admins are users: their sender key is admin_<users.id> (older messages may say bdm_).
+	const senderKey = userData ? `admin_${userData.id}` : null;
+	const isMine = (sender) => Boolean(userData) && (sender === senderKey || sender === `bdm_${userData.id}`);
 
+	// The admin's groups, each with its last message, from the API.
 	const fetchGroups = async () => {
 		try {
-			const res = await MyGroups(token);
-			const groupsFromApi = res.data?.data?.groups || [];
-
-			const enrichedGroups = await Promise.all(
-				groupsFromApi.map(async (group) => {
-					const snap = await get(
-						dbRef(db, `GroupChats/${group.groupId}/messages`)
-					);
-					const lastMsg = Object.values(snap.val() || {}).sort(
-						(a, b) => (a.timestamp || 0) - (b.timestamp || 0)
-					).at(-1);
-
-					return {
-						...group,
-						last_message: lastMsg?.message || "",
-						last_message_time: lastMsg?.timestamp || null,
-					};
-				})
-			);
-
-			setGroups(enrichedGroups);
+			const res = await listGroups();
+			setGroups(itemsOf(res).map((group) => ({ ...group, groupId: group.id })));
 		} catch (error) {
-			console.error("Failed to fetch groups:", error);
+			message.error(errorMessage(error, "Couldn't load the groups"));
 		} finally {
 			setLoadingGroups(false);
 		}
@@ -152,7 +120,6 @@ const GroupChatPage = () => {
 		// Async fetch: state is only set after the request resolves.
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		fetchGroups();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// Live messages for the open group. The cleanup detaches the Firebase
@@ -218,50 +185,16 @@ const GroupChatPage = () => {
 
 	const canSend = newMessage.trim() || selectedFiles.length > 0;
 
+	// The API stores the message under the admin's name and uploads the files.
 	const handleSend = async () => {
 		if (!canSend || sending) return;
-
 		setSending(true);
-		const messagesPath = dbRef(db, `GroupChats/${groupId}/messages`);
-		const base = { sender: senderKey, sender_name: userData.name };
-
 		try {
-			for (const file of selectedFiles) {
-				const kind = getFileKind(file);
-				const fileRef = storageRef(
-					storage,
-					`group_uploads/${groupId}/${Date.now()}_${file.name}`
-				);
-				await uploadBytes(fileRef, file, { contentType: file.type });
-				const url = await getDownloadURL(fileRef);
-
-				await push(messagesPath, {
-					...base,
-					type: kind,
-					message:
-						kind === "pdf" ? `📄 ${file.name}` : PLACEHOLDER[kind],
-					file_url: url,
-					file_name: file.name,
-					file_size: file.size,
-					// Kept for images so older consumers of image_url still work.
-					...(kind === "image" && { image_url: url }),
-					timestamp: serverTimestamp(),
-				});
-			}
-
-			if (newMessage.trim()) {
-				await push(messagesPath, {
-					...base,
-					message: newMessage.trim(),
-					timestamp: serverTimestamp(),
-				});
-			}
-
+			await sendGroupMessage(groupId, { message: newMessage.trim(), files: selectedFiles });
 			setSelectedFiles([]);
 			setNewMessage("");
 		} catch (err) {
-			console.error("Send error:", err);
-			message.error("Failed to send message or file.");
+			message.error(errorMessage(err, "Couldn't send the message"));
 		} finally {
 			setSending(false);
 		}
@@ -281,19 +214,13 @@ const GroupChatPage = () => {
 		if (!newName) return;
 
 		try {
-			const res = await UpdateGroupName(token, { groupId, newName });
-
-			if (res.status === 200) {
-				message.success("Group name updated successfully");
-				setIsEditingGroupName(false);
-				setSelectedGroup((prev) => ({ ...prev, name: newName }));
-				fetchGroups();
-			} else {
-				message.error("Failed to update group name");
-			}
+			await renameGroup(groupId, newName);
+			message.success("Group renamed");
+			setIsEditingGroupName(false);
+			setSelectedGroup((prev) => ({ ...prev, name: newName }));
+			fetchGroups();
 		} catch (error) {
-			console.error("Failed to update group name:", error);
-			message.error("An error occurred while updating group name");
+			message.error(errorMessage(error, "Couldn't rename the group"));
 		}
 	};
 
@@ -302,8 +229,8 @@ const GroupChatPage = () => {
 			const snapshot = await get(dbRef(db, `GroupChats/${groupId}`));
 			setGroupCreatedAt(snapshot.val()?.created_at);
 
-			const res = await GetGroupParticipants(groupId);
-			setGroupParticipants(res?.data?.data || []);
+			const res = await listGroupParticipants(groupId);
+			setGroupParticipants(itemsOf(res));
 			setIsGroupInfoVisible(true);
 		} catch (err) {
 			console.error("Failed to fetch group info", err);
@@ -314,26 +241,37 @@ const GroupChatPage = () => {
 		if (!groupId) return;
 
 		try {
-			const res = await DeleteGroup(token, groupId);
-
-			if (res.status === 200) {
-				message.success("Group deleted successfully");
-				setIsGroupInfoVisible(false);
-				setSelectedGroup(null);
-				await fetchGroups();
-			} else {
-				message.error("Failed to delete group");
-			}
+			await deleteGroup(groupId);
+			message.success("Group deleted");
+			setIsGroupInfoVisible(false);
+			setSelectedGroup(null);
+			await fetchGroups();
 		} catch (err) {
-			console.error("Error deleting group:", err);
-			message.error("An error occurred while deleting the group");
+			message.error(errorMessage(err, "Couldn't delete the group"));
 		}
 	};
 
 	// Resolves a message to its attachment, if any. Messages sent before
 	// this update only carry image_url, so they fall back to type "image".
 	const renderAttachment = (msg) => {
-		const url = msg.file_url || msg.image_url;
+		// Messages sent through the API carry attachments (url, fileName, type IMAGE, VIDEO or PDF).
+		const files = Object.values(msg.attachments || {});
+		if (files.length) {
+			return (
+				<div className="group-chat__attachments">
+					{files.map((file, index) => (
+						<div key={file.url || index}>
+							{renderAttachment({
+								file_url: file.url,
+								file_name: file.fileName,
+								type: String(file.type || "").toLowerCase() || "image",
+							})}
+						</div>
+					))}
+				</div>
+			);
+		}
+		const url = msg.file_url || msg.image_url || msg.imageUrls?.[0];
 		if (!url) return null;
 
 		const type = msg.type || "image";
@@ -485,7 +423,7 @@ const GroupChatPage = () => {
 				</div>
 			) : (
 				messages.map((msg) => {
-					const isSender = msg.sender === senderKey;
+					const isSender = isMine(msg.sender);
 					const attachment = renderAttachment(msg);
 					return (
 						<div
@@ -662,9 +600,11 @@ const GroupChatPage = () => {
 				open={isGroupInfoVisible}
 				onCancel={() => setIsGroupInfoVisible(false)}
 				footer={[
-					<Button key="delete" danger onClick={handleDeleteGroup}>
-						Delete Group
-					</Button>,
+					canDelete && (
+						<Button key="delete" danger onClick={handleDeleteGroup}>
+							Delete Group
+						</Button>
+					),
 					<Button key="close" onClick={() => setIsGroupInfoVisible(false)}>
 						Close
 					</Button>,

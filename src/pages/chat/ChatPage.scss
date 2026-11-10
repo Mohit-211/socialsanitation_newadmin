@@ -239,3 +239,12 @@
 		z-index: 10;
 	}
 }
+
+// Employees / clients switch, and the note in place of a reply box
+.chat-ui__kinds {
+  margin-bottom: var(--space-3);
+}
+
+.chat-ui__read-only {
+  margin: var(--space-3);
+}

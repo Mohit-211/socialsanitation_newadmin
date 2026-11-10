@@ -153,3 +153,12 @@
     }
   }
 }
+
+// Images (the blog editor turns them on)
+.rte__content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: var(--space-3) 0;
+  border-radius: var(--radius-md);
+}

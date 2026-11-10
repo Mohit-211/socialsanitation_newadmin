@@ -1,5 +1,4 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
 // Scopes of work. The master list holds the template sections and tasks for
 // each client type; a client's scope of work is a document of its own, made
@@ -81,14 +80,3 @@ export const updateScopeItem = (scopeId, itemId, changes) =>
 
 /** Needs records.delete. */
 export const deleteScopeItem = (scopeId, itemId) => httpClient.delete(`/scopes/${scopeId}/items/${itemId}`);
-
-// ---------------------------------------------------------------------------
-// Old /api/v1 calls, still used by the estimate screens until they move to
-// /api/v2 (an estimate's own copy of the scope lives at /estimates/:id/scope).
-
-/** @deprecated Use getMasterScope. */
-export const getScope = (clientType = "commercial") =>
-  httpClient.get(`${API_BASE_URL}admin/auth/scope`, { params: { client_type: clientType } });
-
-/** @deprecated A client has many scopes now: use listClientScopes and getScopeOfWork. */
-export const GetUserScopeView = (userId) => httpClient.get(`${API_BASE_URL}admin/auth/user-scope-view/${userId}`);

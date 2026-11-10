@@ -37,6 +37,10 @@ const ServiceChecklistsPage = lazy(() => import("@/pages/service-checklists/Serv
 const BdmsPage = lazy(() => import("@/pages/bdm/BdmsPage"));
 const AssignBdmPage = lazy(() => import("@/pages/bdm/AssignBdmPage"));
 const ProfileRequestsPage = lazy(() => import("@/pages/profile-requests/ProfileRequestsPage"));
+const ContactMessagesPage = lazy(() => import("@/pages/contact-messages/ContactMessagesPage"));
+const BlogPostsPage = lazy(() => import("@/pages/blog/BlogPostsPage"));
+const BlogPostEditorPage = lazy(() => import("@/pages/blog/BlogPostEditorPage"));
+const BlogTaxonomyPage = lazy(() => import("@/pages/blog/BlogTaxonomyPage"));
 const ComplaintsPage = lazy(() => import("@/pages/complaints/ComplaintsPage"));
 const DailyChecklistsPage = lazy(() => import("@/pages/daily-checklists/DailyChecklistsPage"));
 const AddDailyChecklistPage = lazy(() => import("@/pages/daily-checklists/AddDailyChecklistPage"));
@@ -52,7 +56,6 @@ const BookingSeriesPage = lazy(() => import("@/pages/bookings/BookingSeriesPage"
 const RepeatingBookingsPage = lazy(() => import("@/pages/bookings/RepeatingBookingsPage"));
 const BookingCalendarPage = lazy(() => import("@/pages/bookings/BookingCalendarPage"));
 const AttendanceCalendarPage = lazy(() => import("@/pages/attendance/AttendanceCalendarPage"));
-const ServiceChecklistDetailsPage = lazy(() => import("@/pages/service-checklists/ServiceChecklistDetailsPage"));
 const WeeklyChecklistPage = lazy(() => import("@/pages/daily-checklists/WeeklyChecklistPage"));
 const GroupChatPage = lazy(() => import("@/pages/chat/GroupChatPage"));
 const SchedulePage = lazy(() => import("@/pages/schedule/SchedulePage"));
@@ -158,6 +161,11 @@ const AppRoutes = () => (
         <Route path="/add-bdm" element={<Navigate to="/addEmployee?role=bdm" replace />} />
         <Route path="/assign/:id" element={<AssignBdmPage />} />
         <Route path="/profile-requests" element={<ProfileRequestsPage />} />
+        <Route path="/contact-messages" element={<ContactMessagesPage />} />
+        <Route path="/blog" element={<BlogPostsPage />} />
+        <Route path="/blog/new" element={<BlogPostEditorPage />} />
+        <Route path="/blog/categories" element={<BlogTaxonomyPage />} />
+        <Route path="/blog/:id" element={<BlogPostEditorPage />} />
         <Route path="/reports" element={<ComplaintsPage />} />
         <Route path="/daily-checklist" element={<DailyChecklistsPage />} />
         <Route path="/add-daily-checklist" element={<AddDailyChecklistPage />} />
@@ -165,10 +173,8 @@ const AppRoutes = () => (
           path="/edit-daily-checklist/:id"
           element={<EditDailyChecklistPage />}
         />
-        <Route
-          path="/view-daily-checklist/:id"
-          element={<ServiceChecklistDetailsPage />}
-        />
+        {/* Checklists show their tasks in their lists now. */}
+        <Route path="/view-daily-checklist/:id" element={<Navigate to="/daily-checklist" replace />} />
         <Route path="/view-form/:id" element={<HiringFormDetailsPage />} />
         <Route path="/service-quote/:id" element={<CreateServiceQuotePage />} />
         <Route path="/attendance" element={<AttendancePage />} />

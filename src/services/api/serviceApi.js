@@ -1,72 +1,25 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-// Services are a name and a short description (no price: prices are agreed
-// per client).
+// Services: a name, a three-letter abbreviation (it starts booking numbers)
+// and a short description, with the checklists its crew works through. No
+// price (prices are agreed per client) and no pictures.
 
 /** data.items: id and name of every service, for pickers. */
 export const listServiceNames = () => httpClient.get("/service-names");
 
-// ---------------------------------------------------------------------------
-// Old /api/v1 calls, still used by the service screens until they move.
+/** data.items: id, name, abbreviation, description, average_rating. */
+export const listServices = () => httpClient.get("/services");
 
-export const GetServices = async (adminToken) => {
-  try {
-    const res = await httpClient.get(API_BASE_URL + "service/getAllServicesByAdmin", {
-      headers: {
-        "x-access-token": `${adminToken}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
+/** One service, with its checklists (heading_id, heading_title, tasks) and reviews. */
+export const getService = (id) => httpClient.get(`/services/${id}`);
 
-    return res;
-  } catch (error) {
-    // Handle error if needed
-    console.error("Error fetching users:", error);
-    throw error;
-  }
-};
+/** name (required), description, abbreviation (three letters; from the name when left out), service_checklist_ids. */
+export const createService = (service) => httpClient.post("/services", service);
 
-//get products byid
-export const GetServiceById = async (id) => {
-  return await httpClient.get(API_BASE_URL + `service/findServiceById/${id}`);
-};
+export const updateService = (id, changes) => httpClient.patch(`/services/${id}`, changes);
 
-//create products
-export const CreateSerice = async (formData) => {
-  return await httpClient.post(API_BASE_URL + "service/createService", formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+/** Needs records.delete. */
+export const deleteService = (id) => httpClient.delete(`/services/${id}`);
 
-//update products
-export const UpdateService = async (id, formData) => {
-  return await httpClient.put(API_BASE_URL + `service/updateService/${id}`, formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
-
-//delete products
-export const DeleteService = async (id) => {
-  return httpClient.delete(API_BASE_URL + `service/deleteService/${id}`);
-};
-
-export const GetReviewsByProductId = async (service_id) => {
-	return await httpClient.post(
-		`${API_BASE_URL}/rating/getAllReviewsAndRatings`,
-		{ service_id },
-		{
-			headers: {
-				"x-access-token": `${localStorage.getItem("adminToken")}`,
-				"Content-Type": "multipart/form-data",
-			},
-		}
-	);
-};
-
+/** data.items: rating, review, reviewer_name, created_at. */
+export const listServiceReviews = (id) => httpClient.get(`/services/${id}/reviews`);
