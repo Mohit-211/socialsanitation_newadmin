@@ -1,9 +1,9 @@
 import httpClient from "@/services/httpClient";
 
 // Service estimates. Each makes a PDF and goes to the client for signature by
-// DocuSign; it prints the client's newest scope of work, and keeps its own
-// copy of that scope, which the office can edit. Share and Unshare live in
-// documentApi.js.
+// DocuSign. It is made from a scope of work (it keeps its own copy, which the
+// office can edit) and priced from a cost calculation and one of its bids, as
+// price lines the office can change. Share and Unshare live in documentApi.js.
 
 /** Query: page, limit, user_id, status, search (company). */
 export const listEstimates = (params) => httpClient.get("/estimates", { params });
@@ -12,13 +12,29 @@ export const listEstimates = (params) => httpClient.get("/estimates", { params }
 export const getEstimate = (id) => httpClient.get(`/estimates/${id}`);
 
 /**
- * user_id and client_company_name are required; also address_line_1,
- * address_line_2, city, state, zip, contact_name, contact_phone, contact_fax,
- * contact_email, signed_date, frequency and signature.
+ * What a new estimate starts from, saving nothing: the links, the company and
+ * contact, the address of the scope's sheet (or the client's primary one), the
+ * scope's visit frequency, and the price lines and total from the calculation
+ * and bid (the newest bid when none is named).
+ */
+export const getEstimateDraft = ({ clientId, scopeId, calculationId, bidId }) =>
+  httpClient.get("/estimates/draft", {
+    params: { client_id: clientId, scope_of_work_id: scopeId, cost_calculation_id: calculationId, bid_id: bidId },
+  });
+
+/**
+ * user_id and client_company_name are required, and its price: price_lines
+ * (name, frequency, price, hours, personnel) or a cost_calculation_id. Also
+ * scope_of_work_id, bid_id, the address, contact, signed_date, frequency and
+ * signature.
  */
 export const createEstimate = (estimate) => httpClient.post("/estimates", estimate);
 
-/** The whole estimate again (with user_id): a new PDF, sent for signature again. */
+/**
+ * The whole estimate again (with user_id): a new PDF, sent for signature
+ * again. Links left out stay; lines left out stay unless another calculation
+ * or bid comes. Another scope replaces the estimate's copy of the scope.
+ */
 export const updateEstimate = (id, estimate) => httpClient.put(`/estimates/${id}`, estimate);
 
 /** Needs records.delete. */

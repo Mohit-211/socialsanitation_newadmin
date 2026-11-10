@@ -2,16 +2,18 @@ import { useState } from "react";
 import { AutoComplete, Button, Card, DatePicker, Form, Input, message } from "antd";
 import ClientSelect from "@/components/ClientSelect";
 import SignatureField from "@/components/SignatureField";
-import { DATE_FORMAT, toApiDate } from "@/utils/datetime";
-import { FREQUENCY_OPTIONS, estimateFieldsFor } from "../estimateFields";
-
-const text = (value) => (typeof value === "string" ? value.trim() : value) || "";
+import { getEstimateDraft } from "@/services/api/estimateApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { DATE_FORMAT } from "@/utils/datetime";
+import { FREQUENCY_OPTIONS, estimateBody, valuesFromDraft } from "../estimateFields";
+import EstimatePricing from "./EstimatePricing";
 
 /**
  * An estimate's fields: the client (on a new estimate), the company and its
- * address, the contact, the visit frequency, the date and the admin's
- * signature. `onSubmit` gets the estimate as the API takes it; `onClientPick`
- * hears which client was chosen.
+ * address, the scope and price, the contact, the visit frequency, the date
+ * and the admin's signature. Choosing a client fills in what the API's draft
+ * has for them. `onSubmit` gets the estimate as the API takes it;
+ * `onClientPick` hears which client was chosen.
  */
 const EstimateForm = ({
   initialValues,
@@ -27,6 +29,19 @@ const EstimateForm = ({
   const [form] = Form.useForm();
   const [signature, setSignature] = useState({ signature: initialSignature });
   const [saving, setSaving] = useState(false);
+  const pickedClientId = Form.useWatch("user_id", form);
+  const clientId = isNew ? pickedClientId : userId;
+
+  const startFor = async (client) => {
+    onClientPick?.(client);
+    if (!client) return;
+    try {
+      const draft = dataOf(await getEstimateDraft({ clientId: client.id }));
+      form.setFieldsValue(valuesFromDraft(draft));
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't fill in the client's details"));
+    }
+  };
 
   const finish = async (values) => {
     if (!signature.signature) {
@@ -35,22 +50,7 @@ const EstimateForm = ({
     }
     setSaving(true);
     try {
-      await onSubmit({
-        user_id: isNew ? values.user_id : userId,
-        client_company_name: text(values.client_company_name),
-        address_line_1: text(values.address_line_1),
-        address_line_2: text(values.address_line_2),
-        city: text(values.city),
-        state: text(values.state),
-        zip: text(values.zip),
-        contact_name: text(values.contact_name),
-        contact_phone: text(values.contact_phone),
-        contact_fax: text(values.contact_fax),
-        contact_email: text(values.contact_email),
-        frequency: text(values.frequency),
-        signed_date: toApiDate(values.signed_date),
-        signature: signature.signature,
-      });
+      await onSubmit(estimateBody(values, { userId: isNew ? values.user_id : userId, signature: signature.signature }));
     } finally {
       setSaving(false);
     }
@@ -61,14 +61,7 @@ const EstimateForm = ({
       <Card title="Client and Company" className="form-card">
         {isNew && (
           <Form.Item label="Client" name="user_id" rules={[{ required: true, message: "Choose the client" }]}>
-            <ClientSelect
-              clients={clients}
-              locked={lockClient}
-              onPick={(client) => {
-                form.setFieldsValue(estimateFieldsFor(client));
-                onClientPick?.(client);
-              }}
-            />
+            <ClientSelect clients={clients} locked={lockClient} onPick={startFor} />
           </Form.Item>
         )}
         <Form.Item
@@ -98,6 +91,8 @@ const EstimateForm = ({
           </Form.Item>
         </div>
       </Card>
+
+      <EstimatePricing clientId={clientId} isEdit={!isNew} />
 
       <Card title="Contact" className="form-card">
         <div className="form-grid form-grid--2">

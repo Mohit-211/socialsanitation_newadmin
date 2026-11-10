@@ -1,22 +1,25 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import "./CreateServiceQuotePage.scss";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
   createQuote,
   createQuoteDraft,
   deleteQuoteDraft,
   getLatestQuoteDraft,
+  getQuote,
   getNextQuoteRef,
   listQuoteDrafts,
   sendQuoteDraft,
   updateQuoteDraft,
 } from "@/services/api/serviceQuoteApi";
 import { getClient } from "@/services/api/clientApi";
+import { getEstimate, getEstimateDraft } from "@/services/api/estimateApi";
 import { listServiceNames } from "@/services/api/serviceApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { fromApiDate, toApiDate } from "@/utils/datetime";
 import { clientPagePath } from "@/pages/clients/clientFlow";
 import {
+  Alert,
   message,
   Spin,
   Table,
@@ -36,12 +39,40 @@ const { Option } = Select;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const idFrom = (value) => Number(value) || undefined;
+
+// Price lines (of an estimate, or a calculation's draft) as quote lines: each
+// is a flat price, charged once.
+const itemsFromPriceLines = (lines = []) =>
+  lines.map((line) => ({
+    description: line.name,
+    frequency: line.frequency || "",
+    quantity: 1,
+    calculation_type: "na",
+    sqft: "N/A",
+    hour: "",
+    unit_price: line.price,
+    amount: line.price,
+  }));
+
+// The links a quote's body carries (step 5 of the client flow); empty ones stay out.
+const linkFields = (links) => Object.fromEntries(Object.entries(links).filter(([, value]) => value));
+
 const CreateServiceQuotePage = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState([]);
   const { id } = useParams();
+  const [params] = useSearchParams();
+  // What the quote goes with: an estimate (which brings its scope and
+  // calculation), or a calculation and its scope, from the client page.
+  const [links, setLinks] = useState(() => ({
+    estimate_id: idFrom(params.get("estimateId")),
+    cost_calculation_id: idFrom(params.get("calculationId")),
+    scope_of_work_id: idFrom(params.get("scopeId")),
+  }));
+  const fromSource = Boolean(links.estimate_id || links.cost_calculation_id);
   const [formData, setFormData] = useState({
     ref: "",
     reference_type: "",
@@ -77,11 +108,19 @@ const CreateServiceQuotePage = () => {
   // CC email is locked when the user record already has one from the API
   const isCcLocked = !!userData?.cc_email;
 
-  const loadDraftById = async () => {
+  // A draft is a quote waiting to be sent: the one picked, or the client's newest.
+  const loadDraftById = async (draftId) => {
     setIsLoading(true);
     try {
-      const draft = dataOf(await getLatestQuoteDraft(id));
+      const draft = dataOf(draftId ? await getQuote(draftId) : await getLatestQuoteDraft(id));
       if (!draft) return;
+      if (draft.estimate_id || draft.cost_calculation_id || draft.scope_of_work_id) {
+        setLinks({
+          estimate_id: draft.estimate_id ?? undefined,
+          cost_calculation_id: draft.cost_calculation_id ?? undefined,
+          scope_of_work_id: draft.scope_of_work_id ?? undefined,
+        });
+      }
 
       setFormData((prev) => ({
         ref: draft.ref_no || "",
@@ -135,14 +174,16 @@ const CreateServiceQuotePage = () => {
       try {
         const list = itemsOf(await listQuoteDrafts(id));
         setDrafts(list);
-        // Auto load latest draft
-        if (list.length) loadDraftById(list[0].id);
+        // Pick up the newest draft, unless the quote starts from an estimate or a calculation.
+        if (list.length && !fromSource) loadDraftById(list[0].id);
       } catch (error) {
         message.error(errorMessage(error, "Couldn't load the drafts"));
       }
     };
 
     loadDrafts();
+    // Loaded once per client; the source links are read when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useLayoutEffect(() => {
@@ -152,6 +193,12 @@ const CreateServiceQuotePage = () => {
         setUserData(user);
 
         const primaryAddress = user.user_address?.[0] || null;
+
+        // A quote from an estimate is addressed as the estimate is (see below).
+        if (links.estimate_id) {
+          setFormData((prev) => ({ ...prev, cc_email: user.cc_email || prev.cc_email || "" }));
+          return;
+        }
 
         setFormData((prev) => ({
           ...prev,
@@ -171,6 +218,43 @@ const CreateServiceQuotePage = () => {
         }));
       })
       .catch((err) => message.error(errorMessage(err, "Couldn't load the client")));
+    // Loaded once per client; the estimate link is read when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // A quote from an estimate starts from its company, address and price lines;
+  // one from a calculation, from the lines its newest bid prices.
+  useEffect(() => {
+    if (!links.estimate_id && !links.cost_calculation_id) return undefined;
+    let current = true;
+    const source = links.estimate_id
+      ? getEstimate(links.estimate_id).then(dataOf)
+      : getEstimateDraft({
+          clientId: Number(id),
+          calculationId: links.cost_calculation_id,
+          scopeId: links.scope_of_work_id,
+        }).then(dataOf);
+    source
+      .then((start) => {
+        if (!current || !start) return;
+        const items = itemsFromPriceLines(start.price_lines);
+        const street = [start.address_line_1, start.address_line_2].filter(Boolean).join(", ");
+        const place = [start.city, [start.state, start.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+        setFormData((prev) => ({
+          ...prev,
+          ...(links.estimate_id
+            ? { toCompany: start.client_company_name || prev.toCompany, address1: street || prev.address1, address2: place || prev.address2 }
+            : {}),
+          ...(items.length ? { items, totalAmount: String(items.reduce((sum, item) => sum + Number(item.amount || 0), 0)) } : {}),
+        }));
+        if (items.length) setIsDirty(true);
+      })
+      .catch((error) => message.error(errorMessage(error, "Couldn't start from the estimate")));
+    return () => {
+      current = false;
+    };
+    // The source is read once, when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -298,6 +382,7 @@ const CreateServiceQuotePage = () => {
       items: formData.items,
       date: toApiDate(formData.date),
       cc_email: ccEmail,
+      ...linkFields(links),
     };
 
     try {
@@ -541,6 +626,7 @@ const CreateServiceQuotePage = () => {
       items: formData.items,
       date: toApiDate(formData.date),
       signature: formData.signature,
+      ...linkFields(links),
     };
 
     try {
@@ -681,7 +767,7 @@ const CreateServiceQuotePage = () => {
         <div className="quote-form__toolbar">
           <div>
             <Button type="text" icon={<ArrowLeft size={16} />} onClick={handleBack}>
-              Back to Users
+              Back
             </Button>
           </div>
 
@@ -720,6 +806,20 @@ const CreateServiceQuotePage = () => {
             )}
           </div>
         </div>
+
+        {(links.estimate_id || links.cost_calculation_id) && (
+          <Alert
+            type="info"
+            showIcon
+            className="quote-form__source"
+            title={
+              links.estimate_id
+                ? "This quote goes with the client's estimate: its lines start from the estimate's prices."
+                : "This quote is priced from a cost calculation: its lines start from the newest bid."
+            }
+            description="Change the lines as needed. The quote keeps the link to its scope of work and calculation."
+          />
+        )}
 
         <div className="quote-form__meta" style={{ marginBottom: 28 }}>
           <div>

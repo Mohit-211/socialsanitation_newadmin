@@ -1,6 +1,6 @@
 import { Button, Empty, Modal, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
-import { Pencil, Plus, ReceiptText, Trash2 } from "lucide-react";
+import { FileSignature, Pencil, Plus, ReceiptText, ScrollText, Trash2 } from "lucide-react";
 import IconAction from "@/components/IconAction";
 import { deleteDocument, DOCUMENT_KINDS } from "@/services/api/documentApi";
 import { createInvoice } from "@/services/api/invoiceApi";
@@ -18,7 +18,8 @@ const KINDS = {
     flowKey: "estimates",
     newLabel: "New Estimate",
     hint: "An estimate goes to the client for signature by DocuSign.",
-    columns: [statusColumn(), dateColumn("Signed", "signed_date")],
+    columns: [statusColumn(), moneyColumn("Price", "total_price"), dateColumn("Signed", "signed_date")],
+    quoteFromRow: true,
   },
   quotes: {
     kind: "quote",
@@ -50,6 +51,7 @@ const KINDS = {
     hint: "Calculations price a scope of work and stay in the office: they hold costs, margins and commission.",
     columns: [moneyColumn("Operational Cost", "total_operational_cost")],
     newPath: "calculation",
+    documentsFromRow: true,
   },
 };
 
@@ -113,6 +115,33 @@ const ClientDocumentsTab = ({ tab, clientId, flow, onChanged }) => {
           {open && <IconAction icon={Pencil} title="Open" onClick={() => open(row)} />}
           {kind && (
             <ShareToggle kind={kind} id={row.id} sharedAt={row.shared_at} onChanged={() => onChanged?.()} />
+          )}
+          {config.documentsFromRow && (
+            <IconAction
+              icon={FileSignature}
+              title="Make an estimate priced from this calculation"
+              onClick={() =>
+                navigate(
+                  NEW_DOCUMENT_PATHS.estimate(clientId, { calculationId: row.id, scopeId: row.scope_of_work_id }),
+                )
+              }
+            />
+          )}
+          {config.documentsFromRow && (
+            <IconAction
+              icon={ScrollText}
+              title="Make a quote priced from this calculation"
+              onClick={() =>
+                navigate(NEW_DOCUMENT_PATHS.quote(clientId, { calculationId: row.id, scopeId: row.scope_of_work_id }))
+              }
+            />
+          )}
+          {config.quoteFromRow && (
+            <IconAction
+              icon={ScrollText}
+              title="Make a quote from this estimate"
+              onClick={() => navigate(NEW_DOCUMENT_PATHS.quote(clientId, { estimateId: row.id }))}
+            />
           )}
           {config.invoiceFromRow && (
             <IconAction icon={ReceiptText} title="Make an invoice from this quote" onClick={() => invoiceFromQuote(row)} />

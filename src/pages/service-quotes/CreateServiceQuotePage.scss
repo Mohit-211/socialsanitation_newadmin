@@ -32,6 +32,10 @@
 }
 
 /* Toolbar */
+.quote-form__source {
+  margin-bottom: var(--space-5);
+}
+
 .quote-form__toolbar {
   display: flex;
   justify-content: space-between;

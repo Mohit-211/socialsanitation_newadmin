@@ -39,8 +39,8 @@ const EditInvoicePage = () => {
       return;
     }
     try {
-      await updateInvoice(id, changes);
-      message.success("Invoice saved");
+      const res = await updateInvoice(id, changes);
+      message.success(res.data?.message || "Invoice saved");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't save the invoice"));

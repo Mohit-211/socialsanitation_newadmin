@@ -10,9 +10,11 @@ import { dataOf, errorMessage } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
 import ClientBdmSelect from "@/pages/clients/components/ClientBdmSelect";
-import { formatDate, fromApiDate } from "@/utils/datetime";
+import { formatDate } from "@/utils/datetime";
+import { formatMoney } from "@/utils/format";
 import EstimateForm from "./components/EstimateForm";
 import EstimateScopeBuilder from "./components/EstimateScopeBuilder";
+import { valuesFromEstimate } from "./estimateFields";
 import "./estimates.scss";
 
 const open = (url) => window.open(url, "_blank", "noopener");
@@ -67,6 +69,7 @@ const EditEstimatePage = () => {
           estimate && (
             <Space size={8} wrap>
               <StatusTag code={estimate.status} />
+              {estimate.total_price > 0 && <span>{formatMoney(estimate.total_price)}</span>}
               {estimate.sent_at && <span>Sent {formatDate(estimate.sent_at)}</span>}
               {estimate.signed_at && <span>Signed {formatDate(estimate.signed_at)}</span>}
               {estimate.shared_at && <span>In the client app since {formatDate(estimate.shared_at)}</span>}
@@ -118,20 +121,7 @@ const EditEstimatePage = () => {
                     <EstimateForm
                       key={estimate.id}
                       userId={estimate.user_id}
-                      initialValues={{
-                        client_company_name: estimate.client_company_name,
-                        address_line_1: estimate.address_line_1,
-                        address_line_2: estimate.address_line_2,
-                        city: estimate.city,
-                        state: estimate.state,
-                        zip: estimate.zip,
-                        contact_name: estimate.contact_name,
-                        contact_phone: estimate.contact_phone,
-                        contact_fax: estimate.contact_fax,
-                        contact_email: estimate.contact_email,
-                        frequency: estimate.frequency,
-                        signed_date: fromApiDate(estimate.signed_date),
-                      }}
+                      initialValues={valuesFromEstimate(estimate)}
                       initialSignature={estimate.signature || ""}
                       submitLabel="Save and Send a New Copy"
                       onSubmit={submit}

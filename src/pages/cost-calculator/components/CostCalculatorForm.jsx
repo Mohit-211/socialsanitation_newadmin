@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { message, Select } from "antd";
+import { Button, message, Select } from "antd";
 import {
   Calculator,
   ChartColumn,
@@ -8,15 +8,18 @@ import {
   ChevronUp,
   CircleCheck,
   DollarSign,
+  FileSignature,
   Info,
   Plus,
+  ScrollText,
   Trash2,
   TriangleAlert,
   X,
 } from "lucide-react";
 
 import PageHeader from "@/components/PageHeader";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
+import { NEW_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
 import {
   addCostCalculationBid,
   createCostCalculation,
@@ -311,6 +314,7 @@ const CostCalculatorForm = () => {
   const [scopeId, setScopeId] = useState(null);
   const [sheetId, setSheetId] = useState(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [clientChecklist, setClientChecklist] = useState([]);
   const [clientType, setClientType] = useState("");
@@ -1168,6 +1172,33 @@ const CostCalculatorForm = () => {
                     <span className="value">{r.value}</span>
                   </div>
                 ))}
+                {userId && calculationId && (
+                  <div className="cc-next-steps">
+                    <Button
+                      type="primary"
+                      icon={<FileSignature size={16} />}
+                      onClick={() =>
+                        navigate(
+                          NEW_DOCUMENT_PATHS.estimate(userId, {
+                            calculationId,
+                            scopeId: scopeId || undefined,
+                            bidId: bidResult.id,
+                          }),
+                        )
+                      }
+                    >
+                      Make an Estimate at This Bid
+                    </Button>
+                    <Button
+                      icon={<ScrollText size={16} />}
+                      onClick={() =>
+                        navigate(NEW_DOCUMENT_PATHS.quote(userId, { calculationId, scopeId: scopeId || undefined }))
+                      }
+                    >
+                      Make a Quote
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

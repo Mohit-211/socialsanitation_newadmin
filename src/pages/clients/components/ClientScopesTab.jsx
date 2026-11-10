@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Empty, Modal, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
-import { Calculator, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { Calculator, Download, FileSignature, Pencil, Plus, Trash2 } from "lucide-react";
 import IconAction from "@/components/IconAction";
 import { deleteScopeOfWork, getScopeOfWorkPdf } from "@/services/api/scopeApi";
 import { dataOf, errorMessage } from "@/services/apiResult";
@@ -59,7 +59,7 @@ const ClientScopesTab = ({ clientId, flow, onNewScope, onChanged }) => {
     {
       title: "Actions",
       key: "actions",
-      width: 210,
+      width: 240,
       render: (_, row) => (
         <Space size={4}>
           <IconAction icon={Pencil} title="Edit sections and tasks" onClick={() => openScope(row)} />
@@ -69,6 +69,13 @@ const ClientScopesTab = ({ clientId, flow, onNewScope, onChanged }) => {
               icon={Calculator}
               title="Price this scope in the calculator"
               onClick={() => navigate(NEW_DOCUMENT_PATHS.calculation(clientId, { scopeId: row.id }))}
+            />
+          )}
+          {isSuperAdmin && (
+            <IconAction
+              icon={FileSignature}
+              title="Make an estimate for this scope"
+              onClick={() => navigate(NEW_DOCUMENT_PATHS.estimate(clientId, { scopeId: row.id }))}
             />
           )}
           <ShareToggle kind="scope_of_work" id={row.id} sharedAt={row.shared_at} onChanged={() => onChanged?.()} />

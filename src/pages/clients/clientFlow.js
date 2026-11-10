@@ -36,8 +36,10 @@ const withQuery = (path, query) => {
 /** Where each "New" action goes, with the client (and any earlier step) chosen. */
 export const NEW_DOCUMENT_PATHS = Object.freeze({
   calculation: (clientId, { scopeId } = {}) => withQuery("/cost-calculator", { clientId, scopeId }),
-  estimate: (clientId) => withQuery("/generate-estimate", { clientId }),
-  quote: (clientId) => `/service-quote/${clientId}`,
+  estimate: (clientId, { scopeId, calculationId, bidId } = {}) =>
+    withQuery("/generate-estimate", { clientId, scopeId, calculationId, bidId }),
+  quote: (clientId, { estimateId, calculationId, scopeId } = {}) =>
+    withQuery(`/service-quote/${clientId}`, { estimateId, calculationId, scopeId }),
   service_request: (clientId) => withQuery("/generate-service-request", { clientId }),
   contract: (clientId) => withQuery("/create-contract-agreement", { clientId }),
   booking: (clientId) => withQuery("/create-client-booking", { clientId }),
