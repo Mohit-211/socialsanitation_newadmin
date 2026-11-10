@@ -80,9 +80,6 @@ export const deleteBookingSeries = (id) => httpClient.delete(`/booking-series/${
 /** @deprecated Use listEmployeeBookings. */
 export const GetBookingBySPId = (formData) => httpClient.post(API_BASE_URL + "admin/user/getBookingByEmployeeId", formData);
 
-/** @deprecated Use listServiceNames from serviceApi. */
-export const GetAllServiceNameByAdmin = () => httpClient.get(API_BASE_URL + "service/getAllServiceNameByAdmin");
-
 /** @deprecated */
 export const GetDayOverview = (formData) => httpClient.post(API_BASE_URL + "admin/booking/getDayOverview", formData);
 

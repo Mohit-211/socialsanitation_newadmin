@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
-import { Button, Select, message } from "antd";
+import { useState } from "react";
+import { Button, DatePicker } from "antd";
 import { RefreshCw } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-import { GetInvoiceAnalytics } from "@/services/api/dashboardApi";
 import PageHeader from "@/components/PageHeader";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { getInvoiceAnalytics } from "@/services/api/invoiceApi";
+import { dataOf } from "@/services/apiResult";
+import { formatDate } from "@/utils/datetime";
 import "./InvoiceAnalyticsPage.scss";
 
 /* tiny helpers */
@@ -28,8 +31,18 @@ const pct = (part, total) => {
 const STATUS_BADGE = {
   PAID: { label: "Paid", tone: "success" },
   CHECK_PAID: { label: "Check Paid", tone: "info" },
+  ACH_PAID: { label: "ACH Paid", tone: "info" },
+  CASH_PAID: { label: "Cash Paid", tone: "info" },
   NOT_PAID: { label: "Not paid", tone: "warning" },
 };
+
+// How paid money came in; together they make the paid total (ACH counts as paid).
+const PAYMENT_METHODS = [
+  { key: "online", label: "Online" },
+  { key: "check", label: "Check" },
+  { key: "ach", label: "ACH" },
+  { key: "cash", label: "Cash" },
+];
 
 // Text color of a metric value
 const ACCENT_COLORS = {
@@ -81,30 +94,15 @@ const MiniBar = ({ value, max, color = "var(--color-primary-border)" }) => {
 
 /* page */
 const InvoiceAnalyticsPage = () => {
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
-  const [selectedYear, setSelectedYear] = useState(dayjs().year());
-  const [loading, setLoading] = useState(false);
-  const [analytics, setAnalytics] = useState(null);
-
-  const fetchData = async (month, year) => {
-    try {
-      setLoading(true);
-      const formattedMonth = `${year}-${String(month).padStart(2, "0")}`;
-
-      const res = await GetInvoiceAnalytics(formattedMonth);
-      const d = res?.data?.data?.data;
-      setAnalytics(d);
-    } catch (e) {
-      console.error(e);
-      message.error("Failed to load analytics.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData(selectedMonth, selectedYear);
-  }, [selectedMonth, selectedYear]);
+  const [month, setMonth] = useState(() => dayjs().startOf("month"));
+  const monthKey = month.format("YYYY-MM");
+  const {
+    data: analytics,
+    loading,
+    reload,
+  } = useApiQuery(() => getInvoiceAnalytics(monthKey).then(dataOf), [monthKey], {
+    errorText: "Couldn't load the analytics",
+  });
 
   const ov = analytics?.overview || {};
   const payBreak = analytics?.payment_breakdown || {};
@@ -113,16 +111,9 @@ const InvoiceAnalyticsPage = () => {
   const topClients = analytics?.top_clients || [];
   const monthlyActivity = analytics?.monthly_activity || [];
 
-  const totalPay =
-    (payBreak.online || 0) + (payBreak.cash || 0) + (payBreak.check || 0);
+  const totalPay = PAYMENT_METHODS.reduce((sum, method) => sum + (payBreak[method.key] || 0), 0);
   const maxClient = topClients.length ? topClients[0].total_spent : 1;
   const maxDaily = daily.length ? Math.max(...daily.map((d) => d.revenue)) : 1;
-
-  const monthOptions = Array.from({ length: 12 }, (_, i) => ({
-    value: i + 1,
-    label: dayjs().month(i).format("MMMM"),
-  }));
-  const yearOptions = [2025, 2026, 2027, 2028];
 
   return (
     <div className="invoice-analytics">
@@ -132,26 +123,20 @@ const InvoiceAnalyticsPage = () => {
         subtitle="Business overview — invoices, quotes & revenue"
         actions={
           <>
-            <Select
+            <DatePicker
+              picker="month"
               size="large"
+              format="MMMM YYYY"
+              allowClear={false}
               className="invoice-analytics__month"
-              value={selectedMonth}
-              onChange={(v) => setSelectedMonth(v)}
-              options={monthOptions}
-            />
-
-            <Select
-              size="large"
-              className="invoice-analytics__year"
-              value={selectedYear}
-              onChange={(v) => setSelectedYear(v)}
-              options={yearOptions.map((y) => ({ value: y, label: y }))}
+              value={month}
+              onChange={(value) => value && setMonth(value.startOf("month"))}
             />
 
             <Button
               size="large"
               icon={<RefreshCw size={16} />}
-              onClick={() => fetchData(selectedMonth, selectedYear)}
+              onClick={reload}
               disabled={loading}
             >
               {loading ? "Loading…" : "Refresh"}
@@ -213,24 +198,15 @@ const InvoiceAnalyticsPage = () => {
           </h2>
           <div className="invoice-analytics__pay-bar">
             {totalPay > 0 ? (
-              <>
-                {payBreak.online > 0 && (
-                  <div
-                    className="invoice-analytics__pay-segment invoice-analytics__pay-segment--online"
-                    style={{ width: `${pct(payBreak.online, totalPay)}%` }}
-                  >
-                    Online
-                  </div>
-                )}
-                {payBreak.check > 0 && (
-                  <div
-                    className="invoice-analytics__pay-segment invoice-analytics__pay-segment--check"
-                    style={{ width: `${pct(payBreak.check, totalPay)}%` }}
-                  >
-                    Check
-                  </div>
-                )}
-              </>
+              PAYMENT_METHODS.filter((method) => payBreak[method.key] > 0).map((method) => (
+                <div
+                  key={method.key}
+                  className={`invoice-analytics__pay-segment invoice-analytics__pay-segment--${method.key}`}
+                  style={{ width: `${pct(payBreak[method.key], totalPay)}%` }}
+                >
+                  {method.label}
+                </div>
+              ))
             ) : (
               <div className="invoice-analytics__pay-segment invoice-analytics__pay-segment--empty">
                 No payments
@@ -238,14 +214,12 @@ const InvoiceAnalyticsPage = () => {
             )}
           </div>
           <div className="invoice-analytics__legend">
-            <span className="invoice-analytics__legend-item">
-              <span className="invoice-analytics__legend-dot invoice-analytics__legend-dot--online" />
-              Online — ${fmt(payBreak.online)}
-            </span>
-            <span className="invoice-analytics__legend-item">
-              <span className="invoice-analytics__legend-dot invoice-analytics__legend-dot--check" />
-              Check — ${fmt(payBreak.check)}
-            </span>
+            {PAYMENT_METHODS.map((method) => (
+              <span key={method.key} className="invoice-analytics__legend-item">
+                <span className={`invoice-analytics__legend-dot invoice-analytics__legend-dot--${method.key}`} />
+                {method.label} — ${fmt(payBreak[method.key])}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -421,12 +395,12 @@ const InvoiceAnalyticsPage = () => {
       {employees.length > 0 && (
         <div className="surface invoice-analytics__card">
           <h2 className="section-title invoice-analytics__section-title">
-            🧑‍💼 Employee performance
+            🏢 By client
           </h2>
           <table className="invoice-analytics__table">
             <thead>
               <tr>
-                <th>Employee</th>
+                <th>Client</th>
                 <th className="is-center">Records</th>
                 <th className="is-right">Total</th>
                 <th className="is-right">Paid</th>
@@ -510,13 +484,11 @@ const InvoiceAnalyticsPage = () => {
                   <td>{item.client_name}</td>
 
                   <td className="invoice-analytics__date">
-                    {dayjs(item.billing_date).format("MMM D, YYYY")}
+                    {formatDate(item.billing_date)}
                   </td>
 
                   <td className="invoice-analytics__date">
-                    {item.due_date
-                      ? dayjs(item.due_date).format("MMM D, YYYY")
-                      : "—"}
+                    {formatDate(item.due_date)}
                   </td>
 
                   <td className="is-right is-strong">${fmt(item.amount)}</td>

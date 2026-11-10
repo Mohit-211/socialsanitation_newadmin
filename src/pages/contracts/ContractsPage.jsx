@@ -24,7 +24,7 @@ const ContractsPage = () => {
   const confirmDelete = (contract) =>
     Modal.confirm({
       title: `Delete the contract for ${contract.client_company_name}?`,
-      content: "Its payment link closes. This can't be undone.",
+      content: "This can't be undone.",
       okText: "Delete",
       okType: "danger",
       onOk: async () => {

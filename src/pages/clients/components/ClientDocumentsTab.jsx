@@ -24,7 +24,7 @@ const KINDS = {
     kind: "quote",
     flowKey: "quotes",
     newLabel: "New Quote",
-    hint: "A quote goes to the client by email and text, with a Square payment link.",
+    hint: "A quote goes to the client by email and text. They pay through the invoice made from it.",
     columns: [statusColumn(), statusColumn("payment_status", "Payment"), moneyColumn("Total", "total_due")],
     invoiceFromRow: true,
   },

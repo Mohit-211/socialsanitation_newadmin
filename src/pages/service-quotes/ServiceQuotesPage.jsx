@@ -5,7 +5,6 @@ import {
   Banknote,
   CircleCheck,
   Download,
-  ExternalLink,
   Eye,
   FileText,
   Pencil,
@@ -99,7 +98,7 @@ const ServiceQuotesPage = () => {
   const confirmDelete = (quote) =>
     Modal.confirm({
       title: `Delete quote ${quote.ref_no}?`,
-      content: "Its payment link closes. This can't be undone.",
+      content: "This can't be undone.",
       okText: "Delete",
       okType: "danger",
       onOk: () => act(() => deleteQuote(quote.id), "Quote deleted", "Couldn't delete the quote"),
@@ -151,9 +150,6 @@ const ServiceQuotesPage = () => {
           <IconAction icon={Eye} title="View" onClick={() => setViewing(quote)} />
           <IconAction icon={Pencil} title="Edit" onClick={() => navigate(`/edit-service-quote/${quote.id}`)} />
           {quote.pdf_url && <IconAction icon={FileText} title="PDF" onClick={() => open(quote.pdf_url)} />}
-          {quote.payment_url && quote.payment_status === "NOT_PAID" && (
-            <IconAction icon={ExternalLink} title="Payment link" onClick={() => open(quote.payment_url)} />
-          )}
           {quote.job_status === "NOT_BOOKED" && (
             <IconAction
               icon={CircleCheck}
@@ -182,7 +178,7 @@ const ServiceQuotesPage = () => {
     <div>
       <PageHeader
         title="SERVICE QUOTES"
-        subtitle="Quotes sent to clients with a payment link. Start a new one from the client's page."
+        subtitle="Quotes sent to clients, each paid through the invoice made from it. Start a new one from the client's page."
         actions={
           <>
             <DatePicker

@@ -1,4 +1,4 @@
-/* Invoice document editors (CreateInvoicePage.jsx / EditInvoicePage.jsx);
+/* The invoice document editor (components/InvoiceEditor.jsx);
    InvoicesPage.jsx imports it too.
    NOTE: the generic class names below (.header, .meta-table, .quote-title...)
    are global and shared with the other document pages (service quote,
@@ -133,14 +133,59 @@
 	font-weight: var(--font-weight-bold);
 }
 
-/* ALL INVOICES PAGE */
-
-.all-invoices__header {
+/* A line's service picker, with its description typed below */
+.invoice-editor__description {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-4);
-	margin-bottom: var(--space-5);
+	gap: var(--space-1);
+	min-width: 0;
 }
+
+.invoice-editor__ref {
+	margin-top: 5px;
+	font-size: var(--text-md);
+	font-weight: var(--font-weight-semibold);
+}
+
+.invoice-editor__column-title {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+/* Time on site: a start and an end picker side by side */
+.invoice-editor__times {
+	display: flex;
+	gap: var(--space-1);
+
+	.ant-picker {
+		flex: 1;
+		min-width: 0;
+	}
+}
+
+.invoice-editor__to {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	margin-top: 5px;
+}
+
+.invoice-editor__total-due {
+	margin-top: 5px;
+	font-size: var(--text-lg);
+	font-weight: var(--font-weight-bold);
+}
+
+.invoice-editor__submit {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: var(--space-4);
+}
+
+/* ALL INVOICES PAGE */
 
 .all-invoices__toolbar {
 	display: flex;
@@ -148,6 +193,7 @@
 	align-items: center;
 	justify-content: flex-end;
 	gap: var(--space-3);
+	margin-bottom: var(--space-4);
 }
 
 .all-invoices__search {
@@ -155,29 +201,8 @@
 	max-width: 100%;
 }
 
-.all-invoices__month {
-	width: 130px;
-}
-
-.all-invoices__year {
-	width: 110px;
-}
-
-.all-invoices__status {
-	font-weight: var(--font-weight-semibold);
-}
-
-.all-invoices__status--paid {
-	color: var(--color-success-strong);
-}
-
-.all-invoices__status--unpaid {
-	color: var(--color-warning-strong);
-}
-
-.all-invoices__status-note {
-	font-size: 11px;
-	color: var(--color-text-muted);
+.all-invoices__status-filter {
+	min-width: 180px;
 }
 
 /* CSV IMPORT / HISTORICAL INVOICES */

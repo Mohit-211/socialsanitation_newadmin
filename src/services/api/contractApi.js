@@ -1,7 +1,8 @@
 import httpClient from "@/services/httpClient";
 
-// Contract agreements. Each makes a Square link and a PDF and goes to the
-// client for signature by DocuSign. Share and Unshare live in documentApi.js.
+// Contract agreements. Each makes a PDF and goes to the client for signature
+// by DocuSign; it is paid through its invoices. Share and Unshare live in
+// documentApi.js.
 
 /** Query: page, limit, user_id, status, search (company). */
 export const listContracts = (params) => httpClient.get("/contracts", { params });

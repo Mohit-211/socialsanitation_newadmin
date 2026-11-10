@@ -217,7 +217,7 @@ const EditServiceQuotePage = () => {
 
     try {
       await updateQuote(id, payload);
-      message.success("Quote saved; the client was sent the new copy and payment link");
+      message.success("Quote saved; the client was sent the new copy");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't save the quote"));
@@ -590,8 +590,6 @@ const EditServiceQuotePage = () => {
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
-
-        {/* Square Payment Link Section */}
 
         <div className="update-service-quote__disclaimer">
           All quotes and estimates are valid within thirty days from signed

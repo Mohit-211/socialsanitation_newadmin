@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Alert, Button, Space, Spin, message } from "antd";
-import { ArrowLeft, ExternalLink, FileCheck, FileText, ReceiptText, Send } from "lucide-react";
+import { ArrowLeft, FileCheck, FileText, ReceiptText, Send } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import ShareToggle from "@/components/ShareToggle";
 import StatusTag from "@/components/StatusTag";
@@ -15,7 +15,7 @@ import ContractForm from "./components/ContractForm";
 
 const open = (url) => window.open(url, "_blank", "noopener");
 
-// One contract: where it stands (sent, signed, shared, paid link), what to do
+// One contract: where it stands (sent, signed, shared), what to do
 // next (resend, share, invoice it), and its fields. Saving sends a new copy.
 const EditContractPage = () => {
   const { id } = useParams();
@@ -83,11 +83,6 @@ const EditContractPage = () => {
                 Signed Copy
               </Button>
             )}
-            {contract?.payment_url && (
-              <Button icon={<ExternalLink size={16} />} onClick={() => open(contract.payment_url)}>
-                Payment Link
-              </Button>
-            )}
             {contract && !contract.signed_at && (
               <Button icon={<Send size={16} />} onClick={resend} loading={resending}>
                 Resend
@@ -116,7 +111,7 @@ const EditContractPage = () => {
             type="info"
             showIcon
             className="form-card"
-            title="Saving makes a new PDF and payment link and sends the client a new copy to sign. The old link closes unless it was paid."
+            title="Saving makes a new PDF and sends the client a new copy to sign. Card payments go through the Square link on each invoice."
           />
           <ContractForm
             key={contract.id}

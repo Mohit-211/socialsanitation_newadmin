@@ -306,7 +306,7 @@ const CreateServiceQuotePage = () => {
       else await createQuote(payload);
       setQuoteStatus("SAVED");
       setIsDirty(false);
-      message.success("Quote sent to the client with its payment link");
+      message.success("Quote sent to the client");
       navigate(clientPagePath(id, "quotes"));
     } catch (error) {
       message.error(errorMessage(error, "Couldn't send the quote"));
@@ -926,8 +926,6 @@ const CreateServiceQuotePage = () => {
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
-
-        {/* Square Payment Link Section */}
 
         <div
           className="quote-form__disclaimer"

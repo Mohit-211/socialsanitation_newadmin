@@ -51,9 +51,3 @@ export const GetUpcomingInvoices = async () => {
   return res;
 };
 
-export const GetInvoiceAnalytics = async (month) => {
-  const res = await httpClient.post(
-    API_BASE_URL + `invoice/getBusinessAnalytics?month=${month}`,
-  );
-  return res;
-};

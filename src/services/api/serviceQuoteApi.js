@@ -1,7 +1,8 @@
 import httpClient from "@/services/httpClient";
 
-// Service quotes: priced lines a client pays through a Square link. Sending
-// one makes the link and the PDF, then emails and texts the client. Drafts
+// Service quotes: priced lines, paid through the invoice made from them (the
+// quote turns paid when that invoice is). Sending one makes the PDF, then
+// emails and texts the client. Drafts
 // keep a quote being written until it is sent. Share and Unshare live in
 // documentApi.js.
 

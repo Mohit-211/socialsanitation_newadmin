@@ -112,6 +112,7 @@ const AppRoutes = () => (
   <Suspense fallback={<PageLoader fullScreen />}>
     <Routes>
       <Route path="/docusign-success" element={<DocuSignSuccessPage />} />
+      <Route path="/checkout" element={<CheckoutStatusPage />} />
       <Route path="/checkout/:transactionId" element={<CheckoutStatusPage />} />
       <Route path="/Login" element={<LoginPage />} />
       <Route path="/error401" element={<UnauthorizedPage />} />

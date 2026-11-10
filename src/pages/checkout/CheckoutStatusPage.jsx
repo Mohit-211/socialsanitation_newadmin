@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, Spin, Button, Typography, Progress, Space } from "antd";
 import { CircleCheck, CircleX, Clock } from "lucide-react";
-import { useParams } from "react-router";
-import { GetPaymentStatus } from "@/services/api/invoiceApi";
+import { useParams, useSearchParams } from "react-router";
+import { getPaymentStatus } from "@/services/api/paymentApi";
+import { dataOf } from "@/services/apiResult";
 import "./CheckoutStatusPage.scss";
 import { GOOGLE_REVIEW_URL } from "@/config/brand";
 
@@ -10,39 +11,39 @@ const { Title, Text } = Typography;
 
 const REDIRECT_SECONDS = 3;
 
+// Where a client lands after paying an invoice's Square link (/checkout, with
+// Square's ids in the query, or /checkout/:transactionId): how the payment went.
 const CheckoutStatusPage = () => {
-  const { transactionId } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState(null);
+  const { transactionId: fromPath } = useParams();
+  const [params] = useSearchParams();
+  const transactionId =
+    fromPath || params.get("transactionId") || params.get("transaction_id") || params.get("orderId") || "";
+  const [loading, setLoading] = useState(Boolean(transactionId));
+  // SUCCESS, PENDING, REJECTED, REFUNDED, or UNKNOWN (not found yet, or no id)
+  const [status, setStatus] = useState(transactionId ? null : "UNKNOWN");
   const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
 
   const redirectDoneRef = useRef(false);
 
-  // 🔹 Fetch payment status
   useEffect(() => {
-    if (!transactionId) {
-      setStatus("REJECTED");
-      setLoading(false);
-      return;
-    }
-
-    const fetchStatus = async () => {
-      try {
-        const res = await GetPaymentStatus(transactionId);
-        setStatus(res?.data?.data?.payment_status || "REJECTED");
-      } catch {
-        setStatus("REJECTED");
-      } finally {
+    if (!transactionId) return undefined;
+    let current = true;
+    getPaymentStatus(transactionId)
+      .then((res) => dataOf(res)?.payment_status || "UNKNOWN")
+      .catch(() => "UNKNOWN")
+      .then((next) => {
+        if (!current) return;
+        setStatus(next);
         setLoading(false);
-      }
+      });
+    return () => {
+      current = false;
     };
-
-    fetchStatus();
   }, [transactionId]);
 
   // 🔁 Countdown + redirect
   useEffect(() => {
-    if (status !== "SUCCESS" && status !== "PAID") return;
+    if (status !== "SUCCESS") return undefined;
 
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -73,7 +74,7 @@ const CheckoutStatusPage = () => {
   }
 
   // ✅ SUCCESS
-  if (status === "SUCCESS" || status === "PAID") {
+  if (status === "SUCCESS") {
     return (
       <div className="checkout-status">
         <Card className="checkout-status__card">
@@ -111,8 +112,8 @@ const CheckoutStatusPage = () => {
     );
   }
 
-  // ⏳ PENDING
-  if (status === "PENDING") {
+  // ⏳ PENDING, or not known yet (Square tells us a moment after the payment)
+  if (status === "PENDING" || status === "UNKNOWN") {
     return (
       <div className="checkout-status">
         <Card className="checkout-status__card">
@@ -121,7 +122,9 @@ const CheckoutStatusPage = () => {
 
             <Title level={3}>Processing payment</Title>
             <Text type="secondary">
-              We’re waiting for confirmation from your bank.
+              {status === "UNKNOWN"
+                ? "We haven’t heard about this payment yet. It can take a minute; your receipt comes by email."
+                : "We’re waiting for confirmation from your bank."}
             </Text>
 
             <Spin />

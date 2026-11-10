@@ -2,11 +2,7 @@
 
 .invoice-analytics {
 	&__month {
-		width: 130px;
-	}
-
-	&__year {
-		width: 100px;
+		width: 180px;
 	}
 
 	// ---- Layout ----
@@ -133,6 +129,16 @@
 			color: var(--color-on-primary);
 		}
 
+		&--ach {
+			background: var(--color-secondary);
+			color: var(--color-on-secondary);
+		}
+
+		&--cash {
+			background: var(--color-warning);
+			color: var(--color-on-primary);
+		}
+
 		&--empty {
 			width: 100%;
 			font-size: var(--text-xs);
@@ -168,6 +174,14 @@
 
 		&--check {
 			background: var(--color-success);
+		}
+
+		&--ach {
+			background: var(--color-secondary);
+		}
+
+		&--cash {
+			background: var(--color-warning);
 		}
 	}
 
