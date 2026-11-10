@@ -243,15 +243,7 @@ const getMenuItems = ({ isSuperAdmin }) => {
             { key: "/supplies/requests", label: "Restock Requests" },
           ],
         },
-        {
-          key: "/quote-management",
-          icon: icon(MessageSquareText),
-          label: "Quote Management",
-          children: [
-            { key: "/quote-questions", label: "Quote Questions" },
-            { key: "/quote-requests", label: "Quote Requests" },
-          ],
-        },
+        { key: "/enquiries", icon: icon(MessageSquareText), label: "Enquiries" },
       ],
     },
     {
@@ -310,7 +302,6 @@ const SUBMENU_PREFIXES = {
   "/calculator": ["/cost-calculator", "/cost-calculation-settings"],
   "/equipment": ["/equipment/"],
   "/supplies": ["/supplies/"],
-  "/quote-management": ["/quote-questions", "/quote-requests"],
 };
 
 const openKeysFor = (pathname) =>

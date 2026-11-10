@@ -1166,3 +1166,15 @@
     margin-bottom:var(--space-2);
     line-height:1.6;
 }
+
+// Calculation history: the count and the pager under the list
+.ch-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}

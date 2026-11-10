@@ -5,9 +5,10 @@ import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 
 import {
-  GetCostCalculationSettings,
-  UpdateCostCalculationSetting,
+  getCostCalculationSettings,
+  updateCostCalculationSetting,
 } from "@/services/api/costCalculatorApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
 import "./costCalculator.scss";
 
 const CostSettingsPage = () => {
@@ -18,31 +19,38 @@ const CostSettingsPage = () => {
 
   const loadSettings = async (clientType) => {
     try {
-      const res = await GetCostCalculationSettings(clientType);
-      setSettings(res.data.data || []);
-    } catch {
-      message.error("Failed to load settings");
+      setSettings(itemsOf(await getCostCalculationSettings(clientType)));
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't load the settings"));
     }
   };
 
+  // Loads the tab's settings; a late answer for another tab is ignored.
   useEffect(() => {
-    loadSettings(activeTab);
+    let current = true;
+    getCostCalculationSettings(activeTab)
+      .then((res) => {
+        if (current) setSettings(itemsOf(res));
+      })
+      .catch((error) => {
+        if (current) message.error(errorMessage(error, "Couldn't load the settings"));
+      });
+    return () => {
+      current = false;
+    };
   }, [activeTab]);
 
   const saveSetting = async (id) => {
     try {
-      await UpdateCostCalculationSetting({
-        id,
-        minutes_per_unit: Number(minutes),
-      });
+      await updateCostCalculationSetting(id, Number(minutes));
 
       message.success("Setting updated");
 
       setEditingId(null);
 
       loadSettings(activeTab);
-    } catch {
-      message.error("Failed to update");
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't save the setting"));
     }
   };
 

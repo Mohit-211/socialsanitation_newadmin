@@ -1,89 +1,42 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const CreateCostCalculator = async (body) => {
-  try {
-    const res = await httpClient.post(API_BASE_URL + "calculate/cost-calculator", body);
+// The cost calculator prices a client's scope of work: the labor, equipment
+// and chemicals it takes, then bids with margin, overhead, risk and
+// commission. It stays in the office and never reaches the client.
 
-    return res;
-  } catch (error) {
-    console.error("Error creating cost calculator:", error);
-    throw error;
-  }
-};
+/** Query: page, limit, search (property), client_id, scope_of_work_id. Each with custom_tasks. */
+export const listCostCalculations = (params) => httpClient.get("/cost-calculations", { params });
 
-export const CreateBidMaximizer = async (body) => {
-  try {
-    const res = await httpClient.post(API_BASE_URL + "calculate/bid-maximizer", body);
+/** One calculation, with its bids, newest first. */
+export const getCostCalculation = (id) => httpClient.get(`/cost-calculations/${id}`);
 
-    return res;
-  } catch (error) {
-    console.error("Error creating bid maximizer:", error);
-    throw error;
-  }
-};
+/**
+ * The starting counts for a client, from a scope of work (or a sheet, or the
+ * client's newest sheet), saving nothing: estimated_sqft, the room, restroom,
+ * stall, kitchen and trash can counts, walkaround_minutes, employee_count,
+ * client_type and floor_mix.
+ */
+export const getCostCalculationDraft = ({ clientId, scopeId, sheetId }) =>
+  httpClient.get("/cost-calculations/draft", {
+    params: { client_id: clientId, scope_of_work_id: scopeId || undefined, client_sheet_id: sheetId || undefined },
+  });
 
-export const GetAllCostCalculations =
-  async () => {
-    try {
-      const res = await httpClient.get(
-        API_BASE_URL +
-          "calculate/cost-calculator"
-      );
+/**
+ * client_id is required; also scope_of_work_id and client_sheet_id (both the
+ * client's), property_name, the counts, employee_count, hourly_wage and
+ * custom_tasks. Counts left out come from the scope and sheet.
+ */
+export const createCostCalculation = (calculation) => httpClient.post("/cost-calculations", calculation);
 
-      return res;
-    } catch (error) {
-      console.error(
-        "Error fetching calculations:",
-        error
-      );
+/** Needs records.delete. */
+export const deleteCostCalculation = (id) => httpClient.delete(`/cost-calculations/${id}`);
 
-      throw error;
-    }
-  };
+/** profit_margin_percentage, overhead_percentage, risk_buffer_amount, commission_percentage. */
+export const addCostCalculationBid = (id, bid) => httpClient.post(`/cost-calculations/${id}/bids`, bid);
 
-export const DeleteCostCalculation =
-  async (id) => {
-    try {
-      const res = await httpClient.delete(
-        API_BASE_URL +
-          `calculate/cost-calculator/${id}`
-      );
+/** data.items: id, client_type, item_type, minutes_per_unit. */
+export const getCostCalculationSettings = (clientType) =>
+  httpClient.get("/cost-calculation-settings", { params: { client_type: clientType } });
 
-      return res;
-    } catch (error) {
-      console.error(
-        "Error deleting calculation:",
-        error
-      );
-
-      throw error;
-    }
-  };
-
-  export const GetCostCalculationSettings = async (client_type) => {
-  try {
-    const res = await httpClient.get(
-      API_BASE_URL + `calculate/cost-calculation-settings?client_type=${client_type}`
-    );
-
-    return res;
-  } catch (error) {
-    console.error("Error fetching settings:", error);
-    throw error;
-  }
-};
-
-export const UpdateCostCalculationSetting = async (body) => {
-  try {
-    const res = await httpClient.post(
-      API_BASE_URL + "calculate/update-calculation-settings",
-      body
-    );
-
-    return res;
-  } catch (error) {
-    console.error("Error updating setting:", error);
-    throw error;
-  }
-};
+export const updateCostCalculationSetting = (id, minutesPerUnit) =>
+  httpClient.patch(`/cost-calculation-settings/${id}`, { minutes_per_unit: minutesPerUnit });

@@ -1,9 +1,21 @@
-import dayjs from "@/lib/dayjs";
 import { useEffect, useLayoutEffect, useState } from "react";
 import "./CreateServiceQuotePage.scss";
 import { useNavigate, useParams } from "react-router";
-import { DeleteDraftQuote, GetAllDraftQuotes, GetLatestDraftQuote, GetNextQuoteRef, SaveDraftQuote, SendQuote } from "@/services/api/serviceQuoteApi";
-import { GetUserById } from "@/services/api/userApi";
+import {
+  createQuote,
+  createQuoteDraft,
+  deleteQuoteDraft,
+  getLatestQuoteDraft,
+  getNextQuoteRef,
+  listQuoteDrafts,
+  sendQuoteDraft,
+  updateQuoteDraft,
+} from "@/services/api/serviceQuoteApi";
+import { getClient } from "@/services/api/clientApi";
+import { listServiceNames } from "@/services/api/serviceApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { fromApiDate, toApiDate } from "@/utils/datetime";
+import { clientPagePath } from "@/pages/clients/clientFlow";
 import {
   message,
   Spin,
@@ -18,7 +30,6 @@ import {
 import { DatePicker } from "antd";
 import { ArrowLeft, Folder } from "lucide-react";
 import SignatureField from "@/components/SignatureField";
-import { GetAllServiceNameByAdmin } from "@/services/api/bookingApi";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
 const { Option } = Select;
@@ -69,22 +80,21 @@ const CreateServiceQuotePage = () => {
   const loadDraftById = async () => {
     setIsLoading(true);
     try {
-      const res = await GetLatestDraftQuote(id);
-      const draft = res.data.data;
+      const draft = dataOf(await getLatestQuoteDraft(id));
       if (!draft) return;
 
       setFormData((prev) => ({
         ref: draft.ref_no || "",
         reference_type: draft.ref_type || "",
-        serviceDates: draft.service_dates ? dayjs(draft.service_dates) : null,
-        dueDate: draft.due_date ? dayjs(draft.due_date) : null,
+        serviceDates: fromApiDate(draft.service_dates),
+        dueDate: fromApiDate(draft.due_date),
         toCompany: draft.to_company_name || "",
         address1: draft.address_1 || "",
         address2: draft.address_2 || "",
         // keep the value already on the form (user API value) if the draft has none
         cc_email: draft.cc_email ?? prev.cc_email ?? "",
-        items: draft.service_quote_item?.length
-          ? draft.service_quote_item.map((i) => ({
+        items: draft.items?.length
+          ? draft.items.map((i) => ({
               description: i.description,
               frequency: i.frequency,
               quantity: i.quantity,
@@ -106,13 +116,15 @@ const CreateServiceQuotePage = () => {
               },
             ],
         totalAmount: draft.total_due || "",
-        date: draft.date ? dayjs(draft.date) : null,
+        date: fromApiDate(draft.date),
         signature: draft.signature || "",
       }));
 
       setSelectedDraftId(draft.id);
       setQuoteStatus(draft.status);
       setIsDirty(false);
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't load the draft"));
     } finally {
       setIsLoading(false);
     }
@@ -120,13 +132,13 @@ const CreateServiceQuotePage = () => {
 
   useEffect(() => {
     const loadDrafts = async () => {
-      const res = await GetAllDraftQuotes(id);
-      setDrafts(res?.data?.data || []);
-
-      // Auto load latest draft
-      if (res?.data?.data?.length) {
-        const latest = res.data.data[0];
-        loadDraftById(latest.id);
+      try {
+        const list = itemsOf(await listQuoteDrafts(id));
+        setDrafts(list);
+        // Auto load latest draft
+        if (list.length) loadDraftById(list[0].id);
+      } catch (error) {
+        message.error(errorMessage(error, "Couldn't load the drafts"));
       }
     };
 
@@ -134,16 +146,16 @@ const CreateServiceQuotePage = () => {
   }, [id]);
 
   useLayoutEffect(() => {
-    GetUserById(id)
+    getClient(id)
       .then((res) => {
-        const user = res.data.data;
+        const user = dataOf(res);
         setUserData(user);
 
         const primaryAddress = user.user_address?.[0] || null;
 
         setFormData((prev) => ({
           ...prev,
-          toCompany: user.user_profile?.name || "",
+          toCompany: user.name || "",
           // API value is authoritative; otherwise keep whatever is on the form
           cc_email: user.cc_email || prev.cc_email || "",
           address1: primaryAddress
@@ -158,14 +170,13 @@ const CreateServiceQuotePage = () => {
             : "",
         }));
       })
-      .catch((err) => {
-        console.error(err, "error");
-        message.error("Failed to load user details");
-      });
+      .catch((err) => message.error(errorMessage(err, "Couldn't load the client")));
   }, [id]);
 
   useEffect(() => {
-    GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
+    listServiceNames()
+      .then((res) => setServices(itemsOf(res)))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the services")));
   }, []);
 
   const handleItemChange = (index, field, value) => {
@@ -275,33 +286,30 @@ const CreateServiceQuotePage = () => {
 
     setIsLoading(true);
     const payload = {
-      quote_id: selectedDraftId,
-      user_id: id,
+      user_id: Number(id),
       ref_no: formData.ref,
       ref_type: formData.reference_type,
-      service_dates: formData.serviceDates,
-      due_date: formData.dueDate,
+      service_dates: toApiDate(formData.serviceDates) ?? formData.serviceDates,
+      due_date: toApiDate(formData.dueDate),
       to_company_name: formData.toCompany,
       address_1: formData.address1,
       address_2: formData.address2,
       signature: formData.signature,
       items: formData.items,
-      date: formData.date,
+      date: toApiDate(formData.date),
       cc_email: ccEmail,
-
     };
 
     try {
-      const response = await SendQuote(payload);
-      if (response.status === 200) {
-        setQuoteStatus("SAVED");
-        message.success("Quote saved and sent successfully.");
-        setTimeout(() => navigate("/users"), 1000);
-      } else {
-        message.error("Something went wrong");
-      }
+      // A saved draft becomes the quote; otherwise a new quote is made.
+      if (selectedDraftId) await sendQuoteDraft(selectedDraftId, payload);
+      else await createQuote(payload);
+      setQuoteStatus("SAVED");
+      setIsDirty(false);
+      message.success("Quote sent to the client with its payment link");
+      navigate(clientPagePath(id, "quotes"));
     } catch (error) {
-      message.error("Error: " + error.message);
+      message.error(errorMessage(error, "Couldn't send the quote"));
     } finally {
       setIsLoading(false);
     }
@@ -348,11 +356,6 @@ const CreateServiceQuotePage = () => {
                 index,
                 "description",
                 selectedService?.name || "",
-              );
-              handleItemChange(
-                index,
-                "unit_price",
-                selectedService?.price || "",
               );
             }}
             allowClear
@@ -526,25 +529,26 @@ const CreateServiceQuotePage = () => {
     if (!isDirty) return false;
 
     const payload = {
-      quote_id: selectedDraftId,
-      user_id: id,
+      user_id: Number(id),
       ref_no: formData.ref,
       ref_type: formData.reference_type,
-      service_dates: formData.serviceDates,
-      due_date: formData.dueDate,
+      service_dates: toApiDate(formData.serviceDates) ?? formData.serviceDates,
+      due_date: toApiDate(formData.dueDate),
       to_company_name: formData.toCompany,
       address_1: formData.address1,
       address_2: formData.address2,
       cc_email: (formData.cc_email || "").trim(),
       items: formData.items,
-      date: formData.date,
+      date: toApiDate(formData.date),
       signature: formData.signature,
     };
 
     try {
-      const res = await SaveDraftQuote(payload);
+      const res = selectedDraftId
+        ? await updateQuoteDraft(selectedDraftId, payload)
+        : await createQuoteDraft(payload);
 
-      setSelectedDraftId(res.data.data.quote_id);
+      setSelectedDraftId(dataOf(res)?.id ?? selectedDraftId);
       setIsDirty(false);
 
       message.success("Draft saved");
@@ -552,12 +556,7 @@ const CreateServiceQuotePage = () => {
     } catch (err) {
       message.destroy();
 
-      message.error(
-        err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          "Failed to save draft",
-      );
+      message.error(errorMessage(err, "Couldn't save the draft"));
 
       return false;
     }
@@ -620,7 +619,7 @@ const CreateServiceQuotePage = () => {
       okText: "Delete",
       okType: "danger",
       onOk: async () => {
-        await DeleteDraftQuote(selectedDraftId);
+        await deleteQuoteDraft(selectedDraftId);
         setDrafts((prev) => prev.filter((d) => d.id !== selectedDraftId));
 
         setSelectedDraftId(null);
@@ -744,11 +743,11 @@ const CreateServiceQuotePage = () => {
                 // ❗ only auto-generate if ref is empty OR never edited
                 if (!formData.ref || !isRefManuallyEdited) {
                   try {
-                    const res = await GetNextQuoteRef(value);
+                    const res = await getNextQuoteRef(value);
 
                     setFormData((prev) => ({
                       ...prev,
-                      ref: res.data.data.ref_no,
+                      ref: dataOf(res)?.ref_no || prev.ref,
                     }));
 
                     setIsRefManuallyEdited(false); // system-generated

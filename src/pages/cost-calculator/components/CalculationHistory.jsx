@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { Pagination } from "antd";
 import {
   Check,
   ClipboardList,
@@ -13,9 +14,12 @@ import {
 import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
 import {
-  DeleteCostCalculation,
-  GetAllCostCalculations,
+  deleteCostCalculation,
+  listCostCalculations,
 } from "@/services/api/costCalculatorApi";
+import { errorMessage } from "@/services/apiResult";
+import { usePagedList } from "@/hooks/usePagedList";
+import { PERMISSION, useCan } from "@/lib/session";
 
 // TOAST
 const useToast = () => {
@@ -283,43 +287,26 @@ const ConfirmModal = ({ onConfirm, onCancel }) => (
 const CalculationHistory = () => {
   const { show, ToastContainer } = useToast();
 
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchText, setSearchText] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const fetchCalculations = async () => {
-    try {
-      setLoading(true);
-      const res = await GetAllCostCalculations();
-      setData(res.data.data.data || []);
-    } catch {
-      show("Failed to fetch calculations", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCalculations();
-  }, []);
-
-  const filteredData = useMemo(() => {
-    if (!searchText) return data;
-    return data.filter((item) =>
-      (item.property_name?.toLowerCase() || "").includes(searchText.toLowerCase())
-    );
-  }, [searchText, data]);
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  // Paged on the server, searched by property name.
+  const list = usePagedList((query) => listCostCalculations(query), {
+    errorText: "Couldn't load the calculations",
+  });
+  const filteredData = list.items;
+  const loading = list.loading;
+  const searchText = list.searchText;
+  const setSearchText = list.setSearchText;
 
   const handleDelete = async () => {
     try {
-      await DeleteCostCalculation(deleteTarget);
+      await deleteCostCalculation(deleteTarget);
       show("Calculation deleted");
       setDeleteTarget(null);
-      fetchCalculations();
-    } catch {
-      show("Failed to delete calculation", "error");
+      list.reload();
+    } catch (error) {
+      show(errorMessage(error, "Couldn't delete the calculation"), "error");
     }
   };
 
@@ -414,13 +401,15 @@ const CalculationHistory = () => {
                           <Eye size={14} />
                           View
                         </button>
-                        <button
-                          className="ch-btn ch-btn--del"
-                          onClick={() => setDeleteTarget(item.id)}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
+                        {canDelete && (
+                          <button
+                            className="ch-btn ch-btn--del"
+                            onClick={() => setDeleteTarget(item.id)}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -430,8 +419,21 @@ const CalculationHistory = () => {
           )}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: "var(--color-text-secondary)" }}>
-          {filteredData.length} calculation{filteredData.length !== 1 ? "s" : ""} found
+        <div className="ch-footer">
+          <span>
+            {list.pagination?.total ?? filteredData.length} calculation
+            {(list.pagination?.total ?? filteredData.length) !== 1 ? "s" : ""}
+          </span>
+          {(list.pagination?.total_pages ?? 1) > 1 && (
+            <Pagination
+              size="small"
+              current={list.tableProps.pagination.current}
+              pageSize={list.tableProps.pagination.pageSize}
+              total={list.tableProps.pagination.total}
+              showSizeChanger={false}
+              onChange={(page, pageSize) => list.tableProps.onChange({ current: page, pageSize })}
+            />
+          )}
         </div>
       </div>
     </>

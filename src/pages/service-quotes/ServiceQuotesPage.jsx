@@ -1,596 +1,234 @@
-import { useEffect, useState, useMemo } from "react";
-import { Table, Tag, Button, message, Modal, Input, Select, Flex } from "antd";
-import dayjs from "@/lib/dayjs";
-import InvoiceViewModal from "./components/InvoiceViewModal";
+import { useState } from "react";
+import { Button, DatePicker, Input, Modal, Select, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
 import {
-  GetInvoices,
-  GetMonthlyInvoicesSummary,
-  MarkInvoiceBooked,
-  MarkInvoiceCheckPaid,
-  MarkInvoiceACHPaid,
-} from "@/services/api/invoiceApi";
-import { DeleteServiceQuote } from "@/services/api/bookingApi";
-import { API_BASE_URL } from "@/config/env";
-import PageHeader from "@/components/PageHeader";
-import IconAction from "@/components/IconAction";
-import { saveXlsx, excelStyles } from "@/utils/excel";
-import { cssVar } from "@/theme/antdTheme";
-import {
-  Search as SearchIcon,
+  Banknote,
+  CircleCheck,
   Download,
+  ExternalLink,
   Eye,
   FileText,
-  CircleCheck,
-  Banknote,
-  Trash2,
   Pencil,
+  ReceiptText,
+  Search,
+  Trash2,
 } from "lucide-react";
+import dayjs from "@/lib/dayjs";
+import PageHeader from "@/components/PageHeader";
+import IconAction from "@/components/IconAction";
+import ShareToggle from "@/components/ShareToggle";
+import StatusTag from "@/components/StatusTag";
+import { deleteQuote, listQuotes, markQuoteBooked, markQuotePaid } from "@/services/api/serviceQuoteApi";
+import { createInvoice } from "@/services/api/invoiceApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { usePagedList } from "@/hooks/usePagedList";
+import { PERMISSION, useCan } from "@/lib/session";
+import { formatDate } from "@/utils/datetime";
+import { formatMoney } from "@/utils/format";
+import InvoiceViewModal from "./components/InvoiceViewModal";
+import { downloadMonthlyQuotesExcel } from "./quotesExcel";
 import "./ServiceQuotesPage.scss";
 
-// Status colors are antd Tag presets, themed by the app's antd theme.
-const jobStatusConfig = {
-  NOT_BOOKED: { label: "NOT BOOKED", color: "warning" },
-  BOOKED: { label: "BOOKED", color: "processing" },
-  EXPIRED: { label: "EXPIRED", color: "error" },
-};
+const MONTH = "YYYY-MM";
+const STATUS_OPTIONS = [
+  { value: "SAVED", label: "Sent" },
+  { value: "SIGNED", label: "Signed" },
+  { value: "DRAFT", label: "Draft" },
+];
+const PAYMENT_OPTIONS = [
+  { value: "NOT_PAID", label: "Not paid" },
+  { value: "PAID", label: "Paid" },
+  { value: "CHECK_PAID", label: "Paid by check" },
+  { value: "ACH_PAID", label: "Paid by ACH" },
+];
 
-const paymentStatusConfig = {
-  NOT_PAID: { label: "NOT PAID", color: "warning" },
-  PAID: { label: "PAID", color: "success" },
-  CASH_PAID: { label: "PAID (CASH)", color: "success" },
-  CHECK_PAID: { label: "PAID (CHECK)", color: "success" },
-  ACH_PAID: { label: "PAID (ACH)", color: "success" },
-};
+const open = (url) => window.open(url, "_blank", "noopener");
 
-const PDF_BASE_URL = `${API_BASE_URL}docs`;
-
-const getPdfUrl = (record) => {
-  if (record.pdf_url) return record.pdf_url;
-  return `${PDF_BASE_URL}/quote-${record.ref_no}.pdf`;
-};
-
-const handleViewPdf = (record) => {
-  const url = getPdfUrl(record);
-  window.open(url, "_blank", "noopener,noreferrer");
-};
-
+// Service quotes: one month at a time (this month to start), with what the
+// office does next: mark booked or paid, make the invoice, share or delete.
 const ServiceQuotesPage = () => {
   const navigate = useNavigate();
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const [viewing, setViewing] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const list = usePagedList((query) => listQuotes(query), {
+    filters: { month: dayjs().format(MONTH) },
+    errorText: "Couldn't load the quotes",
+  });
 
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-
-  const [searchText, setSearchText] = useState("");
-
-  const [selectedMonth, setSelectedMonth] = useState(dayjs().month());
-  const [selectedYear, setSelectedYear] = useState(dayjs().year());
-
-  const months = Array.from({ length: 12 }, (_, i) =>
-    dayjs().month(i).format("MMMM"),
-  );
-  const years = Array.from({ length: 10 }, (_, i) => dayjs().year() - 5 + i);
-
-  const [payModalOpen, setPayModalOpen] = useState(false);
-  const [payModalInvoiceId, setPayModalInvoiceId] = useState(null);
-  const [payModalLoading, setPayModalLoading] = useState(null);
-
-  const openPayModal = (id) => {
-    setPayModalInvoiceId(id);
-    setPayModalOpen(true);
-  };
-
-  const closePayModal = () => {
-    setPayModalOpen(false);
-    setPayModalInvoiceId(null);
-    setPayModalLoading(null);
-  };
-
-  const handleConfirmPay = async (method) => {
-    if (!payModalInvoiceId) return;
-
-    setPayModalLoading(method);
+  const act = async (action, success, failure) => {
     try {
-      if (method === "check") {
-        await MarkInvoiceCheckPaid(payModalInvoiceId);
-        message.success("Invoice marked as Paid by Check");
-      } else {
-        await MarkInvoiceACHPaid(payModalInvoiceId);
-        message.success("Invoice marked as Paid by ACH");
-      }
-
-      fetchInvoices(selectedMonth, selectedYear);
-      closePayModal();
+      await action();
+      message.success(success);
+      list.reload();
     } catch (error) {
-      const backendMessage =
-        error?.response?.data?.message ||
-        "Failed to mark invoice as paid by " + (method === "check" ? "check" : "ACH");
-      message.error(backendMessage);
-      setPayModalLoading(null);
+      message.error(errorMessage(error, failure));
     }
   };
 
-  const fetchInvoices = async (m = selectedMonth, y = selectedYear) => {
-    try {
-      setLoading(true);
-
-      const formattedMonth = dayjs().year(y).month(m).format("YYYY-MM");
-
-      const res = await GetInvoices(formattedMonth);
-      setData(res.data.data || []);
-    } catch {
-      message.error("Failed to load invoices");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInvoices(selectedMonth, selectedYear);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleMarkBooked = async (id) => {
-    try {
-      await MarkInvoiceBooked(id);
-      message.success("Invoice marked as BOOKED");
-
-      fetchInvoices(selectedMonth, selectedYear);
-    } catch {
-      message.error("Failed to mark as booked");
-    }
-  };
-
-  const filteredData = useMemo(() => {
-    if (!searchText) return data;
-
-    return data.filter((item) => {
-      const name = item.payment_user?.user_profile?.name?.toLowerCase() || "";
-      const ref = item.ref_no?.toLowerCase() || "";
-      const amount = String(item.total_due || "");
-
-      return (
-        name.includes(searchText.toLowerCase()) ||
-        ref.includes(searchText.toLowerCase()) ||
-        amount.includes(searchText)
-      );
+  const markPaid = (quote) => {
+    let method = "CHECK";
+    Modal.confirm({
+      title: `Mark quote ${quote.ref_no} paid?`,
+      content: (
+        <Select
+          defaultValue="CHECK"
+          style={{ width: "100%", marginTop: 8 }}
+          onChange={(value) => (method = value)}
+          options={[
+            { value: "CHECK", label: "Paid by check" },
+            { value: "ACH", label: "Paid by ACH" },
+          ]}
+        />
+      ),
+      okText: "Mark Paid",
+      onOk: () => act(() => markQuotePaid(quote.id, method), "Quote marked paid; its link is closed", "Couldn't mark it paid"),
     });
-  }, [searchText, data]);
+  };
+
+  const makeInvoice = async (quote) => {
+    try {
+      const invoice = dataOf(await createInvoice({ quote_id: quote.id }));
+      message.success("Invoice made from the quote");
+      navigate(`/edit-invoice/${invoice.id}`);
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't make the invoice"));
+    }
+  };
+
+  const confirmDelete = (quote) =>
+    Modal.confirm({
+      title: `Delete quote ${quote.ref_no}?`,
+      content: "Its payment link closes. This can't be undone.",
+      okText: "Delete",
+      okType: "danger",
+      onOk: () => act(() => deleteQuote(quote.id), "Quote deleted", "Couldn't delete the quote"),
+    });
+
+  const exportMonth = async () => {
+    const month = list.filters.month || dayjs().format(MONTH);
+    setExporting(true);
+    try {
+      const monthName = await downloadMonthlyQuotesExcel(month);
+      message.success(`Service quotes for ${monthName} downloaded`);
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't make the spreadsheet"));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const columns = [
-    { title: "Invoice #", dataIndex: "ref_no" },
+    {
+      title: "Quote #",
+      dataIndex: "ref_no",
+      render: (ref, quote) => (
+        <Button type="link" className="table-link" onClick={() => setViewing(quote)}>
+          {ref || `Quote ${quote.id}`}
+        </Button>
+      ),
+    },
     {
       title: "Client",
-      render: (_, r) => r.payment_user?.user_profile?.name || "-",
-    },
-    {
-      title: "Amount",
-      dataIndex: "total_due",
-      render: (v) => "$" + Number(v).toFixed(2),
-    },
-    {
-      title: "Job Status",
-      dataIndex: "job_status",
-      render: (s) => (
-        <Tag color={jobStatusConfig[s]?.color}>{jobStatusConfig[s]?.label}</Tag>
+      key: "client",
+      render: (_, quote) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/viewUser/${quote.user_id}?tab=quotes`)}>
+          {quote.client?.name || quote.to_company_name || "Client"}
+        </Button>
       ),
     },
-    {
-      title: "Payment Status",
-      dataIndex: "payment_status",
-      render: (s) => (
-        <Tag color={paymentStatusConfig[s]?.color}>
-          {paymentStatusConfig[s]?.label}
-        </Tag>
-      ),
-    },
-    {
-      title: "Expiry",
-      dataIndex: "expires_at",
-      render: (d) => dayjs(d).format("MM/DD/YYYY"),
-    },
+    { title: "Amount", dataIndex: "total_due", align: "right", render: formatMoney },
+    { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
+    { title: "Job", dataIndex: "job_status", render: (status) => <StatusTag code={status} /> },
+    { title: "Payment", dataIndex: "payment_status", render: (status) => <StatusTag code={status} /> },
+    { title: "Expires", dataIndex: "expires_at", render: (date) => formatDate(date) },
     {
       title: "Actions",
-      render: (_, record) => (
-        <Flex gap={6} className="invoices__actions">
-          <IconAction
-            icon={Eye}
-            title="View Details"
-            onClick={() => setSelectedInvoice(record)}
-          />
-
-          <IconAction
-            icon={Pencil}
-            title="Edit Quote"
-            onClick={() => navigate("/edit-service-quote/" + record.id)}
-          />
-
-          <IconAction
-            icon={FileText}
-            title="View PDF"
-            onClick={() => handleViewPdf(record)}
-          />
-
-          {record.job_status === "NOT_BOOKED" && (
+      key: "actions",
+      width: 300,
+      render: (_, quote) => (
+        <Space size={4} wrap>
+          <IconAction icon={Eye} title="View" onClick={() => setViewing(quote)} />
+          <IconAction icon={Pencil} title="Edit" onClick={() => navigate(`/edit-service-quote/${quote.id}`)} />
+          {quote.pdf_url && <IconAction icon={FileText} title="PDF" onClick={() => open(quote.pdf_url)} />}
+          {quote.payment_url && quote.payment_status === "NOT_PAID" && (
+            <IconAction icon={ExternalLink} title="Payment link" onClick={() => open(quote.payment_url)} />
+          )}
+          {quote.job_status === "NOT_BOOKED" && (
             <IconAction
               icon={CircleCheck}
-              title="Mark Booked"
-              onClick={() => handleMarkBooked(record.id)}
+              title="Mark booked"
+              onClick={() => act(() => markQuoteBooked(quote.id), "Quote marked booked", "Couldn't mark it booked")}
             />
           )}
-
-          {record.payment_status === "NOT_PAID" && (
-            <IconAction
-              icon={Banknote}
-              title="Mark Paid by Check/ACH"
-              onClick={() => openPayModal(record.id)}
-            />
+          {quote.payment_status === "NOT_PAID" && (
+            <IconAction icon={Banknote} title="Mark paid by check or ACH" onClick={() => markPaid(quote)} />
           )}
-
-          <IconAction
-            icon={Trash2}
-            title="Delete Invoice"
-            danger
-            onClick={() => handleDelete(record.id)}
-          />
-        </Flex>
+          {quote.invoice_id ? (
+            <IconAction icon={ReceiptText} title="Open its invoice" onClick={() => navigate(`/edit-invoice/${quote.invoice_id}`)} />
+          ) : (
+            quote.status !== "DRAFT" && (
+              <IconAction icon={ReceiptText} title="Make an invoice from this quote" onClick={() => makeInvoice(quote)} />
+            )
+          )}
+          <ShareToggle kind="quote" id={quote.id} sharedAt={quote.shared_at} onChanged={list.reload} />
+          {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(quote)} />}
+        </Space>
       ),
     },
   ];
 
-  const handleDownloadExcel = async () => {
-    try {
-      const formattedMonth = dayjs()
-        .year(selectedYear)
-        .month(selectedMonth)
-        .format("YYYY-MM");
-
-      const res = await GetMonthlyInvoicesSummary(formattedMonth);
-      const users = res.data.data || [];
-
-      const monthName = dayjs(formattedMonth).format("MMMM YYYY");
-      const monthShort = dayjs(formattedMonth).format("MMM");
-
-      const ordinalSuffix = (n) => {
-        const j = n % 10;
-        const k = n % 100;
-        if (j === 1 && k !== 11) return "st";
-        if (j === 2 && k !== 12) return "nd";
-        if (j === 3 && k !== 13) return "rd";
-        return "th";
-      };
-
-      const formatDayHeader = (d) => "" + d + ordinalSuffix(d) + " " + monthShort;
-
-      const allDates = [];
-      users.forEach((user) => {
-        (user.invoices || []).forEach((inv) => {
-          if (inv.created_at) {
-            allDates.push(dayjs(inv.created_at).date());
-          }
-        });
-      });
-
-      const dayNumbers = Array.from(new Set(allDates)).sort((a, b) => a - b);
-
-      // Themed cell styles (header, status fills, currency format...).
-      const styles = excelStyles();
-
-      const paidStatuses = ["PAID", "CASH_PAID", "CHECK_PAID", "ACH_PAID"];
-
-      const getFinalStatus = (inv) => {
-        if (paidStatuses.includes(inv.payment_status)) return "PAID";
-        return "NOT_PAID";
-      };
-
-      let totalInvoices = 0;
-      let totalAmount = 0;
-      let paidCount = 0;
-      let paidAmount = 0;
-      let notPaidCount = 0;
-      let notPaidAmount = 0;
-
-      users.forEach((user) => {
-        (user.invoices || []).forEach((inv) => {
-          const amount = Number(inv.total_due || 0);
-          totalInvoices++;
-          totalAmount += amount;
-
-          if (paidStatuses.includes(inv.payment_status)) {
-            paidCount++;
-            paidAmount += amount;
-          } else {
-            notPaidCount++;
-            notPaidAmount += amount;
-          }
-        });
-      });
-
-      const mergeSpan = Math.max(6, dayNumbers.length + 1);
-
-      // Rows are 34pt high (the sheet's row height); client rows grow with
-      // the number of quotes on their busiest day.
-      const ROW_HEIGHT = 34;
-
-      // One cell merged across the full report width.
-      const mergedRow = (cell) => [
-        { ...cell, columnSpan: mergeSpan, height: ROW_HEIGHT },
-        ...Array(mergeSpan - 1).fill(null),
-      ];
-
-      const rows = [];
-
-      rows.push(
-        mergedRow({
-          value: "Service Quote Invoices - " + monthName,
-          ...styles.title,
-        }),
-      );
-
-      rows.push(
-        [
-          "Total Invoices",
-          "Total Amount",
-          "Paid",
-          "Paid Amount",
-          "Not Paid",
-          "Not Paid Amount",
-        ].map((value) => ({ value, ...styles.header, height: ROW_HEIGHT })),
-      );
-
-      rows.push(
-        [
-          totalInvoices,
-          totalAmount,
-          paidCount,
-          paidAmount,
-          notPaidCount,
-          notPaidAmount,
-        ].map((value, i) => ({
-          value,
-          fontWeight: "bold",
-          align: "center",
-          height: ROW_HEIGHT,
-          // 2nd, 4th and 6th columns are amounts
-          ...(i % 2 === 1 ? { format: styles.currency } : {}),
-        })),
-      );
-
-      rows.push(
-        mergedRow({
-          value: "🟢 Paid (Card / Check / ACH / Cash)     🟠 Not Paid",
-          ...styles.note,
-          fontSize: 11,
-        }),
-      );
-
-      const header = ["Client Name"].concat(dayNumbers.map(formatDayHeader));
-
-      rows.push(
-        header.map((value) => ({
-          value,
-          ...styles.header,
-          height: ROW_HEIGHT,
-        })),
-      );
-
-      // Sheet row number of the first client row (rows are striped by it).
-      const firstDataRow = rows.length + 1;
-
-      users.forEach((user, userIndex) => {
-        const userInvoices = user.invoices || [];
-        const hasUnpaid = userInvoices.some(
-          (inv) => getFinalStatus(inv) === "NOT_PAID",
-        );
-
-        // Fill for the whole row; day cells with quotes use a status fill.
-        const rowFill = hasUnpaid
-          ? styles.error
-          : (firstDataRow + userIndex) % 2 === 0
-            ? styles.muted
-            : { backgroundColor: cssVar("--color-bg") };
-
-        const maxQuotesInADay = Math.max(
-          1,
-          ...dayNumbers.map(
-            (d) =>
-              userInvoices.filter((inv) => dayjs(inv.created_at).date() === d)
-                .length,
-          ),
-        );
-
-        const row = [
-          {
-            value: user.name || "Unknown",
-            ...rowFill,
-            fontWeight: "bold",
-            textColor: cssVar(
-              hasUnpaid ? "--color-error-strong" : "--color-text",
-            ),
-            alignVertical: "center",
-            height: Math.max(34, 20 + maxQuotesInADay * 16),
-          },
-        ];
-
-        dayNumbers.forEach((d) => {
-          const invoices = userInvoices.filter(
-            (inv) => dayjs(inv.created_at).date() === d,
-          );
-
-          if (invoices.length === 0) {
-            row.push({ value: "—", ...rowFill, align: "center" });
-            return;
-          }
-
-          let text = "";
-          let cellStatus = "PAID";
-
-          invoices.forEach((inv) => {
-            const status = getFinalStatus(inv);
-            const emoji = status === "PAID" ? "🟢" : "🟠";
-            const amount = "$" + Number(inv.total_due || 0).toFixed(2);
-            text += inv.ref_no + "  " + amount + "  " + emoji + "\n";
-
-            if (status === "NOT_PAID") cellStatus = "NOT_PAID";
-          });
-
-          row.push({
-            value: text.trim(),
-            ...(cellStatus === "PAID" ? styles.success : styles.warning),
-            wrap: true,
-            alignVertical: "top",
-            align: "center",
-          });
-        });
-
-        rows.push(row);
-      });
-
-      await saveXlsx(
-        rows,
-        {
-          sheet: "Service Quotes " + monthName,
-          columns: Array.from({ length: mergeSpan }, (_, i) => ({
-            width: i === 0 ? 36 : 20,
-          })),
-          stickyRowsCount: 5,
-          stickyColumnsCount: 1,
-          orientation: "landscape",
-        },
-        "Service Quote Invoices - " + monthName + ".xlsx",
-      );
-
-      message.success(
-        "Service Quote Invoices - " + monthName + " downloaded successfully!",
-      );
-    } catch (err) {
-      console.error(err);
-      message.error("Excel export failed");
-    }
-  };
-
-  const handleDelete = (invoiceId) => {
-    Modal.confirm({
-      title: "Delete Invoice",
-      content: "Are you sure you want to delete this invoice?",
-      okText: "Delete",
-      okType: "danger",
-      centered: true,
-      onOk: async () => {
-        try {
-          await DeleteServiceQuote(invoiceId);
-          message.success("Invoice deleted successfully");
-          fetchInvoices(selectedMonth, selectedYear);
-        } catch (error) {
-          console.error("Delete error:", error);
-          message.error("Failed to delete invoice");
-        }
-      },
-    });
-  };
-
   return (
-    <>
-      <div className="surface surface--padded invoices__header">
-        <PageHeader
-          card={false}
-          title="SERVICE QUOTE MANAGEMENT"
-          subtitle="View & manage service quotes"
-          actions={
-            <Button
-              type="primary"
+    <div>
+      <PageHeader
+        title="SERVICE QUOTES"
+        subtitle="Quotes sent to clients with a payment link. Start a new one from the client's page."
+        actions={
+          <>
+            <DatePicker
+              picker="month"
               size="large"
-              icon={<Download size={16} />}
-              onClick={handleDownloadExcel}
-              disabled={selectedMonth === null || selectedYear === null}
-            >
-              Download Excel ({dayjs().month(selectedMonth).format("MMM")}{" "}
-              {selectedYear})
+              format="MMMM YYYY"
+              placeholder="Every month"
+              value={list.filters.month ? dayjs(list.filters.month, MONTH) : null}
+              onChange={(value) => list.setFilter("month", value ? value.format(MONTH) : undefined)}
+            />
+            <Select
+              size="large"
+              allowClear
+              placeholder="Any status"
+              style={{ width: 140 }}
+              options={STATUS_OPTIONS}
+              value={list.filters.status}
+              onChange={(value) => list.setFilter("status", value)}
+            />
+            <Select
+              size="large"
+              allowClear
+              placeholder="Any payment"
+              style={{ width: 160 }}
+              options={PAYMENT_OPTIONS}
+              value={list.filters.payment_status}
+              onChange={(value) => list.setFilter("payment_status", value)}
+            />
+            <Input
+              allowClear
+              size="large"
+              prefix={<Search size={16} className="text-subtle" />}
+              placeholder="Search reference or company"
+              style={{ width: 230 }}
+              value={list.searchText}
+              onChange={(event) => list.setSearchText(event.target.value)}
+            />
+            <Button size="large" icon={<Download size={16} />} loading={exporting} onClick={exportMonth}>
+              Monthly Excel
             </Button>
-          }
-        />
-
-        <div className="invoices__toolbar">
-          <Input
-            allowClear
-            size="large"
-            className="invoices__search"
-            prefix={<SearchIcon size={16} className="text-subtle" />}
-            placeholder="Search invoices..."
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-
-          <Select
-            size="large"
-            className="invoices__month"
-            value={selectedMonth}
-            onChange={(m) => {
-              setSelectedMonth(m);
-              fetchInvoices(m, selectedYear);
-            }}
-            options={months.map((m, i) => ({ value: i, label: m }))}
-          />
-
-          <Select
-            size="large"
-            className="invoices__year"
-            value={selectedYear}
-            onChange={(y) => {
-              setSelectedYear(y);
-              fetchInvoices(selectedMonth, y);
-            }}
-            options={years.map((y) => ({ value: y, label: y }))}
-          />
-        </div>
-      </div>
-
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={filteredData}
-        loading={loading}
-        bordered
-        size="middle"
+          </>
+        }
       />
-
-      {selectedInvoice && (
-        <InvoiceViewModal
-          invoice={selectedInvoice}
-          onClose={() => setSelectedInvoice(null)}
-        />
-      )}
-
-      <Modal
-        title="Mark Invoice as Paid"
-        open={payModalOpen}
-        onCancel={closePayModal}
-        footer={[
-          <Button key="cancel" onClick={closePayModal} disabled={!!payModalLoading}>
-            Cancel
-          </Button>,
-          <Button
-            key="check"
-            onClick={() => handleConfirmPay("check")}
-            loading={payModalLoading === "check"}
-            disabled={!!payModalLoading}
-          >
-            Paid by Check
-          </Button>,
-          <Button
-            key="ach"
-            type="primary"
-            onClick={() => handleConfirmPay("ach")}
-            loading={payModalLoading === "ach"}
-            disabled={!!payModalLoading}
-          >
-            Paid by ACH
-          </Button>,
-        ]}
-      >
-        <p>How was this invoice paid?</p>
-      </Modal>
-    </>
+      <Table rowKey="id" columns={columns} scroll={{ x: "max-content" }} size="middle" {...list.tableProps} />
+      {viewing && <InvoiceViewModal invoice={viewing} onClose={() => setViewing(null)} />}
+    </div>
   );
 };
 

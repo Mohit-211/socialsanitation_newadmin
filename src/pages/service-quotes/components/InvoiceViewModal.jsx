@@ -1,5 +1,5 @@
 import { Modal, Tag, Divider, Button } from "antd";
-import dayjs from "@/lib/dayjs";
+import { formatDate } from "@/utils/datetime";
 import "./InvoiceViewModal.scss";
 
 // Status colors are antd Tag presets, themed by the app's antd theme.
@@ -13,6 +13,8 @@ const paymentStatusConfig = {
   NOT_PAID: { label: "NOT PAID", color: "warning" },
   PAID: { label: "PAID", color: "success" },
   CASH_PAID: { label: "PAID (CASH)", color: "success" },
+  CHECK_PAID: { label: "PAID (CHECK)", color: "success" },
+  ACH_PAID: { label: "PAID (ACH)", color: "success" },
 };
 
 const InvoiceViewModal = ({ invoice, onClose }) => {
@@ -48,25 +50,25 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       {/* Client Info */}
       <div className="invoice-view__client">
         <div className="invoice-view__client-name">
-          {invoice.payment_user?.user_profile?.name}
+          {invoice.client?.name || invoice.to_company_name}
         </div>
         <div className="invoice-view__client-email">
-          {invoice.payment_user?.email}
+          {invoice.client?.email}
         </div>
       </div>
 
       {/* Dates & Address */}
       <div className="invoice-view__info">
         <InfoRow label="Service Date">
-          {dayjs(invoice.service_dates).format("MM/DD/YYYY") || "N/A"}
+          {formatDate(invoice.service_dates, "N/A")}
         </InfoRow>
 
         <InfoRow label="Due Date">
-          {dayjs(invoice.due_date).format("MM/DD/YYYY") || "N/A"}
+          {formatDate(invoice.due_date, "N/A")}
         </InfoRow>
 
         <InfoRow label="Expiry Date">
-          {dayjs(invoice.expires_at).format("MM/DD/YYYY")}
+          {formatDate(invoice.expires_at, "N/A")}
         </InfoRow>
 
         <InfoRow label="Address">
@@ -80,7 +82,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       <h4 className="invoice-view__items-title">ITEMS</h4>
 
       <div className="invoice-view__items">
-        {invoice.service_quote_item?.map((item) => (
+        {invoice.items?.map((item) => (
           <div key={item.id} className="invoice-view__item">
             <div className="invoice-view__item-name">{item.description}</div>
             <div className="invoice-view__item-meta">
@@ -95,8 +97,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
 
       {/* Payment Link */}
       <div className="invoice-view__payment">
-        {invoice.payment_status === "PAID" ||
-        invoice.payment_status === "CASH_PAID" ? (
+        {["PAID", "CASH_PAID", "CHECK_PAID", "ACH_PAID"].includes(invoice.payment_status) ? (
           <div className="invoice-view__notice invoice-view__notice--success">
             ✅ Payment Completed
           </div>
@@ -104,12 +105,12 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
           <div className="invoice-view__notice invoice-view__notice--error">
             ⏰ Invoice Expired
           </div>
-        ) : invoice.square_payment_url ? (
+        ) : invoice.payment_url ? (
           <Button
             type="primary"
             block
             size="large"
-            onClick={() => window.open(invoice.square_payment_url, "_blank")}
+            onClick={() => window.open(invoice.payment_url, "_blank", "noopener")}
           >
             💳 View Payment Link
           </Button>

@@ -16,13 +16,17 @@ import {
 } from "lucide-react";
 
 import PageHeader from "@/components/PageHeader";
+import { useSearchParams } from "react-router";
 import {
-  CreateBidMaximizer,
-  CreateCostCalculator,
-  GetCostCalculationSettings,
+  addCostCalculationBid,
+  createCostCalculation,
+  getCostCalculationDraft,
+  getCostCalculationSettings,
 } from "@/services/api/costCalculatorApi";
-import { GetAllUserName } from "@/services/api/invoiceApi";
-import { GetClientChecklistByUserId } from "@/services/api/bookingApi";
+import { listClientPicks } from "@/services/api/clientApi";
+import { listClientScopes } from "@/services/api/scopeApi";
+import { getSheet } from "@/services/api/sheetApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import "@/styles/clientChart.scss";
 
 const { Option } = Select;
@@ -302,6 +306,11 @@ const CostCalculatorForm = () => {
 
   const [users, setUsers] = useState([]);
   const [userId, setUserId] = useState(null);
+  // The scope of work being priced, and the sheet behind it
+  const [scopes, setScopes] = useState([]);
+  const [scopeId, setScopeId] = useState(null);
+  const [sheetId, setSheetId] = useState(null);
+  const [searchParams] = useSearchParams();
 
   const [clientChecklist, setClientChecklist] = useState([]);
   const [clientType, setClientType] = useState("");
@@ -339,125 +348,91 @@ const CostCalculatorForm = () => {
     commission_percentage: 7,
   });
 
-  // ── Fetch users ──
-  useEffect(() => {
-    GetAllUserName()
-      .then((res) => setUsers(res.data.data || []))
-      .catch(console.error);
-  }, []);
-
-  // ── Select client ──
-  const handleUserChange = async (value) => {
-    setUserId(value);
+  // ── Starting counts from the backend ──
+  // The draft works them out from the scope (or the client's newest sheet):
+  // the property, its counts, the floor mix and the client type.
+  const loadDraft = async (clientId, chosenScopeId) => {
+    setLoadingChecklist(true);
     try {
-      setLoadingChecklist(true);
-      const checklistRes = await GetClientChecklistByUserId(value);
-      const checklistData = checklistRes?.data?.data?.data?.[0] || {};
-      const details = checklistData?.user_client_checklist_details || [];
-
-      const currentClientType = checklistData?.client_type || "commercial";
-
-      const settingsRes = await GetCostCalculationSettings(currentClientType);
-
+      const draft = dataOf(await getCostCalculationDraft({ clientId, scopeId: chosenScopeId }));
+      const currentClientType = draft?.client_type || "commercial";
       const settingMap = {};
-
-      (settingsRes.data.data || []).forEach((item) => {
+      itemsOf(await getCostCalculationSettings(currentClientType)).forEach((item) => {
         settingMap[item.item_type] = Number(item.minutes_per_unit);
       });
-
       setCostSettings(settingMap);
-
       setClientType(currentClientType);
-      setClientChecklist(details);
+      setScopeId(draft?.scope_of_work_id ?? null);
+      setSheetId(draft?.client_sheet_id ?? null);
 
+      const mix = draft?.floor_mix || {};
       setFloorComposition({
-        carpet: Number(checklistData.carpet_percentage || 0),
-        concrete: Number(checklistData.concrete_percentage || 0),
-        vct_lvt: Number(checklistData.vct_lvt_percentage || 0),
-        tile: Number(checklistData.tile_percentage || 0),
-      });
-
-      let roomCount = 0;
-
-      details.forEach((item) => {
-        if (currentClientType === "commercial") {
-          // Don't count the Restrooms service area as a room
-          if (item.service_area !== "Restrooms") {
-            roomCount += Number(item.restrooms || 0);
-          }
-        } else {
-          roomCount += Number(item.num_desks_trash_cans || 0);
-        }
-      });
-
-      let restroomCount = 0,
-        stallCount = 0,
-        kitchenCount = 0,
-        trashCanCount = 0;
-
-      details.forEach((item) => {
-        if (currentClientType === "commercial") {
-          if (item.service_area === "Restrooms") {
-            restroomCount += Number(item.restrooms || 0);
-          }
-        } else {
-          if (item.service_area === "Restrooms") {
-            restroomCount += Number(item.num_desks_trash_cans || 0);
-          }
-        }
-
-        if (currentClientType === "commercial") {
-          if (item.service_area === "Restrooms") {
-            stallCount +=
-              Number(item.restrooms || 0) * Number(item.stalls || 0);
-          }
-        } else {
-          if (item.service_area === "Restrooms") {
-            stallCount += Number(item.num_desks_trash_cans || 0);
-          }
-        }
-
-        // kitch logic
-        if (currentClientType === "commercial") {
-          if (item.service_area === "Kitchen Areas") {
-            kitchenCount += Number(item.restrooms || 0);
-          }
-        } else {
-          if (item.service_area === "Kitchen") {
-            kitchenCount += Number(item.num_desks_trash_cans || 0);
-          }
-        }
-        // trash cans
-        if (currentClientType === "commercial") {
-          if (item.service_area !== "Restrooms") {
-            trashCanCount +=
-              Number(item.restrooms || 0) * Number(item.stalls || 0);
-          }
-        } else {
-          if (item.service_area !== "Restrooms") {
-            trashCanCount += Number(item.num_desks_trash_cans || 0);
-          }
-        }
+        carpet: Number(mix.carpet_percentage || 0),
+        concrete: Number(mix.concrete_percentage || 0),
+        vct_lvt: Number(mix.vct_lvt_percentage || 0),
+        tile: Number(mix.tile_percentage || 0),
       });
 
       setFormData((prev) => ({
         ...prev,
-        property_name: checklistData?.user?.name || "",
-        estimated_sqft: Number(checklistData?.estimated_sqft || 0),
-        walkaround_minutes: Number(checklistData?.walkaround_minutes || 0),
-        room_count: roomCount,
-        restroom_count: restroomCount,
-        stall_count: stallCount,
-        kitchen_count: kitchenCount,
-        trash_can_count: trashCanCount,
+        property_name: draft?.property_name || prev.property_name,
+        estimated_sqft: Number(draft?.estimated_sqft || 0),
+        walkaround_minutes: Number(draft?.walkaround_minutes || 0),
+        room_count: Number(draft?.room_count || 0),
+        restroom_count: Number(draft?.restroom_count || 0),
+        stall_count: Number(draft?.stall_count || 0),
+        kitchen_count: Number(draft?.kitchen_count || 0),
+        trash_can_count: Number(draft?.trash_can_count || 0),
+        employee_count: Number(draft?.employee_count || prev.employee_count || 1),
       }));
+
+      // The sheet's areas, for the Initial Client Chart
+      setClientChecklist(draft?.client_sheet_id ? dataOf(await getSheet(draft.client_sheet_id))?.areas || [] : []);
     } catch (error) {
-      console.error(error);
-      message.error("Failed to load checklist");
+      message.error(errorMessage(error, "Couldn't load the starting counts"));
     } finally {
       setLoadingChecklist(false);
     }
   };
+
+  // ── Select client ──
+  const handleUserChange = async (value, chosenScopeId = null, list = users) => {
+    setUserId(value);
+    setScopeId(chosenScopeId);
+    setResult(null);
+    setBidResult(null);
+    setCalculationId(null);
+    const client = list.find((user) => user.id === value);
+    setFormData((prev) => ({ ...prev, property_name: client?.name || "" }));
+    try {
+      setScopes(itemsOf(await listClientScopes(value)));
+    } catch {
+      setScopes([]);
+    }
+    await loadDraft(value, chosenScopeId);
+  };
+
+  const handleScopeChange = (value) => {
+    setScopeId(value ?? null);
+    setResult(null);
+    setBidResult(null);
+    setCalculationId(null);
+    loadDraft(userId, value ?? null);
+  };
+
+  // ── Fetch clients; a client and scope in the address are priced at once ──
+  useEffect(() => {
+    listClientPicks()
+      .then((res) => {
+        const clients = itemsOf(res);
+        setUsers(clients);
+        const clientId = Number(searchParams.get("clientId"));
+        if (clientId) handleUserChange(clientId, Number(searchParams.get("scopeId")) || null, clients);
+      })
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the clients")));
+    // The address is read once, when the calculator opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Live preview ──
   const previewData = useMemo(() => {
@@ -548,16 +523,20 @@ const CostCalculatorForm = () => {
       return show("Please enter a property name", "warning");
     try {
       setLoading(true);
-      const res = await CreateCostCalculator({
-        ...formData,
-        client_id: userId,
-        custom_tasks: customTasks,
-      });
-      setResult(res.data.data);
-      setCalculationId(res.data.data.id);
-      show("Cost calculation saved successfully!");
+      const saved = dataOf(
+        await createCostCalculation({
+          ...formData,
+          client_id: userId,
+          scope_of_work_id: scopeId || undefined,
+          client_sheet_id: sheetId || undefined,
+          custom_tasks: customTasks,
+        }),
+      );
+      setResult(saved);
+      setCalculationId(saved?.id);
+      show("Cost calculation saved");
     } catch (e) {
-      show(e?.response?.data?.message || "Something went wrong", "error");
+      show(errorMessage(e, "Couldn't save the calculation"), "error");
     } finally {
       setLoading(false);
     }
@@ -568,14 +547,10 @@ const CostCalculatorForm = () => {
       return show("Generate cost calculation first", "warning");
     try {
       setBidLoading(true);
-      const res = await CreateBidMaximizer({
-        cost_calculation_id: calculationId,
-        ...bidData,
-      });
-      setBidResult(res.data.data);
-      show("Bid generated successfully!");
+      setBidResult(dataOf(await addCostCalculationBid(calculationId, bidData)));
+      show("Bid worked out");
     } catch (e) {
-      show(e?.response?.data?.message || "Something went wrong", "error");
+      show(errorMessage(e, "Couldn't work out the bid"), "error");
     } finally {
       setBidLoading(false);
     }
@@ -686,17 +661,36 @@ const CostCalculatorForm = () => {
               placeholder="Search and select a client…"
               optionFilterProp="children"
               value={userId}
-              onChange={handleUserChange}
+              onChange={(value) => handleUserChange(value)}
               filterOption={(input, option) =>
                 option?.children?.toLowerCase()?.includes(input.toLowerCase())
               }
             >
               {users.map((user) => (
                 <Option key={user.id} value={user.id}>
-                  {user.name}
+                  {user.name || user.email}
                 </Option>
               ))}
             </Select>
+            {userId && (
+              <>
+                <div className="cc-section-label" style={{ marginTop: 16 }}>
+                  Scope of Work to Price
+                </div>
+                <Select
+                  style={{ width: "100%" }}
+                  allowClear
+                  placeholder="The client's newest sheet (no scope)"
+                  value={scopeId ?? undefined}
+                  onChange={handleScopeChange}
+                  options={scopes.map((scope) => ({
+                    value: scope.id,
+                    label: scope.client_sheet ? `${scope.title} (from ${scope.client_sheet.title})` : scope.title,
+                  }))}
+                  notFoundContent="This client has no scope of work yet"
+                />
+              </>
+            )}
           </div>
 
           {/* ── Property details card ── */}
@@ -842,7 +836,7 @@ const CostCalculatorForm = () => {
                     </div>
                   ) : (
                     <p className="usb-chart-card__empty">
-                      No checklist available for this client
+                      No sheet areas for this client
                     </p>
                   )}
                 </div>

@@ -1,50 +1,59 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const SendQuote = async (formData) => {
-  return await httpClient.post(API_BASE_URL + `admin/user/submitServiceQuote`, formData);
-};
+// Service quotes: priced lines a client pays through a Square link. Sending
+// one makes the link and the PDF, then emails and texts the client. Drafts
+// keep a quote being written until it is sent. Share and Unshare live in
+// documentApi.js.
 
-export const GetServiceQuoteById = async (id) => {
-  const res = await httpClient.get(
-    API_BASE_URL + `admin/user/getServiceQuoteById/${id}`,
-  );
-  return res;
-};
+/**
+ * Query: page, limit, month, user_id, status (DRAFT, SAVED, SIGNED),
+ * job_status, payment_status, search (reference or company).
+ */
+export const listQuotes = (params) => httpClient.get("/quotes", { params });
 
-export const EditServiceQuote = async (formData) => {
-  return await httpClient.put(API_BASE_URL + `admin/user/editServiceQuote`, formData);
-};
+/** One quote, with items, client and signature. */
+export const getQuote = (id) => httpClient.get(`/quotes/${id}`);
 
-// draft api
+/**
+ * user_id and items are required, with ref_no or ref_type; also
+ * service_dates, due_date, date, to_company_name, address_1, address_2,
+ * signature and cc_email. A total of 0 is refused.
+ */
+export const createQuote = (quote) => httpClient.post("/quotes", quote);
 
-export const GetLatestDraftQuote = async (id) => {
-  const res = await httpClient.get(
-    API_BASE_URL + `admin/user/getLatestDraftQuote/${id}`,
-  );
-  return res;
-};
+/** The whole quote again (ref_no required): replaces the lines, makes a new link and sends it again. */
+export const updateQuote = (id, quote) => httpClient.put(`/quotes/${id}`, quote);
 
-export const GetAllDraftQuotes = async (id) => {
-  const res = await httpClient.get(
-    API_BASE_URL + `admin/user/getAllDraftQuotesByUser/${id}`,
-  );
-  return res;
-};
+/** Needs records.delete. Closes its link. */
+export const deleteQuote = (id) => httpClient.delete(`/quotes/${id}`);
 
-export const SaveDraftQuote = async (formData) => {
-  return await httpClient.post(API_BASE_URL + `admin/user/saveDraftQuote`, formData);
-};
+/** method: "CHECK" or "ACH". Closes the link. */
+export const markQuotePaid = (id, method) => httpClient.post(`/quotes/${id}/mark-paid`, { method });
 
-export const DeleteDraftQuote = async (id) => {
-  const res = await httpClient.delete(
-    API_BASE_URL + `admin/user/deleteDraftQuote/${id}`,
-  );
-  return res;
-};
+export const markQuoteBooked = (id) => httpClient.post(`/quotes/${id}/mark-booked`);
 
-export const GetNextQuoteRef = async (ref_type) => {
-  return httpClient.get(API_BASE_URL + `admin/user/getNextQuoteRef`, {
-    params: { ref_type },
-  });
-};
+/** data: ref_no and sequence. */
+export const getNextQuoteRef = (refType) => httpClient.get("/quotes/next-ref", { params: { ref_type: refType } });
+
+/** data.items: each client's user_id, name, email and the quotes they paid that month. */
+export const getQuotesPaidSummary = (month) => httpClient.get("/quotes/paid-summary", { params: { month } });
+
+// --- Drafts --------------------------------------------------------------------
+
+/** data.items: id, ref_type, ref_no, updated_at. */
+export const listQuoteDrafts = (userId) => httpClient.get("/quote-drafts", { params: { user_id: userId } });
+
+/** The client's latest draft with its items, or null. */
+export const getLatestQuoteDraft = (userId) =>
+  httpClient.get("/quote-drafts/latest", { params: { user_id: userId } });
+
+/** user_id, with ref_no or ref_type; the rest can wait. */
+export const createQuoteDraft = (draft) => httpClient.post("/quote-drafts", draft);
+
+export const updateQuoteDraft = (id, draft) => httpClient.put(`/quote-drafts/${id}`, draft);
+
+/** Needs records.delete. */
+export const deleteQuoteDraft = (id) => httpClient.delete(`/quote-drafts/${id}`);
+
+/** Turns the draft into a quote and sends it; the same fields as createQuote. */
+export const sendQuoteDraft = (id, quote) => httpClient.post(`/quote-drafts/${id}/send`, quote);

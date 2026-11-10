@@ -47,7 +47,7 @@ const KINDS = {
     kind: null,
     flowKey: "cost_calculations",
     newLabel: "New Calculation",
-    hint: "Calculations stay in the office: they hold costs, margins and commission.",
+    hint: "Calculations price a scope of work and stay in the office: they hold costs, margins and commission.",
     columns: [moneyColumn("Operational Cost", "total_operational_cost")],
     newPath: "calculation",
   },
@@ -91,8 +91,16 @@ const ClientDocumentsTab = ({ tab, clientId, flow, onChanged }) => {
       },
     });
 
+  // A calculation names the scope of work it priced.
+  const scopeColumn = {
+    title: "Scope of Work",
+    dataIndex: "scope_of_work_id",
+    render: (scopeId) => flow?.scopes_of_work?.find((scope) => scope.id === scopeId)?.title || "—",
+  };
+
   const columns = [
     titleColumn(open),
+    ...(tab === "calculations" ? [scopeColumn] : []),
     ...config.columns,
     ...(kind ? [sharedColumn()] : []),
     dateColumn("Created", "created_at"),

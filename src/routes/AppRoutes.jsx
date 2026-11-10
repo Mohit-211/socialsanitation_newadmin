@@ -64,8 +64,7 @@ const RestockRequestsPage = lazy(() => import("@/pages/supplies/RestockRequestsP
 const AddProductPage = lazy(() => import("@/pages/supplies/AddProductPage"));
 const EditProductPage = lazy(() => import("@/pages/supplies/EditProductPage"));
 const DayOverviewPage = lazy(() => import("@/pages/day-overview/DayOverviewPage"));
-const QuoteQuestionsPage = lazy(() => import("@/pages/quotes/QuoteQuestionsPage"));
-const QuoteRequestsPage = lazy(() => import("@/pages/quotes/QuoteRequestsPage"));
+const EnquiriesPage = lazy(() => import("@/pages/enquiries/EnquiriesPage"));
 const ServiceQuotesPage = lazy(() => import("@/pages/service-quotes/ServiceQuotesPage"));
 const CheckoutStatusPage = lazy(() => import("@/pages/checkout/CheckoutStatusPage"));
 const EmployeeTimesheetPage = lazy(() => import("@/pages/timesheets/EmployeeTimesheetPage"));
@@ -191,8 +190,10 @@ const AppRoutes = () => (
         <Route path="/editProduct/:id" element={<EditProductPage />} />
         <Route path="/supplies/requests" element={<RestockRequestsPage />} />
         <Route path="/overview" element={<DayOverviewPage />} />
-        <Route path="/quote-questions" element={<QuoteQuestionsPage />} />
-        <Route path="/quote-requests" element={<QuoteRequestsPage />} />
+        <Route path="/enquiries" element={<EnquiriesPage />} />
+        {/* The quote form became the enquiry form; its question builder is gone. */}
+        <Route path="/quote-requests" element={<Navigate to="/enquiries" replace />} />
+        <Route path="/quote-questions" element={<Navigate to="/enquiries" replace />} />
         <Route path="/invoices" element={<ServiceQuotesPage />} />
         <Route path="/employee-timesheet" element={<EmployeeTimesheetPage />} />
         <Route path="/pdf-generation" element={<EstimatesPage />} />

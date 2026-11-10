@@ -1,8 +1,10 @@
-import dayjs from "@/lib/dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { EditServiceQuote, GetServiceQuoteById } from "@/services/api/serviceQuoteApi";
-import { GetUserById } from "@/services/api/userApi";
+import { getQuote, updateQuote } from "@/services/api/serviceQuoteApi";
+import { listServiceNames } from "@/services/api/serviceApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { fromApiDate, toApiDate } from "@/utils/datetime";
+import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
 import {
   message,
   Spin,
@@ -15,7 +17,6 @@ import {
 } from "antd";
 import { DatePicker } from "antd";
 import { ArrowLeft } from "lucide-react";
-import { GetAllServiceNameByAdmin } from "@/services/api/bookingApi";
 import SignatureField from "@/components/SignatureField";
 import "./EditServiceQuotePage.scss";
 import { COMPANY_LOGO_URL } from "@/config/brand";
@@ -24,9 +25,11 @@ const { Option } = Select;
 
 const EditServiceQuotePage = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [services, setServices] = useState([]);
   const [userId, setUserId] = useState(null);
+  // Opened from a client's page, saving goes back there.
+  const { returnPath } = useClientFromQuery("quotes", "/invoices");
   const { id } = useParams();
   const [formData, setFormData] = useState({
     ref: "",
@@ -53,76 +56,54 @@ const EditServiceQuotePage = () => {
     date: "",
   });
 
-  const loadQuote = async () => {
-    setIsLoading(true);
-
-    try {
-      const res = await GetServiceQuoteById(id);
-
-      const quote = res.data.data;
-
-      setFormData({
-        ref: quote.ref_no,
-        reference_type: quote.ref_type,
-        serviceDates: dayjs(quote.service_dates),
-        dueDate: dayjs(quote.due_date),
-        toCompany: quote.to_company_name,
-        address1: quote.address_1,
-        address2: quote.address_2,
-        totalAmount: quote.total_due,
-        date: dayjs(quote.date),
-        signature: quote.signature,
-
-        items:
-          quote.service_quote_item?.map((item) => ({
-            description: item.description,
-            frequency: item.frequency,
-            quantity: item.quantity,
-            calculation_type: item.calculation_type || "na",
-            sqft: item.sqft ?? "N/A",
-            hour: item.hour ?? "",
-            unit_price: item.unit_price,
-            amount: item.amount,
-          })) || [],
-      });
-
-      setUserId(quote.user_id);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Loads the quote with its own company, address and lines; an answer for an
+  // old id is ignored.
   useEffect(() => {
-    loadQuote();
+    let current = true;
+    getQuote(id)
+      .then((res) => {
+        if (!current) return;
+        const quote = dataOf(res);
+        setFormData({
+          ref: quote.ref_no,
+          reference_type: quote.ref_type,
+          serviceDates: fromApiDate(quote.service_dates),
+          dueDate: fromApiDate(quote.due_date),
+          toCompany: quote.to_company_name,
+          address1: quote.address_1,
+          address2: quote.address_2,
+          totalAmount: quote.total_due,
+          date: fromApiDate(quote.date),
+          signature: quote.signature,
+          items:
+            quote.items?.map((item) => ({
+              description: item.description,
+              frequency: item.frequency,
+              quantity: item.quantity,
+              calculation_type: item.calculation_type || "na",
+              sqft: item.sqft ?? "N/A",
+              hour: item.hour ?? "",
+              unit_price: item.unit_price,
+              amount: item.amount,
+            })) || [],
+        });
+        setUserId(quote.user_id);
+      })
+      .catch((error) => {
+        if (current) message.error(errorMessage(error, "Couldn't load the quote"));
+      })
+      .finally(() => {
+        if (current) setIsLoading(false);
+      });
+    return () => {
+      current = false;
+    };
   }, [id]);
 
   useEffect(() => {
-    if (!userId) return;
-
-    GetUserById(userId)
-      .then((res) => {
-        const user = res.data.data;
-
-        const primaryAddress = user.user_address?.[0];
-
-        setFormData((prev) => ({
-          ...prev,
-          toCompany: user.user_profile?.name || "",
-          address1: primaryAddress
-            ? `${primaryAddress.address}, ${primaryAddress.user_city?.name}`
-            : "",
-          address2: primaryAddress
-            ? `${primaryAddress.user_state?.name}, ${primaryAddress.user_country?.name}`
-            : "",
-        }));
-      })
-      .catch(() => {
-        message.error("Failed to load user");
-      });
-  }, [userId]);
-
-  useEffect(() => {
-    GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
+    listServiceNames()
+      .then((res) => setServices(itemsOf(res)))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the services")));
   }, []);
 
   const handleItemChange = (index, field, value) => {
@@ -221,31 +202,25 @@ const EditServiceQuotePage = () => {
 
     setIsLoading(true);
     const payload = {
-      quote_id: id,
       user_id: userId,
       ref_no: formData.ref,
       ref_type: formData.reference_type,
-      service_dates: formData.serviceDates,
-      due_date: formData.dueDate,
+      service_dates: toApiDate(formData.serviceDates) ?? formData.serviceDates,
+      due_date: toApiDate(formData.dueDate),
       to_company_name: formData.toCompany,
       address_1: formData.address1,
       address_2: formData.address2,
       signature: formData.signature,
       items: formData.items,
-      date: formData.date,
-
+      date: toApiDate(formData.date),
     };
 
     try {
-      const response = await EditServiceQuote(payload);
-      if (response.status === 200) {
-        message.success("Quote updated successfully.");
-        setTimeout(() => navigate(`/invoices`), 1000);
-      } else {
-        message.error("Something went wrong");
-      }
+      await updateQuote(id, payload);
+      message.success("Quote saved; the client was sent the new copy and payment link");
+      navigate(returnPath);
     } catch (error) {
-      message.error("Error: " + error.message);
+      message.error(errorMessage(error, "Couldn't save the quote"));
     } finally {
       setIsLoading(false);
     }
@@ -291,11 +266,6 @@ const EditServiceQuotePage = () => {
                 index,
                 "description",
                 selectedService?.name || "",
-              );
-              handleItemChange(
-                index,
-                "unit_price",
-                selectedService?.price || "",
               );
             }}
             allowClear
