@@ -13,7 +13,8 @@ import {
   updateQuoteDraft,
 } from "@/services/api/serviceQuoteApi";
 import { getClient } from "@/services/api/clientApi";
-import { getEstimate, getEstimateDraft } from "@/services/api/estimateApi";
+import { getEstimate, getEstimateDraft, listEstimates } from "@/services/api/estimateApi";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import { listServiceNames } from "@/services/api/serviceApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { fromApiDate, toApiDate } from "@/utils/datetime";
@@ -222,27 +223,31 @@ const CreateServiceQuotePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // The client's estimates, for the "Goes with" picker.
+  const { data: clientEstimates } = useApiQuery(() => listEstimates({ user_id: Number(id), limit: 50 }).then(itemsOf), [id], {
+    initial: [],
+    silent: true,
+  });
+
   // A quote from an estimate starts from its company, address and price lines;
   // one from a calculation, from the lines its newest bid prices.
-  useEffect(() => {
-    if (!links.estimate_id && !links.cost_calculation_id) return undefined;
-    let current = true;
-    const source = links.estimate_id
-      ? getEstimate(links.estimate_id).then(dataOf)
+  const startFrom = (source) => {
+    const loading = source.estimate_id
+      ? getEstimate(source.estimate_id).then(dataOf)
       : getEstimateDraft({
           clientId: Number(id),
-          calculationId: links.cost_calculation_id,
-          scopeId: links.scope_of_work_id,
+          calculationId: source.cost_calculation_id,
+          scopeId: source.scope_of_work_id,
         }).then(dataOf);
-    source
+    return loading
       .then((start) => {
-        if (!current || !start) return;
+        if (!start) return;
         const items = itemsFromPriceLines(start.price_lines);
         const street = [start.address_line_1, start.address_line_2].filter(Boolean).join(", ");
         const place = [start.city, [start.state, start.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
         setFormData((prev) => ({
           ...prev,
-          ...(links.estimate_id
+          ...(source.estimate_id
             ? { toCompany: start.client_company_name || prev.toCompany, address1: street || prev.address1, address2: place || prev.address2 }
             : {}),
           ...(items.length ? { items, totalAmount: String(items.reduce((sum, item) => sum + Number(item.amount || 0), 0)) } : {}),
@@ -250,10 +255,21 @@ const CreateServiceQuotePage = () => {
         if (items.length) setIsDirty(true);
       })
       .catch((error) => message.error(errorMessage(error, "Couldn't start from the estimate")));
-    return () => {
-      current = false;
-    };
-    // The source is read once, when the page opens.
+  };
+
+  // Picking the estimate the quote goes with starts its lines from the estimate's prices.
+  const pickEstimate = (estimateId) => {
+    if (!estimateId) {
+      setLinks((prev) => ({ ...prev, estimate_id: undefined }));
+      return;
+    }
+    setLinks({ estimate_id: estimateId });
+    startFrom({ estimate_id: estimateId });
+  };
+
+  useEffect(() => {
+    if (links.estimate_id || links.cost_calculation_id) startFrom(links);
+    // The source in the address is read once, when the page opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -819,6 +835,24 @@ const CreateServiceQuotePage = () => {
             }
             description="Change the lines as needed. The quote keeps the link to its scope of work and calculation."
           />
+        )}
+
+        {(clientEstimates || []).length > 0 && (
+          <div className="quote-form__goes-with">
+            <strong>GOES WITH ESTIMATE:</strong>
+            <Select
+              allowClear
+              placeholder="None"
+              value={links.estimate_id}
+              onChange={pickEstimate}
+              style={{ minWidth: 280 }}
+              options={clientEstimates.map((estimate) => ({
+                value: estimate.id,
+                label: `${estimate.client_company_name || `Estimate ${estimate.id}`}${estimate.signed_date ? ` · ${estimate.signed_date}` : ""}`,
+              }))}
+            />
+            <span className="quote-form__hint">Its prices fill the lines; the quote keeps the link.</span>
+          </div>
         )}
 
         <div className="quote-form__meta" style={{ marginBottom: 28 }}>

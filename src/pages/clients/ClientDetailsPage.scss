@@ -97,3 +97,10 @@
   gap: var(--space-4);
 }
 
+
+// What a document was made from: its estimate, scope and calculation
+.client-flow__sources {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}

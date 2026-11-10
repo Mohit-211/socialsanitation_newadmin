@@ -93,16 +93,42 @@ const ClientDocumentsTab = ({ tab, clientId, flow, onChanged }) => {
       },
     });
 
-  // A calculation names the scope of work it priced.
-  const scopeColumn = {
-    title: "Scope of Work",
-    dataIndex: "scope_of_work_id",
-    render: (scopeId) => flow?.scopes_of_work?.find((scope) => scope.id === scopeId)?.title || "—",
+  // What a document was made from (step 5 of the client flow): its scope, the
+  // calculation that priced it, and for a quote the estimate it goes with.
+  const titleIn = (list, id) => (id ? flow?.[list]?.find((row) => row.id === id)?.title : null);
+  const sourcesColumn = {
+    title: tab === "calculations" ? "Scope of Work" : "Made From",
+    key: "sources",
+    render: (_, row) => {
+      const scope = titleIn("scopes_of_work", row.scope_of_work_id);
+      const calculation = tab === "calculations" ? null : titleIn("cost_calculations", row.cost_calculation_id);
+      const estimate = titleIn("estimates", row.estimate_id);
+      if (!scope && !calculation && !estimate) return <span className="text-subtle">—</span>;
+      return (
+        <div className="client-flow__sources">
+          {estimate && (
+            <Button
+              type="link"
+              className="table-link"
+              onClick={() => navigate(editPathFromClient("estimate", row.estimate_id, clientId))}
+            >
+              Estimate: {estimate}
+            </Button>
+          )}
+          {scope && (
+            <Button type="link" className="table-link" onClick={() => navigate(`/scopes/${row.scope_of_work_id}`)}>
+              {tab === "calculations" ? scope : `Scope: ${scope}`}
+            </Button>
+          )}
+          {calculation && <span className="text-secondary">Priced: {calculation}</span>}
+        </div>
+      );
+    },
   };
 
   const columns = [
     titleColumn(open),
-    ...(tab === "calculations" ? [scopeColumn] : []),
+    ...(["calculations", "estimates", "quotes"].includes(tab) ? [sourcesColumn] : []),
     ...config.columns,
     ...(kind ? [sharedColumn()] : []),
     dateColumn("Created", "created_at"),
