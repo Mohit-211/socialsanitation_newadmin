@@ -1,34 +1,33 @@
-import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
+import httpClient, { authClient } from "@/services/httpClient";
 
-//admin login
-export const AdminLogin = async (formdata) => {
-  return await httpClient.post(API_BASE_URL + "admin/auth/login", formdata);
-};
+// Signing in and the signed-in admin's own account.
+// Sign-in answers id, name, email, user_type, roles, permissions, token and
+// expires_at; a client or employee account gets 403 naming its own app, and
+// too many failed attempts from one network give 429.
 
-export const GetAdminProfile = async (adminToken) => {
-  return httpClient.get(API_BASE_URL + "admin/auth/getProfile", {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "x-access-token": adminToken,
-    },
-  });
-};
+export const signIn = ({ email, password }) => authClient.post("/admin/login", { email, password });
 
-export const ChangeAdminPassword = async (data) => {
-  return httpClient.post(API_BASE_URL + "admin/auth/change-password", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-    },
-  });
-};
+/** Emails a one-time code for a password reset. */
+export const sendResetCode = (email) => authClient.post("/admin/otp", { email });
 
-export const GetValidateToken = async (token) => {
-  return await httpClient.get(API_BASE_URL + "calendar/getValidateToken", {
-    headers: {
-      "x-access-token": token,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+/** Checks the code; the answer's token (valid 30 minutes) allows the reset. */
+export const verifyResetCode = ({ email, otp }) => authClient.post("/admin/verify-otp", { email, otp });
+
+export const resetPassword = ({ email, password, confirm_password, token }) =>
+  authClient.post("/admin/forgot-password", { email, password, confirm_password, token });
+
+/** id, name, email, mobile, is_active, created_at, user_type, roles, permissions. */
+export const getProfile = () => httpClient.get("/profile");
+
+/** Ends this browser's session only. */
+export const signOut = () => httpClient.post("/logout");
+
+/** A new password ends every session, so the next call answers 401. */
+export const changePassword = ({ old_password, new_password, confirm_password }) =>
+  httpClient.post("/change-password", { old_password, new_password, confirm_password });
+
+/** Everyone's sign-ins, grouped by user; each row has app and time_zone. */
+export const listLoginActivity = () => httpClient.get("/login-activity");
+
+/** Clears ended sessions only (needs records.delete), so nobody is signed out. */
+export const clearLoginActivity = () => httpClient.delete("/login-activity");

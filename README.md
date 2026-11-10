@@ -32,8 +32,7 @@ Configuration lives in `.env`, which is gitignored. `.env.example` lists every v
 
 | Variable                            | Required | Used for                                                                                       |
 | ----------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`                 | Yes      | The backend REST API, with a trailing slash. Images are served from `<this URL>images/`.         |
-| `VITE_UPLOADS_BASE_URL`             | Yes      | The server that hosts restock-request photos, with no trailing slash.                          |
+| `VITE_API_URL`                      | Yes      | The backend's address with no path, such as `https://api.socialsanitation.com`. The panel calls its `/api/v2` paths and opens uploaded files from it. |
 | `VITE_GOOGLE_MAPS_API_KEY`          | Yes      | Google Maps: client and employee maps, guest booking address lookup, geocoding.                |
 | `VITE_FIREBASE_API_KEY`             | Yes      | The Firebase web app. Realtime Database powers chat; Storage holds chat attachments.            |
 | `VITE_FIREBASE_AUTH_DOMAIN`         | Yes      | Firebase                                                                                       |
@@ -65,7 +64,7 @@ Code reads these values only through `src/config/env.js`. Don't use `import.meta
 | Icons             | [lucide-react](https://lucide.dev)                                                   |
 | Routing           | [react-router](https://reactrouter.com) 8. Import from `react-router`; `react-router-dom` no longer exists. |
 | Rich text         | [Tiptap](https://tiptap.dev), wrapped in `src/components/RichTextEditor.jsx`         |
-| HTTP              | axios, through the shared client in `src/services/httpClient.js`                     |
+| HTTP              | axios, through the shared clients in `src/services/httpClient.js`                    |
 | Chat              | Firebase Realtime Database and Storage                                               |
 | Maps              | `@react-google-maps/api`                                                             |
 | Dates             | dayjs, with its plugins registered in `src/lib/dayjs.js`                             |
@@ -88,15 +87,17 @@ src/
 │   └── components/       Components used only by this feature
 ├── components/           Shared components (PageHeader, PageLoader, RichTextEditor, SignatureField ...)
 ├── services/
-│   ├── httpClient.js     Shared axios instance: API base URL, sends 401s back to the login page
+│   ├── httpClient.js     axios clients for /api/v2/admin (adds the session token, sends 401s to sign-in), /auth and /web
+│   ├── apiResult.js      Reading answers: dataOf, itemsOf, pageOf, errorMessage
 │   └── api/              One module per backend resource (bookingApi.js, invoiceApi.js ...)
 ├── config/
 │   ├── env.js            Reads and validates the VITE_ variables
 │   └── brand.js          Public brand constants
-├── lib/                  Third-party setup (Firebase, dayjs)
+├── hooks/                Shared React hooks (useApiQuery loads data and reloads it)
+├── lib/                  The signed-in session (session.js) and third-party setup (Firebase, dayjs)
 ├── theme/antdTheme.js    antd theme built from the tokens in index.css
 ├── styles/               Stylesheets shared across features
-├── utils/                Small helpers (downloads, debounce, Excel export, image compression, geocoding)
+├── utils/                Small helpers (dates, file links, downloads, debounce, Excel export, image compression, geocoding)
 └── assets/images/        Images bundled with the app
 
 public/
@@ -116,7 +117,7 @@ public/
 | A page's stylesheet                    | Same name as the page                                                                                   | `ClientsPage.scss`                                    |
 | A stylesheet shared by a feature       | camelCase                                                                                               | `clients.scss`, `serviceRequests.scss`                |
 | Non-component modules                  | camelCase                                                                                               | `httpClient.js`, `utils/debounce.js`                  |
-| API modules                            | `<resource>Api.js` in `services/api/`                                                                   | `bookingApi.js`                                       |
+| API modules                            | `<resource>Api.js` in `services/api/`, exporting camelCase verbs                                        | `bookingApi.js` with `listBookings`, `getBooking`     |
 | Images                                 | kebab-case                                                                                              | `assets/images/logo-mark.png`                         |
 
 ### Imports
@@ -130,6 +131,18 @@ Use the `@/` alias, which points at `src/`, for anything outside the current fea
   - Text on a brand fill uses `--color-on-primary` or `--color-on-secondary`.
   - Brand-colored text on white uses `--color-primary-strong` or `--color-secondary-strong`, which keeps it readable (WCAG AA).
 - Pages are lazy-loaded, so a page's stylesheet only loads with that page. If two features need the same styles, put them in `src/styles/` and import them from both. Don't rely on another page's CSS happening to be on the page.
+
+### Talking to the backend
+
+- Every call goes to `/api/v2` on `VITE_API_URL`. API modules use paths relative to the admin side, such as `httpClient.get("/clients/12")`; the client adds the session token itself.
+- Read answers with `dataOf`, `itemsOf` and `pageOf` from `src/services/apiResult.js`. Lists are paged (`page`, `limit`, at most 50 rows) and answer `{ items, pagination }`.
+- Show `errorMessage(error)` when a call fails: the backend's own message says what went wrong.
+- Load a page's data with `useApiQuery`, which reloads when its inputs change and ignores late answers.
+- Dates go to the API as `YYYY-MM-DD` and times as 24-hour `HH:mm`; people see `MM/DD/YYYY` and `h:mm AM`, in Eastern time. Use the helpers in `src/utils/datetime.js`.
+
+### Who can do what
+
+The sign-in answer carries the admin's `roles` and `permissions`, kept by `src/lib/session.js`. Show a button only when the admin may use it, with `useCan(PERMISSION.DELETE_RECORDS)` and the like, and never check role numbers. The backend refuses anything else with a 403 whose message the screen shows.
 
 ### Adding a page
 

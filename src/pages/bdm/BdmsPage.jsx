@@ -77,7 +77,7 @@ const BdmsPage = () => {
             size="small"
             className="bdm-action bdm-action--edit"
             icon={<Pencil size={14} />}
-            onClick={() => navigate(`/edit-bdm/${record.id}`)}
+            onClick={() => navigate(`/editEmployee/${record.id}`)}
           >
             Edit
           </Button>
@@ -201,7 +201,7 @@ const BdmsPage = () => {
               type="primary"
               size="large"
               icon={<Plus size={16} />}
-              onClick={() => navigate("/add-bdm")}
+              onClick={() => navigate("/addEmployee?role=bdm")}
             >
               Add New BDM
             </Button>

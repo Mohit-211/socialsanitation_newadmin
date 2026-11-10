@@ -1,53 +1,31 @@
-import { AdminLogin } from "@/services/api/authApi";
-import "./LoginPage.scss";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button, Form, Input, message } from "antd";
+import { signIn } from "@/services/api/authApi";
+import { errorMessage } from "@/services/apiResult";
+import { saveSession } from "@/lib/session";
 import logo from "@/assets/images/logo-mark.png";
+import "./LoginPage.scss";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  const onFinish = (values) => {
-    let formData = {
-      email: values.email,
-      password: values.password,
-    };
-    AdminLogin(formData)
-      .then((res) => {
-        message.success("Logged In Successfully");
-        setTimeout(() => {
-          const token = res?.data?.data?.token;
-          const adminId = res?.data?.data?.id;
-          const roleId = res?.data?.data?.role_id;
-          localStorage.removeItem("adminToken");
-          localStorage.removeItem("adminId");
-          localStorage.removeItem("roleId");
-          localStorage.setItem("adminToken", token);
-          localStorage.setItem("adminId", adminId);
-          localStorage.setItem("roleId", roleId);
-          navigate("/");
-        }, 1000);
-      })
-      .catch((error) => {
-        if (error.response?.data?.message === "Error: User not found.") {
-          message.error("Email Doesn't Exist");
-        } else if (
-          error.response?.data?.message ===
-          "Error: Invalid email or password. Please try again."
-        ) {
-          message.error("Invalid Password");
-        } else if (
-          error.response?.data?.message ===
-          "Please Enter Required Fields : [ email_id || password ]"
-        ) {
-          message.error("Please enter Required Fields");
-        } else {
-          message.error("Something went wrong. Please try again.");
-        }
-      });
+  // The backend's message covers every refusal: a wrong email or password,
+  // an account that signs in to one of the apps, and too many attempts.
+  const onFinish = async ({ email, password }) => {
+    setSubmitting(true);
+    try {
+      const res = await signIn({ email: email.trim(), password });
+      saveSession(res.data.data);
+      message.success("Signed in");
+      navigate("/", { replace: true });
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't sign in. Please try again."));
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  const onFinishFailed = () => {};
 
   return (
     <main className="login-page">
@@ -65,31 +43,29 @@ const LoginPage = () => {
         <Form
           name="basic"
           layout="vertical"
-          initialValues={{ remember: true }}
           onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          autoComplete="off"
         >
           <Form.Item
             label="Email Address"
             name="email"
             rules={[
-              { required: true, message: "Please enter your EmailId" },
+              { required: true, message: "Enter your email address" },
+              { type: "email", message: "Enter a valid email address" },
             ]}
           >
-            <Input size="large" />
+            <Input size="large" autoComplete="username" />
           </Form.Item>
           <Form.Item
             label="Password"
             name="password"
             rules={[
-              { required: true, message: "Please enter your Password" },
+              { required: true, message: "Enter your password" },
             ]}
           >
-            <Input.Password size="large" />
+            <Input.Password size="large" autoComplete="current-password" />
           </Form.Item>
           <div className="login-page__submit">
-            <Button type="primary" htmlType="submit" size="large" block>
+            <Button type="primary" htmlType="submit" size="large" block loading={submitting}>
               SIGN IN
             </Button>
           </div>

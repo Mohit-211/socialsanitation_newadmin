@@ -32,7 +32,7 @@ import {
 import { onValue, ref as dbRef } from "firebase/database";
 import { useNavigate } from "react-router";
 import EmojiPicker from "emoji-picker-react";
-import { GetAdminProfile } from "@/services/api/authApi";
+import { getProfile } from "@/services/api/authApi";
 import {
   AddTeamMembers,
   CreateTeam,
@@ -231,7 +231,7 @@ const TeamsPage = () => {
 
   // Load profile and teams once.
   useEffect(() => {
-    GetAdminProfile(token)
+    getProfile()
       .then((result) => setUserData(result.data?.data))
       .catch((error) => console.error("Failed to fetch admin profile:", error));
     // Async fetch: state is only set after the request resolves.

@@ -1,77 +1,47 @@
 import { useState } from "react";
-import { CreateAdmin } from "@/services/api/adminApi";
 import { useNavigate } from "react-router";
 import { Button, Input, Select, Steps, message } from "antd";
 import { ArrowLeft, Check, X, Mail, IdCard } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { ADMIN_ROLES, createAdmin } from "@/services/api/adminApi";
+import { errorMessage } from "@/services/apiResult";
 import "./admins.scss";
-
-const ROLE_OPTIONS = [
-  { value: "5", label: "BDM" },
-  { value: "3", label: "OPERATIONS ADMINISTRATOR" },
-  { value: "1", label: "SUPER ADMIN" },
-];
 
 const AddAdminPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleId, setRoleId] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [role, setRole] = useState("");
   const [disable, setDisable] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!name.trim()) {
+      message.error("Enter a name");
+      return;
+    }
+    if (!email.trim()) {
+      message.error("Enter an email address");
+      return;
+    }
+    if (!role) {
+      message.error("Choose a role");
+      return;
+    }
     setDisable(true);
-
-    if (!name) {
-      setDisable(false);
-      message.error("Please enter name");
-
-      return;
-    }
-    if (!email) {
-      setDisable(false);
-      message.error("Please enter email");
-      return;
-    }
-    if (!roleId) {
-      setDisable(false);
-      message.error("Please choose any Role");
-      return;
-    }
     try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("role_id", parseInt(roleId, 10));
-
-      const response = await CreateAdmin(formData);
-
-      if (response.status === 201) {
-        // confirm the credentials email was sent, and that the
-        // admin can change their password anytime afterward.
-        message.success({
-          content: `Admin added successfully. Login credentials have been emailed to ${email}.`,
-          duration: 4,
-        });
-      }
-      setTimeout(() => {
-        navigate("/adminList");
-      }, 1500);
-      setDisable(false);
+      await createAdmin({ name: name.trim(), email: email.trim(), role, mobile: mobile.trim() });
+      message.success({
+        content: `Admin added. Their sign-in details have been emailed to ${email.trim()}.`,
+        duration: 4,
+      });
+      navigate("/adminList");
     } catch (error) {
-      if (error.response && error.response.status === 400) {
-        message.error("Email already exists");
-      } else if (error.response.status === 401) {
-        message.error("Token expired");
-        localStorage.removeItem("adminToken");
-        setTimeout(() => {
-          navigate("/Login");
-        }, 1000);
-      } else {
-        message.error("Something went wrong");
-      }
+      // Covers a duplicate email ("Email already in use") and a refusal.
+      message.error(errorMessage(error, "Couldn't add the admin"));
+    } finally {
       setDisable(false);
     }
   };
@@ -147,6 +117,20 @@ const AddAdminPage = () => {
               </div>
 
               <div>
+                <label className="field-label" htmlFor="add-admin-mobile">
+                  Mobile (optional)
+                </label>
+                <Input
+                  id="add-admin-mobile"
+                  size="large"
+                  type="tel"
+                  placeholder="Enter mobile number"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                />
+              </div>
+
+              <div>
                 <label className="field-label" htmlFor="add-admin-role">
                   Select Role
                 </label>
@@ -154,9 +138,9 @@ const AddAdminPage = () => {
                   id="add-admin-role"
                   size="large"
                   placeholder="Select Role"
-                  value={roleId || undefined}
-                  onChange={(value) => setRoleId(value)}
-                  options={ROLE_OPTIONS}
+                  value={role || undefined}
+                  onChange={(value) => setRole(value)}
+                  options={ADMIN_ROLES}
                   style={{ width: "100%" }}
                 />
               </div>
@@ -197,18 +181,18 @@ const AddAdminPage = () => {
                   "This role grants extensive access and permissions across all features and pages of the admin panel",
               },
               {
+                title: "Admin",
+                status: "finish",
+                icon: roleIcon,
+                content:
+                  "Runs day-to-day operations across the admin panel, excluding Estimates, the Calculator and BDM management, and can't delete records or manage admins.",
+              },
+              {
                 title: "Business Development Manager",
                 status: "finish",
                 icon: roleIcon,
                 content:
-                  "This role grants extensive access and permissions across the assigned user,employees and their asociated bookings.",
-              },
-              {
-                title: "Operations Administrator",
-                status: "finish",
-                icon: roleIcon,
-                content:
-                  "This role has access to day-to-day operations across the admin panel, excluding Estimates, the Calculator, and BDM management.",
+                  "BDMs are employees now: add them from Employees with the BDM role. They use the employee app, not this panel.",
               },
             ]}
           />

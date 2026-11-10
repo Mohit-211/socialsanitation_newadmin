@@ -10,7 +10,7 @@ import {
     GetAllRequestsByAdmin,
     UpdateRequestStatus,
 } from "@/services/api/productApi";
-import { UPLOADS_BASE_URL } from "@/config/env";
+import { uploadUrl } from "@/utils/files";
 
 
 const RestockRequestsPage = () => {
@@ -47,7 +47,7 @@ const RestockRequestsPage = () => {
     };
 
     const showImageModal = (fileUri, fileName) => {
-        setModalImageSrc(`${UPLOADS_BASE_URL}${fileUri}/${fileName}`);
+        setModalImageSrc(uploadUrl(fileUri, fileName));
         setIsModalVisible(true);
     };
 
@@ -302,7 +302,7 @@ const RestockRequestsPage = () => {
                                         className="inventory-request__attachment"
                                     >
                                         <img
-                                            src={`${UPLOADS_BASE_URL}${img.file_uri}/${img.file_name}`}
+                                            src={uploadUrl(img.file_uri, img.file_name)}
                                             alt="attachment"
                                             crossOrigin="anonymous"
                                         />

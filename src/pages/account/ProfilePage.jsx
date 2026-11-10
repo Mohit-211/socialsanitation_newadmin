@@ -1,26 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { GetAdminProfile } from "@/services/api/authApi";
 import { Button } from "antd";
-import { User, Mail, ShieldCheck, ArrowLeft } from "lucide-react";
+import { User, Mail, Phone, ShieldCheck, ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { getProfile } from "@/services/api/authApi";
+import { dataOf } from "@/services/apiResult";
+import { updateSessionUser, useSession } from "@/lib/session";
 import "@/pages/admins/admins.scss";
 
 const ProfilePage = () => {
-  const [idData, setIdData] = useState({});
   const navigate = useNavigate();
+  const idData = useSession()?.user ?? {};
+  const roleNames = idData.roles?.map((role) => role.name).join(", ");
 
-  const getData = async () => {
-    try {
-      let result = await GetAdminProfile(localStorage.getItem("adminToken"));
-      setIdData(result.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
+  // The session already knows who this is; refresh it in case it changed.
   useEffect(() => {
-    getData();
+    getProfile()
+      .then((res) => updateSessionUser(dataOf(res)))
+      .catch(() => {});
   }, []);
 
   const navigateToAdmin = () => {
@@ -30,7 +27,8 @@ const ProfilePage = () => {
   const fields = [
     { label: "Name", value: idData?.name, icon: User },
     { label: "Email", value: idData?.email, icon: Mail },
-    { label: "Role", value: idData?.admin_role?.name, icon: ShieldCheck },
+    { label: "Phone", value: idData?.mobile, icon: Phone },
+    { label: "Role", value: roleNames, icon: ShieldCheck },
   ];
 
   return (
@@ -60,7 +58,7 @@ const ProfilePage = () => {
               {idData?.name || "—"}
             </p>
             <p className="admin-banner__text">
-              {idData?.admin_role?.name || "Admin"}
+              {roleNames || "Admin"}
             </p>
           </div>
         </div>

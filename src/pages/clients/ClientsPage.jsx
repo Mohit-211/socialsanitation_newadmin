@@ -12,7 +12,8 @@ import {
   Flex,
 } from "antd";
 import { DeleteUser, GetUsers, ChangeAssignedAdmin, ResetUserCredentials, GetClosestEmployees } from "@/services/api/userApi";
-import { SendReview } from "@/services/api/reviewApi";
+import { sendReviewEmail } from "@/services/api/reviewApi";
+import { errorMessage } from "@/services/apiResult";
 import { useNavigate } from "react-router";
 import dayjs from "@/lib/dayjs";
 import {
@@ -310,18 +311,10 @@ const ClientsPage = () => {
 
   const handleSendReview = async (userId) => {
     try {
-      const formData = new FormData();
-      formData.append("user_id", userId);
-
-      // Call your API
-      const response = await SendReview(formData);
-
-      if (response.status === 200) {
-        message.success("Review email sent successfully");
-      }
+      await sendReviewEmail(userId);
+      message.success("Review email sent");
     } catch (error) {
-      console.error("Error sending review email:", error);
-      message.error("Error sending review email");
+      message.error(errorMessage(error, "Couldn't send the review email"));
     }
   };
 

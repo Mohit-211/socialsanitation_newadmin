@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useParams } from "react-router";
 import MainLayout from "@/layouts/MainLayout";
 import PageLoader from "@/components/PageLoader";
 // Not lazy: MainLayout also renders the login page for signed-out users, so it
@@ -30,14 +30,11 @@ const ClientsPage = lazy(() => import("@/pages/clients/ClientsPage"));
 const EmployeesPage = lazy(() => import("@/pages/employees/EmployeesPage"));
 const AddEmployeePage = lazy(() => import("@/pages/employees/AddEmployeePage"));
 const EmployeeDetailsPage = lazy(() => import("@/pages/employees/EmployeeDetailsPage"));
-const AuthorizationSuccessPage = lazy(() => import("@/pages/auth/AuthorizationSuccessPage"));
-const AuthorizationFailurePage = lazy(() => import("@/pages/auth/AuthorizationFailurePage"));
 const ChatPage = lazy(() => import("@/pages/chat/ChatPage"));
 const HiringFormsPage = lazy(() => import("@/pages/hiring/HiringFormsPage"));
 const LeaveRequestsPage = lazy(() => import("@/pages/leave-requests/LeaveRequestsPage"));
 const ServiceChecklistsPage = lazy(() => import("@/pages/service-checklists/ServiceChecklistsPage"));
 const BdmsPage = lazy(() => import("@/pages/bdm/BdmsPage"));
-const AddBdmPage = lazy(() => import("@/pages/bdm/AddBdmPage"));
 const AssignBdmPage = lazy(() => import("@/pages/bdm/AssignBdmPage"));
 const ComplaintsPage = lazy(() => import("@/pages/complaints/ComplaintsPage"));
 const DailyChecklistsPage = lazy(() => import("@/pages/daily-checklists/DailyChecklistsPage"));
@@ -82,7 +79,6 @@ const CreateContractPage = lazy(() => import("@/pages/contracts/CreateContractPa
 const ServiceRequestsPage = lazy(() => import("@/pages/service-requests/ServiceRequestsPage"));
 const CreateServiceRequestPage = lazy(() => import("@/pages/service-requests/CreateServiceRequestPage"));
 const EditInvoicePage = lazy(() => import("@/pages/invoices/EditInvoicePage"));
-const EditBdmPage = lazy(() => import("@/pages/bdm/EditBdmPage"));
 const ScopeOfWorkPage = lazy(() => import("@/pages/scope-of-work/ScopeOfWorkPage"));
 const InvoiceAnalyticsPage = lazy(() => import("@/pages/invoices/InvoiceAnalyticsPage"));
 const CostCalculatorPage = lazy(() => import("@/pages/cost-calculator/CostCalculatorPage"));
@@ -100,6 +96,12 @@ const InspectionDetailsPage = lazy(() => import("@/pages/inspections/InspectionD
 const ClientScopeOfWorkPage = lazy(() => import("@/pages/scope-of-work/ClientScopeOfWorkPage"));
 const TeamsPage = lazy(() => import("@/pages/chat/TeamsPage"));
 
+// An old /edit-bdm/:id link: the BDM is edited as the employee they are.
+const EditBdmRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/editEmployee/${id}`} replace />;
+};
+
 const AppRoutes = () => (
   <Suspense fallback={<PageLoader fullScreen />}>
     <Routes>
@@ -107,14 +109,6 @@ const AppRoutes = () => (
       <Route path="/checkout/:transactionId" element={<CheckoutStatusPage />} />
       <Route path="/Login" element={<LoginPage />} />
       <Route path="/error401" element={<UnauthorizedPage />} />
-      <Route
-        path="/authorization-success/:token"
-        element={<AuthorizationSuccessPage />}
-      />
-      <Route
-        path="/authorization-failure"
-        element={<AuthorizationFailurePage />}
-      />
       <Route path="/chats" element={<ChatPage />} />
       <Route path="/group-chats" element={<GroupChatPage />} />
       <Route path="/teams" element={<TeamsPage />} />
@@ -152,7 +146,8 @@ const AppRoutes = () => (
           element={<EditServiceChecklistPage />}
         />
         <Route path="/bdm-list" element={<BdmsPage />} />
-        <Route path="/add-bdm" element={<AddBdmPage />} />
+        {/* BDMs are employees with the BDM role: old links open the employee form. */}
+        <Route path="/add-bdm" element={<Navigate to="/addEmployee?role=bdm" replace />} />
         <Route path="/assign/:id" element={<AssignBdmPage />} />
         <Route path="/reports" element={<ComplaintsPage />} />
         <Route path="/daily-checklist" element={<DailyChecklistsPage />} />
@@ -209,7 +204,7 @@ const AppRoutes = () => (
           path="/generate-service-request"
           element={<CreateServiceRequestPage />}
         />
-        <Route path="/edit-bdm/:id" element={<EditBdmPage />} />
+        <Route path="/edit-bdm/:id" element={<EditBdmRedirect />} />
         <Route path="/universal-scope-of-work" element={<ScopeOfWorkPage />} />
         <Route path="/invoiceAnalytics" element={<InvoiceAnalyticsPage />} />
         <Route path="/cost-calculator" element={<CostCalculatorPage />} />

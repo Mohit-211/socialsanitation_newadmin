@@ -1,138 +1,118 @@
-import { useEffect, useState } from "react";
-import { Button, Table, message, Space, Modal } from "antd";
+import { Button, Table, message, Space, Modal, Tag } from "antd";
 import { useNavigate } from "react-router";
-import { GetAdmins, DeleteAdmin } from "@/services/api/adminApi";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { LogOut, Pencil, Plus, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
+import { listAdmins, deleteAdmin, endAdminSessions } from "@/services/api/adminApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { PERMISSION, useCan, useSession } from "@/lib/session";
 
+const isSuperAdmin = (admin) => admin.roles?.some((role) => role.code === "super_admin");
+
+// Admin accounts. Only admins with admins.manage (Super Admin) add, change or
+// remove other admins and end their sessions; anyone may edit their own record.
 const AdminsPage = () => {
 	const navigate = useNavigate();
-	const [roleData, setRoleData] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [tableParams, setTableParams] = useState({
-		pagination: {
-			current: 1,
-			pageSize: 100,
-		},
-		sortField: null,
-		sortOrder: null,
+	const selfId = useSession()?.user?.id;
+	const canManage = useCan(PERMISSION.MANAGE_ADMINS);
+	const {
+		data: admins,
+		loading,
+		reload: load,
+	} = useApiQuery(() => listAdmins().then(itemsOf), [], {
+		initial: [],
+		errorText: "Couldn't load the admins",
 	});
 
-	const getData = async () => {
-		try {
-			setLoading(true);
-			let result = await GetAdmins(localStorage.getItem("adminToken"));
-			setRoleData(result.data.data);
-		} catch (e) {
-			console.error(e);
-			if (e.response && e.response.status === 401) {
-				navigate("/error401");
-				message.error("You do not have access to this page.");
-			} else {
-				message.error("Error loading data. Please try again later.");
-			}
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		getData({
-			page: tableParams.pagination.current,
-			pageSize: tableParams.pagination.pageSize,
-			sortField: tableParams.sortField,
-			sortOrder: tableParams.sortOrder,
-		});
-	}, [tableParams]);
-
-	const handleTableChange = (pagination, filters, sorter) => {
-		setTableParams({
-			pagination,
-			filters,
-			sortField: sorter.field,
-			sortOrder: sorter.order,
-		});
-	};
-
-	const navigateToAddAdmin = () => {
-		navigate("/addAdmin");
-	};
-
-	const navigateToEditAdmin = (id) => {
-		navigate(`/editAdmin/${id}`);
-	};
-
-	const removeUser = (user_id) => {
-		DeleteAdmin(user_id, localStorage.getItem("adminToken"))
-			.then((res) => {
-				message.success(res?.data?.message);
-				getData(); // Reload data after deleting
-			})
-			.catch((error) => {
-				console.error(error);
-				message.error("Error deleting admin.");
-			});
-	};
-
-	const handleDelete = (userId) => {
+	const confirmDelete = (admin) => {
 		Modal.confirm({
-			title: "Confirm",
-			content: "Are you sure you want to delete this admin?",
-			okText: "Yes, Delete",
+			title: `Delete ${admin.name || "this admin"}?`,
+			content: "They are signed out and can't sign in again.",
+			okText: "Delete",
 			okType: "danger",
-			cancelText: "No",
-			onOk: () => {
-				removeUser(userId);
+			onOk: async () => {
+				try {
+					await deleteAdmin(admin.id);
+					message.success("Admin deleted");
+					load();
+				} catch (error) {
+					message.error(errorMessage(error, "Couldn't delete the admin"));
+				}
 			},
 		});
 	};
 
-	// Define columns for antd table
+	const confirmEndSessions = (admin) => {
+		Modal.confirm({
+			title: `Sign ${admin.name || "this admin"} out everywhere?`,
+			content: "Every browser they are signed in on is signed out.",
+			okText: "Sign out everywhere",
+			onOk: async () => {
+				try {
+					await endAdminSessions(admin.id);
+					message.success("Signed out on every device");
+				} catch (error) {
+					message.error(errorMessage(error, "Couldn't end their sessions"));
+				}
+			},
+		});
+	};
+
 	const columns = [
 		{
 			title: "S.No.",
-			dataIndex: "index",
-			render: (text, record, index) =>
-				(tableParams.pagination.current - 1) * tableParams.pagination.pageSize + index + 1,
+			key: "index",
+			width: 80,
+			render: (_, __, index) => index + 1,
 		},
-		{
-			title: "Name",
-			dataIndex: "name",
-			key: "name",
-			width: 350,
-		},
-		{
-			title: "Email",
-			dataIndex: "email",
-			key: "email",
-			width: 350,
-		},
+		{ title: "Name", dataIndex: "name", key: "name" },
+		{ title: "Email", dataIndex: "email", key: "email" },
 		{
 			title: "Role",
-			dataIndex: ["admin_role", "name"], // Nested field
-			key: "role",
-			width: 350,
+			key: "roles",
+			render: (_, admin) =>
+				admin.roles?.length
+					? admin.roles.map((role) => (
+							<Tag key={role.code} color={role.code === "super_admin" ? "blue" : "default"}>
+								{role.name}
+							</Tag>
+						))
+					: "—",
 		},
 		{
 			title: "Actions",
 			key: "action",
-			width: 350,
-			render: (text, record) => (
-				<Space>
-					<IconAction
-						icon={Pencil}
-						title="Edit Admin"
-						onClick={() => navigateToEditAdmin(record.id)}
-					/>
-					<IconAction
-						icon={Trash2}
-						title="Delete Admin"
-						danger
-						onClick={() => handleDelete(record.id)}
-					/>
-				</Space>
-			),
+			width: 160,
+			render: (_, admin) => {
+				const isSelf = admin.id === selfId;
+				return (
+					<Space>
+						{(canManage || isSelf) && (
+							<IconAction
+								icon={Pencil}
+								title="Edit Admin"
+								onClick={() => navigate(`/editAdmin/${admin.id}`)}
+							/>
+						)}
+						{canManage && !isSelf && (
+							<IconAction
+								icon={LogOut}
+								title="Sign Out Everywhere"
+								onClick={() => confirmEndSessions(admin)}
+							/>
+						)}
+						{canManage && !isSelf && !isSuperAdmin(admin) && (
+							<IconAction
+								icon={Trash2}
+								title="Delete Admin"
+								danger
+								onClick={() => confirmDelete(admin)}
+							/>
+						)}
+					</Space>
+				);
+			},
 		},
 	];
 
@@ -140,28 +120,30 @@ const AdminsPage = () => {
 		<div>
 			<PageHeader
 				title="ADMIN MANAGEMENT"
-				subtitle="View, edit, delete, and create admins"
+				subtitle={canManage ? "View, edit, delete, and create admins" : "The panel's admin accounts"}
 				actions={
-					<Button
-						type="primary"
-						size="large"
-						icon={<Plus size={16} />}
-						onClick={navigateToAddAdmin}
-					>
-						Add New Admin
-					</Button>
+					canManage && (
+						<Button
+							type="primary"
+							size="large"
+							icon={<Plus size={16} />}
+							onClick={() => navigate("/addAdmin")}
+						>
+							Add New Admin
+						</Button>
+					)
 				}
 			/>
 
 			<Table
-				dataSource={roleData}
+				dataSource={admins}
 				columns={columns}
-				rowKey={(record) => record.id}
-				pagination={tableParams.pagination}
+				rowKey="id"
+				pagination={{ pageSize: 20, hideOnSinglePage: true }}
 				loading={loading}
-				onChange={handleTableChange}
 				bordered
 				size="middle"
+				scroll={{ x: "max-content" }}
 			/>
 		</div>
 	);

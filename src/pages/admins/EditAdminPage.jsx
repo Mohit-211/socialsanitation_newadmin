@@ -1,162 +1,171 @@
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { GetAdminById, UpdateAdmin } from "@/services/api/adminApi";
-import { Button, Input, Select, message } from "antd";
+import { Button, Input, Select, Spin, message } from "antd";
 import { ArrowLeft, Check, X } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { ADMIN_ROLES, getAdmin, updateAdmin } from "@/services/api/adminApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { PERMISSION, updateSessionUser, useCan, useSession } from "@/lib/session";
 import "./admins.scss";
 
-const ROLE_OPTIONS = [
-	{ value: "5", label: "BDM" },
-	{ value: "3", label: "OPERATIONS ADMINISTRATOR" },
-	{ value: "1", label: "SUPER ADMIN" },
-];
-
+// Anyone edits their own name, mobile and email. Another admin, or anyone's
+// role, needs admins.manage (Super Admin).
 const EditAdminPage = () => {
 	const { id } = useParams();
-	const [idData, setIdData] = useState("");
-	const [disable, setDisable] = useState(false);
 	const navigate = useNavigate();
+	const selfId = useSession()?.user?.id;
+	const canManage = useCan(PERMISSION.MANAGE_ADMINS);
+	const [original, setOriginal] = useState(null);
+	const [form, setForm] = useState({ name: "", email: "", mobile: "", role: undefined });
+	const [saving, setSaving] = useState(false);
 
-	//get role By ID
-	useLayoutEffect(() => {
-		GetAdminById(id)
+	const isSelf = Number(id) === selfId;
+	const canEdit = canManage || isSelf;
+	// A role change is Super Admin only, and nobody changes their own here.
+	const canChangeRole = canManage && !isSelf;
+
+	useEffect(() => {
+		getAdmin(id)
 			.then((res) => {
-				setIdData(res.data.data);
+				const admin = dataOf(res);
+				setOriginal(admin);
+				setForm({
+					name: admin?.name || "",
+					email: admin?.email || "",
+					mobile: admin?.mobile || "",
+					role: admin?.roles?.[0]?.code,
+				});
 			})
-			.catch((err) => {
-				console.error(err, "error");
-			});
+			.catch((error) => message.error(errorMessage(error, "Couldn't load the admin")));
 	}, [id]);
 
-	//update role api implementation
-	const handleNameChange = (e) => {
-		setIdData({ ...idData, [e.target?.name]: e.target?.value });
+	const setField = (field) => (event) =>
+		setForm((current) => ({ ...current, [field]: event?.target ? event.target.value : event }));
+
+	const handleSubmit = async (event) => {
+		event.preventDefault();
+		if (!form.name.trim() || !form.email.trim()) {
+			message.error("Name and email can't be empty");
+			return;
+		}
+		// Send only what changed.
+		const changes = {};
+		if (form.name.trim() !== (original?.name || "")) changes.name = form.name.trim();
+		if (form.email.trim() !== (original?.email || "")) changes.email = form.email.trim();
+		if (form.mobile.trim() !== (original?.mobile || "")) changes.mobile = form.mobile.trim();
+		if (canChangeRole && form.role && form.role !== original?.roles?.[0]?.code) changes.role = form.role;
+		if (!Object.keys(changes).length) {
+			navigate("/adminList");
+			return;
+		}
+		setSaving(true);
+		try {
+			const res = await updateAdmin(id, changes);
+			if (isSelf) updateSessionUser(dataOf(res) || changes);
+			message.success("Admin updated");
+			navigate("/adminList");
+		} catch (error) {
+			message.error(errorMessage(error, "Couldn't update the admin"));
+		} finally {
+			setSaving(false);
+		}
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		setDisable(true);
-
-		const formData = new FormData();
-		formData.append("admin_id", id);
-		formData.append("name", idData?.name ? idData?.name : "");
-		formData.append("role_id", idData?.role_id ? idData?.role_id : "");
-
-		UpdateAdmin(formData)
-			.then((res) => {
-				if (res.status === 200) {
-					message.success("Admin updated successfully!");
-				}
-				navigate("/adminList");
-			})
-			.catch((err) => {
-				if (err.response && err.response.status === 401) {
-					message.error("Token expired!");
-					localStorage.removeItem("adminToken");
-					setTimeout(() => {
-						navigate("/Login");
-					}, 3000);
-				} else {
-					message.error("Something went wrong");
-				}
-			})
-			.finally(() => {
-				setDisable(false);
-			});
-	};
-
-	const navigateToRole = () => {
-		navigate("/adminList");
-	};
+	const goBack = () => navigate("/adminList");
 
 	return (
 		<div>
 			<PageHeader
 				title="ADMIN MANAGEMENT"
-				subtitle="Update this admin"
+				subtitle={isSelf ? "Update your details" : "Update this admin"}
 				actions={
-					<Button
-						size="large"
-						icon={<ArrowLeft size={16} />}
-						onClick={navigateToRole}
-					>
+					<Button size="large" icon={<ArrowLeft size={16} />} onClick={goBack}>
 						Return to Admin
 					</Button>
 				}
 			/>
 
 			<div className="surface admin-form__panel">
-				<form onSubmit={handleSubmit}>
-					<div className="admin-form__fields">
-						<div>
-							<label className="field-label" htmlFor="edit-admin-name">
-								Name
-							</label>
-							<Input
-								id="edit-admin-name"
-								size="large"
-								name="name"
-								value={idData?.name || ""}
-								onChange={handleNameChange}
-							/>
-						</div>
+				{!original ? (
+					<Spin />
+				) : (
+					<form onSubmit={handleSubmit}>
+						<div className="admin-form__fields">
+							<div>
+								<label className="field-label" htmlFor="edit-admin-name">
+									Name
+								</label>
+								<Input
+									id="edit-admin-name"
+									size="large"
+									value={form.name}
+									onChange={setField("name")}
+									disabled={!canEdit}
+								/>
+							</div>
 
-						<div>
-							<label className="field-label text-subtle" htmlFor="edit-admin-email">
-								Email
-							</label>
-							<Input
-								id="edit-admin-email"
-								size="large"
-								disabled
-								name="email"
-								value={idData?.email || ""}
-							/>
-						</div>
+							<div>
+								<label className="field-label" htmlFor="edit-admin-email">
+									Email
+								</label>
+								<Input
+									id="edit-admin-email"
+									size="large"
+									type="email"
+									value={form.email}
+									onChange={setField("email")}
+									disabled={!canEdit}
+								/>
+							</div>
 
-						<div>
-							<label className="field-label" htmlFor="edit-admin-role">
-								Select Role
-							</label>
-							{idData && (
-								// role_id comes back as a number; the options use string values
+							<div>
+								<label className="field-label" htmlFor="edit-admin-mobile">
+									Mobile
+								</label>
+								<Input
+									id="edit-admin-mobile"
+									size="large"
+									type="tel"
+									value={form.mobile}
+									onChange={setField("mobile")}
+									disabled={!canEdit}
+								/>
+							</div>
+
+							<div>
+								<label className="field-label" htmlFor="edit-admin-role">
+									Role
+								</label>
 								<Select
 									id="edit-admin-role"
 									size="large"
-									defaultValue={idData?.role_id ? String(idData.role_id) : undefined}
-									onChange={(value) =>
-										handleNameChange({
-											target: { name: "role_id", value },
-										})
-									}
-									options={ROLE_OPTIONS}
+									value={form.role}
+									onChange={setField("role")}
+									options={ADMIN_ROLES}
+									disabled={!canChangeRole}
 									style={{ width: "100%" }}
 								/>
+							</div>
+
+							{canEdit && (
+								<div className="admin-form__actions">
+									<Button
+										type="primary"
+										htmlType="submit"
+										size="large"
+										disabled={saving}
+										icon={!saving ? <Check size={16} /> : null}
+									>
+										{saving ? "Saving..." : "Save"}
+									</Button>
+									<Button size="large" icon={<X size={16} />} onClick={goBack}>
+										Cancel
+									</Button>
+								</div>
 							)}
 						</div>
-
-						<div className="admin-form__actions">
-							<Button
-								type="primary"
-								htmlType="submit"
-								size="large"
-								disabled={disable}
-								icon={!disable ? <Check size={16} /> : null}
-							>
-								{disable ? "Saving..." : "Save"}
-							</Button>
-
-							<Button
-								size="large"
-								icon={<X size={16} />}
-								onClick={navigateToRole}
-							>
-								Cancel
-							</Button>
-						</div>
-					</div>
-				</form>
+					</form>
+				)}
 			</div>
 		</div>
 	);

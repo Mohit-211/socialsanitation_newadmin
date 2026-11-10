@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ChangeAdminPassword } from "@/services/api/authApi";
 import { Button, Input, message } from "antd";
+import { changePassword } from "@/services/api/authApi";
+import { errorMessage } from "@/services/apiResult";
+import { clearSession } from "@/lib/session";
 import { Eye, EyeOff, Check, X, KeyRound, CircleCheck, Circle } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import "./ChangePasswordPage.scss";
@@ -24,17 +26,16 @@ const ChangePasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // live password requirement checks — purely visual guidance,
-  // doesn't block submission (backend remains source of truth for rules).
+  // The server's rule: 8 to 100 characters, at least 2 digits, no spaces.
   const requirements = [
-    { label: "At least 8 characters", met: newPassword.length >= 8 },
-    { label: "One uppercase letter", met: /[A-Z]/.test(newPassword) },
-    { label: "One number", met: /\d/.test(newPassword) },
     {
-      label: "One special character",
-      met: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+      label: "8 to 100 characters",
+      met: newPassword.length >= 8 && newPassword.length <= 100,
     },
+    { label: "At least 2 numbers", met: (newPassword.match(/\d/g) || []).length >= 2 },
+    { label: "No spaces", met: newPassword.length > 0 && !/\s/.test(newPassword) },
   ];
+  const meetsRule = requirements.every((requirement) => requirement.met);
 
   const passwordsMatch =
     confirmPassword.length > 0 && newPassword === confirmPassword;
@@ -44,38 +45,32 @@ const ChangePasswordPage = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    if (
-      oldPassword?.length === 0 ||
-      newPassword?.length === 0 ||
-      confirmPassword?.length === 0
-    ) {
-      message.error("Please enter valid input");
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      message.error("Fill in all three passwords");
       return;
     }
-
+    if (!meetsRule) {
+      message.error("The new password needs 8 to 100 characters, at least 2 numbers and no spaces");
+      return;
+    }
     if (newPassword !== confirmPassword) {
-      message.error("New Password and Confirm Password do not match");
+      message.error("The new passwords don't match");
       return;
     }
-
-    const formData = new FormData();
-    formData.append("old_password", oldPassword);
-    formData.append("new_password", newPassword);
-    formData.append("confirm_password", confirmPassword);
 
     setSaving(true);
     try {
-      const res = await ChangeAdminPassword(formData);
-      if (res?.status === 200) {
-        message.success("Password changed!");
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        message.error(res?.data?.message);
-      }
+      await changePassword({
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      // A new password ends every session, this one included.
+      clearSession();
+      message.success("Password changed. Sign in again with your new password.");
+      navigate("/Login", { replace: true });
     } catch (error) {
-      message.error(error?.response?.data?.message);
+      message.error(errorMessage(error, "Couldn't change the password"));
     } finally {
       setSaving(false);
     }

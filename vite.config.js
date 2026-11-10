@@ -6,8 +6,7 @@ const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 // Every variable the app needs (see .env.example and src/config/env.js).
 const REQUIRED_ENV = [
-  "VITE_API_BASE_URL",
-  "VITE_UPLOADS_BASE_URL",
+  "VITE_API_URL",
   "VITE_GOOGLE_MAPS_API_KEY",
   "VITE_FIREBASE_API_KEY",
   "VITE_FIREBASE_AUTH_DOMAIN",

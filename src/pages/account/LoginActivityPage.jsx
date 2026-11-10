@@ -1,22 +1,16 @@
 import { useEffect, useState } from "react";
 import { Button, Spin, Table, message } from "antd";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import { getUserLoginTimings, clearUserLoginTimings } from "@/services/api/userApi";
+import { listLoginActivity, clearLoginActivity } from "@/services/api/authApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
+import { formatDateTime } from "@/utils/datetime";
 import PageHeader from "@/components/PageHeader";
 import "./LoginActivityPage.scss";
 
-const DATE_TIME_FORMAT = {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-};
-
-const roleLabel = (roleId) =>
-  roleId === 6 ? "User" : roleId === 7 ? "Driver" : "";
+// Which app a session was in, as people say it.
+const APP_LABELS = { admin: "Admin panel", client: "Client app", employee: "Employee app" };
+const appLabel = (app) => APP_LABELS[app] || app || "—";
 
 // One table row per user. The API returns an object keyed by user id whose
 // values are that user's login records; `rows` is that list.
@@ -26,7 +20,7 @@ const columns = [
     key: "name",
     render: (_, { rows }) => (
       <span className="login-logs__name">
-        {rows[0].login_user?.user_profile?.name}
+        {rows[0].login_user?.name || "—"}
       </span>
     ),
   },
@@ -39,11 +33,13 @@ const columns = [
     ),
   },
   {
-    title: "Role",
-    key: "role",
+    title: "App",
+    key: "app",
     align: "right",
     render: (_, { rows }) => (
-      <span className="login-logs__muted">{roleLabel(rows[0].role_id)}</span>
+      <span className="login-logs__muted">
+        {[...new Set(rows.map((row) => appLabel(row.app)))].join(", ")}
+      </span>
     ),
   },
   {
@@ -80,25 +76,32 @@ const LoginHistory = ({ rows }) => (
       dataSource={rows}
       columns={[
         {
-          title: "IP Address",
-          key: "ip_address",
-          render: () => rows[0].ip_address.split(":").pop(),
+          title: "App",
+          dataIndex: "app",
+          render: (app) => appLabel(app),
         },
         {
-          title: "Login Time",
+          title: "IP Address",
+          dataIndex: "ip_address",
+          render: (ip) => (ip ? String(ip).split(":").pop() : "—"),
+        },
+        {
+          title: "Login Time (Eastern)",
           dataIndex: "login_time_utc",
           align: "right",
-          render: (loginTime) =>
-            new Date(loginTime).toLocaleString("en-US", DATE_TIME_FORMAT),
+          render: (loginTime) => formatDateTime(loginTime),
         },
         {
-          title: "Logout Time",
+          title: "Logout Time (Eastern)",
           dataIndex: "logout_time_utc",
           align: "right",
-          render: (logoutTime) =>
-            logoutTime
-              ? new Date(logoutTime).toLocaleString("en-US", DATE_TIME_FORMAT)
-              : "----",
+          render: (logoutTime) => (logoutTime ? formatDateTime(logoutTime) : "Signed in"),
+        },
+        {
+          title: "Device Time Zone",
+          dataIndex: "time_zone",
+          align: "right",
+          render: (zone) => zone || "—",
         },
       ]}
     />
@@ -106,17 +109,17 @@ const LoginHistory = ({ rows }) => (
 );
 
 const LoginActivityPage = () => {
-  const [userLoginTimingData, setUserLoginTimingData] = useState([]);
+  const [userLoginTimingData, setUserLoginTimingData] = useState({});
+  const canClear = useCan(PERMISSION.DELETE_RECORDS);
   const [loading, setLoading] = useState(true);
   const [clearLoading, setClearLoading] = useState(false);
 
   useEffect(() => {
     const loginTimingsFunc = async () => {
       try {
-        let data = await getUserLoginTimings();
-        setUserLoginTimingData(data.data.data);
+        setUserLoginTimingData(dataOf(await listLoginActivity()) || {});
       } catch (err) {
-        console.error(err);
+        message.error(errorMessage(err, "Couldn't load the login activity"));
       } finally {
         setLoading(false);
       }
@@ -128,11 +131,12 @@ const LoginActivityPage = () => {
   const handleClearButtonClick = async () => {
     setClearLoading(true);
     try {
-      await clearUserLoginTimings();
-      setUserLoginTimingData([]);
-      message.success("Login Record Cleared Successfully");
-    } catch {
-      message.error("Failed to Clear Login Record");
+      await clearLoginActivity();
+      // Live sessions stay, so reload what is left.
+      setUserLoginTimingData(dataOf(await listLoginActivity()) || {});
+      message.success("Ended sessions cleared");
+    } catch (err) {
+      message.error(errorMessage(err, "Couldn't clear the login activity"));
     } finally {
       setClearLoading(false);
     }
@@ -150,16 +154,18 @@ const LoginActivityPage = () => {
         title="USER LOGIN ACTIVITY"
         subtitle="Login track record of all users"
         actions={
-          <Button
-            type="primary"
-            danger
-            size="large"
-            icon={<Trash2 size={16} />}
-            onClick={handleClearButtonClick}
-            disabled={clearLoading}
-          >
-            {clearLoading ? "Clearing..." : "Clear Logs"}
-          </Button>
+          canClear && (
+            <Button
+              type="primary"
+              danger
+              size="large"
+              icon={<Trash2 size={16} />}
+              onClick={handleClearButtonClick}
+              disabled={clearLoading}
+            >
+              {clearLoading ? "Clearing..." : "Clear Ended Sessions"}
+            </Button>
+          )
         }
       />
 
@@ -167,7 +173,7 @@ const LoginActivityPage = () => {
         <div className="login-logs__loading">
           <Spin size="large" />
         </div>
-      ) : userLoginTimingData && userLoginTimingData.length !== 0 ? (
+      ) : dataSource.length > 0 ? (
         <Table
           columns={columns}
           dataSource={dataSource}

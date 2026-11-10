@@ -1,18 +1,15 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetReviewLink = async () => {
-  const res = await httpClient.get(API_BASE_URL + "admin/user/getReviewLink");
-  return res;
-};
+// Review links (shown to clients when asking for a review) and review emails.
 
-export const CreateOrUpdateReviewLink = async (formData) => {
-  return await httpClient.post(
-    API_BASE_URL + "admin/user/createOrUpdateReviewLink",
-    formData,
-  );
-};
+/** One object: apple_review_link, google_review_link, booking_review_link. */
+export const getReviewLinks = () => httpClient.get("/review-links");
 
-export const SendReview = async (data) => {
-  return await httpClient.post(`${API_BASE_URL}admin/user/sendReviewEmail`, data);
-};
+/** Any of apple_review_link, google_review_link, booking_review_link. */
+export const saveReviewLinks = (links) => httpClient.put("/review-links", links);
+
+/** Emails the client the review links; 404 until the links are saved. */
+export const sendReviewEmail = (clientId) => httpClient.post(`/clients/${clientId}/review-email`);
+
+/** A service's reviews; the writer is reviewer_name. */
+export const listServiceReviews = (serviceId) => httpClient.get(`/services/${serviceId}/reviews`);

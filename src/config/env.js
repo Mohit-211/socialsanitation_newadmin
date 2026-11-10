@@ -18,19 +18,29 @@ function required(name) {
   return value;
 }
 
-const withTrailingSlash = (url) => (url.endsWith("/") ? url : `${url}/`);
 const withoutTrailingSlash = (url) => url.replace(/\/+$/, "");
 
-/** Backend REST API, always with a trailing slash (see .env.example). */
-export const API_BASE_URL = withTrailingSlash(required("VITE_API_BASE_URL"));
+/** The backend's address with no path, such as https://api.socialsanitation.com. */
+export const API_URL = withoutTrailingSlash(required("VITE_API_URL"));
 
-/** Images uploaded through the API. */
-export const IMAGE_BASE_URL = `${API_BASE_URL}images/`;
+/** The admin side of the API: every panel call except sign-in. */
+export const ADMIN_API_URL = `${API_URL}/api/v2/admin`;
 
-/** Server that hosts restock-request photos (joined with their file_uri). */
-export const UPLOADS_BASE_URL = withoutTrailingSlash(
-  required("VITE_UPLOADS_BASE_URL"),
-);
+/** Sign-in, one-time codes and password resets. These need no token. */
+export const AUTH_API_URL = `${API_URL}/api/v2/auth`;
+
+/** Public lists the panel shares with the website, such as countries, states and cities. */
+export const WEB_API_URL = `${API_URL}/api/v2/web`;
+
+/** Uploaded images the API names by file name only (see utils/files.js). */
+export const IMAGE_BASE_URL = `${API_URL}/api/v1/images/`;
+
+/**
+ * @deprecated The old /api/v1 API, which the backend no longer serves. Only
+ * screens that haven't moved to /api/v2 yet still use it; it goes once they
+ * have all moved.
+ */
+export const API_BASE_URL = `${API_URL}/api/v1/`;
 
 /** Browser key for Google Maps and Geocoding; restrict it by HTTP referrer. */
 export const GOOGLE_MAPS_API_KEY = required("VITE_GOOGLE_MAPS_API_KEY");

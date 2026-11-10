@@ -1,53 +1,28 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetAdmins = async (adminToken) => {
-  try {
-    const res = await httpClient.get(API_BASE_URL + "admin/auth/getAllAdmins", {
-      headers: {
-        "x-access-token": `${adminToken}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
+// Admin accounts. An admin has the role super_admin or admin; BDMs are
+// employees now, added from the employee form. Adding, changing another admin,
+// removing one and ending their sessions need admins.manage (Super Admin);
+// anyone may edit their own name, mobile and email.
 
-    return res;
-  } catch (error) {
-    // Handle error if needed
-    console.error("Error fetching users:", error);
-    throw error;
-  }
-};
+/** The admin roles the forms offer, by code. */
+export const ADMIN_ROLES = Object.freeze([
+  { value: "super_admin", label: "Super Admin" },
+  { value: "admin", label: "Admin" },
+]);
 
-export const GetAdminById = async (id) => {
-  return await httpClient.get(API_BASE_URL + "admin/auth/findAdminById?id=" + id);
-};
+export const listAdmins = () => httpClient.get("/admins");
 
-export const CreateAdmin = async (formData) => {
-  return await httpClient.post(API_BASE_URL + "admin/auth/register", formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+export const getAdmin = (id) => httpClient.get(`/admins/${id}`);
 
-export const UpdateAdmin = async (formData) => {
-  return await httpClient.put(API_BASE_URL + "admin/auth/updateAdmin", formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
+/** name, email and role are required; mobile is optional. */
+export const createAdmin = ({ name, email, role, mobile }) =>
+  httpClient.post("/admins", { name, email, role, mobile: mobile || undefined });
 
-export const DeleteAdmin = async (admin_id, adminToken) => {
-  const formData = new FormData();
-  formData.append("admin_id", admin_id);
-  return httpClient.delete(API_BASE_URL + "admin/auth/deleteAdmin", {
-    data: formData,
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "x-access-token": adminToken,
-    },
-  });
-};
+/** Any of name, mobile, email, role; an empty value changes nothing. */
+export const updateAdmin = (id, changes) => httpClient.patch(`/admins/${id}`, changes);
+
+export const deleteAdmin = (id) => httpClient.delete(`/admins/${id}`);
+
+/** Signs the admin out on every device. */
+export const endAdminSessions = (id) => httpClient.post(`/admins/${id}/end-sessions`);

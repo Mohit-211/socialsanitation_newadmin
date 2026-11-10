@@ -46,7 +46,7 @@ import {
 	MyGroups,
 	UpdateGroupName,
 } from "@/services/api/groupChatApi";
-import { GetAdminProfile } from "@/services/api/authApi";
+import { getProfile } from "@/services/api/authApi";
 import db from "@/lib/firebase";
 import "./GroupChatPage.scss";
 
@@ -146,7 +146,7 @@ const GroupChatPage = () => {
 
 	// Load profile and groups once.
 	useEffect(() => {
-		GetAdminProfile(token)
+		getProfile()
 			.then((result) => setUserData(result.data?.data))
 			.catch((error) => console.error("Failed to fetch admin profile:", error));
 		// Async fetch: state is only set after the request resolves.

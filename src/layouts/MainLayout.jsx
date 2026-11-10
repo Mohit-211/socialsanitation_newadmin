@@ -28,7 +28,6 @@ import {
   Link2,
   ListChecks,
   LogOut,
-  MessageCircle,
   MessageSquare,
   MessageSquareText,
   MessageSquareWarning,
@@ -50,8 +49,10 @@ import {
 } from "lucide-react";
 import LoginPage from "@/pages/auth/LoginPage";
 import PageLoader from "@/components/PageLoader";
-import { GetAdminProfile } from "@/services/api/authApi";
-import { GetReviewLink, CreateOrUpdateReviewLink } from "@/services/api/reviewApi";
+import { getProfile, signOut } from "@/services/api/authApi";
+import { getReviewLinks as fetchReviewLinks, saveReviewLinks as storeReviewLinks } from "@/services/api/reviewApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { clearSession, updateSessionUser, useSession } from "@/lib/session";
 import logo from "@/assets/images/logo-wordmark.png";
 import smallLogo from "@/assets/images/logo-mark.png";
 import "./MainLayout.scss";
@@ -108,11 +109,10 @@ const PROFILE_LINKS = [
 
 const icon = (Icon) => <Icon size={18} />;
 
-// Operations Administrator (role_id 3) has restricted menu access —
-// Estimate, Calculator, and BDM are hidden for this role.
-const getMenuItems = (roleId) => {
-  const isOperationsAdmin = roleId === 3;
-  const unlessOpsAdmin = (item) => (isOperationsAdmin ? [] : [item]);
+// Estimates, the calculator and BDMs are for Super Admins; the Admin role
+// (the old Operations Administrator) runs day-to-day operations without them.
+const getMenuItems = ({ isSuperAdmin }) => {
+  const unlessOpsAdmin = (item) => (isSuperAdmin ? [item] : []);
 
   return [
     {
@@ -270,9 +270,6 @@ const getMenuItems = (roleId) => {
       type: "group",
       label: "COMMUNICATION",
       children: [
-        ...(roleId === 5
-          ? [{ key: "/chats", icon: icon(MessageCircle), label: "Chat" }]
-          : []),
         { key: "/teams", icon: icon(UsersRound), label: "Teams" },
         { key: "/group-chats", icon: icon(MessagesSquare), label: "Group Chat" },
       ],
@@ -321,8 +318,12 @@ const openKeysFor = (pathname) =>
     .filter(([, prefixes]) => prefixes.some((p) => pathname.startsWith(p)))
     .map(([key]) => key);
 
+const isSuperAdminOf = (user) =>
+  Boolean(user?.roles?.some((role) => role.code === "super_admin"));
+
 const MainLayout = () => {
-  const [idData, setIdData] = useState({});
+  const session = useSession();
+  const user = session?.user;
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -333,52 +334,42 @@ const MainLayout = () => {
 
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const token = localStorage.getItem("adminToken");
+  const signedIn = Boolean(session);
 
+  // Who the admin is now: roles and permissions can change after sign-in,
+  // and a demoted admin loses access at once.
   useEffect(() => {
-    const getData = async () => {
-      try {
-        const result = await GetAdminProfile(
-          localStorage.getItem("adminToken"),
-        );
-        if (result.status === 200) {
-          setIdData(result.data.data);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    getData();
-  }, []);
+    if (!signedIn) return;
+    getProfile()
+      .then((res) => updateSessionUser(dataOf(res)))
+      .catch(() => {
+        // A 401 already sends the panel to sign-in.
+      });
+  }, [signedIn]);
 
-  function logout() {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminId");
-    message.success("Logged Out Successfully");
-    setTimeout(() => {
-      navigate("/Login");
-    }, 1000);
+  async function logout() {
+    try {
+      await signOut();
+    } catch {
+      // The session ends here either way.
+    }
+    clearSession();
+    message.success("Signed out");
+    navigate("/Login", { replace: true });
   }
 
   const getReviewLinks = async () => {
     try {
       setReviewLoading(true);
-      const res = await GetReviewLink();
-      const data = res.data;
-
-      if (data.success && data.data.length > 0) {
-        const links = data.data[0];
-        setReviewLinks({
-          apple_review_link: links.apple_review_link || "",
-          google_review_link: links.google_review_link || "",
-          booking_review_link: links.booking_review_link || "",
-        });
-      } else {
-        setReviewLinks(EMPTY_REVIEW_LINKS);
-      }
+      const links = dataOf(await fetchReviewLinks()) || {};
+      setReviewLinks({
+        apple_review_link: links.apple_review_link || "",
+        google_review_link: links.google_review_link || "",
+        booking_review_link: links.booking_review_link || "",
+      });
     } catch (err) {
-      console.error(err);
-      message.error("Failed to fetch review links");
+      setReviewLinks(EMPTY_REVIEW_LINKS);
+      message.error(errorMessage(err, "Couldn't load the review links"));
     } finally {
       setReviewLoading(false);
     }
@@ -387,29 +378,17 @@ const MainLayout = () => {
   const saveReviewLinks = async () => {
     try {
       setReviewLoading(true);
-
-      const formData = new FormData();
-      formData.append("apple_review_link", reviewLinks.apple_review_link);
-      formData.append("google_review_link", reviewLinks.google_review_link);
-      formData.append("booking_review_link", reviewLinks.booking_review_link);
-
-      const res = await CreateOrUpdateReviewLink(formData);
-
-      if (res.status === 200) {
-        message.success("Review links saved successfully!");
-        setReviewModalVisible(false);
-      } else {
-        message.error(res.message || "Failed to save review links");
-      }
+      await storeReviewLinks(reviewLinks);
+      message.success("Review links saved");
+      setReviewModalVisible(false);
     } catch (err) {
-      console.error(err);
-      message.error("Failed to save review links");
+      message.error(errorMessage(err, "Couldn't save the review links"));
     } finally {
       setReviewLoading(false);
     }
   };
 
-  if (!token) {
+  if (!signedIn) {
     return <LoginPage />;
   }
 
@@ -439,7 +418,8 @@ const MainLayout = () => {
     onClick: ({ key }) => (key === "logout" ? logout() : navigate(key)),
   };
 
-  const initial = idData?.name?.charAt(0)?.toUpperCase();
+  const initial = user?.name?.charAt(0)?.toUpperCase();
+  const roleLabel = user?.roles?.map((role) => role.name).join(", ") || "Admin";
 
   return (
     <Layout className="app-shell">
@@ -468,7 +448,7 @@ const MainLayout = () => {
             if (isMobile) setMobileMenuOpen(false);
             navigate(key);
           }}
-          items={getMenuItems(idData?.role_id)}
+          items={getMenuItems({ isSuperAdmin: isSuperAdminOf(user) })}
         />
       </Sider>
 
@@ -523,10 +503,10 @@ const MainLayout = () => {
                 </Avatar>
                 <span className="profile-trigger__text">
                   <span className="profile-trigger__name">
-                    {idData?.name || "Admin"}
+                    {user?.name || "Admin"}
                   </span>
                   <span className="profile-trigger__role">
-                    {idData?.admin_role?.name || "Admin"}
+                    {roleLabel}
                   </span>
                 </span>
                 <ChevronDown
