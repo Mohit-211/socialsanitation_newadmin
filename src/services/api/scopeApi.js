@@ -1,116 +1,117 @@
 import httpClient from "@/services/httpClient";
 import { API_BASE_URL } from "@/config/env";
 
-// GET ALL (by client type: "commercial" | "residential")
-export const getScope = (clientType = "commercial") => {
-  return httpClient.get(`${API_BASE_URL}/admin/auth/scope`, {
-    params: { client_type: clientType },
-  });
-};
+// Scopes of work. The master list holds the template sections and tasks for
+// each client type; a client's scope of work is a document of its own, made
+// from one of their sheets (or the whole master list) and then edited for that
+// client. Every change to a client's scope answers with the whole scope.
 
-export const GetUserScopeView = (userId) => {
-  return httpClient.get(`${API_BASE_URL}/admin/auth/user-scope-view/${userId}`);
-};
+// --- Master list -----------------------------------------------------------
 
-export const downloadScopeOfWorkPDF = (userId) => {
-  return httpClient.get(`${API_BASE_URL}admin/auth/scope-of-work-pdf/${userId}`);
-};
+/** data.items: sections with their items, for "commercial" or "residential". */
+export const getMasterScope = (clientType) =>
+  httpClient.get("/scope", { params: { client_type: clientType } });
 
-// CREATE SECTION  (data should include client_type)
-export const createSection = (data) => {
-  return httpClient.post(`${API_BASE_URL}/admin/auth/scope/section`, data);
-};
+/** title (required), is_red, client_type. */
+export const createMasterSection = (section) => httpClient.post("/scope/sections", section);
 
-// UPDATE SECTION
-export const updateSection = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/scope/section/${id}`, data);
-};
+/** Any of title, is_red, client_type, order. */
+export const updateMasterSection = (id, changes) => httpClient.patch(`/scope/sections/${id}`, changes);
 
-// DELETE SECTION
-export const deleteSectionApi = (id) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/scope/section/${id}`);
-};
+export const deleteMasterSection = (id) => httpClient.delete(`/scope/sections/${id}`);
 
-// CREATE ITEM
-export const createItem = (data) => {
-  return httpClient.post(`${API_BASE_URL}/admin/auth/scope/item`, data);
-};
+/** section_id and description (required), is_daily, is_weekly, is_monthly. */
+export const createMasterItem = (item) => httpClient.post("/scope/items", item);
 
-// UPDATE ITEM
-export const updateItemApi = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/scope/item/${id}`, data);
-};
+/** Any of description, is_daily, is_weekly, is_monthly, order. */
+export const updateMasterItem = (id, changes) => httpClient.patch(`/scope/items/${id}`, changes);
 
-// DELETE ITEM
-export const deleteItemApi = (id) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/scope/item/${id}`);
-};
+export const deleteMasterItem = (id) => httpClient.delete(`/scope/items/${id}`);
 
-export const GetUserScope = (userId) => {
-  return httpClient.get(`${API_BASE_URL}/admin/auth/user-scope/${userId}`);
-};
+// --- A client's scopes of work ---------------------------------------------
 
-export const CheckUserScopeExists = (userId) => {
-  return httpClient.get(`${API_BASE_URL}/admin/auth/user-scope/${userId}/exists`);
-};
+/** The client's scopes, newest first, without sections. */
+export const listClientScopes = (clientId) => httpClient.get(`/clients/${clientId}/scopes`);
 
-export const CreateUserSection = (data) => {
-  return httpClient.post(`${API_BASE_URL}/admin/auth/user-scope-section`, data);
-};
+/**
+ * All optional: title, client_sheet_id (left out, the scope starts from the
+ * whole master list), visit_frequency, service_days, service_time, crew_size,
+ * hours_per_visit, notes.
+ */
+export const createClientScope = (clientId, scope) => httpClient.post(`/clients/${clientId}/scopes`, scope);
 
-export const UpdateUserScopeSection = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/user-scope-section/${id}`, data);
-};
+/** The scope with its sections and tasks, in order. */
+export const getScopeOfWork = (id) => httpClient.get(`/scopes/${id}`);
 
-export const DeleteUserScopeSection = (id) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/user-scope-section/${id}`);
-};
+/** The same fields, at least one; null or "" clears one. */
+export const updateScopeOfWork = (id, changes) => httpClient.patch(`/scopes/${id}`, changes);
 
-export const CreateUserScopeItem = (id, data) => {
-  return httpClient.post(`${API_BASE_URL}/admin/auth/user-scope-item/${id}`, data);
-};
+/** Needs records.delete. */
+export const deleteScopeOfWork = (id) => httpClient.delete(`/scopes/${id}`);
 
-export const UpdateUserScopeItem = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/user-scope-item/${id}`, data);
-};
+/** file_url (a link that expires) and file_name. */
+export const getScopeOfWorkPdf = (id) => httpClient.get(`/scopes/${id}/pdf`);
 
-export const DeleteUserScopeItem = (id) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/user-scope-item/${id}`);
-};
+/** { title, is_red }, or { master_section_id } to copy a master section with its tasks. */
+export const addScopeSection = (scopeId, section) => httpClient.post(`/scopes/${scopeId}/sections`, section);
 
-/* ESTIMATE SCOPE APIs */
+/** sections: a list of { id, order }. */
+export const reorderScopeSections = (scopeId, sections) =>
+  httpClient.patch(`/scopes/${scopeId}/sections/order`, { sections });
 
-export const CreateEstimateSection = (estimateId, data) => {
-  return httpClient.post(
-    `${API_BASE_URL}/admin/auth/estimate-section/${estimateId}`,
-    data,
-  );
-};
+/** Any of title, is_red, order. */
+export const updateScopeSection = (scopeId, sectionId, changes) =>
+  httpClient.patch(`/scopes/${scopeId}/sections/${sectionId}`, changes);
 
-export const UpdateEstimateSection = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/estimate-section/${id}`, data);
-};
+/** Needs records.delete. */
+export const deleteScopeSection = (scopeId, sectionId) =>
+  httpClient.delete(`/scopes/${scopeId}/sections/${sectionId}`);
 
-export const DeleteEstimateSection = (id, data) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/estimate-section/${id}`, {
-    data,
-  });
-};
+/** description (required), is_daily, is_weekly, is_monthly. */
+export const addScopeItem = (scopeId, sectionId, item) =>
+  httpClient.post(`/scopes/${scopeId}/sections/${sectionId}/items`, item);
 
-export const CreateEstimateItem = (sectionId, data) => {
-  return httpClient.post(`${API_BASE_URL}/admin/auth/estimate-item/${sectionId}`, data);
-};
+/** items: a list of { id, order }. */
+export const reorderScopeItems = (scopeId, sectionId, items) =>
+  httpClient.patch(`/scopes/${scopeId}/sections/${sectionId}/items/order`, { items });
 
-export const UpdateEstimateItem = (id, data) => {
-  return httpClient.put(`${API_BASE_URL}/admin/auth/estimate-item/${id}`, data);
-};
+/** Any of description, is_daily, is_weekly, is_monthly, order. */
+export const updateScopeItem = (scopeId, itemId, changes) =>
+  httpClient.patch(`/scopes/${scopeId}/items/${itemId}`, changes);
 
-export const DeleteEstimateItem = (id, data) => {
-  return httpClient.delete(`${API_BASE_URL}/admin/auth/estimate-item/${id}`, { data });
-};
+/** Needs records.delete. */
+export const deleteScopeItem = (scopeId, itemId) => httpClient.delete(`/scopes/${scopeId}/items/${itemId}`);
 
-export const ReorderUserScopeSections = (sections) =>
-  httpClient.patch(`${API_BASE_URL}/admin/auth/scope/section/reorder`, { sections });
+// ---------------------------------------------------------------------------
+// Old /api/v1 calls, still used by the estimate screens until they move to
+// /api/v2 (an estimate's own copy of the scope lives at /estimates/:id/scope).
 
-export const ReorderUserScopeItems = (items) =>
-  httpClient.patch(`${API_BASE_URL}/admin/auth/scope/item/reorder`, { items });
+/** @deprecated Use getMasterScope. */
+export const getScope = (clientType = "commercial") =>
+  httpClient.get(`${API_BASE_URL}admin/auth/scope`, { params: { client_type: clientType } });
+
+/** @deprecated A client has many scopes now: use listClientScopes and getScopeOfWork. */
+export const GetUserScopeView = (userId) => httpClient.get(`${API_BASE_URL}admin/auth/user-scope-view/${userId}`);
+
+/** @deprecated */
+export const CreateEstimateSection = (estimateId, data) =>
+  httpClient.post(`${API_BASE_URL}admin/auth/estimate-section/${estimateId}`, data);
+
+/** @deprecated */
+export const UpdateEstimateSection = (id, data) =>
+  httpClient.put(`${API_BASE_URL}admin/auth/estimate-section/${id}`, data);
+
+/** @deprecated */
+export const DeleteEstimateSection = (id, data) =>
+  httpClient.delete(`${API_BASE_URL}admin/auth/estimate-section/${id}`, { data });
+
+/** @deprecated */
+export const CreateEstimateItem = (sectionId, data) =>
+  httpClient.post(`${API_BASE_URL}admin/auth/estimate-item/${sectionId}`, data);
+
+/** @deprecated */
+export const UpdateEstimateItem = (id, data) => httpClient.put(`${API_BASE_URL}admin/auth/estimate-item/${id}`, data);
+
+/** @deprecated */
+export const DeleteEstimateItem = (id, data) =>
+  httpClient.delete(`${API_BASE_URL}admin/auth/estimate-item/${id}`, { data });

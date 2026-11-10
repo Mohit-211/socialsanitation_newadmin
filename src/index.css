@@ -354,6 +354,28 @@ samp {
   }
 }
 
+/* Form fields side by side, one column on phones:
+   <div className="form-grid form-grid--2">…Form.Items…</div> */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .form-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* ==========================================================================
    antd layout adjustments (colors come from the antd theme)
    ========================================================================== */

@@ -13,14 +13,16 @@ import {
 } from "lucide-react";
 
 import {
-  createItem,
-  createSection,
-  deleteItemApi,
-  deleteSectionApi,
-  getScope,
-  updateItemApi,
-  updateSection,
+  createMasterItem,
+  createMasterSection,
+  deleteMasterItem,
+  deleteMasterSection,
+  getMasterScope,
+  updateMasterItem,
+  updateMasterSection,
 } from "@/services/api/scopeApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 
 import "./ScopeOfWorkPage.scss";
 
@@ -39,9 +41,11 @@ const FreqBadge = ({ label, active, onClick }) => (
 );
 
 const ScopeOfWorkPage = () => {
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const [clientType, setClientType] = useState("commercial");
   const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Loading starts with the first fetch; switching type sets it again.
+  const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState(null);
   const [savingItem, setSavingItem] = useState(null);
 
@@ -59,43 +63,35 @@ const ScopeOfWorkPage = () => {
 
   /* FETCH */
 
-  const fetchScope = async (type) => {
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
+  const formatSections = (sectionsArray) =>
+    sectionsArray.map((section) => ({
+      id: section.id,
+      title: section.title,
+      is_red: section.is_red,
+      items: (section.items || []).map((item) => ({
+        id: item.id,
+        description: item.description,
+        is_daily: item.is_daily,
+        is_weekly: item.is_weekly,
+        is_monthly: item.is_monthly,
+      })),
+    }));
 
-    try {
-      const res = await getScope(type);
-
-      // A newer request has been made since this one; ignore this response
-      if (requestId !== requestIdRef.current) return;
-
-      const sectionsArray = res?.data?.data?.data || [];
-
-      const formatted = sectionsArray.map((section) => ({
-        id: section.id,
-        title: section.title,
-        is_red: section.is_red,
-        items: (section.items || []).map((item) => ({
-          id: item.id,
-          description: item.description,
-          is_daily: item.is_daily,
-          is_weekly: item.is_weekly,
-          is_monthly: item.is_monthly,
-        })),
-      }));
-
-      setSections(formatted);
-    } catch (err) {
-      if (requestId !== requestIdRef.current) return;
-      console.error(err);
-      message.error("Failed to load scope");
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  };
-
+  // Loads the master list for the client type; an answer for a type the
+  // admin has since switched away from is ignored.
   useEffect(() => {
-    fetchScope(clientType);
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
+    getMasterScope(clientType)
+      .then((res) => {
+        if (isCurrent()) setSections(formatSections(itemsOf(res)));
+      })
+      .catch((err) => {
+        if (isCurrent()) message.error(errorMessage(err, "Couldn't load the master list"));
+      })
+      .finally(() => {
+        if (isCurrent()) setLoading(false);
+      });
   }, [clientType]);
 
   /* CLIENT TYPE SWITCH */
@@ -107,6 +103,7 @@ const ScopeOfWorkPage = () => {
     setDirtyItems(new Set());
     setCollapsedSections(new Set());
     setSections([]);
+    setLoading(true);
     setClientType(type);
   };
 
@@ -200,7 +197,7 @@ const ScopeOfWorkPage = () => {
     try {
       const section = sections[index];
       if (section.id) {
-        await deleteSectionApi(section.id);
+        await deleteMasterSection(section.id);
       }
       const key = getSectionKey(section);
       setSections((prev) => prev.filter((_, i) => i !== index));
@@ -210,8 +207,8 @@ const ScopeOfWorkPage = () => {
         return next;
       });
       message.success("Section deleted");
-    } catch {
-      message.error("Delete failed");
+    } catch (err) {
+      message.error(errorMessage(err, "Couldn't delete the section"));
     }
   };
 
@@ -220,7 +217,7 @@ const ScopeOfWorkPage = () => {
       const section = sections[sectionIndex];
       const item = section.items[itemIndex];
       if (item.id) {
-        await deleteItemApi(item.id);
+        await deleteMasterItem(item.id);
       }
       const iKey = getItemKey(section, item);
       setSections((prev) =>
@@ -236,8 +233,8 @@ const ScopeOfWorkPage = () => {
         return next;
       });
       message.success("Task deleted");
-    } catch {
-      message.error("Delete failed");
+    } catch (err) {
+      message.error(errorMessage(err, "Couldn't delete the task"));
     }
   };
 
@@ -284,14 +281,13 @@ const ScopeOfWorkPage = () => {
       const key = getSectionKey(section);
 
       if (!section.id) {
-        const res = await createSection({
+        const res = await createMasterSection({
           title: section.title,
           is_red: section.is_red,
           client_type: clientType,
         });
 
-        const saved =
-          res?.data?.data?.data || res?.data?.data || res?.data;
+        const saved = dataOf(res) || {};
 
         setSections((prev) =>
           prev.map((sec, idx) =>
@@ -310,7 +306,7 @@ const ScopeOfWorkPage = () => {
 
         message.success("Section created");
       } else {
-        await updateSection(section.id, {
+        await updateMasterSection(section.id, {
           title: section.title,
           is_red: section.is_red,
         });
@@ -324,8 +320,7 @@ const ScopeOfWorkPage = () => {
         message.success("Section updated");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Save failed");
+      message.error(errorMessage(err, "Couldn't save the section"));
     } finally {
       setSavingSection(null);
     }
@@ -351,16 +346,15 @@ const ScopeOfWorkPage = () => {
       const iKey = getItemKey(section, item);
 
       if (!item.id) {
-        const res = await createItem({
-          scope_section_id: section.id,
+        const res = await createMasterItem({
+          section_id: section.id,
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
           is_monthly: item.is_monthly,
         });
 
-        const saved =
-          res?.data?.data?.data || res?.data?.data || res?.data;
+        const saved = dataOf(res) || {};
 
         setSections((prev) =>
           prev.map((sec, idx) => {
@@ -384,7 +378,7 @@ const ScopeOfWorkPage = () => {
 
         message.success("Task created");
       } else {
-        await updateItemApi(item.id, {
+        await updateMasterItem(item.id, {
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
@@ -400,8 +394,7 @@ const ScopeOfWorkPage = () => {
         message.success("Task updated");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Save failed");
+      message.error(errorMessage(err, "Couldn't save the task"));
     } finally {
       setSavingItem(null);
     }
@@ -592,13 +585,15 @@ const ScopeOfWorkPage = () => {
                       </button>
                     )}
 
-                    <button
-                      className="btn-icon btn-delete"
-                      title="Delete section"
-                      onClick={() => deleteSectionHandler(sectionIndex)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {(canDelete || !section.id) && (
+                      <button
+                        className="btn-icon btn-delete"
+                        title={section.id ? "Delete section" : "Discard section"}
+                        onClick={() => deleteSectionHandler(sectionIndex)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
 
                     {/* COLLAPSE TOGGLE */}
                     <button
@@ -715,13 +710,15 @@ const ScopeOfWorkPage = () => {
                             </button>
                           )}
 
-                          <button
-                            className="btn-icon btn-delete"
-                            title="Delete task"
-                            onClick={() => deleteItemHandler(sectionIndex, itemIndex)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {(canDelete || !item.id) && (
+                            <button
+                              className="btn-icon btn-delete"
+                              title={item.id ? "Delete task" : "Discard task"}
+                              onClick={() => deleteItemHandler(sectionIndex, itemIndex)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       );
                     })}

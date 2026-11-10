@@ -102,6 +102,12 @@ const EditBdmRedirect = () => {
   return <Navigate to={`/editEmployee/${id}`} replace />;
 };
 
+// An old /client-scope/:clientId link: the client page lists their scopes.
+const ClientScopesRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/viewUser/${id}?tab=scopes`} replace />;
+};
+
 const AppRoutes = () => (
   <Suspense fallback={<PageLoader fullScreen />}>
     <Routes>
@@ -238,7 +244,9 @@ const AppRoutes = () => (
           path="/clientInspections/:id"
           element={<ClientInspectionsPage />}
         />
-        <Route path="/client-scope/:id" element={<ClientScopeOfWorkPage />} />
+        <Route path="/scopes/:id" element={<ClientScopeOfWorkPage />} />
+        {/* A client has many scopes now: an old link opens the client's scopes. */}
+        <Route path="/client-scope/:id" element={<ClientScopesRedirect />} />
         <Route path="/inspection/:id" element={<InspectionDetailsPage />} />
       </Route>
     </Routes>

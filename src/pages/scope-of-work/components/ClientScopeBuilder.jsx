@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
+import { useState } from "react";
+import { Button, Select, Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
 import {
   ChartColumn,
   ChevronDown,
@@ -12,6 +12,7 @@ import {
   Plus,
   Save,
   Trash2,
+  CopyPlus,
 } from "lucide-react";
 import {
   DndContext,
@@ -30,17 +31,21 @@ import { CSS } from "@dnd-kit/utilities";
 import "@/styles/clientChart.scss";
 import "@/styles/scopeBuilder.scss";
 import {
-  GetUserScope,
-  CreateUserSection,
-  UpdateUserScopeSection,
-  DeleteUserScopeSection,
-  CreateUserScopeItem,
-  UpdateUserScopeItem,
-  DeleteUserScopeItem,
-  ReorderUserScopeSections,
-  ReorderUserScopeItems,
+  addScopeItem,
+  addScopeSection,
+  deleteScopeItem,
+  deleteScopeSection,
+  getMasterScope,
+  getScopeOfWork,
+  reorderScopeItems,
+  reorderScopeSections,
+  updateScopeItem,
+  updateScopeSection,
 } from "@/services/api/scopeApi";
-import { GetClientChecklistByUserId } from "@/services/api/bookingApi";
+import { getSheet } from "@/services/api/sheetApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { PERMISSION, useCan } from "@/lib/session";
 
 const FreqBadge = ({ label, active, onClick }) => (
   <button
@@ -105,18 +110,24 @@ const SortableTaskRow = ({ id, disabled, children }) => {
   );
 };
 
-const ClientScopeBuilder = ({
-  userId,
-  onChange,
-  initialSections = null,
-}) => {
-  const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(false);
+// Sections and tasks of one client scope of work, in their order.
+const sortSections = (sections = []) =>
+  [...sections]
+    .map((section) => ({
+      ...section,
+      items: [...(section.items || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+// Edits one client scope of work (by id): its sections and tasks, their order,
+// and copies of master sections. Every change answers with the whole scope;
+// only the part that changed is taken from it, so unsaved edits elsewhere stay.
+const ClientScopeBuilder = ({ scopeId }) => {
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const [savingSection, setSavingSection] = useState(null);
   const [savingItem, setSavingItem] = useState(null);
-  const [clientChecklist, setClientChecklist] = useState([]);
-  const [loadingChecklist, setLoadingChecklist] = useState(false);
-  const [clientType, setClientType] = useState("");
+  const [masterSectionId, setMasterSectionId] = useState();
+  const [addingMaster, setAddingMaster] = useState(false);
 
   const [chartCollapsed, setChartCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -128,83 +139,40 @@ const ClientScopeBuilder = ({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  /* FETCH CHECKLIST */
+  /* LOAD THE SCOPE, ITS SHEET AND THE MASTER LIST */
 
-  const fetchChecklist = async () => {
-    if (!userId) {
-      setClientChecklist([]);
-      setClientType("residential");
-      return;
-    }
-    try {
-      setLoadingChecklist(true);
-      const checklistRes = await GetClientChecklistByUserId(userId);
-      const checklistData = checklistRes?.data?.data?.data?.[0] || {};
-      setClientType(checklistData?.client_type || "residential");
-      const list = checklistData?.user_client_checklist_details || [];
-      setClientChecklist(list);
-    } catch (error) {
-      console.error(error);
-      setClientChecklist([]);
-      setClientType("residential");
-      message.error("Failed to fetch client checklist");
-    } finally {
-      setLoadingChecklist(false);
-    }
-  };
+  const {
+    data: scope,
+    loading,
+    setData: setScope,
+  } = useApiQuery(
+    () => getScopeOfWork(scopeId).then((res) => {
+      const loaded = dataOf(res);
+      return { ...loaded, sections: sortSections(loaded?.sections) };
+    }),
+    [scopeId],
+    { skip: !scopeId, errorText: "Couldn't load the scope of work" },
+  );
+  const sections = scope?.sections ?? [];
+  const setSections = (update) =>
+    setScope((current) => ({
+      ...current,
+      sections: typeof update === "function" ? update(current?.sections ?? []) : update,
+    }));
+  const clientType = scope?.client_type || "commercial";
 
-  /* FETCH USER SCOPE */
+  const { data: sheet, loading: loadingChecklist } = useApiQuery(
+    () => getSheet(scope.client_sheet_id).then(dataOf),
+    [scope?.client_sheet_id],
+    { skip: !scope?.client_sheet_id, errorText: "Couldn't load the client sheet" },
+  );
+  const clientChecklist = scope?.client_sheet_id ? sheet?.areas ?? [] : [];
 
-  const fetchUserScope = async () => {
-    if (!userId) {
-      setSections([]);
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await GetUserScope(userId);
-      const data = res?.data?.data?.data || [];
-      const formatted = data
-        .map((section) => ({
-          id: section.id,
-          title: section.title,
-          is_red: section.is_red,
-          order: section.order ?? 0,
-          items: (section.items || [])
-            .map((item) => ({
-              id: item.id,
-              description: item.description,
-              is_daily: item.is_daily,
-              is_weekly: item.is_weekly,
-              is_monthly: item.is_monthly,
-              order: item.order ?? 0,
-            }))
-            .sort((a, b) => a.order - b.order),
-        }))
-        .sort((a, b) => a.order - b.order);
-      setSections(formatted);
-      if (onChange) onChange(formatted);
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to load user scope");
-    } finally {
-      setLoading(false);
-    }
-  };
-useEffect(() => {
-  if (initialSections !== null) {
-    setSections(initialSections || []);
-    fetchChecklist();
-    return;
-  }
-
-  fetchUserScope();
-  fetchChecklist();
-}, [userId, initialSections]);
-
-  useEffect(() => {
-    if (onChange) onChange(sections);
-  }, [sections]);
+  const { data: masterSections } = useApiQuery(
+    () => getMasterScope(clientType).then(itemsOf),
+    [clientType],
+    { skip: !scope, initial: [] },
+  );
 
   /* COLLAPSE HELPERS */
 
@@ -265,12 +233,12 @@ useEffect(() => {
     setSections(reordered);
 
     try {
-      await ReorderUserScopeSections(
+      await reorderScopeSections(
+        scopeId,
         reordered.map((s) => ({ id: s.id, order: s.order })),
       );
     } catch (err) {
-      console.error(err);
-      message.error("Failed to save new section order");
+      message.error(errorMessage(err, "Couldn't save the new section order"));
       setSections(previousSections);
     }
   };
@@ -307,31 +275,51 @@ useEffect(() => {
     if (savableItems.length === 0) return;
 
     try {
-      await ReorderUserScopeItems(
+      await reorderScopeItems(
+        scopeId,
+        section.id,
         savableItems.map((i) => ({ id: i.id, order: i.order })),
       );
     } catch (err) {
-      console.error(err);
-      message.error("Failed to save new task order");
+      message.error(errorMessage(err, "Couldn't save the new task order"));
       setSections(previousSections);
     }
   };
 
   /* CREATE SECTION */
 
+  // The section the answer has that the screen doesn't yet.
+  const newSectionFrom = (res) => {
+    const known = new Set(sections.map((section) => section.id));
+    const added = (dataOf(res)?.sections || []).find((section) => !known.has(section.id));
+    return added ? sortSections([added])[0] : null;
+  };
+
   const createSection = async () => {
     try {
-      const res = await CreateUserSection({
-        user_id: userId,
-        title: "New Section",
-        is_red: false,
-      });
-      const section = res?.data?.data?.data;
-      setSections((prev) => [...prev, { ...section, items: [] }]);
+      const res = await addScopeSection(scopeId, { title: "New Section", is_red: false });
+      const section = newSectionFrom(res);
+      if (section) setSections((prev) => [...prev, { ...section, items: section.items || [] }]);
       message.success("Section created");
     } catch (err) {
-      console.error(err);
-      message.error("Failed to create section");
+      message.error(errorMessage(err, "Couldn't create the section"));
+    }
+  };
+
+  // Copies a master section with its tasks into this scope.
+  const addMasterSection = async () => {
+    if (!masterSectionId) return;
+    setAddingMaster(true);
+    try {
+      const res = await addScopeSection(scopeId, { master_section_id: masterSectionId });
+      const section = newSectionFrom(res);
+      if (section) setSections((prev) => [...prev, section]);
+      setMasterSectionId(undefined);
+      message.success("Section added from the master list");
+    } catch (err) {
+      message.error(errorMessage(err, "Couldn't add the section"));
+    } finally {
+      setAddingMaster(false);
     }
   };
 
@@ -340,14 +328,13 @@ useEffect(() => {
   const saveSection = async (section, index) => {
     try {
       setSavingSection(index);
-      await UpdateUserScopeSection(section.id, {
+      await updateScopeSection(scopeId, section.id, {
         title: section.title,
         is_red: section.is_red,
       });
       message.success("Section saved");
     } catch (err) {
-      console.error(err);
-      message.error("Failed to save section");
+      message.error(errorMessage(err, "Couldn't save the section"));
     } finally {
       setSavingSection(null);
     }
@@ -364,9 +351,13 @@ useEffect(() => {
         okText: "Delete",
         okButtonProps: { danger: true },
         onOk: async () => {
-          await DeleteUserScopeSection(section.id);
-          setSections((prev) => prev.filter((_, i) => i !== sectionIndex));
-          message.success("Section deleted");
+          try {
+            await deleteScopeSection(scopeId, section.id);
+            setSections((prev) => prev.filter((_, i) => i !== sectionIndex));
+            message.success("Section deleted");
+          } catch (err) {
+            message.error(errorMessage(err, "Couldn't delete the section"));
+          }
         },
       });
     } catch (err) {
@@ -414,14 +405,16 @@ useEffect(() => {
       }
 
       if (!item.id) {
-        const res = await CreateUserScopeItem(section.id, {
-          user_scope_section_id: section.id,
+        const res = await addScopeItem(scopeId, section.id, {
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
           is_monthly: item.is_monthly,
         });
-        const saved = res?.data?.data?.data || res?.data?.data || res?.data;
+        // The new task is the one in this section the screen doesn't know yet.
+        const known = new Set(section.items.filter((it) => it.id).map((it) => it.id));
+        const answered = (dataOf(res)?.sections || []).find((sec) => sec.id === section.id);
+        const saved = (answered?.items || []).find((it) => !known.has(it.id)) || {};
         setSections((prev) =>
           prev.map((sec, idx) => {
             if (idx !== sectionIndex) return sec;
@@ -435,7 +428,7 @@ useEffect(() => {
         );
         message.success("Task created");
       } else {
-        await UpdateUserScopeItem(item.id, {
+        await updateScopeItem(scopeId, item.id, {
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
@@ -444,8 +437,7 @@ useEffect(() => {
         message.success("Task saved");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Save failed");
+      message.error(errorMessage(err, "Couldn't save the task"));
     } finally {
       setSavingItem(null);
     }
@@ -457,7 +449,7 @@ useEffect(() => {
     try {
       const item = sections[sectionIndex].items[itemIndex];
       if (item.id) {
-        await DeleteUserScopeItem(item.id);
+        await deleteScopeItem(scopeId, item.id);
       }
       setSections((prev) =>
         prev.map((section, idx) =>
@@ -471,22 +463,21 @@ useEffect(() => {
       );
       message.success("Task deleted");
     } catch (err) {
-      console.error(err);
-      message.error("Delete failed");
+      message.error(errorMessage(err, "Couldn't delete the task"));
     }
   };
 
   /* EMPTY / LOADING */
 
-  if (!userId) {
+  if (!scopeId) {
     return (
       <div className="usb-empty">
-        <Empty description="Select a client first" />
+        <Empty description="Choose a scope of work first" />
       </div>
     );
   }
 
-  if (loading) {
+  if (loading && !scope) {
     return (
       <div className="usb-loading">
         <Spin size="large" />
@@ -516,10 +507,33 @@ useEffect(() => {
           </div>
         </div>
 
-        <button className="usb-btn-add-section" onClick={createSection}>
-          <Plus size={16} />
-          <span>Add Section</span>
-        </button>
+        <div className="usb-header__actions">
+          <Select
+            className="usb-master-select"
+            placeholder="Add a section from the master list"
+            value={masterSectionId}
+            onChange={setMasterSectionId}
+            showSearch
+            optionFilterProp="label"
+            options={(masterSections || []).map((section) => ({
+              value: section.id,
+              label: `${section.title} (${section.items?.length || 0} tasks)`,
+            }))}
+            popupMatchSelectWidth={false}
+          />
+          <Button
+            icon={<CopyPlus size={16} />}
+            onClick={addMasterSection}
+            disabled={!masterSectionId}
+            loading={addingMaster}
+          >
+            Add
+          </Button>
+          <button className="usb-btn-add-section" onClick={createSection}>
+            <Plus size={16} />
+            <span>Add Section</span>
+          </button>
+        </div>
       </div>
 
       <div className="usb-chart-card" style={{ marginBottom: "30px" }}>
@@ -546,7 +560,7 @@ useEffect(() => {
         {!chartCollapsed && (
           <div className="usb-chart-card__body">
             {loadingChecklist ? (
-              <p className="usb-chart-card__loading">Loading checklist…</p>
+              <p className="usb-chart-card__loading">Loading the client sheet…</p>
             ) : clientChecklist.length > 0 ? (
               <div className="usb-table-wrap">
                 <table className="usb-table">
@@ -609,7 +623,11 @@ useEffect(() => {
                 </table>
               </div>
             ) : (
-              <p className="usb-chart-card__empty">No checklist available</p>
+              <p className="usb-chart-card__empty">
+                {scope?.client_sheet_id
+                  ? "This sheet has no areas"
+                  : "This scope was made from the whole master list, not a sheet"}
+              </p>
             )}
           </div>
         )}
@@ -620,7 +638,7 @@ useEffect(() => {
           <div className="usb-empty__icon">
             <FolderOpen size={40} />
           </div>
-          <p className="usb-empty__text">No scope generated for this client.</p>
+          <p className="usb-empty__text">This scope of work has no sections yet.</p>
           <button className="usb-btn-add-section" onClick={createSection}>
             <Plus size={16} /> Add First Section
           </button>
@@ -705,15 +723,17 @@ useEffect(() => {
                             </button>
                           </Tooltip>
 
-                          <Tooltip title="Delete section">
-                            <button
-                              className="usb-btn usb-btn--danger"
-                              onClick={() => deleteSection(sectionIndex)}
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete</span>
-                            </button>
-                          </Tooltip>
+                          {canDelete && (
+                            <Tooltip title="Delete section">
+                              <button
+                                className="usb-btn usb-btn--danger"
+                                onClick={() => deleteSection(sectionIndex)}
+                              >
+                                <Trash2 size={14} />
+                                <span>Delete</span>
+                              </button>
+                            </Tooltip>
+                          )}
 
                           <button
                             className="usb-btn usb-btn--collapse"
@@ -886,20 +906,22 @@ useEffect(() => {
                                           </button>
                                         </Tooltip>
 
-                                        <Tooltip title="Delete task">
-                                          <button
-                                            className="usb-btn usb-btn--danger"
-                                            onClick={() =>
-                                              deleteItem(
-                                                sectionIndex,
-                                                itemIndex,
-                                              )
-                                            }
-                                          >
-                                            <Trash2 size={14} />
-                                            <span>Delete</span>
-                                          </button>
-                                        </Tooltip>
+                                        {(canDelete || !isSaved) && (
+                                          <Tooltip title={isSaved ? "Delete task" : "Discard task"}>
+                                            <button
+                                              className="usb-btn usb-btn--danger"
+                                              onClick={() =>
+                                                deleteItem(
+                                                  sectionIndex,
+                                                  itemIndex,
+                                                )
+                                              }
+                                            >
+                                              <Trash2 size={14} />
+                                              <span>{isSaved ? "Delete" : "Discard"}</span>
+                                            </button>
+                                          </Tooltip>
+                                        )}
                                       </div>
                                     )}
                                   </SortableTaskRow>

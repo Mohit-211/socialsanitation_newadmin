@@ -1,0 +1,47 @@
+// Initial Client Sheet fields (SheetFields.jsx): floor mix and the areas grid.
+
+.sheet-fields__floor {
+  margin-bottom: var(--space-2);
+}
+
+.sheet-fields__floor-total {
+  margin-left: var(--space-2);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-success-strong);
+
+  &.is-off {
+    color: var(--color-error-strong);
+  }
+}
+
+.sheet-fields__areas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  overflow-x: auto;
+}
+
+// Area, its counts (one or three), flooring, requests, remove
+.sheet-fields__row {
+  display: grid;
+  grid-template-columns:
+    minmax(170px, 1.4fr)
+    repeat(var(--counts), minmax(90px, 0.7fr))
+    minmax(140px, 1fr)
+    minmax(160px, 1.3fr)
+    32px;
+  gap: var(--space-2);
+  align-items: start;
+  min-width: 720px;
+
+  .ant-form-item {
+    margin-bottom: 0;
+  }
+}
+
+.sheet-fields__row--head {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}

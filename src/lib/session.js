@@ -96,3 +96,13 @@ export function useCan(code) {
   const session = useSession();
   return Boolean(session?.user?.permissions?.includes(code));
 }
+
+/**
+ * Whether the signed-in admin is a Super Admin. Some screens (estimates, the
+ * calculator, BDMs) are for Super Admins; the Admin role runs day-to-day
+ * operations without them. Use permissions for what the backend enforces.
+ */
+export function useIsSuperAdmin() {
+  const session = useSession();
+  return Boolean(session?.user?.roles?.some((role) => role.code === "super_admin"));
+}

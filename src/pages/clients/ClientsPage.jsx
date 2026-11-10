@@ -1,940 +1,344 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Table,
-  Space,
-  message,
-  Modal,
-  Tooltip,
-  Select,
-  Input,
-  Button,
-  Divider,
-  Flex,
-} from "antd";
-import { DeleteUser, GetUsers, ChangeAssignedAdmin, ResetUserCredentials, GetClosestEmployees } from "@/services/api/userApi";
-import { sendReviewEmail } from "@/services/api/reviewApi";
-import { errorMessage } from "@/services/apiResult";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import dayjs from "@/lib/dayjs";
+import { Button, Dropdown, Input, Modal, Select, Space, Table, Tooltip, message } from "antd";
 import {
-  GoogleMap,
-  Marker,
-  InfoWindow,
-  useJsApiLoader,
-} from "@react-google-maps/api";
-import {
-  Search,
+  ClipboardCheck,
   Download,
-  Trash2,
-  Plus,
-  Eye,
-  Pencil,
-  Send,
+  Ellipsis,
+  KeyRound,
   Mail,
   MapPin,
-  KeyRound,
-  RefreshCw,
-  User as UserIcon,
-  Navigation,
-  ClipboardList,
+  Pencil,
+  Plus,
+  ScrollText,
+  Search,
+  Trash2,
+  Users,
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
-import { GOOGLE_MAPS_API_KEY } from "@/config/env";
-import { cssVar } from "@/theme/antdTheme";
+import NearestEmployeesModal from "@/components/NearestEmployeesModal";
+import {
+  assignClientAdmin,
+  deleteClient,
+  listClients,
+  listEmployeesNearClient,
+  resetClientCredentials,
+} from "@/services/api/clientApi";
+import { listAdmins } from "@/services/api/adminApi";
+import { sendReviewEmail } from "@/services/api/reviewApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { PERMISSION, useCan } from "@/lib/session";
+import { formatDateTime } from "@/utils/datetime";
+import { downloadBlob } from "@/utils/download";
 import "./clients.scss";
 import "./ClientsPage.scss";
 
-// 🔹 role_id -> readable label for the nearby-employees panel
-const NEARBY_ROLE_LABELS = {
-  9: "CLEANER",
-  7: "INSPECTOR/SUPERVISOR",
-  8: "QUALITY ASSURANCE TECHNICIAN",
+// The first address on file, as one line: street, then city, state, country.
+const addressParts = (client) => {
+  const address = client?.user_address?.[0];
+  if (!address) return null;
+  const place = [address.user_city?.name, address.user_state?.name, address.user_country?.name]
+    .filter(Boolean)
+    .join(", ");
+  return { street: address.address || "", place };
 };
 
-// Google Maps needs real color values, so the tokens are resolved at runtime.
-const getNearbyMarkerColors = () => ({
-  client: cssVar("--color-primary-strong"),
-  employee: cssVar("--color-success-strong"),
-  selected: cssVar("--color-warning"),
-  stroke: cssVar("--color-bg"),
-  label: cssVar("--color-text-inverse"),
-  selectedLabel: cssVar("--color-on-primary"),
-});
-
-// 🔹 Shared "pretty" address renderer: icon + street on top, muted city/state
-// below, truncated with an ellipsis if too long, full text on hover.
-const renderAddress = (user_address, maxWidth = 220) => {
-  const address = user_address?.[0];
-
-  if (!address) {
+const renderAddress = (client) => {
+  const parts = addressParts(client);
+  if (!parts) {
     return (
       <span className="client-list__address client-list__address--empty">
         <MapPin size={14} />
-        <span>N/A</span>
+        <span>No address</span>
       </span>
     );
   }
-
-  const street = address?.address || "";
-  const city = address?.user_city?.name || "";
-  const state = address?.user_state?.name || "";
-  // Older addresses predate the country field — shown as USA rather than
-  // blank, consistent with how that's resolved everywhere else in the app.
-  const country = address?.user_country?.name || "USA";
-  const location = [city, state, country].filter(Boolean).join(", ");
-  const fullAddress = [street, location].filter(Boolean).join(", ") || "N/A";
-
   return (
-    <Tooltip title={fullAddress}>
-      <div className="client-list__address" style={{ maxWidth }}>
+    <Tooltip title={[parts.street, parts.place].filter(Boolean).join(", ")}>
+      <div className="client-list__address" style={{ maxWidth: 230 }}>
         <MapPin size={14} className="client-list__address-icon" />
         <div className="client-list__address-text">
-          <div className="client-list__address-street">{street || "N/A"}</div>
-          {location && (
-            <div className="client-list__address-location">{location}</div>
-          )}
+          <div className="client-list__address-street">{parts.street || "—"}</div>
+          {parts.place && <div className="client-list__address-location">{parts.place}</div>}
         </div>
       </div>
     </Tooltip>
   );
 };
 
+const csvCell = (value) => {
+  const text = value === null || value === undefined ? "" : String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+// Clicks on the row's own controls don't open the client.
+const isControl = (target) => Boolean(target.closest("button, a, input, .ant-select, .ant-dropdown, .ant-checkbox-wrapper"));
+
+// Every client. Clicking one opens their page, where their whole flow is
+// worked: sheets, scopes, estimates, quotes, contracts, bookings, invoices.
 const ClientsPage = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [userBackupData, setUserBackupData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const [search, setSearch] = useState("");
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 100,
-    },
-    sortField: null,
-    sortOrder: null,
-  });
-
-  // 🔹 Same email/password reset modal as EmployeesPage
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [resetFor, setResetFor] = useState(null);
   const [newEmail, setNewEmail] = useState("");
+  const [nearestFor, setNearestFor] = useState(null);
 
-  const openEditModal = (record) => {
-    setSelectedUser(record);
-    setNewEmail(record.email);
-    setEditModalVisible(true);
-  };
+  const {
+    data: clients,
+    loading,
+    reload,
+    setData: setClients,
+  } = useApiQuery(() => listClients().then(itemsOf), [], { initial: [], errorText: "Couldn't load the clients" });
+  const { data: admins } = useApiQuery(() => listAdmins().then(itemsOf), [], { initial: [] });
 
-  const navigateToInspections = (event, record) => {
-    navigate(`/clientInspections/${record.id}`, {
-      state: { clientName: record.user_profile?.name },
+  const rows = useMemo(() => {
+    const text = search.trim().toLowerCase();
+    if (!text) return clients;
+    return clients.filter((client) => {
+      const parts = addressParts(client);
+      return [client.name, client.email, client.phone, parts?.street, parts?.place]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(text));
     });
-  };
+  }, [clients, search]);
 
-  // 🔹 Call API to reset credentials
-  const handleResetCredentials = async () => {
-    if (!selectedUser) return;
-
+  const changeAdmin = async (client, adminId) => {
     try {
-      const res = await ResetUserCredentials(
-        {
-          user_id: selectedUser.id,
-          new_email: newEmail,
-        },
-        localStorage.getItem("adminToken"),
-      );
-
-      message.success(res.data.message || "New credentials sent successfully!");
-      setEditModalVisible(false);
-      getData();
+      await assignClientAdmin(client.id, adminId);
+      setClients((list) => list.map((item) => (item.id === client.id ? { ...item, assigned_to: adminId } : item)));
+      message.success("Assigned admin changed");
     } catch (error) {
-      console.error("Reset credentials failed:", error);
-      message.error(
-        error?.response?.data?.message || "Failed to reset credentials",
-      );
+      message.error(errorMessage(error, "Couldn't change the assigned admin"));
     }
   };
 
-  // 🔹 Nearby employees modal (map + list)
-  const [nearbyModalVisible, setNearbyModalVisible] = useState(false);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [nearbyEmployees, setNearbyEmployees] = useState([]);
-  const [nearbyClientLocation, setNearbyClientLocation] = useState(null);
-  const [nearbyClient, setNearbyClient] = useState(null);
-  const [selectedNearbyId, setSelectedNearbyId] = useState(null);
+  const sendReview = async (client) => {
+    try {
+      await sendReviewEmail(client.id);
+      message.success("Review links emailed to the client");
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't email the review links"));
+    }
+  };
 
-  const { isLoaded: isNearbyMapLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ["maps"],
-  });
+  const resetCredentials = async () => {
+    try {
+      await resetClientCredentials(resetFor.id, newEmail.trim() === resetFor.email ? "" : newEmail.trim());
+      message.success("New sign-in details sent");
+      setResetFor(null);
+      reload();
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't reset the sign-in details"));
+    }
+  };
 
-  const nearbyMapRef = useRef(null);
-  const markerColors = useMemo(() => getNearbyMarkerColors(), []);
-
-  // Employees this far outside the client's area would force the whole map
-  // to zoom out just to fit them — keep them out of the *default* view so
-  // the close-by cluster stays legible. Selecting one from the list still
-  // zooms straight to it (see focusOnEmployee below).
-  const NEARBY_CLUSTER_THRESHOLD_MI = 2;
-
-  const capZoom = (max) => {
-    window.google.maps.event.addListenerOnce(
-      nearbyMapRef.current,
-      "idle",
-      () => {
-        if (nearbyMapRef.current.getZoom() > max) {
-          nearbyMapRef.current.setZoom(max);
+  // Clients are deleted one at a time.
+  const confirmDelete = (ids) =>
+    Modal.confirm({
+      title: ids.length > 1 ? `Delete ${ids.length} clients?` : "Delete this client?",
+      content: "They can no longer sign in to the app. This can't be undone.",
+      okText: "Delete",
+      okType: "danger",
+      onOk: async () => {
+        let deleted = 0;
+        for (const id of ids) {
+          try {
+            await deleteClient(id);
+            deleted += 1;
+          } catch (error) {
+            message.error(errorMessage(error, "Couldn't delete a client"));
+            break;
+          }
         }
+        if (deleted) message.success(deleted > 1 ? `${deleted} clients deleted` : "Client deleted");
+        setSelectedRowKeys([]);
+        reload();
       },
-    );
-  };
-
-  // Default view: client + whichever employees are actually close by.
-  const fitDefaultView = () => {
-    if (!nearbyMapRef.current || !nearbyClientLocation) return;
-
-    const closeEmployees = nearbyEmployees.filter(
-      (emp) => emp.distance <= NEARBY_CLUSTER_THRESHOLD_MI,
-    );
-    // If literally everyone is far away, at least show the closest one
-    // rather than an empty map.
-    const employeesToShow =
-      closeEmployees.length > 0 ? closeEmployees : nearbyEmployees.slice(0, 1);
-
-    const bounds = new window.google.maps.LatLngBounds();
-    bounds.extend({
-      lat: nearbyClientLocation.address_lat,
-      lng: nearbyClientLocation.address_long,
-    });
-    employeesToShow.forEach((emp) => {
-      bounds.extend({ lat: emp.address_lat, lng: emp.address_long });
     });
 
-    nearbyMapRef.current.fitBounds(bounds, 60);
-    capZoom(18);
+  const exportCsv = () => {
+    const lines = [
+      ["ID", "Name", "Email", "Phone", "Address"].join(","),
+      ...rows.map((client) => {
+        const parts = addressParts(client);
+        return [client.id, client.name, client.email, client.phone, parts && [parts.street, parts.place].join(", ")]
+          .map(csvCell)
+          .join(",");
+      }),
+    ];
+    downloadBlob(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }), "clients.csv");
   };
 
-  // Focused view: just the client + one selected employee, zoomed in tight
-  // enough to clearly see both pins and judge the distance between them.
-  const focusOnEmployee = (emp) => {
-    if (!nearbyMapRef.current || !nearbyClientLocation || !emp) return;
-
-    const bounds = new window.google.maps.LatLngBounds();
-    bounds.extend({
-      lat: nearbyClientLocation.address_lat,
-      lng: nearbyClientLocation.address_long,
-    });
-    bounds.extend({ lat: emp.address_lat, lng: emp.address_long });
-
-    nearbyMapRef.current.fitBounds(bounds, 80);
-    capZoom(18);
-  };
-
-  const handleSelectNearbyEmployee = (emp) => {
-    setSelectedNearbyId(emp.id);
-    focusOnEmployee(emp);
-  };
-
-  const handleResetMapView = () => {
-    setSelectedNearbyId(null);
-    fitDefaultView();
-  };
-
-  // Run the default fit once the map is loaded and data has arrived.
-  useEffect(() => {
-    if (!isNearbyMapLoaded || !nearbyClientLocation) return;
-    fitDefaultView();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNearbyMapLoaded, nearbyClientLocation, nearbyEmployees]);
-
-  const openNearbyEmployeesModal = async (record) => {
-    setNearbyClient(record);
-    setNearbyModalVisible(true);
-    setNearbyLoading(true);
-    setSelectedNearbyId(null);
-    try {
-      const res = await GetClosestEmployees(record.id);
-      // Expected shape: { client: { lat, long }, employees: [{ id, name, role_id, employee_type, address, lat, long, distance }] }
-      const payload = res.data.data || {};
-      setNearbyClientLocation(payload.client || null);
-      setNearbyEmployees(payload.employees || []);
-    } catch (error) {
-      console.error("Error fetching nearby employees:", error);
-      message.error("Failed to fetch nearby employees");
-    } finally {
-      setNearbyLoading(false);
-    }
-  };
-
-  const selectedNearbyEmployee = nearbyEmployees.find(
-    (emp) => emp.id === selectedNearbyId,
-  );
-
-  const nearbyEmployeesColumns = [
-    {
-      title: "#",
-      width: 50,
-      align: "center",
-      render: (_, __, index) => (
-        <span className="customer-nearby__index">{index + 1}</span>
-      ),
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      width: "30%",
-      render: (name) => <span className="customer-nearby__medium">{name}</span>,
-    },
-    {
-      title: "Role",
-      dataIndex: "role_id",
-      width: 220,
-      render: (role_id) => (
-        <strong className="customer-nearby__role">
-          {NEARBY_ROLE_LABELS[role_id] || "-"}
-        </strong>
-      ),
-    },
-    {
-      title: "Distance",
-      dataIndex: "distance",
-      width: 110,
-      align: "right",
-      sorter: (a, b) => a.distance - b.distance,
-      defaultSortOrder: "ascend",
-      render: (distance) => (
-        <span className="customer-nearby__medium">{distance} mi</span>
-      ),
-    },
+  const moreItems = [
+    { key: "quote", icon: <ScrollText size={14} />, label: "New quote" },
+    { key: "inspections", icon: <ClipboardCheck size={14} />, label: "Inspections" },
+    { key: "review", icon: <Mail size={14} />, label: "Email review links" },
+    { key: "reset", icon: <KeyRound size={14} />, label: "Send new sign-in details" },
+    { key: "edit", icon: <Pencil size={14} />, label: "Edit details" },
+    ...(canDelete ? [{ type: "divider" }, { key: "delete", icon: <Trash2 size={14} />, label: "Delete", danger: true }] : []),
   ];
 
-  const handleSendReview = async (userId) => {
-    try {
-      await sendReviewEmail(userId);
-      message.success("Review email sent");
-    } catch (error) {
-      message.error(errorMessage(error, "Couldn't send the review email"));
+  const onMore = (client, key) => {
+    if (key === "quote") navigate(`/service-quote/${client.id}`);
+    if (key === "inspections") navigate(`/clientInspections/${client.id}`);
+    if (key === "review") sendReview(client);
+    if (key === "reset") {
+      setResetFor(client);
+      setNewEmail(client.email || "");
     }
-  };
-
-  const handleChangeAssignedSelect = async (userId, assigned_to) => {
-    try {
-      await ChangeAssignedAdmin({
-        user_id: userId,
-        assigned_to,
-      });
-
-      message.success("Assigned admin updated");
-      getData();
-    } catch (error) {
-      console.error(error);
-      message.error("Failed to update assigned admin");
-    }
+    if (key === "edit") navigate(`/editUser/${client.id}`);
+    if (key === "delete") confirmDelete([client.id]);
   };
 
   const columns = [
     {
-      title: "S.No.",
-      dataIndex: "index",
-      width: 60,
-      sorter: (a, b) => a.index - b.index,
-    },
-    {
       title: "Name",
-      dataIndex: ["user_profile", "name"],
-      sorter: (a, b) => a.user_profile.name.localeCompare(b.user_profile.name),
-      width: 150,
-      render: (name) => (
-        <Tooltip title={name}>
-          <span className="client-list__name">{name}</span>
-        </Tooltip>
+      dataIndex: "name",
+      sorter: (a, b) => (a.name || "").localeCompare(b.name || ""),
+      render: (name, client) => (
+        <Button type="link" className="client-list__open" onClick={() => navigate(`/viewUser/${client.id}`)}>
+          {name || client.email}
+        </Button>
       ),
     },
-    {
-      title: "Email",
-      dataIndex: "email",
-      width: 220,
-      render: (email, record) => (
-        <Space size={6} align="center">
-          <Tooltip title={email}>
-            <span className="client-list__email">{email}</span>
-          </Tooltip>
-          <IconAction
-            icon={KeyRound}
-            title="Reset Email / Password"
-            size="small"
-            iconSize={14}
-            onClick={() => openEditModal(record)}
-          />
-        </Space>
-      ),
-    },
+    { title: "Email", dataIndex: "email", render: (email) => <span className="client-list__email">{email}</span> },
+    { title: "Phone", dataIndex: "phone", render: (phone) => phone || "—" },
     {
       title: "Assigned To",
       dataIndex: "assigned_to",
-      width: 160,
-      render: (assigned_to, record) => {
-        return (
-          <Select
-            value={assigned_to || undefined}
-            placeholder="Assign Admin"
-            style={{ width: 150 }}
-            allowClear
-            onChange={(value) => handleChangeAssignedSelect(record.id, value)}
-          >
-            <Select.Option value={2}>Marco Williams</Select.Option>
-            <Select.Option value={5}>Yovanna C</Select.Option>
-          </Select>
-        );
-      },
+      render: (assignedTo, client) => (
+        <Select
+          value={assignedTo || undefined}
+          placeholder="Assign an admin"
+          style={{ width: 170 }}
+          onChange={(value) => changeAdmin(client, value)}
+          options={(admins || []).map((admin) => ({ value: admin.id, label: admin.name || admin.email }))}
+          aria-label="Assigned admin"
+        />
+      ),
     },
+    { title: "Address", key: "address", render: (_, client) => renderAddress(client) },
     {
-      title: "Address",
-      dataIndex: "user_address",
-      width: 260,
-      render: (user_address) => renderAddress(user_address, 230),
-    },
-    {
-      title: "Account Created On",
+      title: "Client Since",
       dataIndex: "created_at",
-      width: 170,
-      render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
+      sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
+      render: (date) => formatDateTime(date),
     },
     {
-      title: "Action",
-      dataIndex: "action",
-      width: 300,
-      render: (_, record) => (
-        <Flex gap={8}>
-          <IconAction
-            icon={MapPin}
-            title="View Nearby Employees"
-            onClick={() => openNearbyEmployeesModal(record)}
-          />
-          <IconAction
-            icon={ClipboardList}
-            title="Inspections"
-            onClick={(event) => navigateToInspections(event, record)}
-          />
-          <IconAction
-            icon={Mail}
-            title="Send Review Email"
-            onClick={() => handleSendReview(record.id)}
-          />
-          <IconAction
-            icon={Send}
-            title="Send Quote"
-            onClick={(event) => navigateToQuote(event, record.id)}
-          />
-          <IconAction
-            icon={Pencil}
-            title="Edit Client"
-            onClick={(event) => navigateToEditUser(event, record.id)}
-          />
-          <IconAction
-            icon={Eye}
-            title="View Client"
-            onClick={(event) => navigateToViewUser(event, record.id)}
-          />
-          <IconAction
-            icon={Trash2}
-            title="Delete Client"
-            danger
-            onClick={() => handleDelete([record.id])}
-          />
-        </Flex>
+      title: "Actions",
+      key: "actions",
+      width: 110,
+      render: (_, client) => (
+        <Space size={4}>
+          <IconAction icon={Users} title="Nearest employees" onClick={() => setNearestFor(client)} />
+          <Dropdown trigger={["click"]} menu={{ items: moreItems, onClick: ({ key }) => onMore(client, key) }}>
+            <Button aria-label="More actions" icon={<Ellipsis size={16} />} className="icon-action" />
+          </Dropdown>
+        </Space>
       ),
     },
   ];
-
-  const handleDelete = (userIds) => {
-    Modal.confirm({
-      title: "Confirm",
-      content: `Are you sure you want to delete ${
-        userIds.length > 1 ? "these clients" : "this client"
-      }?`,
-      onOk: async () => {
-        try {
-          await DeleteUser(userIds, localStorage.getItem("adminToken"));
-          message.success("Client(s) deleted successfully");
-          getData();
-        } catch (error) {
-          console.error("Error deleting client(s):", error);
-          message.error("Error deleting client(s)");
-        }
-      },
-    });
-  };
-
-  // Get all users
-  const getData = async (params = {}) => {
-    try {
-      setLoading(true);
-      let result = await GetUsers(localStorage.getItem("adminToken"), params);
-      // Adding index for serial number
-      const newData = result.data.data.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }));
-      setData(newData);
-      setUserBackupData(newData);
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 401) {
-        navigate("/error401");
-        console.error("You do not have access to this page as a sub-admin.");
-      } else {
-        console.error("Error loading data. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getData({
-      page: tableParams.pagination.current,
-      pageSize: tableParams.pagination.pageSize,
-      sortField: tableParams.sortField,
-      sortOrder: tableParams.sortOrder,
-    });
-  }, [tableParams]);
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-    });
-  };
-
-  const onSearch = (searchField) => {
-    const searchValue = searchField?.trim().toLowerCase();
-
-    if (!searchValue) {
-      setData(userBackupData);
-      return;
-    }
-
-    const searchList = userBackupData.filter((client) => {
-      const name = client?.user_profile?.name?.toLowerCase() || "";
-
-      const email = client?.email?.toLowerCase() || "";
-
-      const addresses = client?.user_address || [];
-
-      const addressSearchText = addresses
-        .map((userAddress) => {
-          const address = userAddress?.address?.toLowerCase() || "";
-
-          const state = userAddress?.user_state?.name?.toLowerCase() || "";
-
-          const city = userAddress?.user_city?.name?.toLowerCase() || "";
-
-          // Same USA fallback as renderAddress, so searching "usa" finds
-          // legacy addresses that predate the country field too.
-          const country =
-            userAddress?.user_country?.name?.toLowerCase() || "usa";
-
-          return `${address} ${state} ${city} ${country}`;
-        })
-        .join(" ");
-
-      return (
-        name.includes(searchValue) ||
-        email.includes(searchValue) ||
-        addressSearchText.includes(searchValue)
-      );
-    });
-
-    setData(searchList);
-  };
-
-  const exportToCSV = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      "ID,Name,Email,Mobile\n" +
-      data
-        .map(
-          (row) =>
-            `${row.id},${row.user_profile?.name},${row.email},${row.mobile}`,
-        )
-        .join("\n");
-
-    const encodedURI = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedURI);
-    link.setAttribute("download", "customers.csv");
-    document.body.appendChild(link);
-    link.click();
-  };
-
-  const navigateToAddUser = () => {
-    navigate("/addUser");
-  };
-
-  const navigateToViewUser = (event, id) => {
-    navigate(`/viewUser/${id}`);
-  };
-
-  const navigateToEditUser = (event, id) => {
-    navigate(`/editUser/${id}`);
-  };
-
-  const navigateToQuote = (event, id) => {
-    navigate(`/service-quote/${id}`);
-  };
-
-  const onSelectChange = (newSelectedRowKeys) => {
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: onSelectChange,
-    selections: [
-      Table.SELECTION_ALL,
-      Table.SELECTION_INVERT,
-      Table.SELECTION_NONE,
-      {
-        key: "odd",
-        text: "Select Odd Row",
-        onSelect: (changeableRowKeys) => {
-          const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
-            if (index % 2 !== 0) {
-              return false;
-            }
-            return true;
-          });
-          setSelectedRowKeys(newSelectedRowKeys);
-        },
-      },
-      {
-        key: "even",
-        text: "Select Even Row",
-        onSelect: (changeableRowKeys) => {
-          const newSelectedRowKeys = changeableRowKeys.filter((_, index) => {
-            if (index % 2 !== 0) {
-              return true;
-            }
-            return false;
-          });
-          setSelectedRowKeys(newSelectedRowKeys);
-        },
-      },
-    ],
-  };
 
   return (
     <div>
       <PageHeader
         title="CLIENT MANAGEMENT"
-        subtitle="View, delete, and add Client"
+        subtitle="Open a client to work their sheets, scopes, documents, bookings and invoices"
         actions={
           <>
             <Input
               allowClear
               size="large"
               prefix={<Search size={16} className="text-subtle" />}
-              placeholder="Search by name, email, address, or country..."
-              style={{ width: 260 }}
-              onChange={(e) => onSearch(e.target.value)}
+              placeholder="Search name, email, phone or address"
+              style={{ width: 280 }}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
             />
-
             <Tooltip title="Export CSV">
-              <Button
-                size="large"
-                icon={<Download size={18} />}
-                aria-label="Export CSV"
-                onClick={exportToCSV}
-              />
+              <Button size="large" icon={<Download size={18} />} aria-label="Export CSV" onClick={exportCsv} />
             </Tooltip>
-
-            <Tooltip title="Delete Selected">
-              <span className="client-list__tooltip-wrap">
-                <Button
-                  size="large"
-                  type="primary"
-                  danger
-                  icon={<Trash2 size={18} />}
-                  aria-label="Delete Selected"
-                  disabled={!selectedRowKeys.length}
-                  onClick={() => handleDelete(selectedRowKeys)}
-                />
-              </span>
-            </Tooltip>
-
-            <Tooltip title="Add Client">
-              <Button
-                size="large"
-                type="primary"
-                icon={<Plus size={18} />}
-                aria-label="Add Client"
-                onClick={navigateToAddUser}
-              />
-            </Tooltip>
+            {canDelete && (
+              <Tooltip title="Delete selected">
+                <span className="client-list__tooltip-wrap">
+                  <Button
+                    size="large"
+                    type="primary"
+                    danger
+                    icon={<Trash2 size={18} />}
+                    aria-label="Delete selected"
+                    disabled={!selectedRowKeys.length}
+                    onClick={() => confirmDelete(selectedRowKeys)}
+                  />
+                </span>
+              </Tooltip>
+            )}
+            <Button size="large" type="primary" icon={<Plus size={18} />} onClick={() => navigate("/addUser")}>
+              New Client
+            </Button>
           </>
         }
       />
 
       <Table
+        className="client-list"
         columns={columns}
-        rowKey={(record) => record.id}
-        dataSource={data}
-        pagination={tableParams.pagination}
+        rowKey="id"
+        dataSource={rows}
         loading={loading}
-        onChange={handleTableChange}
-        rowSelection={rowSelection}
-        scroll={{ x: 1420 }}
+        pagination={{ pageSize: 50, showSizeChanger: true, pageSizeOptions: [25, 50, 100] }}
+        rowSelection={canDelete ? { selectedRowKeys, onChange: setSelectedRowKeys } : undefined}
+        scroll={{ x: "max-content" }}
         size="middle"
+        onRow={(client) => ({
+          onClick: (event) => {
+            if (!isControl(event.target)) navigate(`/viewUser/${client.id}`);
+          },
+        })}
       />
 
-      {/* Reset Email / Password modal                                      */}
-      {editModalVisible && (
-        <Modal
-          title={
-            <div className="customer-modal-title">
-              <span className="customer-modal-title__icon customer-modal-title__icon--warning">
-                <KeyRound size={17} />
-              </span>
-              <span className="customer-modal-title__text">
-                Edit Client Email &amp; Reset Password
-              </span>
-            </div>
-          }
-          open={editModalVisible}
-          onCancel={() => setEditModalVisible(false)}
-          onOk={handleResetCredentials}
-          okText="Generate & Send New Password"
-          width={460}
-        >
-          <Divider className="customer-modal-divider" />
-
-          <div className="client-list__client-card">
-            <span className="client-list__client-avatar">
-              <UserIcon size={18} />
+      <Modal
+        open={Boolean(resetFor)}
+        title={
+          <div className="customer-modal-title">
+            <span className="customer-modal-title__icon customer-modal-title__icon--warning">
+              <KeyRound size={17} />
             </span>
-            <div className="client-list__client-info">
-              <div className="client-list__client-eyebrow">Client</div>
-              <div className="client-list__client-name">
-                {selectedUser?.user_profile?.name || "—"}
-              </div>
-            </div>
+            <span className="customer-modal-title__text">Send New Sign-in Details</span>
           </div>
+        }
+        onCancel={() => setResetFor(null)}
+        onOk={resetCredentials}
+        okText="Send New Password"
+        width={460}
+        destroyOnHidden
+      >
+        <p className="client-list__hint">
+          {resetFor?.name || resetFor?.email} gets a new temporary password by email. Change the address below to sign
+          them in with a different email.
+        </p>
+        <label htmlFor="client-new-email" className="field-label client-list__field-label">
+          Email Address
+        </label>
+        <Input
+          id="client-new-email"
+          type="email"
+          value={newEmail}
+          onChange={(event) => setNewEmail(event.target.value)}
+          size="large"
+        />
+      </Modal>
 
-          <label
-            htmlFor="client-new-email"
-            className="field-label client-list__field-label"
-          >
-            New Email Address
-          </label>
-          <Input
-            id="client-new-email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="Enter new email"
-            size="large"
-            style={{ width: "100%" }}
-          />
-          <p className="client-list__hint">
-            A new temporary password will be generated and emailed to this
-            client along with their updated login email.
-          </p>
-        </Modal>
-      )}
-
-      {/* Nearby Employees modal (map + list) — redesigned                   */}
-      {nearbyModalVisible && (
-        <Modal
-          title={
-            <div className="customer-modal-title">
-              <span className="customer-modal-title__icon customer-modal-title__icon--neutral">
-                <MapPin size={17} />
-              </span>
-              <div>
-                <div className="customer-modal-title__text">Nearby Employees</div>
-                {nearbyClient?.user_profile?.name && (
-                  <div className="customer-modal-title__sub">
-                    For {nearbyClient.user_profile.name}
-                  </div>
-                )}
-              </div>
-            </div>
-          }
-          open={nearbyModalVisible}
-          onCancel={() => setNearbyModalVisible(false)}
-          footer={null}
-          width={900}
-        >
-          <Divider className="customer-modal-divider" />
-
-          {/* Map Controls Row (Aligned at top) */}
-          <div className="customer-nearby__bar">
-            <div className="customer-nearby__controls">
-              <p className="customer-nearby__hint">
-                <Navigation size={14} />
-                Client & closest employees
-              </p>
-              <Tooltip title="Zoom back out to all nearby employees">
-                <Button
-                  type="link"
-                  size="small"
-                  className="customer-nearby__reset"
-                  icon={<RefreshCw size={14} />}
-                  onClick={handleResetMapView}
-                >
-                  Reset View
-                </Button>
-              </Tooltip>
-            </div>
-
-            <p className="customer-nearby__hint">
-              {nearbyEmployees.length > 0
-                ? `${nearbyEmployees.length} employee${
-                    nearbyEmployees.length > 1 ? "s" : ""
-                  } found`
-                : "Closest employees"}
-            </p>
-          </div>
-
-          {/* Content Grid Row */}
-          <div className="customer-nearby__panels">
-            {/* Map Panel */}
-            <div className="customer-nearby__panel">
-              {!isNearbyMapLoaded ? (
-                <div className="customer-nearby__loading">Loading map...</div>
-              ) : (
-                <GoogleMap
-                  mapContainerStyle={{ width: "100%", height: "100%" }}
-                  center={
-                    nearbyClientLocation
-                      ? {
-                          lat: nearbyClientLocation.address_lat,
-                          lng: nearbyClientLocation.address_long,
-                        }
-                      : { lat: 0, lng: 0 }
-                  }
-                  zoom={nearbyClientLocation ? 15 : 2}
-                  onLoad={(map) => {
-                    nearbyMapRef.current = map;
-                    fitDefaultView();
-                  }}
-                >
-                  {nearbyClientLocation && (
-                    <Marker
-                      position={{
-                        lat: nearbyClientLocation.address_lat,
-                        lng: nearbyClientLocation.address_long,
-                      }}
-                      icon={{
-                        path: window.google.maps.SymbolPath.CIRCLE,
-                        scale: 12,
-                        fillColor: markerColors.client,
-                        fillOpacity: 1,
-                        strokeColor: markerColors.stroke,
-                        strokeWeight: 2,
-                      }}
-                      label={{
-                        text: "C",
-                        color: markerColors.label,
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                      }}
-                      title={`Client — ${nearbyClientLocation.address || ""}`}
-                      onClick={() => setSelectedNearbyId(null)}
-                      zIndex={999}
-                    />
-                  )}
-
-                  {nearbyEmployees.map((emp, index) => {
-                    const isSelected = emp.id === selectedNearbyId;
-                    return (
-                      <Marker
-                        key={emp.id}
-                        position={{
-                          lat: emp.address_lat,
-                          lng: emp.address_long,
-                        }}
-                        icon={{
-                          path: window.google.maps.SymbolPath.CIRCLE,
-                          scale: isSelected ? 14 : 11,
-                          fillColor: isSelected
-                            ? markerColors.selected
-                            : markerColors.employee,
-                          fillOpacity: 1,
-                          strokeColor: markerColors.stroke,
-                          strokeWeight: 2,
-                        }}
-                        label={{
-                          text: `${index + 1}`,
-                          color: isSelected
-                            ? markerColors.selectedLabel
-                            : markerColors.label,
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                        }}
-                        title={`${emp.name} — ${emp.distance} mi from client`}
-                        zIndex={isSelected ? 1000 : index}
-                        onClick={() => handleSelectNearbyEmployee(emp)}
-                      />
-                    );
-                  })}
-
-                  {selectedNearbyEmployee && (
-                    <InfoWindow
-                      position={{
-                        lat: selectedNearbyEmployee.address_lat,
-                        lng: selectedNearbyEmployee.address_long,
-                      }}
-                      onCloseClick={() => setSelectedNearbyId(null)}
-                    >
-                      <div>
-                        <p>
-                          <strong>{selectedNearbyEmployee.name}</strong>
-                        </p>
-                        <p>
-                          {NEARBY_ROLE_LABELS[selectedNearbyEmployee.role_id] ||
-                            "-"}
-                        </p>
-                        <p>{selectedNearbyEmployee.address}</p>
-                        <p>
-                          <strong>{selectedNearbyEmployee.distance} mi</strong>{" "}
-                          from client
-                        </p>
-                      </div>
-                    </InfoWindow>
-                  )}
-                </GoogleMap>
-              )}
-            </div>
-
-            {/* List Panel */}
-            <div className="customer-nearby__panel customer-nearby__panel--list">
-              <Table
-                columns={nearbyEmployeesColumns}
-                rowKey={(record) => record.id}
-                dataSource={nearbyEmployees}
-                loading={nearbyLoading}
-                pagination={false}
-                size="small"
-                locale={{ emptyText: "No nearby employees found." }}
-                onRow={(record) => ({
-                  onClick: () => handleSelectNearbyEmployee(record),
-                  style: {
-                    cursor: "pointer",
-                    background:
-                      record.id === selectedNearbyId
-                        ? "var(--color-warning-subtle)"
-                        : undefined,
-                  },
-                })}
-              />
-            </div>
-          </div>
-        </Modal>
-      )}
+      <NearestEmployeesModal
+        open={Boolean(nearestFor)}
+        subtitle={nearestFor?.name}
+        load={() => listEmployeesNearClient(nearestFor.id)}
+        onClose={() => setNearestFor(null)}
+      />
     </div>
   );
 };

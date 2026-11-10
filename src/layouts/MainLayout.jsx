@@ -52,7 +52,7 @@ import PageLoader from "@/components/PageLoader";
 import { getProfile, signOut } from "@/services/api/authApi";
 import { getReviewLinks as fetchReviewLinks, saveReviewLinks as storeReviewLinks } from "@/services/api/reviewApi";
 import { dataOf, errorMessage } from "@/services/apiResult";
-import { clearSession, updateSessionUser, useSession } from "@/lib/session";
+import { clearSession, updateSessionUser, useIsSuperAdmin, useSession } from "@/lib/session";
 import logo from "@/assets/images/logo-wordmark.png";
 import smallLogo from "@/assets/images/logo-mark.png";
 import "./MainLayout.scss";
@@ -318,12 +318,10 @@ const openKeysFor = (pathname) =>
     .filter(([, prefixes]) => prefixes.some((p) => pathname.startsWith(p)))
     .map(([key]) => key);
 
-const isSuperAdminOf = (user) =>
-  Boolean(user?.roles?.some((role) => role.code === "super_admin"));
-
 const MainLayout = () => {
   const session = useSession();
   const user = session?.user;
+  const isSuperAdmin = useIsSuperAdmin();
   const [profileOpen, setProfileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -448,7 +446,7 @@ const MainLayout = () => {
             if (isMobile) setMobileMenuOpen(false);
             navigate(key);
           }}
-          items={getMenuItems({ isSuperAdmin: isSuperAdminOf(user) })}
+          items={getMenuItems({ isSuperAdmin })}
         />
       </Sider>
 

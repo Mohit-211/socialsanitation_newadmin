@@ -1,466 +1,139 @@
-// Client details page (ClientDetailsPage.jsx).
-// Blocks shared with the other client pages live in clients.scss.
+// The client page (ClientDetailsPage.jsx): a header with the New menu, and
+// one tab per step of the client's flow, each with its list and New button.
 
-.view-customer__tabs {
-  margin-bottom: var(--space-6);
-}
-
-// ---- Overview tab cards ----
-
-.view-customer__panel {
-  margin-bottom: var(--space-6);
-  padding: 28px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xs);
-
-  &--first {
-    margin-top: var(--space-5);
-  }
-
-  &--last {
-    margin-bottom: 0;
-  }
-
-  @media (max-width: 599.98px) {
-    padding: var(--space-4);
-  }
-}
-
-.view-customer__info-grid {
-  gap: var(--space-8);
-}
-
-.view-customer__info-label {
-  margin-bottom: 6px;
-}
-
-.view-customer__info-value {
-  margin: 0;
-  font-size: var(--text-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-  overflow-wrap: anywhere;
-
-  &--empty {
-    color: var(--color-text-subtle);
-  }
-}
-
-// Initial client chart (read only)
-.view-customer__pills {
-  display: flex;
-  flex-wrap: wrap;
+.client-flow__title {
+  display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.view-customer__floor-breakdown {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
-  margin-bottom: var(--space-5);
+.ant-tag.client-flow__type {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.view-customer__count {
   font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-
-  &--empty {
-    color: var(--color-text-subtle);
-  }
+  letter-spacing: 0;
 }
 
-.customer-chart td.view-customer__requests {
-  white-space: pre-wrap;
-  color: var(--color-text-secondary);
-}
-
-.customer-chart td.view-customer__requests--empty {
-  color: var(--color-text-subtle);
-}
-
-.view-customer__scope {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-}
-
-.view-customer__scope-title {
-  font-size: var(--text-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.view-customer__scope-text {
-  margin-top: var(--space-1);
-  font-size: 12.5px;
-  color: var(--color-text-subtle);
-}
-
-// Bookings
-.section-title.view-customer__bookings-title {
-  margin-bottom: var(--space-6);
-}
-
-.view-customer__booking-table {
+.client-flow__tabs {
   margin-top: var(--space-5);
-}
+  padding: var(--space-4);
 
-.view-customer__no-employee {
-  font-weight: 300;
-  color: var(--color-error);
-}
-
-// ---- Document tabs (quotes, invoices, contracts, estimates, requests) ----
-
-.view-customer__section {
-  margin: var(--space-5) 0 var(--space-10);
-  padding: var(--space-5);
-  background: linear-gradient(to bottom, var(--color-bg), var(--color-bg-subtle));
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xs);
-}
-
-.view-customer__section-header {
-  margin-bottom: var(--space-6);
-  padding-bottom: var(--space-4);
-  border-bottom: 2px solid var(--color-border-subtle);
-}
-
-.section-title.view-customer__section-title {
-  font-size: var(--text-2xl);
-  letter-spacing: -0.02em;
-}
-
-.view-customer__empty {
-  padding: 60px var(--space-5);
-  text-align: center;
-  color: var(--color-text-subtle);
-
-  p {
-    margin: 0;
-    font-size: var(--text-md);
+  // Steps down the side on wide screens
+  &.ant-tabs-left > .ant-tabs-nav,
+  &.ant-tabs-start > .ant-tabs-nav {
+    min-width: 220px;
   }
 }
 
-.view-customer__card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-  gap: var(--space-6);
-}
-
-.view-customer__doc-card {
-  overflow: hidden;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: all 0.3s ease;
-
-  &--interactive:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
-  }
-}
-
-// Card header: brand fill with dark "on primary" text
-.view-customer__doc-head {
-  padding: var(--space-5);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.view-customer__doc-head-row {
-  display: flex;
+.client-flow__tab-label {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
   width: 100%;
-  margin-bottom: var(--space-4);
-
-  &--flush {
-    margin-bottom: 0;
-  }
 }
 
-.view-customer__doc-tags {
-  display: flex;
-  flex-wrap: wrap;
+.client-flow__step {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-
-.view-customer__doc-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-2);
-}
-
-// Solid status chips: dark status shades with inverse text
-.view-customer__status-tag {
-  display: inline-block;
-  padding: var(--space-1) 10px;
-  border-radius: var(--radius-xs);
-  background: var(--color-text-muted);
-  color: var(--color-text-inverse);
-  font-size: 11px;
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-base);
-  white-space: nowrap;
-
-  &--success {
-    background: var(--color-success-strong);
-  }
-
-  &--warning {
-    background: var(--color-warning-strong);
-  }
-
-  &--error {
-    background: var(--color-error);
-  }
-
-  &--info {
-    background: var(--color-primary-strong);
-  }
-
-  &--neutral {
-    background: var(--color-text-muted);
-  }
-}
-
-// Quote total, a translucent light chip on the brand header
-.view-customer__amount-tag {
-  display: inline-block;
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border: 1px solid color-mix(in srgb, var(--color-bg) 60%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-bg) 45%, transparent);
-  color: var(--color-on-primary);
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
-  white-space: nowrap;
-}
-
-.view-customer__eyebrow {
-  display: block;
-  margin-bottom: 2px;
-  font-size: 11px;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary-subtle);
+  color: var(--color-primary-stronger);
+  font-size: var(--text-xs);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.05em;
-  opacity: 0.8;
 }
 
-.view-customer__doc-title {
-  font-size: 22px;
-  font-weight: var(--font-weight-bold);
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+.client-flow__count {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+
+  &.is-zero {
+    opacity: 0.55;
+  }
 }
 
-// Card body
-.view-customer__doc-body {
-  padding: var(--space-5);
-}
-
-.view-customer__company {
+.client-flow__tab-head {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-bottom: var(--space-4);
-  padding: 14px;
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-md);
-
-  svg {
-    flex-shrink: 0;
-    color: var(--color-primary-strong);
-  }
 
   p {
-    min-width: 0;
     margin: 0;
-    font-size: var(--text-md);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
-    word-break: break-word;
+    max-width: 640px;
   }
 }
 
-.view-customer__details {
+.client-flow__subsection {
+  margin-top: var(--space-6);
+}
+
+.ant-btn.client-flow__link {
+  height: auto;
+  padding: 0;
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  white-space: normal;
+}
+
+.client-flow__answers {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.client-flow__modal-body p {
+  margin-bottom: var(--space-3);
+}
+
+// Profile tab
+.client-profile {
   display: grid;
-  gap: var(--space-3);
-
-  &--spaced {
-    margin-bottom: var(--space-5);
-  }
-
-  &--quote {
-    margin-bottom: var(--space-4);
-  }
+  gap: var(--space-4);
 }
 
-.view-customer__detail {
+.client-addresses {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.client-addresses__item {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
 }
 
-.view-customer__detail-icon {
-  display: inline-flex;
+.client-addresses__icon {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--color-primary-strong);
 }
 
-.view-customer__detail-label {
-  flex-shrink: 0;
-  min-width: 95px;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
-
-  &--wide {
-    min-width: 100px;
-  }
-}
-
-.view-customer__detail-value {
+.client-addresses__body {
   flex: 1;
   min-width: 0;
-  font-size: var(--text-base);
+}
+
+.client-addresses__title {
   font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-
-  &--regular {
-    font-weight: var(--font-weight-regular);
-  }
 }
 
-// Quote items
-.view-customer__items {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-}
-
-.view-customer__items-title {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.view-customer__items-list {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.view-customer__item {
-  padding: 10px var(--space-3);
-  background: var(--color-bg-subtle);
-  border-left: 3px solid var(--color-primary-border);
-  border-radius: var(--radius-sm);
-}
-
-.view-customer__item-desc {
-  margin-bottom: var(--space-1);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-}
-
-.view-customer__item-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.view-customer__item-amount {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary-strong);
-}
-
-// Payment state, links and the invoice button at the bottom of a card
-.view-customer__payment {
-  margin-top: var(--space-4);
-}
-
-.view-customer__invoice-action {
-  margin-top: var(--space-3);
-}
-
-.view-customer__doc-links {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.view-customer__doc-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-semibold);
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.3s ease;
-
-  &:hover {
-    color: var(--color-on-primary);
-    box-shadow: var(--shadow-md);
-    transform: scale(1.02);
-  }
-
-  &--success {
-    background: var(--color-success);
-  }
-}
-
-.view-customer__notice {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-subtle);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  text-align: center;
-
-  &--success {
-    background: var(--color-success-subtle);
-    color: var(--color-success-strong);
-  }
-
-  &--warning {
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
-  }
-
-  &--muted {
-    font-weight: var(--font-weight-medium);
-  }
+.client-addresses__actions {
+  flex-shrink: 0;
 }

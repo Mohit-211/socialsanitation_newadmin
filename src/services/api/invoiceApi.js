@@ -1,6 +1,32 @@
 import httpClient from "@/services/httpClient";
 import { API_BASE_URL } from "@/config/env";
 
+// Invoices on /api/v2. Amounts are numbers; every invoice answers its state
+// (draft, scheduled, sent, deposit_paid, overdue, paid or cancelled),
+// contract_id, reminder_count and last_reminder_at.
+
+/** quote_id, user_id or contract_id is required; a contract fills in the rest it can. */
+export const createInvoice = (invoice) => httpClient.post("/invoices", invoice);
+
+/** Emails it at once, whatever its schedule. */
+export const sendInvoice = (id) => httpClient.post(`/invoices/${id}/send`);
+
+/** An email with the Square link and a note in the app. */
+export const remindInvoice = (id) => httpClient.post(`/invoices/${id}/remind`);
+
+/** method: "CHECK" or "ACH". Closes the online link. */
+export const markInvoicePaid = (id, method) => httpClient.post(`/invoices/${id}/mark-paid`, { method });
+
+/** Needs records.delete. Closes any waiting payment link. */
+export const deleteInvoice = (id) => httpClient.delete(`/invoices/${id}`);
+
+/** What an invoice for the contract would hold, saving nothing. */
+export const getContractInvoiceDraft = (contractId) => httpClient.get(`/contracts/${contractId}/invoice-draft`);
+
+// ---------------------------------------------------------------------------
+// Old /api/v1 calls, still used by the invoice screens until they move to
+// /api/v2. They go once those screens move.
+
 export const GetInvoices = async (month = null) => {
   try {
     const res = await httpClient.get(
