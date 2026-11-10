@@ -18,7 +18,7 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 import { listServiceNames } from "@/services/api/serviceApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
-import { fromApiDate, toApiDate } from "@/utils/datetime";
+import { formatDate, fromApiDate, toApiDate } from "@/utils/datetime";
 import { clientPagePath } from "@/pages/clients/clientFlow";
 import {
   Alert,
@@ -32,8 +32,8 @@ import {
   Popconfirm,
   Modal,
 } from "antd";
-import { DatePicker } from "antd";
-import { ArrowLeft, Folder } from "lucide-react";
+import { DatePicker, Tooltip } from "antd";
+import { ArrowLeft, FilePlus2, Folder } from "lucide-react";
 import SignatureField from "@/components/SignatureField";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
@@ -146,6 +146,8 @@ const CreateServiceQuotePage = () => {
               hour: i.hour ?? "",
               unit_price: i.unit_price,
               amount: i.amount,
+              // A line a service request brought goes back as it came (step 6).
+              ...(i.service_request_id ? { service_request_id: i.service_request_id } : {}),
             }))
           : [
               {
@@ -392,7 +394,7 @@ const CreateServiceQuotePage = () => {
       user_id: Number(id),
       ref_no: formData.ref,
       ref_type: formData.reference_type,
-      service_dates: toApiDate(formData.serviceDates) ?? formData.serviceDates,
+      service_dates: toApiDate(formData.serviceDates) ?? (formData.serviceDates || ""),
       due_date: toApiDate(formData.dueDate),
       to_company_name: formData.toCompany,
       address_1: formData.address1,
@@ -475,6 +477,13 @@ const CreateServiceQuotePage = () => {
             placeholder="Or type description"
             style={{ width: "50%" }}
             value={record.description}
+            suffix={
+              record.service_request_id ? (
+                <Tooltip title="Added by a service request. Editing the request changes this line; deleting it takes the line out.">
+                  <FilePlus2 size={14} className="quote-line__from-request" aria-label="From a service request" />
+                </Tooltip>
+              ) : undefined
+            }
             onChange={(e) =>
               handleItemChange(index, "description", e.target.value)
             }
@@ -636,7 +645,7 @@ const CreateServiceQuotePage = () => {
       user_id: Number(id),
       ref_no: formData.ref,
       ref_type: formData.reference_type,
-      service_dates: toApiDate(formData.serviceDates) ?? formData.serviceDates,
+      service_dates: toApiDate(formData.serviceDates) ?? (formData.serviceDates || ""),
       due_date: toApiDate(formData.dueDate),
       to_company_name: formData.toCompany,
       address_1: formData.address1,
@@ -851,7 +860,7 @@ const CreateServiceQuotePage = () => {
               style={{ minWidth: 280 }}
               options={clientEstimates.map((estimate) => ({
                 value: estimate.id,
-                label: `${estimate.client_company_name || `Estimate ${estimate.id}`}${estimate.signed_date ? ` · ${estimate.signed_date}` : ""}`,
+                label: `${estimate.client_company_name || `Estimate ${estimate.id}`}${estimate.signed_date ? ` · ${formatDate(estimate.signed_date)}` : ""}`,
               }))}
             />
             <span className="quote-form__hint">Its prices fill the lines; the quote keeps the link.</span>

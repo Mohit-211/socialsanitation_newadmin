@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Alert, AutoComplete, Button, Card, Form, Input, InputNumber, Select, Space, Spin, message } from "antd";
-import { Calculator, FileStack, Plus, Trash2 } from "lucide-react";
+import { Alert, AutoComplete, Button, Card, Form, Input, InputNumber, Select, Space, Spin, Tooltip, message } from "antd";
+import { Calculator, FilePlus2, FileStack, Plus, Trash2 } from "lucide-react";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { getCostCalculation, listCostCalculations } from "@/services/api/costCalculatorApi";
 import { getEstimateDraft } from "@/services/api/estimateApi";
@@ -10,7 +10,7 @@ import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { NEW_DOCUMENT_PATHS, clientPagePath } from "@/pages/clients/clientFlow";
 import { formatDate } from "@/utils/datetime";
 import { formatMoney } from "@/utils/format";
-import { FREQUENCY_OPTIONS, priceLinesOf, priceTotal } from "../estimateFields";
+import { FREQUENCY_OPTIONS, priceLinesOf, priceTotal, requestLinesOf } from "../estimateFields";
 
 const needsALine = {
   validator: async (_, lines) => {
@@ -62,7 +62,10 @@ const EstimatePricing = ({ clientId, isEdit = false }) => {
         scope_of_work_id: draft.scope_of_work_id ?? undefined,
         cost_calculation_id: draft.cost_calculation_id ?? undefined,
         bid_id: draft.bid_id ?? undefined,
-        ...(priced ? { price_lines: priceLinesOf(draft.price_lines) } : {}),
+        // The calculation's lines, and any a service request added (those stay)
+        ...(priced
+          ? { price_lines: [...priceLinesOf(draft.price_lines), ...requestLinesOf(form.getFieldValue("price_lines"))] }
+          : {}),
         ...(draft.frequency && !form.getFieldValue("frequency") ? { frequency: draft.frequency } : {}),
       });
       if (priced) message.success("Prices filled in from the calculation; change them as needed");
@@ -202,7 +205,20 @@ const EstimatePricing = ({ clientId, isEdit = false }) => {
                       name={[field.name, "name"]}
                       rules={[{ required: true, whitespace: true, message: "Name the service" }]}
                     >
-                      <Input placeholder="Advance Cleaning Services" aria-label="Service" />
+                      <Input
+                        placeholder="Advance Cleaning Services"
+                        aria-label="Service"
+                        suffix={
+                          lines?.[field.name]?.service_request_id ? (
+                            <Tooltip title="Added by a service request. Editing the request changes this line; deleting it takes the line out.">
+                              <FilePlus2 size={14} className="price-lines__from-request" aria-label="From a service request" />
+                            </Tooltip>
+                          ) : undefined
+                        }
+                      />
+                    </Form.Item>
+                    <Form.Item name={[field.name, "service_request_id"]} hidden>
+                      <Input />
                     </Form.Item>
                     <Form.Item name={[field.name, "frequency"]}>
                       <AutoComplete options={FREQUENCY_OPTIONS} placeholder="Weekly" aria-label="Frequency" />

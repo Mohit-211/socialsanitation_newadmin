@@ -140,3 +140,8 @@
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
+
+// A line a service request added (step 6 of the client flow)
+.quote-line__from-request {
+  color: var(--color-primary-strong);
+}

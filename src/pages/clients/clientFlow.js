@@ -40,8 +40,10 @@ export const NEW_DOCUMENT_PATHS = Object.freeze({
     withQuery("/generate-estimate", { clientId, scopeId, calculationId, bidId }),
   quote: (clientId, { estimateId, calculationId, scopeId } = {}) =>
     withQuery(`/service-quote/${clientId}`, { estimateId, calculationId, scopeId }),
-  service_request: (clientId) => withQuery("/generate-service-request", { clientId }),
-  contract: (clientId) => withQuery("/create-contract-agreement", { clientId }),
+  // A request can add to one of the client's estimates or quotes (step 6).
+  service_request: (clientId, { estimateId, quoteId } = {}) =>
+    withQuery("/generate-service-request", { clientId, estimateId, quoteId }),
+  contract: (clientId, { estimateId } = {}) => withQuery("/create-contract-agreement", { clientId, estimateId }),
   booking: (clientId) => withQuery("/create-client-booking", { clientId }),
   invoice: (clientId, { contractId } = {}) => withQuery("/generate-invoice", { clientId, contractId }),
 });

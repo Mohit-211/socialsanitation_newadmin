@@ -278,6 +278,11 @@ samp {
   color: var(--color-text-subtle);
 }
 
+/* A caution in text, such as a field's note */
+.text-warning {
+  color: var(--color-warning-strong);
+}
+
 /* Row action buttons in tables. Use <IconAction> (src/components/IconAction.jsx). */
 .icon-action.ant-btn {
   color: var(--color-primary-strong);

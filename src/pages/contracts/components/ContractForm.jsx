@@ -1,19 +1,48 @@
-import { useState } from "react";
-import { Button, Card, DatePicker, Form, Input, InputNumber, message } from "antd";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { Button, Card, DatePicker, Form, Input, InputNumber, Select, message } from "antd";
 import ClientSelect from "@/components/ClientSelect";
 import SignatureField from "@/components/SignatureField";
-import { contractFieldsFor } from "../contractFields";
+import { contractFieldsFor, contractFieldsFromEstimate } from "../contractFields";
 import { DATE_FORMAT, toApiDate } from "@/utils/datetime";
+import { statusTag } from "@/utils/format";
+import { getEstimate } from "@/services/api/estimateApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { useClientDocuments } from "@/hooks/useClientDocuments";
+import { EDIT_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
 
 /**
  * A contract's fields: the client (on a new contract), the parties, the
  * monthly price, the service address, the date and the admin's signature.
+ * A new contract can come from one of the client's estimates (step 7 of the
+ * client flow): picking it fills the parties and address from the estimate.
  * `onSubmit` gets the contract as the API takes it.
  */
 const ContractForm = ({ initialValues, initialSignature = "", clients, lockClient, isNew, submitLabel, onSubmit }) => {
   const [form] = Form.useForm();
   const [signature, setSignature] = useState({ signature: initialSignature });
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+
+  // The client's estimates, and the contracts already made from them.
+  const userId = Form.useWatch("user_id", form);
+  const estimateId = Form.useWatch("estimate_id", form);
+  const { data: documents } = useClientDocuments(isNew ? userId : undefined);
+  const estimates = documents?.estimates ?? [];
+  const existing = estimateId ? documents?.contracts?.find((row) => row.estimate_id === estimateId) : null;
+
+  const fillFromEstimate = (id) => {
+    if (!id) return;
+    getEstimate(id)
+      .then((res) => form.setFieldsValue(contractFieldsFromEstimate(dataOf(res))))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the estimate")));
+  };
+
+  useEffect(() => {
+    if (isNew && initialValues?.estimate_id) fillFromEstimate(initialValues.estimate_id);
+    // The estimate the form was opened with is read once, when it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const finish = async (values) => {
     if (!signature.signature) {
@@ -23,7 +52,7 @@ const ContractForm = ({ initialValues, initialSignature = "", clients, lockClien
     setSaving(true);
     try {
       await onSubmit({
-        ...(isNew ? { user_id: values.user_id } : {}),
+        ...(isNew ? { user_id: values.user_id, ...(values.estimate_id ? { estimate_id: values.estimate_id } : {}) } : {}),
         client_company_name: values.client_company_name.trim(),
         client_legal_name: values.client_legal_name.trim(),
         client_representative: values.client_representative?.trim() || "",
@@ -45,7 +74,39 @@ const ContractForm = ({ initialValues, initialSignature = "", clients, lockClien
             <ClientSelect
               clients={clients}
               locked={lockClient}
-              onPick={(client) => form.setFieldsValue(contractFieldsFor(client))}
+              onPick={(client) => form.setFieldsValue({ ...contractFieldsFor(client), estimate_id: undefined })}
+            />
+          </Form.Item>
+        )}
+        {isNew && (
+          <Form.Item
+            label="Made From Estimate"
+            name="estimate_id"
+            extra={
+              existing ? (
+                <span className="text-warning">
+                  This estimate already has a contract ({statusTag(existing.status).label}).{" "}
+                  <Button
+                    type="link"
+                    size="small"
+                    className="table-link"
+                    onClick={() => navigate(EDIT_DOCUMENT_PATHS.contract(existing.id))}
+                  >
+                    Open it
+                  </Button>{" "}
+                  instead of making another.
+                </span>
+              ) : (
+                "Its company, contact and address fill the contract, and the contract keeps the link."
+              )
+            }
+          >
+            <Select
+              allowClear
+              placeholder={estimates.length ? "None" : "The client has no estimates"}
+              disabled={!estimates.length}
+              onChange={fillFromEstimate}
+              options={estimates.map((row) => ({ value: row.id, label: `${row.title} · ${statusTag(row.status).label}` }))}
             />
           </Form.Item>
         )}

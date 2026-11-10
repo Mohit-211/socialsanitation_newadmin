@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Alert, Button, Card, Space, Spin, Tabs, message } from "antd";
-import { ArrowLeft, FileCheck, FileText, Send } from "lucide-react";
+import { ArrowLeft, FileCheck, FilePlus2, FileText, Handshake, Send } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import ShareToggle from "@/components/ShareToggle";
 import StatusTag from "@/components/StatusTag";
@@ -9,9 +9,12 @@ import { getEstimate, resendEstimate, updateEstimate } from "@/services/api/esti
 import { dataOf, errorMessage } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
+import { EDIT_DOCUMENT_PATHS, NEW_DOCUMENT_PATHS, editPathFromClient } from "@/pages/clients/clientFlow";
+import { useClientDocuments } from "@/hooks/useClientDocuments";
+import { canResend, savingNote } from "@/utils/signing";
 import ClientBdmSelect from "@/pages/clients/components/ClientBdmSelect";
 import { formatDate } from "@/utils/datetime";
-import { formatMoney } from "@/utils/format";
+import { formatMoney, statusTag } from "@/utils/format";
 import EstimateForm from "./components/EstimateForm";
 import EstimateScopeBuilder from "./components/EstimateScopeBuilder";
 import { valuesFromEstimate } from "./estimateFields";
@@ -24,12 +27,20 @@ const open = (url) => window.open(url, "_blank", "noopener");
 const EditEstimatePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { returnPath, backLabel } = useClientFromQuery("estimates", "/pdf-generation");
+  const { clientId, returnPath, backLabel } = useClientFromQuery("estimates", "/pdf-generation");
   const [resending, setResending] = useState(false);
 
   const { data: estimate, loading, reload } = useApiQuery(() => getEstimate(id).then(dataOf), [id], {
     errorText: "Couldn't load the estimate",
   });
+
+  // What comes next (steps 6 and 7 of the client flow): its contract, and
+  // service requests whose lines join it.
+  const { data: documents } = useClientDocuments(estimate?.user_id);
+  const contract = estimate && documents?.contracts?.find((row) => row.estimate_id === estimate.id);
+  const requests = (estimate && documents?.service_requests?.filter((row) => row.estimate_id === estimate.id)) || [];
+  const editPath = (kind, docId) => (clientId ? editPathFromClient(kind, docId, clientId) : EDIT_DOCUMENT_PATHS[kind](docId));
+  const note = savingNote(estimate?.status);
 
   const resend = async () => {
     setResending(true);
@@ -45,8 +56,8 @@ const EditEstimatePage = () => {
 
   const submit = async (changes) => {
     try {
-      await updateEstimate(id, changes);
-      message.success("Estimate saved; a new copy went to the client for signature");
+      const res = await updateEstimate(id, changes);
+      message.success(res.data?.message || "Estimate saved; a new copy went to the client for signature");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't save the estimate"));
@@ -88,7 +99,7 @@ const EditEstimatePage = () => {
                 Signed Copy
               </Button>
             )}
-            {estimate && !estimate.signed_at && (
+            {estimate && canResend(estimate.status) && (
               <Button icon={<Send size={16} />} onClick={resend} loading={resending}>
                 Resend
               </Button>
@@ -112,12 +123,7 @@ const EditEstimatePage = () => {
               children: (
                 <div className="estimate-layout">
                   <div className="estimate-layout__main">
-                    <Alert
-                      type="info"
-                      showIcon
-                      className="form-card"
-                      title="Saving makes a new PDF and sends the client a new copy to sign."
-                    />
+                    <Alert type={note.type} showIcon className="form-card" title={note.title} />
                     <EstimateForm
                       key={estimate.id}
                       userId={estimate.user_id}
@@ -128,6 +134,55 @@ const EditEstimatePage = () => {
                     />
                   </div>
                   <aside className="estimate-layout__side">
+                    <Card title="Next Steps" size="small" className="form-card">
+                      <div className="estimate-next">
+                        {contract ? (
+                          <Button block icon={<Handshake size={16} />} onClick={() => navigate(editPath("contract", contract.id))}>
+                            Open Its Contract ({statusTag(contract.status).label})
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              block
+                              icon={<Handshake size={16} />}
+                              onClick={() =>
+                                navigate(NEW_DOCUMENT_PATHS.contract(estimate.user_id, { estimateId: estimate.id }))
+                              }
+                            >
+                              Make a Contract
+                            </Button>
+                            <span className="text-secondary">
+                              When the client signs, a draft contract is made from this estimate for you to price and
+                              send.
+                            </span>
+                          </>
+                        )}
+                        <Button
+                          block
+                          icon={<FilePlus2 size={16} />}
+                          onClick={() =>
+                            navigate(NEW_DOCUMENT_PATHS.service_request(estimate.user_id, { estimateId: estimate.id }))
+                          }
+                        >
+                          Add a Service Request
+                        </Button>
+                        {requests.length > 0 && (
+                          <div className="estimate-next__requests">
+                            <span className="text-secondary">Service requests in it:</span>
+                            {requests.map((request) => (
+                              <Button
+                                key={request.id}
+                                type="link"
+                                className="table-link"
+                                onClick={() => navigate(editPath("service_request", request.id))}
+                              >
+                                {request.title}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
                     <Card title="Representative (BDM)" size="small" className="form-card">
                       <ClientBdmSelect clientId={estimate.user_id} />
                     </Card>

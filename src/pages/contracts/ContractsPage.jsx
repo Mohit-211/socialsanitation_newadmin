@@ -1,4 +1,4 @@
-import { Button, Input, Modal, Space, Table, message } from "antd";
+import { Button, Input, Modal, Select, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
 import { FileCheck, FileText, Pencil, Plus, ReceiptText, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -9,7 +9,8 @@ import { deleteContract, listContracts } from "@/services/api/contractApi";
 import { errorMessage } from "@/services/apiResult";
 import { usePagedList } from "@/hooks/usePagedList";
 import { PERMISSION, useCan } from "@/lib/session";
-import { NEW_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
+import { EDIT_DOCUMENT_PATHS, NEW_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
+import { SIGNING_STATUS_OPTIONS, isDraft } from "@/utils/signing";
 import { formatDate } from "@/utils/datetime";
 import { formatMoney } from "@/utils/format";
 
@@ -57,6 +58,23 @@ const ContractsPage = () => {
         </Button>
       ),
     },
+    {
+      // The estimate it comes from: a signed estimate drafts its contract.
+      title: "Made From",
+      key: "estimate",
+      render: (_, contract) =>
+        contract.estimate_id ? (
+          <Button
+            type="link"
+            className="table-link"
+            onClick={() => navigate(EDIT_DOCUMENT_PATHS.estimate(contract.estimate_id))}
+          >
+            Estimate #{contract.estimate_id}
+          </Button>
+        ) : (
+          <span className="text-subtle">—</span>
+        ),
+    },
     { title: "Monthly Price", dataIndex: "total_monthly_price", align: "right", render: formatMoney },
     { title: "Contract Date", dataIndex: "contract_date", render: (date) => formatDate(date) },
     { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
@@ -74,11 +92,13 @@ const ContractsPage = () => {
             <IconAction icon={FileCheck} title="Signed copy" onClick={() => open(contract.signed_file_url)} />
           )}
           <ShareToggle kind="contract" id={contract.id} sharedAt={contract.shared_at} onChanged={list.reload} />
-          <IconAction
-            icon={ReceiptText}
-            title="Make an invoice for this contract"
-            onClick={() => navigate(NEW_DOCUMENT_PATHS.invoice(contract.user_id, { contractId: contract.id }))}
-          />
+          {!isDraft(contract.status) && (
+            <IconAction
+              icon={ReceiptText}
+              title="Make an invoice for this contract"
+              onClick={() => navigate(NEW_DOCUMENT_PATHS.invoice(contract.user_id, { contractId: contract.id }))}
+            />
+          )}
           {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(contract)} />}
         </Space>
       ),
@@ -92,6 +112,15 @@ const ContractsPage = () => {
         subtitle="Contract agreements sent to clients for signature"
         actions={
           <>
+            <Select
+              size="large"
+              allowClear
+              placeholder="Any status"
+              style={{ width: 200 }}
+              options={SIGNING_STATUS_OPTIONS}
+              value={list.filters.status}
+              onChange={(value) => list.setFilter("status", value)}
+            />
             <Input
               allowClear
               size="large"

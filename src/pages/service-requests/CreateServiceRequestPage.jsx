@@ -19,6 +19,9 @@ import { listServiceNames } from "@/services/api/serviceApi";
 import { listClientPicks } from "@/services/api/clientApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
+import { useClientDocuments } from "@/hooks/useClientDocuments";
+import AddsToPicker from "./components/AddsToPicker";
+import { joinsParent, pickedParent } from "./addsTo";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
 const { Option } = Select;
@@ -26,7 +29,13 @@ const { Option } = Select;
 const CreateServiceRequestPage = () => {
   const navigate = useNavigate();
   // Opened from a client's page, the client is already chosen and saving goes back there.
-  const { clientId, fromClientPage, returnPath } = useClientFromQuery("service-requests", "/service-request");
+  const { clientId, fromClientPage, returnPath, params } = useClientFromQuery("service-requests", "/service-request");
+  // What it adds to: an estimate or quote picked here, or passed from the client page.
+  const [addsTo, setAddsTo] = useState(() => {
+    const estimateId = Number(params.get("estimateId")) || undefined;
+    const quoteId = Number(params.get("quoteId")) || undefined;
+    return estimateId ? { estimate_id: estimateId } : quoteId ? { quote_id: quoteId } : {};
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState([]);
   const [formData, setFormData] = useState({
@@ -57,6 +66,9 @@ const CreateServiceRequestPage = () => {
   const [users, setUsers] = useState([]);
 
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
+  const { data: documents } = useClientDocuments(formData.user_id);
+  const parent = pickedParent(documents, addsTo);
+  const joins = joinsParent(parent);
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
 
   const handleUserChange = (userId, list = users) => {
@@ -218,11 +230,13 @@ const CreateServiceRequestPage = () => {
           unit_price: Number(item.unit_price || 0),
           amount: Number(item.amount || 0),
         })),
+        ...(addsTo.estimate_id ? { estimate_id: addsTo.estimate_id } : {}),
+        ...(addsTo.quote_id ? { quote_id: addsTo.quote_id } : {}),
       };
 
-      await createServiceRequest(payload);
+      const res = await createServiceRequest(payload);
       setQuoteStatus("SAVED");
-      message.success("Service request sent to the client for signature");
+      message.success(res.data?.message || "Service request sent to the client for signature");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't send the service request"));
@@ -507,7 +521,10 @@ const CreateServiceRequestPage = () => {
               optionFilterProp="children"
               value={formData.user_id}
               disabled={fromClientPage}
-              onChange={(value) => handleUserChange(value)}
+              onChange={(value) => {
+                handleUserChange(value);
+                setAddsTo({});
+              }}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
               }
@@ -562,6 +579,8 @@ const CreateServiceRequestPage = () => {
             />
           </div>
         </div>
+
+        <AddsToPicker documents={documents} value={addsTo} onChange={setAddsTo} />
 
         <Table
           dataSource={formData.items.map((item, idx) => ({
@@ -620,7 +639,7 @@ const CreateServiceRequestPage = () => {
             onClick={handleSubmit}
             loading={isLoading}
           >
-            Send PDF via Email
+            {joins ? `Add to the ${parent.kind === "estimate" ? "Estimate" : "Quote"}` : "Send PDF via Email"}
           </Button>
         </div>
       </div>

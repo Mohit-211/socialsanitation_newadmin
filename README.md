@@ -119,6 +119,8 @@ A client's page (`/viewUser/:id`) is where the office works a client from first 
 
 - Every "New" button opens its form with the client already chosen, and saving comes back to the client's tab (`?clientId=` on the form's address; see `src/pages/clients/clientFlow.js`).
 - Each step hands on to the next with what it knows: price a scope in the calculator, make an estimate or quote from a calculation, a quote from an estimate, an invoice from a quote or a contract.
+- A service request can add to one of the client's estimates or quotes: its lines join that document, which goes to the client again, and the request isn't sent on its own (a paid quote takes no new lines, so its request goes alone).
+- When the client signs an estimate, a draft contract appears on the Contracts tab: open it, set the monthly price and date, and save to send it for signature. A signed contract shows what the client filled in (start date and time, service days, payment method).
 - Opening a document from the client page and saving it also comes back there.
 
 ## Conventions

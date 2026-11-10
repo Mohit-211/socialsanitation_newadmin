@@ -12,6 +12,7 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { PERMISSION, useCan } from "@/lib/session";
 import { formatDate } from "@/utils/datetime";
 import { formatMoney } from "@/utils/format";
+import { EDIT_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
 import "./serviceRequests.scss";
 
 const MONTH = "YYYY-MM";
@@ -67,6 +68,22 @@ const ServiceRequestsPage = () => {
     { title: "Date", dataIndex: "date", render: (date) => formatDate(date) },
     { title: "Due", dataIndex: "due_date", render: (date) => formatDate(date) },
     { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
+    {
+      // The estimate or quote it adds to; joined: its lines went out in that document.
+      title: "Adds To",
+      key: "adds_to",
+      render: (_, request) => {
+        const kind = request.estimate_id ? "estimate" : request.quote_id ? "quote" : null;
+        if (!kind) return <span className="text-subtle">—</span>;
+        const parentId = request.estimate_id || request.quote_id;
+        return (
+          <Button type="link" className="table-link" onClick={() => navigate(EDIT_DOCUMENT_PATHS[kind](parentId))}>
+            {kind === "estimate" ? "Estimate" : "Quote"} #{parentId}
+            {request.joined ? "" : " (sent alone)"}
+          </Button>
+        );
+      },
+    },
     { title: "Signed", dataIndex: "signed_at", render: (date) => formatDate(date) },
     {
       title: "Actions",

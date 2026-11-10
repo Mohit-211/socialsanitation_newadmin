@@ -8,6 +8,8 @@ const STATUS_TAGS = {
   completed: { label: "Signed", color: "green" },
   declined: { label: "Declined", color: "red" },
   voided: { label: "Voided", color: "default" },
+  // DocuSign couldn't reach the signer: the email to them bounced
+  failed: { label: "Email bounced", color: "red" },
   // quotes
   DRAFT: { label: "Draft", color: "default" },
   SAVED: { label: "Sent", color: "blue" },

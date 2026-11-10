@@ -93,6 +93,21 @@
     font-weight: var(--font-weight-bold);
   }
 
+  // What the request adds to (an estimate or quote), and where it stands
+  &__adds-to {
+    max-width: 640px;
+    margin-bottom: var(--space-5);
+  }
+
+  &__adds-to-note,
+  &__standing {
+    margin-top: var(--space-3);
+  }
+
+  &__standing {
+    margin-bottom: var(--space-5);
+  }
+
   &__item-actions {
     display: flex;
     flex-wrap: wrap;

@@ -31,7 +31,13 @@ export const priceLinesOf = (lines = []) =>
     price: line.price ?? null,
     hours: line.hours ?? null,
     personnel: line.personnel ?? null,
+    // A line a service request brought (step 6): sent back as it came, so the
+    // request can change or take its lines out later.
+    service_request_id: line.service_request_id ?? null,
   }));
+
+/** The lines a service request brought, which repricing from the calculation keeps. */
+export const requestLinesOf = (lines = []) => (lines || []).filter((line) => line?.service_request_id);
 
 /** What the lines add up to. */
 export const priceTotal = (lines = []) =>
@@ -70,6 +76,7 @@ export function estimateBody(values, { userId, signature }) {
       price: Number(line.price) || 0,
       hours: numberOrNull(line.hours),
       personnel: numberOrNull(line.personnel),
+      ...(line.service_request_id ? { service_request_id: line.service_request_id } : {}),
     }));
   return {
     user_id: userId ?? values.user_id,

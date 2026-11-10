@@ -11,12 +11,17 @@ import {
   Select,
   Popconfirm,
 } from "antd";
-import { DatePicker } from "antd";
+import { Alert, DatePicker } from "antd";
 import { getServiceRequest, updateServiceRequest } from "@/services/api/serviceRequestApi";
 import { listServiceNames } from "@/services/api/serviceApi";
 import { errorMessage, dataOf, itemsOf } from "@/services/apiResult";
 import { fromApiDate } from "@/utils/datetime";
 import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
+import { EDIT_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
+import { useClientDocuments } from "@/hooks/useClientDocuments";
+import StatusTag from "@/components/StatusTag";
+import { savingNote } from "@/utils/signing";
+import { pickedParent } from "./addsTo";
 import SignatureField from "@/components/SignatureField";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
@@ -53,6 +58,9 @@ const EditServiceRequestPage = () => {
     date: null,
   });
   const [client, setClient] = useState(null);
+  // Where it stands: its status, and the estimate or quote it adds to (joined:
+  // its lines are in that document, which went to the client instead of it).
+  const [standing, setStanding] = useState(null);
   // Opened from a client's page, saving goes back there.
   const { returnPath } = useClientFromQuery("service-requests", "/service-request");
 
@@ -89,6 +97,12 @@ const EditServiceRequestPage = () => {
             })) || [],
         });
         setClient(quote.client || null);
+        setStanding({
+          status: quote.status,
+          estimate_id: quote.estimate_id ?? null,
+          quote_id: quote.quote_id ?? null,
+          joined: Boolean(quote.joined),
+        });
       })
       .catch((error) => {
         if (current) message.error(errorMessage(error, "Couldn't load the service request"));
@@ -184,6 +198,25 @@ const EditServiceRequestPage = () => {
     }));
   };
 
+  const { data: documents } = useClientDocuments(formData.user_id);
+  const parent = pickedParent(documents, standing ?? {});
+  const parentName = parent?.kind === "estimate" ? "Estimate" : "Quote";
+  const note = (() => {
+    if (standing?.joined && parent) {
+      return {
+        type: "info",
+        title:
+          parent.kind === "estimate"
+            ? `Its lines are in estimate ${parent.row.title}. Saving changes them there, and the estimate goes to the client again for a new signature.`
+            : `Its lines are in quote ${parent.row.title}. Saving changes them there, and the quote goes to the client again (a draft quote just takes the change).`,
+      };
+    }
+    const base = savingNote(standing?.status);
+    return parent?.kind === "quote"
+      ? { ...base, title: `Made for quote ${parent.row.title}, which was paid, so it went to the client on its own. ${base.title}` }
+      : base;
+  })();
+
   const handleSubmit = async () => {
     if (
       !formData.reference_type ||
@@ -236,8 +269,8 @@ const EditServiceRequestPage = () => {
         })),
       };
 
-      await updateServiceRequest(id, payload);
-      message.success("Service request saved; a new copy went to the client for signature");
+      const res = await updateServiceRequest(id, payload);
+      message.success(res.data?.message || "Service request saved; a new copy went to the client for signature");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't save the service request"));
@@ -388,6 +421,25 @@ const EditServiceRequestPage = () => {
   return (
     <Spin spinning={isLoading}>
       <div className="service-request-doc">
+        {standing && (
+          <Alert
+            type={note.type}
+            showIcon
+            className="service-request-doc__standing"
+            title={
+              <>
+                <StatusTag code={standing.status} /> {note.title}
+              </>
+            }
+            action={
+              parent && (
+                <Button size="small" onClick={() => navigate(EDIT_DOCUMENT_PATHS[parent.kind](parent.row.id))}>
+                  Open the {parentName}
+                </Button>
+              )
+            }
+          />
+        )}
         <div className="service-request-doc__brand">
           <div className="service-request-doc__header">
             <img
@@ -559,7 +611,7 @@ const EditServiceRequestPage = () => {
             onClick={handleSubmit}
             loading={isLoading}
           >
-            Send PDF via Email
+            {standing?.joined && parent ? `Save to the ${parentName}` : "Save and Send a New Copy"}
           </Button>
         </div>
       </div>

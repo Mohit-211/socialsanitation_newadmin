@@ -1,4 +1,4 @@
-import { Button, Input, Modal, Space, Table, message } from "antd";
+import { Button, Input, Modal, Select, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
 import { FileCheck, FileText, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -8,6 +8,7 @@ import StatusTag from "@/components/StatusTag";
 import { deleteEstimate, listEstimates } from "@/services/api/estimateApi";
 import { errorMessage } from "@/services/apiResult";
 import { usePagedList } from "@/hooks/usePagedList";
+import { SIGNING_STATUS_OPTIONS } from "@/utils/signing";
 import { PERMISSION, useCan } from "@/lib/session";
 import { formatDate } from "@/utils/datetime";
 
@@ -84,6 +85,15 @@ const EstimatesPage = () => {
         subtitle="Estimates sent to clients for signature"
         actions={
           <>
+            <Select
+              size="large"
+              allowClear
+              placeholder="Any status"
+              style={{ width: 200 }}
+              options={SIGNING_STATUS_OPTIONS}
+              value={list.filters.status}
+              onChange={(value) => list.setFilter("status", value)}
+            />
             <Input
               allowClear
               size="large"

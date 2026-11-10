@@ -74,3 +74,21 @@
     display: none;
   }
 }
+
+// A line a service request added
+.price-lines__from-request {
+  color: var(--color-primary-strong);
+}
+
+// The estimate's next steps: its contract and service requests
+.estimate-next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.estimate-next__requests {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}

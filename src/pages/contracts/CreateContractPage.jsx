@@ -14,14 +14,16 @@ import { contractFieldsFor } from "./contractFields";
 // already chosen and saving goes back there.
 const CreateContractPage = () => {
   const navigate = useNavigate();
-  const { clientId, fromClientPage, returnPath, backLabel } = useClientFromQuery("contracts", "/contract-agreement");
+  const { clientId, fromClientPage, returnPath, backLabel, params } = useClientFromQuery("contracts", "/contract-agreement");
+  // Opened from an estimate (step 7 of the client flow), the contract starts from it.
+  const estimateId = Number(params.get("estimateId")) || undefined;
   const { data: clients, loading } = useClientPicks();
   const preselected = clients.find((client) => client.id === clientId);
 
   const submit = async (contract) => {
     try {
-      await createContract(contract);
-      message.success("Contract made and sent to the client for signature");
+      const res = await createContract(contract);
+      message.success(res.data?.message || "Contract made and sent to the client for signature");
       navigate(returnPath);
     } catch (error) {
       message.error(errorMessage(error, "Couldn't make the contract"));
@@ -49,7 +51,12 @@ const CreateContractPage = () => {
           isNew
           clients={clients}
           lockClient={fromClientPage && Boolean(preselected)}
-          initialValues={{ user_id: preselected?.id, contract_date: dayjs(), ...contractFieldsFor(preselected) }}
+          initialValues={{
+            user_id: preselected?.id,
+            estimate_id: preselected ? estimateId : undefined,
+            contract_date: dayjs(),
+            ...contractFieldsFor(preselected),
+          }}
           submitLabel="Make the Contract and Send It for Signature"
           onSubmit={submit}
         />

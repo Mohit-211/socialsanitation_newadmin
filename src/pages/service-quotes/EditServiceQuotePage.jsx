@@ -15,8 +15,8 @@ import {
   Select,
   Popconfirm,
 } from "antd";
-import { DatePicker } from "antd";
-import { ArrowLeft } from "lucide-react";
+import { DatePicker, Tooltip } from "antd";
+import { ArrowLeft, FilePlus2 } from "lucide-react";
 import SignatureField from "@/components/SignatureField";
 import "./EditServiceQuotePage.scss";
 import { COMPANY_LOGO_URL } from "@/config/brand";
@@ -85,6 +85,8 @@ const EditServiceQuotePage = () => {
               hour: item.hour ?? "",
               unit_price: item.unit_price,
               amount: item.amount,
+              // A line a service request brought goes back as it came (step 6).
+              ...(item.service_request_id ? { service_request_id: item.service_request_id } : {}),
             })) || [],
         });
         setUserId(quote.user_id);
@@ -281,6 +283,13 @@ const EditServiceQuotePage = () => {
             placeholder="Or type description"
             style={{ width: "50%" }}
             value={record.description}
+            suffix={
+              record.service_request_id ? (
+                <Tooltip title="Added by a service request. Editing the request changes this line; deleting it takes the line out.">
+                  <FilePlus2 size={14} className="quote-line__from-request" aria-label="From a service request" />
+                </Tooltip>
+              ) : undefined
+            }
             onChange={(e) =>
               handleItemChange(index, "description", e.target.value)
             }
