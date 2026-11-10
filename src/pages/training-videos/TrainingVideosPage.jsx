@@ -3,6 +3,7 @@ import { Button, Table, Modal, Space, message } from "antd";
 import { useNavigate } from "react-router";
 import { deleteVideo, listVideos } from "@/services/api/trainingVideoApi";
 import { errorMessage } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 import { formatDateTime } from "@/utils/datetime";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -10,6 +11,8 @@ import IconAction from "@/components/IconAction";
 
 const TrainingVideosPage = () => {
 	const navigate = useNavigate();
+	// Deleting is Super Admin only (records.delete); others don't see it.
+	const canDelete = useCan(PERMISSION.DELETE_RECORDS);
 	const [data, setData] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -66,12 +69,14 @@ const TrainingVideosPage = () => {
 						title="Edit Video"
 						onClick={(event) => navigateToEdit(event, record.id)}
 					/>
-					<IconAction
-						icon={Trash2}
-						title="Delete Video"
-						danger
-						onClick={() => handleDelete([record.id])}
-					/>
+					{canDelete && (
+						<IconAction
+							icon={Trash2}
+							title="Delete Video"
+							danger
+							onClick={() => handleDelete([record.id])}
+						/>
+					)}
 				</Space>
 			),
 		},
@@ -143,7 +148,7 @@ const TrainingVideosPage = () => {
 				subtitle="View and manage training videos"
 				actions={
 					<>
-						{selectedRowKeys.length > 0 && (
+						{canDelete && selectedRowKeys.length > 0 && (
 							<Button
 								type="primary"
 								danger
@@ -174,7 +179,7 @@ const TrainingVideosPage = () => {
 				pagination={tableParams.pagination}
 				loading={loading}
 				onChange={handleTableChange}
-				rowSelection={rowSelection}
+				rowSelection={canDelete ? rowSelection : undefined}
 				bordered
 				size="middle"
 			/>

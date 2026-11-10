@@ -27,6 +27,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { PERMISSION, useCan } from "@/lib/session";
 import IconAction from "@/components/IconAction";
 import { createInspection, deleteInspection, listClientInspections } from "@/services/api/inspectionApi";
 import { listEmployeeNames } from "@/services/api/employeeApi";
@@ -100,6 +101,8 @@ const StatCard = ({ icon, label, value, tone }) => (
 const ClientInspectionsPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  // Deleting is Super Admin only (records.delete); others don't see it.
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const location = useLocation();
 
   const [loading, setLoading] = useState(true);
@@ -359,14 +362,16 @@ const ClientInspectionsPage = () => {
                     )}
                   </div>
 
-                  <IconAction
-                    icon={Trash2}
-                    title="Delete Inspection"
-                    danger
-                    iconSize={14}
-                    className="inspection-card__delete"
-                    onClick={(event) => handleDeleteInspection(event, item)}
-                  />
+                  {canDelete && (
+                    <IconAction
+                      icon={Trash2}
+                      title="Delete Inspection"
+                      danger
+                      iconSize={14}
+                      className="inspection-card__delete"
+                      onClick={(event) => handleDeleteInspection(event, item)}
+                    />
+                  )}
                 </div>
 
                 <h3 className="inspection-card__title">{item.name}</h3>

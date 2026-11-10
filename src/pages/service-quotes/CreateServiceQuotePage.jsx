@@ -17,6 +17,7 @@ import { getEstimate, getEstimateDraft, listEstimates } from "@/services/api/est
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { listServiceNames } from "@/services/api/serviceApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 import { fromApiDate, toApiDate } from "@/utils/datetime";
 import { clientPagePath } from "@/pages/clients/clientFlow";
 import {
@@ -102,6 +103,8 @@ const CreateServiceQuotePage = () => {
 
   const [drafts, setDrafts] = useState([]);
   const [selectedDraftId, setSelectedDraftId] = useState(null);
+  // Deleting a draft is Super Admin only (records.delete); others don't see it.
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const [isDirty, setIsDirty] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
@@ -815,7 +818,7 @@ const CreateServiceQuotePage = () => {
               </Select>
             )}
 
-            {quoteStatus === "DRAFT" && selectedDraftId && (
+            {canDelete && quoteStatus === "DRAFT" && selectedDraftId && (
               <Button danger type="link" onClick={handleDeleteDraft}>
                 Delete Draft
               </Button>

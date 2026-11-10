@@ -1,6 +1,4 @@
-/* Full-page status screens: access denied (UnauthorizedPage) and the
-   calendar authorization result pages (auth/AuthorizationSuccessPage and
-   auth/AuthorizationFailurePage import this file too). */
+/* Full-page status screens, such as access denied (UnauthorizedPage). */
 
 .status-page {
   display: flex;

@@ -5,11 +5,14 @@ import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { formatDate } from "@/utils/datetime";
 import { deleteProduct, listProducts } from "@/services/api/productApi";
 import { errorMessage } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 
 const ProductsPage = () => {
 	const navigate = useNavigate();
+	// Deleting is Super Admin only (records.delete); others don't see it.
+	const canDelete = useCan(PERMISSION.DELETE_RECORDS);
 	const [data, setData] = useState([]);
 	const [userBackupData, setUserBackupData] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -84,12 +87,14 @@ const ProductsPage = () => {
 						onClick={() => navigate(`/editProduct/${record.id}`)}
 					/>
 
-					<IconAction
-						icon={Trash2}
-						title="Delete Product"
-						danger
-						onClick={() => handleDelete([record.id])}
-					/>
+					{canDelete && (
+						<IconAction
+							icon={Trash2}
+							title="Delete Product"
+							danger
+							onClick={() => handleDelete([record.id])}
+						/>
+					)}
 				</Space>
 			),
 		},
@@ -228,7 +233,7 @@ const ProductsPage = () => {
 							onChange={(e) => onSearch(e.target.value)}
 						/>
 
-						{selectedRowKeys.length > 0 && (
+						{canDelete && selectedRowKeys.length > 0 && (
 							<Button
 								type="primary"
 								danger
@@ -259,7 +264,7 @@ const ProductsPage = () => {
 				pagination={tableParams.pagination}
 				loading={loading}
 				onChange={handleTableChange}
-				rowSelection={rowSelection}
+				rowSelection={canDelete ? rowSelection : undefined}
 				bordered
 				size="middle"
 			/>

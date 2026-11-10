@@ -27,6 +27,7 @@ import {
   deleteEquipment,
 } from "@/services/api/equipmentApi";
 import PageHeader from "@/components/PageHeader";
+import { PERMISSION, useCan } from "@/lib/session";
 
 const { Text } = AntTypography;
 const { Dragger } = Upload;
@@ -59,6 +60,8 @@ const parseEquipmentCSV = (csvText) => {
 };
 
 const EquipmentPage = () => {
+  // Deleting is Super Admin only (records.delete); others don't see it.
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const [equipments, setEquipments] = useState([]);
   const [filteredEquipments, setFilteredEquipments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -266,17 +269,19 @@ const EquipmentPage = () => {
           <Button type="link" onClick={() => openEditModal(record)}>
             Edit
           </Button>
-          <Popconfirm
-            title="Delete equipment"
-            description="Are you sure you want to delete this equipment?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="link" danger>
-              Delete
-            </Button>
-          </Popconfirm>
+          {canDelete && (
+            <Popconfirm
+              title="Delete equipment"
+              description="Are you sure you want to delete this equipment?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button type="link" danger>
+                Delete
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
