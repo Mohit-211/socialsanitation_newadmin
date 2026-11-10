@@ -1,35 +1,17 @@
 // GenerateEstimate.scss
+// Document-style editor shared by GenerateEstimate and UpdateServiceEstimate.
+// Colors, fonts, radii and shadows come from the design tokens in
+// src/index.css; antd components (tabs, inputs, buttons) take their colors
+// from the antd theme.
 
-// ─── Tokens ───────────────────────────────────────────────
-$bg-page:       #f5f6fa;
-$bg-card:       #ffffff;
-$bg-section:    #fafbfc;
-
-$border:        #e8eaef;
-$border-focus:  #3b82f6;
-
-$text-primary:  #1a1a2e;
-$text-secondary:#6b7280;
-$text-muted:    #adb5bd;
-
-$blue:          #3b82f6;
-$blue-dark:     #1d4ed8;
-$blue-light:    #eff6ff;
-
-$radius-lg:     16px;
-$radius-md:     12px;
-$radius-sm:     8px;
-
-$shadow-card:   0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.04);
-$shadow-hover:  0 4px 20px rgba(0,0,0,.12);
-$transition:    all 0.18s ease;
+$transition: all 0.18s ease;
 
 // ─── Page wrapper ─────────────────────────────────────────
 .ge-wrapper {
   padding: 28px;
-  background: $bg-page;
+  background: var(--color-bg-layout);
   min-height: 100vh;
-  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 
 // ─── Page header ─────────────────────────────────────────
@@ -37,84 +19,74 @@ $transition:    all 0.18s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: $bg-card;
-  padding: 20px 28px;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-card;
-  margin-bottom: 24px;
-
-  &__left {}
+  background: var(--color-bg);
+  padding: var(--space-5) 28px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-6);
 
   &__title {
-    margin: 0 0 4px;
-    font-size: 20px;
-    font-weight: 700;
-    color: $text-primary;
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
     letter-spacing: -0.3px;
   }
 
   &__sub {
     margin: 0;
-    font-size: 13px;
-    color: $text-secondary;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
   }
 }
 
 .ge-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 9px 18px;
-  border: 1.5px solid $border;
-  border-radius: $radius-sm;
-  background: $bg-card;
-  color: $text-secondary;
-  font-size: 13px;
-  font-weight: 500;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: $transition;
   white-space: nowrap;
 
   &:hover {
-    border-color: $blue;
-    color: $blue;
-    background: $blue-light;
+    border-color: var(--color-primary-border);
+    color: var(--color-primary-strong);
+    background: var(--color-primary-subtle);
   }
 }
 
 // ─── Tabs wrapper ─────────────────────────────────────────
+// Tab and ink-bar colors come from the antd theme; only spacing is set here.
 .ge-tabs-wrapper {
-  background: $bg-card;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-card;
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
   padding: 0 28px 28px;
 
   .ge-tabs {
-    // Override Ant Design tab nav
     .ant-tabs-nav {
-      margin-bottom: 24px;
-      padding-top: 4px;
-
-      &::before {
-        border-bottom-color: $border;
-      }
+      margin-bottom: var(--space-6);
+      padding-top: var(--space-1);
     }
 
     .ant-tabs-tab {
       padding: 14px 6px;
-      font-size: 14px;
-      color: $text-secondary;
-      transition: $transition;
-
-      &:hover {
-        color: $blue;
-      }
+      font-size: var(--text-base);
 
       &.ant-tabs-tab-active .ant-tabs-tab-btn {
-        color: $blue;
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
       }
     }
 
     .ant-tabs-ink-bar {
-      background: $blue;
       height: 3px;
       border-radius: 2px;
     }
@@ -125,24 +97,24 @@ $transition:    all 0.18s ease;
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: var(--text-base);
 
   &__icon {
-    font-size: 16px;
+    display: inline-flex;
     line-height: 1;
   }
 }
 
 // ─── Form sections ────────────────────────────────────────
 .ge-section {
-  margin-bottom: 24px;
-  border: 1.5px solid $border;
-  border-radius: $radius-md;
+  margin-bottom: var(--space-6);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: box-shadow 0.2s;
 
   &:hover {
-    box-shadow: $shadow-hover;
+    box-shadow: var(--shadow-md);
   }
 
   // Section label bar
@@ -150,12 +122,12 @@ $transition:    all 0.18s ease;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 20px;
-    background: $bg-section;
-    border-bottom: 1.5px solid $border;
-    font-size: 13px;
-    font-weight: 600;
-    color: $text-primary;
+    padding: var(--space-3) var(--space-5);
+    background: var(--color-bg-subtle);
+    border-bottom: 1.5px solid var(--color-border);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
     letter-spacing: 0.01em;
   }
 
@@ -165,73 +137,48 @@ $transition:    all 0.18s ease;
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: 6px;
-    background: $blue;
-    color: #fff;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     flex-shrink: 0;
   }
 
   &__page {
     margin-left: auto;
     font-size: 11px;
-    color: $text-muted;
-    font-weight: 400;
-    background: #f0f0f0;
-    padding: 2px 8px;
-    border-radius: 20px;
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-regular);
+    background: var(--color-bg-muted);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-full);
   }
 
   &__body {
-    padding: 20px 20px 4px;
-    background: $bg-card;
+    padding: var(--space-5) var(--space-5) var(--space-1);
+    background: var(--color-bg);
 
-    // Ant Design form overrides inside sections
     .ant-form-item-label > label {
-      font-size: 13px;
-      font-weight: 500;
-      color: $text-secondary;
-    }
-
-    .ant-input,
-    .ant-picker,
-    .ant-select-selector {
-      border-radius: $radius-sm !important;
-      border-color: $border !important;
-      font-size: 13.5px;
-      transition: $transition;
-
-      &:focus,
-      &:hover {
-        border-color: $border-focus !important;
-        box-shadow: 0 0 0 3px rgba($blue, .08) !important;
-      }
-    }
-
-    .ant-select-focused .ant-select-selector {
-      border-color: $border-focus !important;
-      box-shadow: 0 0 0 3px rgba($blue, .08) !important;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-secondary);
     }
   }
 }
 
 // ─── Submit button ────────────────────────────────────────
+// Colors come from the antd theme (primary button); only size changes here.
 .ge-submit-btn {
   height: 48px !important;
-  border-radius: $radius-sm !important;
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  background: $blue !important;
-  border-color: $blue !important;
+  font-size: var(--text-md) !important;
+  font-weight: var(--font-weight-semibold) !important;
   letter-spacing: 0.01em;
   transition: $transition;
 
-  &:hover {
-    background: $blue-dark !important;
-    border-color: $blue-dark !important;
+  &:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba($blue, .35) !important;
+    box-shadow: var(--shadow-md) !important;
   }
 
   &:active {
@@ -249,10 +196,27 @@ $transition:    all 0.18s ease;
   }
 }
 
+// "No User Scope" message (UpdateServiceEstimate)
+.ge-scope-empty {
+  text-align: center;
+  padding: 50px var(--space-5);
+
+  &__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-4);
+  }
+
+  &__text {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-5);
+  }
+}
+
 // ─── Responsive ──────────────────────────────────────────
 @media (max-width: 768px) {
   .ge-wrapper {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .ge-header {
@@ -262,6 +226,6 @@ $transition:    all 0.18s ease;
   }
 
   .ge-tabs-wrapper {
-    padding: 0 16px 20px;
+    padding: 0 var(--space-4) var(--space-5);
   }
 }

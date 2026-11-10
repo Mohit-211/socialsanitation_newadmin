@@ -345,7 +345,7 @@ const EditServiceRequest = () => {
     {
       title: (
         <span>
-          Frequency <span style={{ color: "red" }}>*</span>
+          Frequency <span className="required-mark">*</span>
         </span>
       ),
       dataIndex: "frequency",
@@ -423,69 +423,67 @@ const EditServiceRequest = () => {
 
   return (
     <Spin spinning={isLoading}>
-      <div className="invoice-form-container">
-        <div className="invoice-form">
-          <div className="header">
+      <div className="service-request-doc">
+        <div className="service-request-doc__brand">
+          <div className="service-request-doc__header">
             <img
               src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg"
               alt="Logo"
-              className="logo1"
+              className="service-request-doc__logo"
             />
-            <div className="quote-title">SERVICE REQUEST</div>
+            <div className="service-request-doc__title">SERVICE REQUEST</div>
           </div>
         </div>
 
-        <div className="invoice-meta-container">
-          {/* ROW — REF TYPE, REF NO, SERVICE DAYS, DUE DATE */}
-          <div className="meta-table">
-            {/* REF TYPE */}
-            <div>
-              <strong>REF TYPE:</strong>
-              <Input value={formData.reference_type} readOnly />
-            </div>
+        {/* ROW — REF TYPE, REF NO, SERVICE DAYS, DUE DATE */}
+        <div className="service-request-doc__meta">
+          {/* REF TYPE */}
+          <div>
+            <strong>REF TYPE:</strong>
+            <Input value={formData.reference_type} readOnly />
+          </div>
 
-            {/* REF NO */}
-            <div>
-              <strong>REF #:</strong>
-              <Input value={formData.ref} readOnly />
-            </div>
+          {/* REF NO */}
+          <div>
+            <strong>REF #:</strong>
+            <Input value={formData.ref} readOnly />
+          </div>
 
-            {/* SERVICE DAYS */}
-            <div>
-              <strong>
-                SERVICE DAYS <span style={{ color: "red" }}>*</span>
-              </strong>
+          {/* SERVICE DAYS */}
+          <div>
+            <strong>
+              SERVICE DAYS <span className="required-mark">*</span>
+            </strong>
 
-              <Input
-                placeholder="e.g. 2 Business Days, Same Day, Within 48 Hours"
-                value={formData.service_days}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    service_days: e.target.value,
-                  }))
-                }
-                style={{ width: "100%", marginTop: 5 }}
-              />
-            </div>
+            <Input
+              placeholder="e.g. 2 Business Days, Same Day, Within 48 Hours"
+              value={formData.service_days}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  service_days: e.target.value,
+                }))
+              }
+              style={{ width: "100%", marginTop: 5 }}
+            />
+          </div>
 
-            {/* DUE DATE */}
-            <div>
-              <strong>
-                DUE DATE <span style={{ color: "red" }}>*</span>
-              </strong>
+          {/* DUE DATE */}
+          <div>
+            <strong>
+              DUE DATE <span className="required-mark">*</span>
+            </strong>
 
-              <DatePicker
-                format="MM-DD-YYYY"
-                value={formData.dueDate}
-                onChange={onDueDateChange}
-                style={{ width: "100%", marginTop: 5 }}
-              />
-            </div>
+            <DatePicker
+              format="MM-DD-YYYY"
+              value={formData.dueDate}
+              onChange={onDueDateChange}
+              style={{ width: "100%", marginTop: 5 }}
+            />
           </div>
         </div>
 
-        <div className="address-table" style={{ marginBottom: 24 }}>
+        <div className="service-request-doc__address">
           <div>
             <strong>FROM:</strong>
             <br />
@@ -502,7 +500,7 @@ const EditServiceRequest = () => {
           </div>
           <div>
             <strong>
-              TO: <span style={{ color: "red" }}>*</span>
+              TO: <span className="required-mark">*</span>
             </strong>
             <br />
 
@@ -536,10 +534,7 @@ const EditServiceRequest = () => {
           </div>
           <div>
             <strong>TOTAL DUE:</strong>
-          <Input
-  value={formatAmount(formData.totalAmount)}
-  readOnly
-/>
+            <Input value={formatAmount(formData.totalAmount)} readOnly />
           </div>
         </div>
 
@@ -551,24 +546,22 @@ const EditServiceRequest = () => {
           columns={columns}
           pagination={false}
           footer={() => (
-            <div style={{ textAlign: "right", fontWeight: "bold" }}>
-             Total: ${formatAmount(formData.totalAmount)}
+            <div className="service-request-doc__total">
+              Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />
 
-        <div style={{ marginTop: 16, marginBottom: 16 }}>
-          <Button onClick={addItem} style={{ marginRight: 8 }}>
-            + Add Item
-          </Button>
+        <div className="service-request-doc__item-actions">
+          <Button onClick={addItem}>+ Add Item</Button>
           <Button type="primary" onClick={calculateTotal}>
             Calculate Total
           </Button>
         </div>
 
-        <div className="footer-section" style={{ marginBottom: 24 }}>
-          <div style={{ marginTop: "40px" }}>
-            Date <span style={{ color: "red" }}>*</span>:{" "}
+        <div className="service-request-doc__footer">
+          <div className="service-request-doc__date">
+            Date <span className="required-mark">*</span>:{" "}
             <DatePicker
               format="MM-DD-YYYY"
               value={formData.date}
@@ -577,18 +570,12 @@ const EditServiceRequest = () => {
               placeholder="Date"
             />
           </div>
-          <div className="signature-block" style={{ marginTop: 16 }}>
+          <div className="service-request-doc__signature">
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
 
-        <div
-          className="disclaimer"
-          style={{
-            marginTop: "60px", // ✅ increased from 0 to 60 for better spacing
-            textAlign: "justify",
-          }}
-        >
+        <div className="service-request-doc__disclaimer">
           All service requests are in addition to the monthly or weekly price.
           Total price is due at the next invoice, for all services provided in
           this document. Ten business days after the signed date, this document
@@ -602,7 +589,7 @@ const EditServiceRequest = () => {
           our representative.
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="service-request-doc__submit">
           <Button
             type="primary"
             onClick={handleSubmit}

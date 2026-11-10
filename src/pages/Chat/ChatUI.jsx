@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, Spin, Input, Avatar, Tooltip, Upload, message } from "antd";
-import {
-  ArrowLeftOutlined,
-  SmileOutlined,
-  PlusOutlined,
-  CloseCircleFilled,
-  UserOutlined,
-} from "@ant-design/icons";
+import { ArrowLeft, CircleX, Plus, Smile, User } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { ref as dbRef, onValue, push, set } from "firebase/database";
 import {
@@ -19,7 +13,8 @@ import {
 import db from "./Firebase";
 import { GetUserChatList } from "../../services/Api/ChatApi";
 import { BASE_URL_IMAGE } from "../../services/Host";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
+import "./ChatUI.scss";
 const storage = getStorage();
 const { TextArea } = Input;
 
@@ -169,58 +164,26 @@ const ChatUI = () => {
 
   return (
     <div
-      className={`chat-layout${selectedChat ? " chat-layout--open" : ""}`}
-      style={{
-        display: "flex",
-        height: "100vh",
-        gap: 20,
-        padding: 20,
-        background: "#f0f2f5",
-      }}
+      className={`chat-ui chat-layout${selectedChat ? " chat-layout--open" : ""}`}
     >
       {/* Left Panel */}
-      <div
-        className="chat-layout__list"
-        style={{
-          width: "30%",
-          background: "#fff",
-          padding: 16,
-          borderRadius: 8,
-          border: "1px solid #ddd",
-          overflowY: "auto",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Chats</h2>
-          <Button onClick={() => navigate("/")} style={{ fontWeight: 500 }}>
-            ← Back
+      <div className="chat-ui__panel chat-ui__list chat-layout__list">
+        <div className="chat-ui__list-header">
+          <h2 className="chat-ui__title">Chats</h2>
+          <Button icon={<ArrowLeft size={16} />} onClick={() => navigate("/")}>
+            Back
           </Button>
         </div>
 
         {chatListLoading ? (
           <Spin />
         ) : chatListData.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 20px",
-              color: "#888",
-            }}
-          >
-            <UserOutlined style={{ fontSize: 32, marginBottom: 10 }} />
+          <div className="chat-ui__empty">
+            <User size={32} className="chat-ui__empty-icon" />
 
-            <div style={{ fontSize: 15, fontWeight: 500 }}>
-              No users assigned
-            </div>
+            <div className="chat-ui__empty-title">No users assigned</div>
 
-            <div style={{ fontSize: 13, marginTop: 5 }}>
+            <div className="chat-ui__empty-text">
               Users assigned to you will appear here.
             </div>
           </div>
@@ -228,31 +191,26 @@ const ChatUI = () => {
           chatListData.map((chat) => (
             <Card
               key={chat.id}
-              style={{
-                cursor: "pointer",
-                backgroundColor:
-                  selectedChat?.id === chat.id ? "#e6f7ff" : "#fff",
-                borderColor:
-                  selectedChat?.id === chat.id ? "#1890ff" : "#f0f0f0",
-                marginBottom: 10,
-              }}
+              className={`chat-ui__item${
+                selectedChat?.id === chat.id ? " chat-ui__item--active" : ""
+              }`}
               onClick={() => setSelectedChat(chat)}
-              bodyStyle={{ padding: 12 }}
+              styles={{ body: { padding: "var(--space-3)" } }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="chat-ui__item-row">
                 <Avatar
                   src={
                     chat.user_attachments?.[0]?.file_name
                       ? `${BASE_URL_IMAGE}${chat.user_attachments[0].file_name}`
                       : undefined
                   }
-                  icon={<UserOutlined />}
+                  icon={<User size={18} />}
                 />
                 <div>
-                  <div style={{ fontWeight: 500 }}>
+                  <div className="chat-ui__item-name">
                     {chat.user_profile?.name}
                   </div>
-                  <div style={{ fontSize: 12, color: "#888" }}>
+                  <div className="chat-ui__item-preview">
                     {chat.displayMessage}
                   </div>
                 </div>
@@ -263,51 +221,20 @@ const ChatUI = () => {
       </div>
 
       {/* Right Panel */}
-      <div
-        className="chat-layout__conversation"
-        style={{
-          width: "70%",
-          background: "#fff",
-          borderRadius: 8,
-          border: "1px solid #ddd",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <div className="chat-ui__panel chat-ui__conversation chat-layout__conversation">
         {!selectedChat ? (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#888",
-              fontSize: "1.2rem",
-              fontWeight: 500,
-            }}
-          >
+          <div className="chat-ui__placeholder">
             Select a user to start chatting.
           </div>
         ) : (
           <>
             {/* Header */}
-            <div
-              style={{
-                padding: "16px 20px",
-                borderBottom: "1px solid #eee",
-                display: "flex",
-                alignItems: "center",
-                position: "sticky",
-                top: 0,
-                backgroundColor: "#fff",
-                zIndex: 10,
-              }}
-            >
+            <div className="chat-ui__header">
               <Button
                 className="chat-layout__back"
                 type="text"
                 aria-label="Back to chats"
-                icon={<ArrowLeftOutlined />}
+                icon={<ArrowLeft size={16} />}
                 onClick={() => setSelectedChat(null)}
               />
               <Avatar
@@ -317,70 +244,38 @@ const ChatUI = () => {
                     ? `${BASE_URL_IMAGE}${selectedChat.user_attachments[0].file_name}`
                     : undefined
                 }
-                icon={<UserOutlined />}
-                style={{ marginRight: 12 }}
+                icon={<User size={20} />}
+                className="chat-ui__header-avatar"
               />
-              <span style={{ fontWeight: 600, fontSize: 18 }}>
+              <span className="chat-ui__header-name">
                 {selectedChat.user_profile?.name}
               </span>
             </div>
 
             {/* Message Area */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "20px",
-                background: "#fafafa",
-              }}
-            >
+            <div className="chat-ui__messages">
               {messages.map((msg) => {
                 const isSender = msg.source === "SENDER";
                 return (
                   <div
                     key={msg.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: isSender ? "flex-end" : "flex-start",
-                      marginBottom: 16,
-                    }}
+                    className={`chat-ui__row${isSender ? " chat-ui__row--mine" : ""}`}
                   >
-                    <div
-                      style={{
-                        background: isSender ? "#DCF8C6" : "#fff",
-                        border: "1px solid #eee",
-                        padding: "10px 14px",
-                        borderRadius: 12,
-                        maxWidth: "70%",
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                      }}
-                    >
-                      {/* ✅ Render all images if available */}
+                    <div className="chat-ui__bubble">
+                      {/* Render all images if available */}
                       {Array.isArray(msg.imageUrls) &&
                         msg.imageUrls.map((url, idx) => (
                           <img
                             key={idx}
                             src={url}
                             alt={`chat-img-${idx}`}
-                            style={{
-                              maxWidth: 200,
-                              borderRadius: 8,
-                              marginBottom: 6,
-                              display: "block",
-                            }}
+                            className="chat-ui__image"
                           />
                         ))}
 
-                      {/* ✅ Render message text */}
-                      <div style={{ fontSize: 14 }}>{msg.message}</div>
-                      <div
-                        style={{
-                          fontSize: 10,
-                          textAlign: "right",
-                          color: "#999",
-                          marginTop: 6,
-                        }}
-                      >
+                      {/* Render message text */}
+                      <div className="chat-ui__text">{msg.message}</div>
+                      <div className="chat-ui__time">
                         {formatTime(msg.timestamp)}
                       </div>
                     </div>
@@ -391,7 +286,7 @@ const ChatUI = () => {
             </div>
 
             {/* Input Area */}
-            <div style={{ display: "flex", gap: 8, padding: "10px" }}>
+            <div className="chat-ui__composer">
               <Upload
                 multiple
                 accept="image/*"
@@ -400,85 +295,39 @@ const ChatUI = () => {
               >
                 <Tooltip title="Attach Images">
                   <Button
-                    icon={<PlusOutlined />}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: "50%",
-                      padding: 0,
-                      background: "rgb(240, 240, 240)",
-                      border: "none",
-                    }}
+                    shape="circle"
+                    color="default"
+                    variant="filled"
+                    icon={<Plus size={16} />}
                   />
                 </Tooltip>
               </Upload>
 
               <Tooltip title="Add Emoji">
                 <Button
-                  icon={<SmileOutlined />}
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: "50%",
-                    padding: 0,
-                    background: "rgb(240, 240, 240)",
-                    border: "none",
-                    alignSelf: "center",
-                  }}
+                  shape="circle"
+                  color="default"
+                  variant="filled"
+                  icon={<Smile size={16} />}
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 />
               </Tooltip>
 
               {/* Right-side input and preview */}
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  border: "1px solid #d9d9d9",
-                  borderRadius: 8,
-                  padding: 8,
-                  backgroundColor: "#fff",
-                }}
-              >
+              <div className="chat-ui__input-box">
                 {/* Image preview shown ABOVE TextArea */}
                 {selectedImages.length > 0 && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 10,
-                      marginBottom: 10,
-                    }}
-                  >
+                  <div className="chat-ui__previews">
                     {selectedImages.map((file, index) => (
                       <div
                         key={`${file.name}_${index}`}
-                        style={{ position: "relative" }}
+                        className="chat-ui__preview"
                       >
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="preview"
-                          style={{
-                            width: 60,
-                            height: 60,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid #ccc",
-                          }}
-                        />
-                        <CloseCircleFilled
+                        <img src={URL.createObjectURL(file)} alt="preview" />
+                        <CircleX
+                          size={16}
+                          className="chat-ui__preview-remove"
                           onClick={() => removeImage(index)}
-                          style={{
-                            position: "absolute",
-                            top: -6,
-                            right: -6,
-                            color: "#ff4d4f",
-                            cursor: "pointer",
-                            fontSize: 14,
-                            background: "#fff",
-                            borderRadius: "50%",
-                          }}
                         />
                       </div>
                     ))}
@@ -488,6 +337,7 @@ const ChatUI = () => {
                 {/* Textarea */}
                 <TextArea
                   id="chat-message-textarea"
+                  className="chat-ui__textarea"
                   rows={selectedImages.length > 0 ? 4 : 2}
                   placeholder="Type a message"
                   value={newMessage}
@@ -500,24 +350,12 @@ const ChatUI = () => {
                       }
                     }
                   }}
-                  bordered={false} // ❗️ This removes the border
-                  style={{
-                    resize: "none",
-                    boxShadow: "none", // ❗️ Removes the inner box shadow
-                    outline: "none", // ❗️ Removes focus outline
-                  }}
+                  variant="borderless"
                 />
 
                 {/* Emoji Picker */}
                 {showEmojiPicker && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "100%",
-                      left: 0,
-                      zIndex: 10,
-                    }}
-                  >
+                  <div className="chat-ui__emoji">
                     <EmojiPicker
                       onEmojiClick={(emojiData) => {
                         setNewMessage((prev) => prev + emojiData.emoji);
@@ -535,14 +373,6 @@ const ChatUI = () => {
               </div>
 
               <Button
-                style={{
-                  alignSelf: "center",
-                  backgroundColor: "#f0f0f0",
-                  color: "#333",
-                  border: "none",
-                  borderRadius: 6,
-                  padding: "6px 16px",
-                }}
                 type="primary"
                 onClick={handleSend}
                 loading={sending}

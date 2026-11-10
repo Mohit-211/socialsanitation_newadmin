@@ -1,16 +1,18 @@
 import { Modal, Tag, Divider, Button } from "antd";
 import dayjs from "@/lib/dayjs";
+import "./InvoiceViewModal.scss";
 
+// Status colors are antd Tag presets, themed by the app's antd theme.
 const jobStatusConfig = {
-  NOT_BOOKED: { label: "NOT BOOKED", color: "gold" },
-  BOOKED: { label: "BOOKED", color: "blue" },
-  EXPIRED: { label: "EXPIRED", color: "red" },
+  NOT_BOOKED: { label: "NOT BOOKED", color: "warning" },
+  BOOKED: { label: "BOOKED", color: "processing" },
+  EXPIRED: { label: "EXPIRED", color: "error" },
 };
 
 const paymentStatusConfig = {
-  NOT_PAID: { label: "NOT PAID", color: "orange" },
-  PAID: { label: "PAID", color: "green" },
-  CASH_PAID: { label: "PAID (CASH)", color: "green" },
+  NOT_PAID: { label: "NOT PAID", color: "warning" },
+  PAID: { label: "PAID", color: "success" },
+  CASH_PAID: { label: "PAID (CASH)", color: "success" },
 };
 
 const InvoiceViewModal = ({ invoice, onClose }) => {
@@ -23,24 +25,9 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       title={null}
     >
       {/* Header */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          padding: 20,
-          borderRadius: 12,
-          color: "#fff",
-          marginBottom: 20,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ display: "flex", gap: 8 }}>
+      <div className="invoice-view__hero">
+        <div className="invoice-view__hero-top">
+          <div className="invoice-view__tags">
             <Tag color={jobStatusConfig[invoice.job_status]?.color}>
               {jobStatusConfig[invoice.job_status]?.label}
             </Tag>
@@ -49,50 +36,33 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
             </Tag>
           </div>
 
-          <Tag
-            style={{
-              background: "rgba(255,255,255,0.25)",
-              border: "1px solid rgba(255,255,255,0.4)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 16,
-            }}
-          >
+          <Tag className="invoice-view__amount">
             ${Number(invoice.total_due).toFixed(2)}
           </Tag>
         </div>
 
-        <div style={{ fontSize: 13, opacity: 0.9 }}>QUOTE REFERENCE</div>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>
-          {invoice.ref_no}
-        </div>
+        <div className="invoice-view__ref-label">QUOTE REFERENCE</div>
+        <div className="invoice-view__ref">{invoice.ref_no}</div>
       </div>
 
       {/* Client Info */}
-      <div
-        style={{
-          background: "#f8f9fa",
-          padding: 14,
-          borderRadius: 8,
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ fontWeight: 600 }}>
+      <div className="invoice-view__client">
+        <div className="invoice-view__client-name">
           {invoice.payment_user?.user_profile?.name}
         </div>
-        <div style={{ fontSize: 13, color: "#6c757d" }}>
+        <div className="invoice-view__client-email">
           {invoice.payment_user?.email}
         </div>
       </div>
 
       {/* Dates & Address */}
-      <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+      <div className="invoice-view__info">
         <InfoRow label="Service Date">
           {dayjs(invoice.service_dates).format("MM/DD/YYYY") || "N/A"}
         </InfoRow>
 
         <InfoRow label="Due Date">
-         {dayjs(invoice.due_date).format("MM/DD/YYYY") || "N/A"  }
+          {dayjs(invoice.due_date).format("MM/DD/YYYY") || "N/A"}
         </InfoRow>
 
         <InfoRow label="Expiry Date">
@@ -107,34 +77,15 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       <Divider />
 
       {/* Items */}
-      <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
-        ITEMS
-      </h4>
+      <h4 className="invoice-view__items-title">ITEMS</h4>
 
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="invoice-view__items">
         {invoice.service_quote_item?.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              background: "#f8f9fa",
-              padding: "10px 12px",
-              borderRadius: 6,
-              borderLeft: "3px solid #667eea",
-            }}
-          >
-            <div style={{ fontWeight: 500 }}>
-              {item.description}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 13,
-                color: "#6c757d",
-              }}
-            >
+          <div key={item.id} className="invoice-view__item">
+            <div className="invoice-view__item-name">{item.description}</div>
+            <div className="invoice-view__item-meta">
               <span>{item.frequency || "N/A"}</span>
-              <span style={{ fontWeight: 600, color: "#667eea" }}>
+              <span className="invoice-view__item-amount">
                 ${Number(item.amount).toFixed(2)}
               </span>
             </div>
@@ -143,32 +94,14 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
       </div>
 
       {/* Payment Link */}
-      <div style={{ marginTop: 20 }}>
+      <div className="invoice-view__payment">
         {invoice.payment_status === "PAID" ||
         invoice.payment_status === "CASH_PAID" ? (
-          <div
-            style={{
-              background: "#d4edda",
-              color: "#155724",
-              padding: 12,
-              borderRadius: 8,
-              textAlign: "center",
-              fontWeight: 600,
-            }}
-          >
+          <div className="invoice-view__notice invoice-view__notice--success">
             ✅ Payment Completed
           </div>
         ) : invoice.payment_status === "EXPIRED" ? (
-          <div
-            style={{
-              background: "#f8d7da",
-              color: "#721c24",
-              padding: 12,
-              borderRadius: 8,
-              textAlign: "center",
-              fontWeight: 600,
-            }}
-          >
+          <div className="invoice-view__notice invoice-view__notice--error">
             ⏰ Invoice Expired
           </div>
         ) : invoice.square_payment_url ? (
@@ -181,15 +114,7 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
             💳 View Payment Link
           </Button>
         ) : (
-          <div
-            style={{
-              background: "#fff3cd",
-              color: "#856404",
-              padding: 12,
-              borderRadius: 8,
-              textAlign: "center",
-            }}
-          >
+          <div className="invoice-view__notice invoice-view__notice--warning">
             ⚠️ Payment Link Not Available
           </div>
         )}
@@ -199,18 +124,9 @@ const InvoiceViewModal = ({ invoice, onClose }) => {
 };
 
 const InfoRow = ({ label, children }) => (
-  <div style={{ display: "flex" }}>
-    <div
-      style={{
-        minWidth: 120,
-        fontSize: 13,
-        color: "#6c757d",
-        fontWeight: 500,
-      }}
-    >
-      {label}:
-    </div>
-    <div style={{ fontSize: 14, fontWeight: 500 }}>{children}</div>
+  <div className="invoice-view__info-row">
+    <div className="invoice-view__info-label">{label}:</div>
+    <div className="invoice-view__info-value">{children}</div>
   </div>
 );
 

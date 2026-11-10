@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
-import { Table, Button, Card, Row, Col, Statistic, Typography } from "antd";
-import {
-	LeftOutlined,
-	RightOutlined,
-	TeamOutlined,
-	FileDoneOutlined,
-} from "@ant-design/icons";
+import { Table, Button, Card, Row, Col, Statistic } from "antd";
+import { ChevronLeft, ChevronRight, FileCheck, Users } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { GetDayOverview } from "../../services/Api/BookingApi";
-import { saveAs } from "file-saver";
-import ExcelJS from "exceljs";
+import PageHeader from "../../components/PageHeader";
+import { excelStyles, saveXlsx } from "../../utils/excel";
+import "./WeeklyOverview.scss";
 
-const { Title } = Typography;
+// Excel export columns (title + width in characters)
+const EXPORT_COLUMNS = [
+	{ title: "Booking Name", width: 25 },
+	{ title: "Client", width: 20 },
+	{ title: "Employee Count", width: 15 },
+	{ title: "Address", width: 30 },
+	{ title: "Employee Name", width: 20 },
+	{ title: "Clock In", width: 15 },
+	{ title: "Clock Out", width: 15 },
+	{ title: "Breaks", width: 10 },
+	{ title: "Break Timings", width: 25 },
+];
 
 const DayOverview = () => {
 	const navigate = useNavigate();
@@ -110,79 +117,61 @@ const DayOverview = () => {
 const downloadExcel = async () => {
     setLoading(true);
     try {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Weekly Overview");
-        
-        // 1. DEFINE STYLES 🎨
+        // 1. DEFINE STYLES 🎨 (theme colors from excelStyles())
+        const styles = excelStyles();
+
+        // Date header: merged across all columns, medium top/bottom border
         const DATE_HEADER_STYLE = {
-            font: { bold: true, size: 16, color: { argb: 'FFFFFF' } }, // White text
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '4CAF50' } }, // Green background
-            alignment: { vertical: 'middle', horizontal: 'center' },
-            border: { top: { style: 'medium' }, bottom: { style: 'medium' } }
+            ...styles.header,
+            fontSize: 16,
+            topBorderStyle: "medium",
+            bottomBorderStyle: "medium",
         };
 
         const TABLE_HEADER_STYLE = {
-            font: { bold: true, size: 11, color: { argb: '000000' } }, // Black text
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E0E0' } }, // Light Gray background
-            alignment: { vertical: 'middle', horizontal: 'center' },
-            border: {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            }
+            ...styles.subheader,
+            fontSize: 11,
+            align: "center",
+            alignVertical: "center",
         };
 
         const BOOKING_SUMMARY_STYLE = {
-            font: { bold: true, size: 11 },
-            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F5F5F5' } }, // Very Light Gray background
-            border: {
-                top: { style: 'medium' }, // Thicker line above the booking summary
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            }
+            ...styles.border,
+            ...styles.muted,
+            fontWeight: "bold",
+            fontSize: 11,
+            topBorderStyle: "medium", // Thicker line above the booking summary
         };
 
         const EMPLOYEE_ROW_BORDER = {
-            border: {
-                left: { style: 'thin' },
-                bottom: { style: 'dotted', color: { argb: 'BDBDBD' } },
-                right: { style: 'thin' }
-            }
+            leftBorderStyle: "thin",
+            leftBorderColor: styles.border.borderColor,
+            bottomBorderStyle: "dotted",
+            bottomBorderColor: styles.border.borderColor,
+            rightBorderStyle: "thin",
+            rightBorderColor: styles.border.borderColor,
         };
-        // 2. BUG FIX & COLUMN DEFINITION (Sets widths) ✅
-        worksheet.columns = [
-            { header: 'Booking Name', key: 'booking_name', width: 25 },
-            { header: 'Client', key: 'client', width: 20 },
-            { header: 'Employee Count', key: 'emp_count', width: 15 },
-            { header: 'Address', key: 'address', width: 30 },
-            { header: 'Employee Name', key: 'emp_name', width: 20 },
-            { header: 'Clock In', key: 'clock_in', width: 15 },
-            { header: 'Clock Out', key: 'clock_out', width: 15 },
-            { header: 'Breaks', key: 'breaks', width: 10 },
-            { header: 'Break Timings', key: 'break_timings', width: 25 },
-        ];
-        
-        let rowIndex = 1;
+
+        const rows = [];
 
         for (const d of weekDates) {
             // 1. Date Header
-            worksheet.mergeCells(`A${rowIndex}:I${rowIndex}`); 
-            const dateHeaderCell = worksheet.getCell(`A${rowIndex}`);
-            dateHeaderCell.value = d.display;
-            Object.assign(dateHeaderCell, DATE_HEADER_STYLE);
-            rowIndex++;
+            rows.push([
+                {
+                    value: d.display,
+                    ...DATE_HEADER_STYLE,
+                    columnSpan: EXPORT_COLUMNS.length,
+                },
+                ...Array(EXPORT_COLUMNS.length - 1).fill(null),
+            ]);
 
             // 2. Table headers
-            const headerRow = worksheet.addRow([
-                "Booking Name", "Client", "Employee Count", "Address", "Employee Name", 
-                "Clock In", "Clock Out", "Breaks", "Break Timings",
-            ]);
-            headerRow.eachCell((cell) => {
-                Object.assign(cell, TABLE_HEADER_STYLE);
-            });
-            rowIndex++;
+            rows.push(
+                EXPORT_COLUMNS.map(({ title }) => ({
+                    value: title,
+                    ...TABLE_HEADER_STYLE,
+                })),
+            );
 
             // 3. Bookings data
             const formData = new FormData();
@@ -192,124 +181,100 @@ const downloadExcel = async () => {
 
             for (const booking of bookings) {
                 // Booking summary row
-                const bookingSummaryRow = worksheet.addRow([
-                    booking.booking_name || "",
-                    booking.client_name || "",
-                    booking.number_of_employees || "",
-                    booking.address?.address_line_1 || "",
-                    "", "", "", "", "", // Empty cells for employee columns
-                ]);
-                bookingSummaryRow.eachCell((cell) => {
-                    Object.assign(cell, BOOKING_SUMMARY_STYLE);
-                });
-                rowIndex++;
+                rows.push(
+                    [
+                        booking.booking_name || "",
+                        booking.client_name || "",
+                        booking.number_of_employees || "",
+                        booking.address?.address_line_1 || "",
+                        "", "", "", "", "", // Empty cells for employee columns
+                    ].map((value) => ({ value, ...BOOKING_SUMMARY_STYLE })),
+                );
 
                 // Employee details rows
                 for (const emp of booking.employees || []) {
                     // Break timings logic
                     const breakTimes = (emp.breaks || [])
                         .map((br) => {
-                            const formatTime = (timeStr) => 
-                                timeStr && dayjs(timeStr, "HH:mm:ss").isValid() 
-                                    ? dayjs(timeStr, "HH:mm:ss").format("hh:mm A") 
+                            const formatTime = (timeStr) =>
+                                timeStr && dayjs(timeStr, "HH:mm:ss").isValid()
+                                    ? dayjs(timeStr, "HH:mm:ss").format("hh:mm A")
                                     : "--";
-                            
+
                             const start = formatTime(br?.break_start_est);
                             const end = formatTime(br?.break_end_est);
                             return `${start}-${end}`;
                         })
                         .join(", ");
-                        
-                    const employeeRow = worksheet.addRow([
-                        "", "", "", "", 
-                        emp.name || "", 
-                        emp.clock_in ? dayjs(emp.clock_in).format("hh:mm A") : "--", 
-                        emp.clock_out ? dayjs(emp.clock_out).format("hh:mm A") : "--", 
-                        emp.breaks ? emp.breaks.length : "", 
-                        breakTimes, 
-                    ]);
-                    
-                    // Apply border style and center alignment for time/breaks
-                    employeeRow.eachCell((cell, colNumber) => {
-                        Object.assign(cell, EMPLOYEE_ROW_BORDER);
-                        // Center align Clock In (col 6) through Break Timings (col 9)
-                        if (colNumber >= 6 && colNumber <= 9) {
-                            cell.alignment = { horizontal: 'center' };
-                        }
-                    });
 
-                    rowIndex++;
+                    rows.push(
+                        [
+                            "", "", "", "",
+                            emp.name || "",
+                            emp.clock_in ? dayjs(emp.clock_in).format("hh:mm A") : "--",
+                            emp.clock_out ? dayjs(emp.clock_out).format("hh:mm A") : "--",
+                            emp.breaks ? emp.breaks.length : "",
+                            breakTimes,
+                        ].map((value, index) => ({
+                            value,
+                            ...EMPLOYEE_ROW_BORDER,
+                            // Center align Clock In (col 6) through Break Timings (col 9)
+                            ...(index >= 5 ? { align: "center" } : {}),
+                        })),
+                    );
                 }
             }
-            
+
             // 4. Blank separator rows
-            worksheet.addRow([]);
-            worksheet.addRow([]);
-            rowIndex += 2;
+            rows.push([], []);
         }
 
         // Save
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveAs(
-            new Blob([buffer]),
+        await saveXlsx(
+            rows,
+            {
+                sheet: "Weekly Overview",
+                columns: EXPORT_COLUMNS.map(({ width }) => ({ width })),
+            },
             `Weekly_Bookings_${dayjs().format("YYYY-MM-DD")}.xlsx`
         );
     } catch (err) {
-        console.error("Error exporting Excel:", err); 
+        console.error("Error exporting Excel:", err);
     } finally {
         setLoading(false);
     }
 };
 
 	return (
-		<div style={{ padding: 20 }}>
-			<Card>
-				<Title level={4} style={{ marginBottom: 20 }}>
-					Weekly Booking Overview
-				</Title>
-
-				{/* Week Tabs with Day + Date */}
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						gap: 10,
-						padding: "0 16px",
-						flexWrap: "wrap",
-						marginBottom: 30,
-					}}
-				>
+		<>
+			<PageHeader
+				title="Weekly Booking Overview"
+				actions={
 					<Button
-						style={{ alignSelf: "center" }}
-						icon={<LeftOutlined />}
+						type="primary"
+						onClick={downloadExcel}
+						className="weekly-overview__download"
+					>
+						Download Weekly Bookings (Excel)
+					</Button>
+				}
+			/>
+
+			<div className="surface surface--padded weekly-overview">
+				{/* Week Tabs with Day + Date */}
+				<div className="weekly-overview__week">
+					<Button
+						className="weekly-overview__nav"
+						icon={<ChevronLeft size={16} />}
+						aria-label="Previous week"
 						onClick={() => setOffset((prev) => prev - 7)}
 					/>
-					<div
-						style={{
-							display: "flex",
-							flex: 1,
-							justifyContent: "space-evenly",
-							flexWrap: "wrap",
-							gap: 10,
-						}}
-					>
+					<div className="weekly-overview__days">
 						{weekDates.map((d) => (
 							<Button
 								key={d.date}
 								type={d.date === selectedDate ? "primary" : "default"}
-								style={{
-									flex: "0 1 100px",
-									minWidth: 80,
-									height: 60,
-									textAlign: "center",
-									padding: "5px 6px",
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "center",
-									justifyContent: "center",
-									borderRadius: 8,
-									fontSize: 12,
-								}}
+								className="weekly-overview__day"
 								onClick={() => setSelectedDate(d.date)}
 							>
 								<strong>{d.label}</strong>
@@ -319,35 +284,36 @@ const downloadExcel = async () => {
 					</div>
 
 					<Button
-						style={{ alignSelf: "center" }}
-						icon={<RightOutlined />}
+						className="weekly-overview__nav"
+						icon={<ChevronRight size={16} />}
+						aria-label="Next week"
 						onClick={() => setOffset((prev) => prev + 7)}
 					/>
 				</div>
 
-				<Title level={5} style={{ marginBottom: 20 }}>
+				<h2 className="section-title weekly-overview__summary">
 					Summary – {dayjs(selectedDate).format("dddd, MMMM Do YYYY")}
-				</Title>
+				</h2>
 
 				{/* Statistics */}
-				<Row gutter={16} style={{ marginBottom: 30 }}>
+				<Row gutter={16} className="weekly-overview__stats">
 					<Col xs={12} sm={8} md={6}>
 						<Card
-							style={{ backgroundColor: "#e6f4ff", borderRadius: 10 }}
-							bodyStyle={{ padding: 20 }}
+							className="weekly-overview__stat weekly-overview__stat--bookings"
+							styles={{ body: { padding: 20 } }}
 						>
 							<Statistic
 								title="Total Bookings"
 								value={bookings.length}
-								prefix={<FileDoneOutlined />}
+								prefix={<FileCheck size={20} />}
 							/>
 						</Card>
 					</Col>
 
 					<Col xs={12} sm={8} md={6}>
 						<Card
-							style={{ backgroundColor: "#fce4ff", borderRadius: 10 }}
-							bodyStyle={{ padding: 20 }}
+							className="weekly-overview__stat weekly-overview__stat--employees"
+							styles={{ body: { padding: 20 } }}
 						>
 							<Statistic
 								title="Total Employees Working"
@@ -355,21 +321,9 @@ const downloadExcel = async () => {
 									(acc, b) => acc + b.number_of_employees,
 									0
 								)}
-								prefix={<TeamOutlined />}
+								prefix={<Users size={20} />}
 							/>
 						</Card>
-					</Col>
-				</Row>
-
-				<Row justify="end" style={{ marginBottom: 20 }}>
-					<Col>
-						<Button
-							type="primary"
-							onClick={downloadExcel}
-							style={{ height: "auto", minHeight: 32, whiteSpace: "normal" }}
-						>
-							Download Weekly Bookings (Excel)
-						</Button>
 					</Col>
 				</Row>
 
@@ -383,8 +337,8 @@ const downloadExcel = async () => {
 					bordered
 					size="middle"
 				/>
-			</Card>
-		</div>
+			</div>
+		</>
 	);
 };
 

@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-  HolderOutlined,
-  CheckCircleFilled,
-  EditOutlined,
-  DownOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
+  ChartColumn,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  ClipboardList,
+  FolderOpen,
+  GripVertical,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -496,7 +499,9 @@ useEffect(() => {
     <div className="usb-root">
       <div className="usb-header">
         <div className="usb-header__left">
-          <span className="usb-header__icon">📋</span>
+          <span className="usb-header__icon">
+            <ClipboardList size={28} />
+          </span>
           <div>
             <h2 className="usb-header__title">Client Scope of Work</h2>
             <p className="usb-header__sub">
@@ -511,7 +516,7 @@ useEffect(() => {
         </div>
 
         <button className="usb-btn-add-section" onClick={createSection}>
-          <PlusOutlined />
+          <Plus size={16} />
           <span>Add Section</span>
         </button>
       </div>
@@ -521,15 +526,20 @@ useEffect(() => {
           className="usb-chart-card__toggle"
           onClick={() => setChartCollapsed((v) => !v)}
         >
+          <ChartColumn size={16} className="usb-chart-card__toggle-icon" />
           <span className="usb-chart-card__toggle-title">
-            📊 Initial Client Chart
+            Initial Client Chart
           </span>
           <span className="usb-chart-card__toggle-meta">
             {chartCollapsed
               ? `${clientChecklist.length} row${clientChecklist.length !== 1 ? "s" : ""} · click to expand`
               : "click to collapse"}
           </span>
-          {chartCollapsed ? <DownOutlined /> : <UpOutlined />}
+          {chartCollapsed ? (
+            <ChevronDown size={16} className="usb-chart-card__chevron" />
+          ) : (
+            <ChevronUp size={16} className="usb-chart-card__chevron" />
+          )}
         </button>
 
         {!chartCollapsed && (
@@ -606,10 +616,12 @@ useEffect(() => {
 
       {sections.length === 0 && (
         <div className="usb-empty usb-empty--inner">
-          <div className="usb-empty__icon">🗂️</div>
+          <div className="usb-empty__icon">
+            <FolderOpen size={40} />
+          </div>
           <p className="usb-empty__text">No scope generated for this client.</p>
           <button className="usb-btn-add-section" onClick={createSection}>
-            <PlusOutlined /> Add First Section
+            <Plus size={16} /> Add First Section
           </button>
         </div>
       )}
@@ -645,7 +657,7 @@ useEffect(() => {
                           title="Drag to reorder section"
                           {...dragHandleProps}
                         >
-                          <HolderOutlined />
+                          <GripVertical size={14} />
                         </div>
 
                         <input
@@ -687,7 +699,7 @@ useEffect(() => {
                               onClick={() => saveSection(section, sectionIndex)}
                               disabled={isSavingSection}
                             >
-                              <CheckCircleFilled />
+                              <CircleCheck size={14} />
                               <span>Save</span>
                             </button>
                           </Tooltip>
@@ -697,7 +709,7 @@ useEffect(() => {
                               className="usb-btn usb-btn--danger"
                               onClick={() => deleteSection(sectionIndex)}
                             >
-                              <DeleteOutlined />
+                              <Trash2 size={14} />
                               <span>Delete</span>
                             </button>
                           </Tooltip>
@@ -711,7 +723,7 @@ useEffect(() => {
                                 : "Collapse section"
                             }
                           >
-                            {isCollapsed ? <DownOutlined /> : <UpOutlined />}
+                            {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                           </button>
                         </div>
                       </div>
@@ -777,7 +789,7 @@ useEffect(() => {
                                           }}
                                           {...(isSaved ? dragHandleProps : {})}
                                         >
-                                          <HolderOutlined />
+                                          <GripVertical size={14} />
                                         </div>
 
                                         <input
@@ -861,12 +873,12 @@ useEffect(() => {
                                           >
                                             {isSaved ? (
                                               <>
-                                                <EditOutlined />
+                                                <Pencil size={14} />
                                                 <span>Update</span>
                                               </>
                                             ) : (
                                               <>
-                                                <SaveOutlined />
+                                                <Save size={14} />
                                                 <span>Save</span>
                                               </>
                                             )}
@@ -883,7 +895,7 @@ useEffect(() => {
                                               )
                                             }
                                           >
-                                            <DeleteOutlined />
+                                            <Trash2 size={14} />
                                             <span>Delete</span>
                                           </button>
                                         </Tooltip>
@@ -899,7 +911,7 @@ useEffect(() => {
                             className="usb-btn-add-task"
                             onClick={() => addItem(sectionIndex)}
                           >
-                            <PlusOutlined /> Add Task
+                            <Plus size={14} /> Add Task
                           </button>
                         </div>
                       )}

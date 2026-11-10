@@ -1,17 +1,16 @@
 import { useState } from "react";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import { CreateAdmin } from "../../services/Api/Api";
-import { useNavigate } from "react-router-dom";
-import "react-toastify/dist/ReactToastify.css";
-import { message, Steps } from "antd";
-import { SolutionOutlined } from "@ant-design/icons";
-import { ArrowLeft, Check, X, Mail } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Button, Input, Select, Steps, message } from "antd";
+import { ArrowLeft, Check, X, Mail, IdCard } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import "./AdminManagement.scss";
+
+const ROLE_OPTIONS = [
+  { value: "5", label: "BDM" },
+  { value: "3", label: "OPERATIONS ADMINISTRATOR" },
+  { value: "1", label: "SUPER ADMIN" },
+];
 
 const AddAdmin = () => {
   const [name, setName] = useState("");
@@ -81,285 +80,141 @@ const AddAdmin = () => {
     navigate("/adminList");
   };
 
-  const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-      height: "45px",
-      borderRadius: "6px",
-    },
-  };
-
-  const labelSx = {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-  };
+  const roleIcon = <IdCard size={20} color="var(--color-primary-strong)" />;
 
   return (
-    <Box>
-      {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              ADMIN MANAGEMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Create a new admin
-            </Typography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="ADMIN MANAGEMENT"
+        subtitle="Create a new admin"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToAdmin}
-            sx={{
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              flexShrink: 0,
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Admin
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          gap: 2.5,
-        }}
-      >
-        <Paper
-          variant="outlined"
-          sx={{
-            flex: { md: "0 0 70%" },
-            p: 3,
-            borderRadius: "10px",
-            borderColor: "#eef0f2",
-          }}
-        >
+      <div className="admin-form__layout">
+        <div className="surface admin-form__panel admin-form__main">
           {/* info banner explaining the credentials-by-email flow */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 1.5,
-              background: "#eef2ff",
-              border: "1px solid #e0e7ff",
-              borderRadius: "10px",
-              padding: "12px 16px",
-              marginBottom: "24px",
-            }}
-          >
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: "10px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#4f46e5",
-                color: "#fff",
-                flexShrink: 0,
-              }}
-            >
+          <div className="admin-banner admin-banner--top">
+            <span className="admin-banner__icon">
               <Mail size={18} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#1e1b4b",
-                  lineHeight: 1.3,
-                }}
-              >
+            </span>
+            <div className="admin-banner__body">
+              <p className="admin-banner__title">
                 Credentials Sent Automatically
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "12px",
-                  color: "#4338ca",
-                  lineHeight: 1.4,
-                  mt: 0.25,
-                }}
-              >
+              </p>
+              <p className="admin-banner__text">
                 Once you save, a system-generated password will be emailed to
                 the admin's address. They can log in with it right away and
                 change it anytime from the Change Password page.
-              </Typography>
-            </Box>
-          </Box>
+              </p>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-              <Box>
-                <Typography sx={labelSx}>Name</Typography>
-                <TextField
-                  fullWidth
-                  size="small"
+            <div className="admin-form__fields">
+              <div>
+                <label className="field-label" htmlFor="add-admin-name">
+                  Name
+                </label>
+                <Input
+                  id="add-admin-name"
+                  size="large"
                   placeholder="Enter name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  sx={fieldSx}
                 />
-              </Box>
+              </div>
 
-              <Box>
-                <Typography sx={labelSx}>Email</Typography>
-                <TextField
-                  fullWidth
-                  size="small"
+              <div>
+                <label className="field-label" htmlFor="add-admin-email">
+                  Email
+                </label>
+                <Input
+                  id="add-admin-email"
+                  size="large"
                   type="email"
                   placeholder="Enter email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  sx={fieldSx}
                 />
-              </Box>
+              </div>
 
-              <Box>
-                <Typography sx={labelSx}>Select Role</Typography>
+              <div>
+                <label className="field-label" htmlFor="add-admin-role">
+                  Select Role
+                </label>
                 <Select
-                  fullWidth
-                  size="small"
-                  displayEmpty
-                  value={roleId}
-                  onChange={(e) => setRoleId(e.target.value)}
-                  sx={{
-                    height: "45px",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select Role
-                  </MenuItem>
-                  <MenuItem value="5">BDM</MenuItem>
-                  <MenuItem value="3">OPERATIONS ADMINISTRATOR</MenuItem>
-                  <MenuItem value="1">SUPER ADMIN</MenuItem>
-                </Select>
-              </Box>
+                  id="add-admin-role"
+                  size="large"
+                  placeholder="Select Role"
+                  value={roleId || undefined}
+                  onChange={(value) => setRoleId(value)}
+                  options={ROLE_OPTIONS}
+                  style={{ width: "100%" }}
+                />
+              </div>
 
-              <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
+              <div className="admin-form__actions">
                 <Button
-                  variant="contained"
-                  disableElevation
-                  type="submit"
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
                   disabled={disable}
-                  startIcon={!disable ? <Check size={18} /> : null}
-                  sx={{
-                    height: 42,
-                    px: 3,
-                    borderRadius: "6px",
-                    textTransform: "none",
-                    fontWeight: 600,
-                    backgroundColor: "#16a34a",
-                    "&:hover": {
-                      backgroundColor: "#15803d",
-                    },
-                  }}
+                  icon={!disable ? <Check size={16} /> : null}
                 >
                   {disable ? "Saving..." : "Save"}
                 </Button>
 
                 <Button
-                  variant="contained"
-                  disableElevation
-                  startIcon={<X size={18} />}
+                  size="large"
+                  icon={<X size={16} />}
                   onClick={navigateToAdmin}
-                  sx={{
-                    height: 42,
-                    px: 3,
-                    borderRadius: "6px",
-                    textTransform: "none",
-                    fontWeight: 600,
-                    backgroundColor: "#6b7280",
-                    "&:hover": {
-                      backgroundColor: "#4b5563",
-                    },
-                  }}
                 >
                   Cancel
                 </Button>
-              </Box>
-            </Box>
+              </div>
+            </div>
           </form>
-        </Paper>
+        </div>
 
-        <Paper
-          variant="outlined"
-          sx={{
-            flex: { md: "0 0 30%" },
-            p: 3,
-            borderRadius: "10px",
-            borderColor: "#eef0f2",
-          }}
-        >
+        <div className="surface admin-form__panel admin-form__aside">
           <Steps
-            direction="vertical"
+            orientation="vertical"
             size="small"
             items={[
               {
                 title: "Super Admin",
                 status: "finish",
-                icon: <SolutionOutlined />,
-                description:
+                icon: roleIcon,
+                content:
                   "This role grants extensive access and permissions across all features and pages of the admin panel",
               },
               {
                 title: "Business Development Manager",
                 status: "finish",
-                icon: <SolutionOutlined />,
-                description:
+                icon: roleIcon,
+                content:
                   "This role grants extensive access and permissions across the assigned user,employees and their asociated bookings.",
               },
               {
                 title: "Operations Administrator",
                 status: "finish",
-                icon: <SolutionOutlined />,
-                description:
+                icon: roleIcon,
+                content:
                   "This role has access to day-to-day operations across the admin panel, excluding Estimates, the Calculator, and BDM management.",
               },
             ]}
           />
-        </Paper>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 };
 

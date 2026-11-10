@@ -1,17 +1,13 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
-import { ArrowLeft } from "lucide-react";
-import { Card, Form, Input, Select, Button, message } from "antd";
+import { useNavigate, useParams } from "react-router";
+import { ArrowLeft, Plus, Trash2, X } from "lucide-react";
+import { Card, Flex, Form, Input, Select, Button, message } from "antd";
 import { GetServiceById, UpdateService } from "../../services/Api/ServiceApi";
 import { GetAllChecklist } from "../../services/Api/checklistApi";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { BASE_URL_IMAGE } from "../../services/Host";
+import PageHeader from "../../components/PageHeader";
+import RichTextEditor from "../../components/RichTextEditor";
+import "./EditService.scss";
 
 const { Option } = Select;
 
@@ -109,12 +105,11 @@ const EditService = () => {
 		}));
 	};
 
-	// 🔹 Handle Description Change (CKEditor)
-	const handleEditorChange = (event, editor) => {
-		const data = editor.getData();
+	// 🔹 Handle Description Change (rich-text editor, HTML)
+	const handleEditorChange = (html) => {
 		setServiceData((prevData) => ({
 			...prevData,
-			description: data,
+			description: html,
 		}));
 	};
 
@@ -170,65 +165,21 @@ const EditService = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* Header Section */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 3,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						gap: 2,
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							SERVICE MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							Edit details of this service
-						</Typography>
-					</Box>
-
-					<MuiButton
-						variant="contained"
-						disableElevation
-						startIcon={<ArrowLeft size={18} />}
+			<PageHeader
+				title="SERVICE MANAGEMENT"
+				subtitle="Edit details of this service"
+				actions={
+					<Button
+						size="large"
+						icon={<ArrowLeft size={16} />}
 						onClick={() => navigate("/services")}
-						sx={{
-							height: 46,
-							px: 3,
-							borderRadius: "8px",
-							minWidth: 180,
-							textTransform: "none",
-							fontWeight: 600,
-							backgroundColor: "#2c3345",
-							flexShrink: 0,
-							"&:hover": {
-								backgroundColor: "#1f2433",
-							},
-						}}
 					>
 						Return to Services
-					</MuiButton>
-				</Box>
-			</Paper>
+					</Button>
+				}
+			/>
 
 			<Card style={{ width: "100%" }}>
 				<Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -297,21 +248,18 @@ const EditService = () => {
 						</Select>
 					</Form.Item>
 
+					{/* Description (kept in serviceData state, submitted from state) */}
 					<Form.Item label="Description:" name="description">
-						<CKEditor
-							editor={ClassicEditor}
-							data={serviceData.description}
+						<RichTextEditor
+							value={serviceData.description}
 							onChange={handleEditorChange}
 						/>
 					</Form.Item>
 
 					<Form.Item label="Upload Images:">
-						<div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+						<div className="edit-service__images">
 							{serviceData.service_attachments.map((attachment, index) => (
-								<div
-									key={index}
-									style={{ position: "relative", display: "inline-block" }}
-								>
+								<div key={index} className="edit-service__image">
 									<img
 										src={
 											attachment.newFile
@@ -320,40 +268,25 @@ const EditService = () => {
 										}
 										crossOrigin="anonymous"
 										alt="Service"
-										style={{
-											width: "100px",
-											height: "100px",
-											borderRadius: "5px",
-											border: "1px solid #d9d9d9",
-										}}
+										className="edit-service__image-preview"
 									/>
 									<Button
 										type="text"
-										style={{
-											position: "absolute",
-											top: "-5px",
-											right: "-5px",
-											color: "red",
-											background: "white",
-											border: "1px solid #d9d9d9",
-											borderRadius: "50%",
-											padding: "0",
-											width: "20px",
-											height: "20px",
-											lineHeight: "18px",
-										}}
+										danger
+										size="small"
+										shape="circle"
+										aria-label="Remove image"
+										className="edit-service__image-remove"
+										icon={<X size={12} />}
 										onClick={() => handleRemoveExistingImage(attachment.id)}
-									>
-										X
-									</Button>
+									/>
 								</div>
 							))}
 
 							{/* Add Image Button */}
 							<div>
 								<Button
-									icon={<PlusOutlined />}
-									className="changePhoto"
+									icon={<Plus size={16} />}
 									onClick={handleProfilePhotoClick}
 								>
 									Add Image
@@ -369,20 +302,20 @@ const EditService = () => {
 						</div>
 					</Form.Item>
 
-					<Box sx={{ display: "flex", gap: "10px" }}>
+					<Flex gap={10}>
 						<Button type="primary" htmlType="submit">
 							Save
 						</Button>
 						<Button
 							onClick={() => navigate("/services")}
-							icon={<DeleteOutlined />}
+							icon={<Trash2 size={16} />}
 						>
 							Cancel
 						</Button>
-					</Box>
+					</Flex>
 				</Form>
 			</Card>
-		</Box>
+		</div>
 	);
 };
 

@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, Switch, message } from "antd";
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-  EditOutlined,
-  HolderOutlined,
-  DownOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  FolderOpen,
+  GripVertical,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 
 import {
   createItem,
@@ -465,7 +467,9 @@ const ScopeBuilder = () => {
       {/* HEADER */}
       <div className="scope-header">
         <div className="scope-header__left">
-          <span className="scope-header__icon">📋</span>
+          <span className="scope-header__icon">
+            <ClipboardList size={28} />
+          </span>
           <div>
             <h2 className="scope-header__title">Scope of Work</h2>
             <p className="scope-header__sub">
@@ -476,7 +480,7 @@ const ScopeBuilder = () => {
         </div>
 
         <button className="btn-add-section" onClick={addSection}>
-          <PlusOutlined /> Add Section
+          <Plus size={16} /> Add Section
         </button>
       </div>
 
@@ -503,12 +507,14 @@ const ScopeBuilder = () => {
       {/* EMPTY */}
       {!loading && sections.length === 0 && (
         <div className="scope-empty">
-          <div className="scope-empty__icon">🗂️</div>
+          <div className="scope-empty__icon">
+            <FolderOpen size={40} />
+          </div>
           <p className="scope-empty__text">
             No {clientLabel.toLowerCase()} sections yet. Start by adding one.
           </p>
           <button className="btn-add-section" onClick={addSection}>
-            <PlusOutlined /> Add First Section
+            <Plus size={16} /> Add First Section
           </button>
         </div>
       )}
@@ -532,7 +538,7 @@ const ScopeBuilder = () => {
                 {/* SECTION HEADER */}
                 <div className="section-card__header">
                   <div className="section-card__drag">
-                    <HolderOutlined />
+                    <GripVertical size={14} />
                   </div>
 
                   <input
@@ -568,7 +574,7 @@ const ScopeBuilder = () => {
                         title="Edit section"
                         onClick={() => enterEditSection(section)}
                       >
-                        <EditOutlined />
+                        <Pencil size={14} />
                       </button>
                     ) : (
                       <button
@@ -581,7 +587,7 @@ const ScopeBuilder = () => {
                         {savingSection === sectionIndex ? (
                           <span className="btn-spinner" />
                         ) : (
-                          <SaveOutlined />
+                          <Save size={14} />
                         )}
                       </button>
                     )}
@@ -591,7 +597,7 @@ const ScopeBuilder = () => {
                       title="Delete section"
                       onClick={() => deleteSectionHandler(sectionIndex)}
                     >
-                      <DeleteOutlined />
+                      <Trash2 size={14} />
                     </button>
 
                     {/* COLLAPSE TOGGLE */}
@@ -600,7 +606,7 @@ const ScopeBuilder = () => {
                       title={collapsed ? "Expand section" : "Collapse section"}
                       onClick={() => toggleCollapse(section)}
                     >
-                      {collapsed ? <DownOutlined /> : <UpOutlined />}
+                      {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                     </button>
                   </div>
                 </div>
@@ -622,7 +628,7 @@ const ScopeBuilder = () => {
                           className={`task-row ${itemSaved ? "task-row--saved" : ""}`}
                         >
                           <div className="task-row__drag">
-                            <HolderOutlined />
+                            <GripVertical size={14} />
                           </div>
 
                           <input
@@ -689,7 +695,7 @@ const ScopeBuilder = () => {
                               title="Edit task"
                               onClick={() => enterEditItem(section, item)}
                             >
-                              <EditOutlined />
+                              <Pencil size={14} />
                             </button>
                           ) : (
                             <button
@@ -704,7 +710,7 @@ const ScopeBuilder = () => {
                               {savingItem === `${sectionIndex}-${itemIndex}` ? (
                                 <span className="btn-spinner" />
                               ) : (
-                                <SaveOutlined />
+                                <Save size={14} />
                               )}
                             </button>
                           )}
@@ -714,7 +720,7 @@ const ScopeBuilder = () => {
                             title="Delete task"
                             onClick={() => deleteItemHandler(sectionIndex, itemIndex)}
                           >
-                            <DeleteOutlined />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       );
@@ -724,7 +730,7 @@ const ScopeBuilder = () => {
                       className="btn-add-task"
                       onClick={() => addItem(sectionIndex)}
                     >
-                      <PlusOutlined /> Add Task
+                      <Plus size={14} /> Add Task
                     </button>
                   </div>
                 )}

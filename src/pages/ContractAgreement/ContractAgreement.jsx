@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
 import { Plus } from "lucide-react";
 import dayjs from "@/lib/dayjs";
+import PageHeader from "../../components/PageHeader";
 import { DeleteContractAgreement, GetAllContractAgreements } from "../../services/Api/Api";
+import { BASE_URL } from "../../services/Host";
 
 const ContractAgreement = () => {
   const navigate = useNavigate();
@@ -56,7 +54,7 @@ const ContractAgreement = () => {
         let url = "";
 
         if (record.status === "signed" && record.signed_file_name) {
-          url = `https://node.socialsanitation.com/api/v1/docs/${record.signed_file_name}`;
+          url = `${BASE_URL}docs/${record.signed_file_name}`;
         } else if (record.file_url) {
           url = record.file_url;
         }
@@ -158,61 +156,21 @@ const ContractAgreement = () => {
   };
 
   return (
-    <Box>
-      {/* HEADER */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              CONTRACT AGREEMENT MANAGEMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              View &amp; manage contract agreements
-            </Typography>
-          </Box>
-
-          <MuiButton
-            variant="contained"
-            disableElevation
-            startIcon={<Plus size={18} />}
+    <div>
+      <PageHeader
+        title="CONTRACT AGREEMENT MANAGEMENT"
+        subtitle="View & manage contract agreements"
+        actions={
+          <Button
+            type="primary"
+            size="large"
+            icon={<Plus size={16} />}
             onClick={() => navigate("/create-contract-agreement")}
-            sx={{
-              height: 44,
-              px: 2.5,
-              borderRadius: "8px",
-              textTransform: "none",
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
           >
             Generate Contract
-          </MuiButton>
-        </Box>
-      </Paper>
+          </Button>
+        }
+      />
 
       <Table
         columns={columns}
@@ -224,7 +182,7 @@ const ContractAgreement = () => {
         bordered
         size="middle"
       />
-    </Box>
+    </div>
   );
 };
 

@@ -1,6 +1,6 @@
 import "./Error401.css";
-import Button from "@mui/material/Button";
-import { useNavigate } from "react-router-dom";
+import { Button } from "antd";
+import { useNavigate } from "react-router";
 import AccessImage from "../../assets/access-denied-5627546-4694106.webp";
 
 const Error401 = () => {
@@ -10,26 +10,21 @@ const Error401 = () => {
   };
 
   return (
-    <div className="main_container">
-      <img src={AccessImage} alt="Access Denied" className="error_image" />
-      <div className="main_box">
-        <div className="error_heading">
+    <main className="status-page">
+      <img src={AccessImage} alt="Access Denied" className="status-page__image" />
+      <div>
+        <h1 className="status-page__title">
           You are not allowed to access this page
-        </div>
-        <p className="text-muted my-4">
+        </h1>
+        <p className="status-page__text">
           You have been denied access to this page. Please check your
           permissions.
         </p>
       </div>
-      <div className="back_button">
-        <Button
-          label="Back To Dashboard"
-          severity="info"
-          style={{ borderRadius: "5px", height: "45px" }}
-          onClick={navigateToDashboard}
-        />
-      </div>
-    </div>
+      <Button type="primary" size="large" onClick={navigateToDashboard}>
+        Back To Dashboard
+      </Button>
+    </main>
   );
 };
 

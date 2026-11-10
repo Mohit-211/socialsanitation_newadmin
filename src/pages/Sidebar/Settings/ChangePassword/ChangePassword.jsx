@@ -1,15 +1,14 @@
 import { useState } from "react";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { ChangeAdminPassword } from "@/services/Api/Api";
-import { message } from "antd";
-import { Eye, EyeOff, Check, X, KeyRound, CheckCircle2, Circle } from "lucide-react";
+import { Button, Input, message } from "antd";
+import { Eye, EyeOff, Check, X, KeyRound, CircleCheck, Circle } from "lucide-react";
+import PageHeader from "../../../../components/PageHeader";
+import "./ChangePassword.scss";
+
+// Eye-off while the password is shown, eye while it is hidden
+const renderVisibilityIcon = (visible) =>
+  visible ? <EyeOff size={16} /> : <Eye size={16} />;
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -82,332 +81,148 @@ const ChangePassword = () => {
     }
   };
 
-  const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-      height: "45px",
-      borderRadius: "6px",
-    },
-  };
-
-  const labelSx = {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-  };
-
   return (
-    <Box>
+    <div>
       {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box>
-          <Typography className="page-title">CHANGE PASSWORD</Typography>
-          <Typography className="page-sub-title">
-            Update your account password
-          </Typography>
-        </Box>
-      </Paper>
+      <PageHeader title="CHANGE PASSWORD" subtitle="Update your account password" />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
+      <div className="surface change-password__panel">
         {/* Intro banner */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            background: "#eef2ff",
-            border: "1px solid #e0e7ff",
-            borderRadius: "10px",
-            padding: "12px 16px",
-            marginBottom: "24px",
-          }}
-        >
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#4f46e5",
-              color: "#fff",
-              flexShrink: 0,
-            }}
-          >
+        <div className="change-password__banner">
+          <span className="change-password__banner-icon">
             <KeyRound size={18} />
-          </Box>
-          <Box>
-            <Typography
-              sx={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#1e1b4b",
-                lineHeight: 1.3,
-              }}
-            >
-              Update Your Password
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "12px",
-                color: "#4338ca",
-                lineHeight: 1.4,
-                mt: 0.25,
-              }}
-            >
+          </span>
+          <div>
+            <p className="change-password__banner-title">Update Your Password</p>
+            <p className="change-password__banner-text">
               Choose a strong password you haven't used before.
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleChangePassword}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box>
-              <Typography sx={labelSx}>Current Password</Typography>
-              <TextField
-                fullWidth
-                size="small"
+          <div className="change-password__fields">
+            <div>
+              <label className="field-label" htmlFor="current-password">
+                Current Password
+              </label>
+              <Input.Password
+                id="current-password"
+                size="large"
                 required
-                type={showCurrentPassword ? "text" : "password"}
                 placeholder="Enter current password"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
-                sx={fieldSx}
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            setShowCurrentPassword((prev) => !prev)
-                          }
-                          edge="end"
-                          aria-label={
-                            showCurrentPassword
-                              ? "Hide current password"
-                              : "Show current password"
-                          }
-                        >
-                          {showCurrentPassword ? (
-                            <EyeOff size={17} />
-                          ) : (
-                            <Eye size={17} />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
+                visibilityToggle={{
+                  visible: showCurrentPassword,
+                  onVisibleChange: setShowCurrentPassword,
                 }}
+                iconRender={renderVisibilityIcon}
               />
-            </Box>
+            </div>
 
-            <Box>
-              <Typography sx={labelSx}>New Password</Typography>
-              <TextField
-                fullWidth
-                size="small"
+            <div>
+              <label className="field-label" htmlFor="new-password">
+                New Password
+              </label>
+              <Input.Password
+                id="new-password"
+                size="large"
                 required
-                type={showNewPassword ? "text" : "password"}
                 placeholder="Enter new password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                sx={fieldSx}
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setShowNewPassword((prev) => !prev)}
-                          edge="end"
-                          aria-label={
-                            showNewPassword
-                              ? "Hide new password"
-                              : "Show new password"
-                          }
-                        >
-                          {showNewPassword ? (
-                            <EyeOff size={17} />
-                          ) : (
-                            <Eye size={17} />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
+                visibilityToggle={{
+                  visible: showNewPassword,
+                  onVisibleChange: setShowNewPassword,
                 }}
+                iconRender={renderVisibilityIcon}
               />
 
               {/* live requirement checklist */}
               {newPassword.length > 0 && (
-                <Box
-                  sx={{
-                    mt: 1,
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                    gap: "4px 12px",
-                  }}
-                >
+                <div className="change-password__requirements">
                   {requirements.map((req) => (
-                    <Box
+                    <div
                       key={req.label}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.75,
-                      }}
+                      className={`change-password__hint${
+                        req.met ? " change-password__hint--met" : ""
+                      }`}
                     >
-                      {req.met ? (
-                        <CheckCircle2 size={14} color="#16a34a" />
-                      ) : (
-                        <Circle size={14} color="#d1d5db" />
-                      )}
-                      <Typography
-                        sx={{
-                          fontSize: "11.5px",
-                          color: req.met ? "#16a34a" : "#9ca3af",
-                        }}
-                      >
-                        {req.label}
-                      </Typography>
-                    </Box>
+                      {req.met ? <CircleCheck size={14} /> : <Circle size={14} />}
+                      <span>{req.label}</span>
+                    </div>
                   ))}
-                </Box>
+                </div>
               )}
-            </Box>
+            </div>
 
-            <Box>
-              <Typography sx={labelSx}>Confirm Password</Typography>
-              <TextField
-                fullWidth
-                size="small"
+            <div>
+              <label className="field-label" htmlFor="confirm-password">
+                Confirm Password
+              </label>
+              <Input.Password
+                id="confirm-password"
+                size="large"
                 required
-                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Re-enter new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                error={passwordsMismatch}
-                sx={fieldSx}
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            setShowConfirmPassword((prev) => !prev)
-                          }
-                          edge="end"
-                          aria-label={
-                            showConfirmPassword
-                              ? "Hide confirm password"
-                              : "Show confirm password"
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff size={17} />
-                          ) : (
-                            <Eye size={17} />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
+                status={passwordsMismatch ? "error" : undefined}
+                visibilityToggle={{
+                  visible: showConfirmPassword,
+                  onVisibleChange: setShowConfirmPassword,
                 }}
+                iconRender={renderVisibilityIcon}
               />
 
               {/* live match indicator */}
               {confirmPassword.length > 0 && (
-                <Box
-                  sx={{
-                    mt: 0.75,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                  }}
+                <div
+                  className={`change-password__hint change-password__match ${
+                    passwordsMatch
+                      ? "change-password__hint--met"
+                      : "change-password__hint--error"
+                  }`}
                 >
                   {passwordsMatch ? (
                     <>
-                      <CheckCircle2 size={14} color="#16a34a" />
-                      <Typography sx={{ fontSize: "11.5px", color: "#16a34a" }}>
-                        Passwords match
-                      </Typography>
+                      <CircleCheck size={14} />
+                      <span>Passwords match</span>
                     </>
                   ) : (
                     <>
-                      <Circle size={14} color="#ef4444" />
-                      <Typography sx={{ fontSize: "11.5px", color: "#ef4444" }}>
-                        Passwords do not match
-                      </Typography>
+                      <Circle size={14} />
+                      <span>Passwords do not match</span>
                     </>
                   )}
-                </Box>
+                </div>
               )}
-            </Box>
+            </div>
 
-            <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
+            <div className="change-password__actions">
               <Button
-                variant="contained"
-                disableElevation
-                type="submit"
+                type="primary"
+                htmlType="submit"
+                size="large"
                 disabled={saving}
-                startIcon={!saving ? <Check size={18} /> : null}
-                sx={{
-                  height: 42,
-                  px: 3,
-                  borderRadius: "6px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  backgroundColor: "#3b82f6",
-                  "&:hover": {
-                    backgroundColor: "#2563eb",
-                  },
-                }}
+                icon={!saving ? <Check size={16} /> : null}
               >
                 {saving ? "Saving..." : "Save"}
               </Button>
 
               <Button
-                variant="contained"
-                disableElevation
-                startIcon={<X size={18} />}
+                size="large"
+                icon={<X size={16} />}
                 onClick={navigateToDashboard}
-                sx={{
-                  height: 42,
-                  px: 3,
-                  borderRadius: "6px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  backgroundColor: "#6b7280",
-                  "&:hover": {
-                    backgroundColor: "#4b5563",
-                  },
-                }}
               >
                 Cancel
               </Button>
-            </Box>
-          </Box>
+            </div>
+          </div>
         </form>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

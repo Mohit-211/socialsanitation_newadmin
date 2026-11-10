@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { Modal, Descriptions, Tag, Form, Select, InputNumber } from "antd";
 
-const { Option } = Select;
+const STATUS_OPTIONS = [
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Rejected" },
+];
 
 const QuoteDetailsModal = ({
   open,
@@ -46,7 +49,7 @@ const QuoteDetailsModal = ({
             </Descriptions.Item>
 
             <Descriptions.Item label="Current Status">
-              <Tag color={quote.status === "accepted" ? "green" : "red"}>
+              <Tag color={quote.status === "accepted" ? "success" : "error"}>
                 {quote.status.toUpperCase()}
               </Tag>
             </Descriptions.Item>
@@ -73,10 +76,7 @@ const QuoteDetailsModal = ({
               name="status"
               rules={[{ required: true }]}
             >
-              <Select>
-                <Option value="accepted">Accepted</Option>
-                <Option value="rejected">Rejected</Option>
-              </Select>
+              <Select options={STATUS_OPTIONS} />
             </Form.Item>
 
             <Form.Item

@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useParams, useNavigate } from "react-router";
 import dayjs from "@/lib/dayjs";
-import { Box, Paper, Typography, Button, CircularProgress, Stack } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Button, Spin } from "antd";
 import {
+  ArrowLeft,
   User,
   GraduationCap,
   Briefcase,
@@ -17,6 +16,9 @@ import {
   Landmark,
   ClipboardList,
 } from "lucide-react";
+import { GetHiringFormById } from "../../services/Api/HiringFormApi";
+import PageHeader from "../../components/PageHeader";
+import "./ViewForm.scss";
 
 // Config: section metadata (icon + friendly title) — falls back gracefully
 // for any section name not explicitly listed.
@@ -124,169 +126,92 @@ const isSignatureKey = (key) => /signature/i.test(key);
 
 // Presentational bits
 
+const EmptyValue = ({ children = "—" }) => (
+  <div className="hiring-view__empty">{children}</div>
+);
+
 const FieldValue = ({ fieldKey, value }) => {
   if (value === null || value === undefined || value === "") {
-    return (
-      <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-        —
-      </Typography>
-    );
+    return <EmptyValue />;
   }
 
   if (isImageValue(value)) {
     return (
-      <Box
-        sx={{
-          mt: 0.5,
-          p: 1,
-          border: "1px solid #eef0f2",
-          borderRadius: "8px",
-          backgroundColor: "#fafbfc",
-          display: "inline-block",
-        }}
-      >
-        <img
-          src={value}
-          alt={fieldKey}
-          style={{
-            maxHeight: 90,
-            maxWidth: 220,
-            display: "block",
-          }}
-        />
-      </Box>
+      <div className="hiring-view__image">
+        <img src={value} alt={fieldKey} />
+      </div>
     );
   }
 
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      return (
-        <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-          —
-        </Typography>
-      );
+      return <EmptyValue />;
     }
     if (value.every((item) => typeof item !== "object" || item === null)) {
       return (
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75, mt: 0.5 }}>
+        <div className="hiring-view__chips">
           {value.map((item, i) => (
-            <Box
-              key={i}
-              sx={{
-                px: 1.25,
-                py: 0.5,
-                borderRadius: "6px",
-                backgroundColor: "#eef2ff",
-                color: "#3949ab",
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
+            <span key={i} className="hiring-view__chip">
               {String(formatValue(fieldKey, item))}
-            </Box>
+            </span>
           ))}
-        </Stack>
+        </div>
       );
     }
     // array of objects -> nested cards
     return (
-      <Stack spacing={1.25} sx={{ mt: 0.5 }}>
+      <div className="hiring-view__list">
         {value.map((obj, i) => (
-          <Paper
-            key={i}
-            variant="outlined"
-            sx={{ p: 1.5, borderRadius: "8px", borderColor: "#eef0f2" }}
-          >
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                gap: 1.25,
-              }}
-            >
+          <div key={i} className="hiring-view__card">
+            <div className="hiring-view__grid hiring-view__grid--nested">
               {Object.entries(obj).map(([k, v]) => (
-                <Box key={k}>
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#6b7280",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.02em",
-                      mb: 0.25,
-                    }}
-                  >
-                    {humanizeKey(k)}
-                  </Typography>
+                <div key={k}>
+                  <div className="hiring-view__sublabel">{humanizeKey(k)}</div>
                   <FieldValue fieldKey={k} value={v} />
-                </Box>
+                </div>
               ))}
-            </Box>
-          </Paper>
+            </div>
+          </div>
         ))}
-      </Stack>
+      </div>
     );
   }
 
   if (typeof value === "object") {
     if (Object.keys(value).length === 0) {
-      return (
-        <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-          —
-        </Typography>
-      );
+      return <EmptyValue />;
     }
     return (
-      <Box
-        sx={{
-          mt: 0.5,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-          gap: 1,
-        }}
-      >
+      <div className="hiring-view__grid hiring-view__grid--object">
         {Object.entries(value).map(([k, v]) => (
-          <Box key={k}>
-            <Typography
-              sx={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#6b7280",
-                textTransform: "uppercase",
-                letterSpacing: "0.02em",
-                mb: 0.25,
-              }}
-            >
-              {humanizeKey(k)}
-            </Typography>
+          <div key={k}>
+            <div className="hiring-view__sublabel">{humanizeKey(k)}</div>
             <FieldValue fieldKey={k} value={v} />
-          </Box>
+          </div>
         ))}
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Typography sx={{ fontSize: 14.5, color: "#1f2433", fontWeight: 500 }}>
+    <div className="hiring-view__value">
       {String(formatValue(fieldKey, value))}
-    </Typography>
+    </div>
   );
 };
 
 const Field = ({ fieldKey, value, spanFull }) => (
-  <Box sx={{ gridColumn: spanFull ? "1 / -1" : "auto" }}>
-    <Typography
-      sx={{
-        fontSize: 13,
-        fontWeight: 600,
-        color: "#6b7280",
-        mb: 0.5,
-      }}
-    >
-      {humanizeKey(fieldKey)}
-    </Typography>
+  <div className={spanFull ? "hiring-view__field--full" : undefined}>
+    <div className="hiring-view__label">{humanizeKey(fieldKey)}</div>
     <FieldValue fieldKey={fieldKey} value={value} />
-  </Box>
+  </div>
+);
+
+const SectionShell = ({ Icon, title, children }) => (
+  <section className="surface hiring-view__section">
+    <SectionHeader Icon={Icon} title={title} />
+    <div className="hiring-view__section-body">{children}</div>
+  </section>
 );
 
 const SectionCard = ({ sectionName, data }) => {
@@ -297,78 +222,46 @@ const SectionCard = ({ sectionName, data }) => {
   // References-style: top-level array of objects
   if (Array.isArray(data)) {
     return (
-      <Paper
-        variant="outlined"
-        sx={{ borderRadius: "10px", borderColor: "#eef0f2", overflow: "hidden", mb: 2.5 }}
-      >
-        <SectionHeader Icon={Icon} title={title} />
-        <Box sx={{ p: 2.5 }}>
-          {data.length === 0 ? (
-            <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-              No entries
-            </Typography>
-          ) : (
-            <Stack spacing={2}>
-              {data.map((item, i) => (
-                <Paper
-                  key={i}
-                  variant="outlined"
-                  sx={{ p: 2, borderRadius: "8px", borderColor: "#eef0f2" }}
-                >
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                      gap: 2,
-                    }}
-                  >
-                    {Object.entries(item).map(([k, v]) => (
-                      <Field
-                        key={k}
-                        fieldKey={k}
-                        value={v}
-                        spanFull={isImageValue(v)}
-                      />
-                    ))}
-                  </Box>
-                </Paper>
-              ))}
-            </Stack>
-          )}
-        </Box>
-      </Paper>
+      <SectionShell Icon={Icon} title={title}>
+        {data.length === 0 ? (
+          <EmptyValue>No entries</EmptyValue>
+        ) : (
+          <div className="hiring-view__list hiring-view__list--entries">
+            {data.map((item, i) => (
+              <div key={i} className="hiring-view__card hiring-view__card--entry">
+                <div className="hiring-view__grid hiring-view__grid--entries">
+                  {Object.entries(item).map(([k, v]) => (
+                    <Field
+                      key={k}
+                      fieldKey={k}
+                      value={v}
+                      spanFull={isImageValue(v)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionShell>
     );
   }
 
   // Empty object section
   if (typeof data === "object" && data !== null && Object.keys(data).length === 0) {
     return (
-      <Paper
-        variant="outlined"
-        sx={{ borderRadius: "10px", borderColor: "#eef0f2", overflow: "hidden", mb: 2.5 }}
-      >
-        <SectionHeader Icon={Icon} title={title} />
-        <Box sx={{ p: 2.5 }}>
-          <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-            No data submitted
-          </Typography>
-        </Box>
-      </Paper>
+      <SectionShell Icon={Icon} title={title}>
+        <EmptyValue>No data submitted</EmptyValue>
+      </SectionShell>
     );
   }
 
   // Plain string section (unusual, but handle gracefully)
   if (typeof data === "string") {
     return (
-      <Paper
-        variant="outlined"
-        sx={{ borderRadius: "10px", borderColor: "#eef0f2", overflow: "hidden", mb: 2.5 }}
-      >
-        <SectionHeader Icon={Icon} title={title} />
-        <Box sx={{ p: 2.5 }}>
-          <Field fieldKey="language" value={data} />
-        </Box>
-      </Paper>
+      <SectionShell Icon={Icon} title={title}>
+        <Field fieldKey="language" value={data} />
+      </SectionShell>
     );
   }
 
@@ -402,80 +295,37 @@ const SectionCard = ({ sectionName, data }) => {
   const entries = groupAddressFields(filteredEntries);
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{ borderRadius: "10px", borderColor: "#eef0f2", overflow: "hidden", mb: 2.5 }}
-    >
-      <SectionHeader Icon={Icon} title={title} />
-      <Box sx={{ p: 2.5 }}>
-        {entries.length === 0 ? (
-          <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-            No data submitted
-          </Typography>
-        ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: 2.25,
-            }}
-          >
-            {entries.map(([key, value]) => (
-              <Field
-                key={key}
-                fieldKey={key}
-                value={value}
-                spanFull={
-                  isImageValue(value) ||
-                  isSignatureKey(key) ||
-                  (typeof value === "object" && value !== null && !Array.isArray(value)) ||
-                  (Array.isArray(value) && value.some((v) => typeof v === "object"))
-                }
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
-    </Paper>
+    <SectionShell Icon={Icon} title={title}>
+      {entries.length === 0 ? (
+        <EmptyValue>No data submitted</EmptyValue>
+      ) : (
+        <div className="hiring-view__grid">
+          {entries.map(([key, value]) => (
+            <Field
+              key={key}
+              fieldKey={key}
+              value={value}
+              spanFull={
+                isImageValue(value) ||
+                isSignatureKey(key) ||
+                (typeof value === "object" && value !== null && !Array.isArray(value)) ||
+                (Array.isArray(value) && value.some((v) => typeof v === "object"))
+              }
+            />
+          ))}
+        </div>
+      )}
+    </SectionShell>
   );
 };
 
 const SectionHeader = ({ Icon, title }) => (
-  <Box
-    sx={{
-      px: 2.5,
-      py: 1.5,
-      backgroundColor: "#eef2ff",
-      display: "flex",
-      alignItems: "center",
-      gap: 1.25,
-    }}
-  >
-    <Box
-      sx={{
-        width: 32,
-        height: 32,
-        borderRadius: "8px",
-        backgroundColor: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <Icon size={17} color="#3949ab" />
-    </Box>
-    <Typography
-      sx={{
-        fontSize: 15.5,
-        fontWeight: 600,
-        color: "#2c3345",
-        letterSpacing: "-0.01em",
-      }}
-    >
-      {title}
-    </Typography>
-  </Box>
+  <div className="hiring-view__section-header">
+    <span className="hiring-view__section-icon">
+      <Icon size={18} />
+    </span>
+    <h2 className="hiring-view__section-title">{title}</h2>
+  </div>
 );
 
 // Main component
@@ -494,9 +344,7 @@ const ViewForm = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await axios.get(
-          `https://node.socialsanitation.com/api/v1/form/getFormById/${id}`
-        );
+        const res = await GetHiringFormById(id);
         const submissions = res.data?.data?.details_form_submission || [];
         const parsed = submissions.map((item) => ({
           sectionName: item.section_name,
@@ -515,97 +363,37 @@ const ViewForm = () => {
   }, [id]);
 
   return (
-    <Box sx={{ p: 3, backgroundColor: "#f7f8fa", minHeight: "100vh" }}>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box>
-            <Typography
-              sx={{
-                fontSize: 24,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                color: "#1f2433",
-              }}
-            >
-              EMPLOYEE HIRING FORM MANAGEMENT
-            </Typography>
-            <Typography sx={{ fontSize: 14, color: "#6b7280", mt: 0.5 }}>
-              View Employee Hiring Form
-            </Typography>
-          </Box>
-
+    <div className="hiring-view">
+      <PageHeader
+        title="EMPLOYEE HIRING FORM MANAGEMENT"
+        subtitle="View Employee Hiring Form"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowBackIcon />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToHiringForms}
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              flexShrink: 0,
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Hiring Forms
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
       {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress size={32} sx={{ color: "#2c3345" }} />
-        </Box>
+        <div className="hiring-view__loading">
+          <Spin size="large" />
+        </div>
       )}
 
       {!loading && error && (
-        <Paper
-          variant="outlined"
-          sx={{
-            p: 3,
-            borderRadius: "10px",
-            borderColor: "#fecaca",
-            backgroundColor: "#fef2f2",
-            color: "#b91c1c",
-            fontSize: 14,
-          }}
-        >
+        <div className="surface hiring-view__message hiring-view__message--error">
           {error}
-        </Paper>
+        </div>
       )}
 
       {!loading && !error && sections.length === 0 && (
-        <Paper
-          variant="outlined"
-          sx={{ p: 3, borderRadius: "10px", borderColor: "#eef0f2" }}
-        >
-          <Typography sx={{ fontSize: 14, color: "#a3a9b3", fontStyle: "italic" }}>
-            No submission data found for this form.
-          </Typography>
-        </Paper>
+        <div className="surface hiring-view__message">
+          <EmptyValue>No submission data found for this form.</EmptyValue>
+        </div>
       )}
 
       {!loading &&
@@ -617,7 +405,7 @@ const ViewForm = () => {
             data={section.data}
           />
         ))}
-    </Box>
+    </div>
   );
 };
 

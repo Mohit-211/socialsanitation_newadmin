@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { DeleteOutlined, EyeOutlined, HistoryOutlined } from "@ant-design/icons";
+import {
+  Check,
+  ClipboardList,
+  Eye,
+  History,
+  LoaderCircle,
+  Search,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import dayjs from "@/lib/dayjs";
+import PageHeader from "../../components/PageHeader";
 import {
   DeleteCostCalculation,
   GetAllCostCalculations,
@@ -14,15 +25,18 @@ const useToast = () => {
     setToasts((p) => [...p, { id, msg, type }]);
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
   }, []);
-  const icons = { success: "✓", error: "✕", warning: "⚠" };
+  const icons = { success: Check, error: X, warning: TriangleAlert };
   const ToastContainer = (
     <div className="cc-toast-wrap">
-      {toasts.map((t) => (
-        <div key={t.id} className={`cc-toast ${t.type}`}>
-          <span className="icon">{icons[t.type]}</span>
-          {t.msg}
-        </div>
-      ))}
+      {toasts.map((t) => {
+        const Icon = icons[t.type];
+        return (
+          <div key={t.id} className={`cc-toast ${t.type}`}>
+            <span className="icon">{Icon && <Icon size={16} />}</span>
+            {t.msg}
+          </div>
+        );
+      })}
     </div>
   );
   return { show, ToastContainer };
@@ -55,9 +69,12 @@ const ViewModal = ({ record, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="cc-modal-header">
-          <h3>📋 {record.property_name}</h3>
-          <button className="cc-modal-close" onClick={onClose}>
-            ✕
+          <h3>
+            <ClipboardList size={20} />
+            {record.property_name}
+          </h3>
+          <button className="cc-modal-close" onClick={onClose} aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
@@ -168,7 +185,7 @@ const ViewModal = ({ record, onClose }) => {
             <div className="ch-detail-item">
               <div className="d-label">TOTAL OPERATIONAL COST</div>
               <div
-                className="d-value green"
+                className="d-value success"
                 style={{ fontSize: 30, fontWeight: 700 }}
               >
                 ${Number(record.total_operational_cost || 0).toFixed(2)}
@@ -218,7 +235,7 @@ const ViewModal = ({ record, onClose }) => {
 
                     <tr
                       style={{
-                        background: "#f8fafc",
+                        background: "var(--color-primary-subtle)",
                         fontWeight: 700,
                       }}
                     >
@@ -245,7 +262,9 @@ const ConfirmModal = ({ onConfirm, onCancel }) => (
     <div className="cc-modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
       <div className="cc-modal-header">
         <h3>Delete Calculation</h3>
-        <button className="cc-modal-close" onClick={onCancel}>✕</button>
+        <button className="cc-modal-close" onClick={onCancel} aria-label="Close">
+          <X size={16} />
+        </button>
       </div>
       <div className="cc-modal-body">
         <p className="cc-confirm-msg">
@@ -320,28 +339,38 @@ const CalculationHistory = () => {
       )}
 
       <div className="ch-page">
-        <div className="ch-header">
-          <div>
-            <h1 className="ch-title">Calculation History</h1>
-            <p className="ch-sub">View and manage all saved operational calculations</p>
-          </div>
-          <input
-            className="ch-search"
-            placeholder="🔍  Search by property…"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        </div>
+        <PageHeader
+          card={false}
+          className="ch-header"
+          title="Calculation History"
+          subtitle="View and manage all saved operational calculations"
+          actions={
+            <div className="ch-search">
+              <Search size={16} className="ch-search__icon" aria-hidden="true" />
+              <input
+                className="ch-search__input"
+                placeholder="Search by property…"
+                aria-label="Search by property"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+            </div>
+          }
+        />
 
         <div className="ch-table-wrap">
           {loading ? (
             <div className="ch-empty">
-              <div className="icon">⏳</div>
+              <div className="icon">
+                <LoaderCircle size={36} className="icon-spin" />
+              </div>
               <div className="msg">Loading calculations…</div>
             </div>
           ) : filteredData.length === 0 ? (
             <div className="ch-empty">
-              <div className="icon"><HistoryOutlined /></div>
+              <div className="icon">
+                <History size={36} />
+              </div>
               <div className="msg">
                 {searchText ? "No calculations match your search" : "No calculations saved yet"}
               </div>
@@ -363,9 +392,9 @@ const CalculationHistory = () => {
                 {filteredData.map((item) => (
                   <tr key={item.id}>
                     <td style={{ fontWeight: 600 }}>{item.property_name}</td>
-                    <td style={{ color: "#8892a4" }}>{item.estimated_sqft?.toLocaleString() || "—"}</td>
-                    <td style={{ color: "#8892a4" }}>{item.employee_count}</td>
-                    <td style={{ color: "#8892a4" }}>{Number(item.estimated_hours).toFixed(2)} hrs</td>
+                    <td className="ch-cell-muted">{item.estimated_sqft?.toLocaleString() || "—"}</td>
+                    <td className="ch-cell-muted">{item.employee_count}</td>
+                    <td className="ch-cell-muted">{Number(item.estimated_hours).toFixed(2)} hrs</td>
                     <td>
                       <span className="ch-tag">
                         ${Number(item.total_operational_cost).toFixed(2)}
@@ -382,14 +411,14 @@ const CalculationHistory = () => {
                           className="ch-btn ch-btn--view"
                           onClick={() => setSelectedRecord(item)}
                         >
-                          <EyeOutlined />
+                          <Eye size={14} />
                           View
                         </button>
                         <button
                           className="ch-btn ch-btn--del"
                           onClick={() => setDeleteTarget(item.id)}
                         >
-                          <DeleteOutlined />
+                          <Trash2 size={14} />
                           Delete
                         </button>
                       </div>
@@ -401,7 +430,7 @@ const CalculationHistory = () => {
           )}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: "#525c6e" }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: "var(--color-text-secondary)" }}>
           {filteredData.length} calculation{filteredData.length !== 1 ? "s" : ""} found
         </div>
       </div>

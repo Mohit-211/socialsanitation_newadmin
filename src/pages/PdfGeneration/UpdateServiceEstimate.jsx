@@ -12,7 +12,8 @@ import {
   Tabs,
   Modal,
 } from "antd";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
+import { ArrowLeft, ClipboardList, FileText, PenLine } from "lucide-react";
 import {
   EditServiceEstimate,
   GetServiceEstimateById,
@@ -241,7 +242,9 @@ const fetchUserScopeView = async (userId) => {
       key: "1",
       label: (
         <span className="ge-tab-label">
-          <span className="ge-tab-label__icon">📄</span>
+          <span className="ge-tab-label__icon">
+            <FileText size={16} />
+          </span>
           Estimate Details
         </span>
       ),
@@ -390,7 +393,7 @@ const fetchUserScopeView = async (userId) => {
               {/* 🚫 No user selected */}
               {!form.getFieldValue("user_id") && (
                 <div className="bdm-empty">
-                  <p style={{ marginBottom: 10, color: "#999" }}>
+                  <p className="text-muted" style={{ marginBottom: 10 }}>
                     Please select a client first to view or assign a BDM
                   </p>
 
@@ -475,8 +478,9 @@ const fetchUserScopeView = async (userId) => {
               block
               size="large"
               className="ge-submit-btn"
+              icon={<PenLine size={16} />}
             >
-              🖊️ &nbsp; Update &amp; Sign Document
+              Update &amp; Sign Document
             </Button>
           </Form.Item>
         </Form>
@@ -486,7 +490,9 @@ const fetchUserScopeView = async (userId) => {
       key: "2",
       label: (
         <span className="ge-tab-label">
-          <span className="ge-tab-label__icon">📋</span>
+          <span className="ge-tab-label__icon">
+            <ClipboardList size={16} />
+          </span>
           Scope of Work
           <span className="ge-section__page">Page 4-5</span>
         </span>
@@ -505,28 +511,10 @@ const fetchUserScopeView = async (userId) => {
               onChange={setScopeSections}
             />
           ) : (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "50px 20px",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 18,
-                  fontWeight: 500,
-                  marginBottom: 16,
-                }}
-              >
-                No User Scope
-              </p>
+            <div className="ge-scope-empty">
+              <p className="ge-scope-empty__title">No User Scope</p>
 
-              <p
-                style={{
-                  color: "#999",
-                  marginBottom: 20,
-                }}
-              >
+              <p className="ge-scope-empty__text">
                 This client does not have a Scope of Work yet.
               </p>
 
@@ -560,7 +548,8 @@ const fetchUserScopeView = async (userId) => {
           className="ge-back-btn"
           onClick={() => navigate("/pdf-generation")}
         >
-          ← Back to All PDFs
+          <ArrowLeft size={16} />
+          Back to All PDFs
         </button>
       </div>
 

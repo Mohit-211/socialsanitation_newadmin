@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
+import {
+  Table,
+  Space,
+  message,
+  Modal,
+  Tooltip,
+  Select,
+  Input,
+  Button,
+} from "antd";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { GOOGLE_MAPS_API_KEY } from "../../config/google";
 import "./employee.css";
 import {
   DeleteUser,
@@ -34,20 +40,6 @@ import {
   X,
 } from "lucide-react";
 
-// 🔹 Shared circular icon-button styling so every action button in the
-// table stays visually consistent instead of repeating style objects.
-const actionIconBtn = (color) => ({
-  width: 34,
-  height: 34,
-  border: "1px solid",
-  borderColor: color,
-  color,
-  "&:hover": {
-    backgroundColor: `${color}14`,
-    borderColor: color,
-  },
-});
-
 // 🔹 Shared "pretty" address renderer: icon + street on top, muted city/state
 // below, truncated with an ellipsis if too long, full text on hover.
 const renderAddress = (user_address, maxWidth = 240) => {
@@ -55,10 +47,10 @@ const renderAddress = (user_address, maxWidth = 240) => {
 
   if (!address) {
     return (
-      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "#9CA3AF" }}>
+      <div className="employee-list__address employee-list__address--empty">
         <MapPin size={14} />
-        <span style={{ fontSize: 13 }}>N/A</span>
-      </Stack>
+        <span>N/A</span>
+      </div>
     );
   }
 
@@ -73,45 +65,15 @@ const renderAddress = (user_address, maxWidth = 240) => {
 
   return (
     <Tooltip title={fullAddress}>
-      <Stack
-        direction="row"
-        spacing={0.75}
-        sx={{ alignItems: "flex-start", maxWidth, cursor: "default" }}
-      >
-        <MapPin
-          size={14}
-          style={{ marginTop: 3, flexShrink: 0, color: "#9CA3AF" }}
-        />
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#1a1a1a",
-              lineHeight: 1.35,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {street || "N/A"}
-          </Typography>
+      <div className="employee-list__address" style={{ maxWidth }}>
+        <MapPin size={14} className="employee-list__address-icon" />
+        <div className="employee-list__address-text">
+          <p className="employee-list__address-street">{street || "N/A"}</p>
           {location && (
-            <Typography
-              sx={{
-                fontSize: "11.5px",
-                color: "#9ca3af",
-                lineHeight: 1.35,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {location}
-            </Typography>
+            <p className="employee-list__address-location">{location}</p>
           )}
-        </Box>
-      </Stack>
+        </div>
+      </div>
     </Tooltip>
   );
 };
@@ -155,8 +117,7 @@ const ServiceProvider = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newEmail, setNewEmail] = useState("");
 
-  // 🔹 Open Edit Modal (kept in case you still need email/password reset later —
-  // nothing calls this right now since the pencil button navigates instead)
+  // 🔹 Open the reset email/password modal (key button in the actions column)
   const openEditModal = (record) => {
     setSelectedUser(record);
     setNewEmail(record.email);
@@ -280,18 +241,7 @@ const ServiceProvider = () => {
       width: 150,
       render: (name) => (
         <Tooltip title={name}>
-          <span
-            style={{
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "block",
-              maxWidth: 130,
-            }}
-          >
-            {name}
-          </span>
+          <span className="employee-list__name">{name}</span>
         </Tooltip>
       ),
     },
@@ -302,27 +252,19 @@ const ServiceProvider = () => {
       render: (email, record) => (
         <Space size={6} align="center">
           <Tooltip title={email}>
-            <span
-              style={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "inline-block",
-                maxWidth: 175,
-                verticalAlign: "middle",
-              }}
-            >
-              {email}
-            </span>
+            <span className="employee-list__email">{email}</span>
           </Tooltip>
           <Tooltip title="Reset Email / Password">
-            <IconButton
+            <Button
+              type="text"
               size="small"
-              sx={{ color: "#FF9800", flexShrink: 0 }}
+              className="employee-list__reset"
+              aria-label="Reset Email / Password"
+              icon={
+                <KeyRound size={16} color="var(--color-warning-strong)" />
+              }
               onClick={() => openEditModal(record)}
-            >
-              <KeyRound size={16} />
-            </IconButton>
+            />
           </Tooltip>
         </Space>
       ),
@@ -379,15 +321,16 @@ const ServiceProvider = () => {
       width: 150,
       dataIndex: "logout_image_required",
       render: (logout_image_required, record) => (
-        <Tooltip title={logout_image_required ? "Required" : "Not Required"}>
-          <IconButton
-            size="small"
-            sx={actionIconBtn(logout_image_required ? "#2E7D32" : "#9CA3AF")}
-            onClick={() => toggleLogoutImageRequirement(record.id)}
-          >
-            {logout_image_required ? <Check size={16} /> : <X size={16} />}
-          </IconButton>
-        </Tooltip>
+        <IconAction
+          icon={logout_image_required ? Check : X}
+          title={logout_image_required ? "Required" : "Not Required"}
+          className={
+            logout_image_required
+              ? "employee-list__toggle employee-list__toggle--on"
+              : "employee-list__toggle"
+          }
+          onClick={() => toggleLogoutImageRequirement(record.id)}
+        />
       ),
     },
     {
@@ -401,53 +344,34 @@ const ServiceProvider = () => {
       dataIndex: "action",
       width: 220,
       render: (_, record) => (
-        <Stack useFlexGap sx={{ flexWrap: "nowrap" }} direction="row" spacing={1}>
-          <Tooltip title="Send 2-Week Schedule">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#2E7D32")}
-              onClick={() => handleSendSchedule(record.id)}
-            >
-              <Send size={16} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit Employee">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#2196F3")}
-              onClick={() => navigateToEditUser(record.id)}
-            >
-              <Pencil size={16} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="View Location">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#8F00FF")}
-              onClick={() => openLocationModal(record.id)}
-            >
-              <MapPin size={16} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="View Employee">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#FF9800")}
-              onClick={(event) => navigateToViewUser(event, record.id)}
-            >
-              <Eye size={16} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Employee">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#EF4444")}
-              onClick={() => handleDelete([record.id])}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+        <div className="employee-list__actions">
+          <IconAction
+            icon={Send}
+            title="Send 2-Week Schedule"
+            onClick={() => handleSendSchedule(record.id)}
+          />
+          <IconAction
+            icon={Pencil}
+            title="Edit Employee"
+            onClick={() => navigateToEditUser(record.id)}
+          />
+          <IconAction
+            icon={MapPin}
+            title="View Location"
+            onClick={() => openLocationModal(record.id)}
+          />
+          <IconAction
+            icon={Eye}
+            title="View Employee"
+            onClick={(event) => navigateToViewUser(event, record.id)}
+          />
+          <IconAction
+            icon={Trash2}
+            title="Delete Employee"
+            danger
+            onClick={() => handleDelete([record.id])}
+          />
+        </div>
       ),
     },
   ];
@@ -647,110 +571,61 @@ const ServiceProvider = () => {
   };
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o", // ✅ your real key only here
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: ["maps"],
   });
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={2}
-          useFlexGap
-          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
-        >
-          {/* Left */}
-          <Box>
-            <Typography className="page-title">EMPLOYEE MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              View, delete, and add Employee
-            </Typography>
-          </Box>
-
-          {/* Right */}
-          <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{
-              ml: "auto",
-              alignItems: "center",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-            }}
-          >
+    <div>
+      <PageHeader
+        title="EMPLOYEE MANAGEMENT"
+        subtitle="View, delete, and add Employee"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              className="employee-list__search"
+              prefix={<Search size={18} color="var(--color-text-subtle)" />}
               placeholder="Search by name, email, address, or country..."
-              style={{
-                width: 260,
-                height: 44,
-              }}
               onChange={(e) => onSearch(e.target.value)}
             />
 
             <Tooltip title="Export CSV">
               <Button
-                variant="contained"
-                color="success"
-                sx={{
-                  minWidth: 46,
-                  width: 46,
-                  height: 46,
-                  borderRadius: "8px",
-                }}
+                size="large"
+                aria-label="Export CSV"
+                icon={<Download size={18} />}
                 onClick={exportToCSV}
-              >
-                <Download size={18} />
-              </Button>
+              />
             </Tooltip>
 
             <Tooltip title="Delete Selected">
-              <span>
+              <span className="employee-list__tooltip-target">
                 <Button
-                  variant="contained"
-                  color="error"
+                  type="primary"
+                  danger
+                  size="large"
+                  aria-label="Delete Selected"
+                  icon={<Trash2 size={18} />}
                   disabled={!selectedRowKeys.length}
                   onClick={() => handleDelete(selectedRowKeys)}
-                  sx={{
-                    minWidth: 46,
-                    width: 46,
-                    height: 46,
-                    borderRadius: "8px",
-                  }}
-                >
-                  <Trash2 size={18} />
-                </Button>
+                />
               </span>
             </Tooltip>
 
             <Tooltip title="Add Employee">
               <Button
-                variant="contained"
-                color="primary"
+                type="primary"
+                size="large"
+                aria-label="Add Employee"
+                icon={<Plus size={18} />}
                 onClick={navigateToAddUser}
-                sx={{
-                  minWidth: 46,
-                  width: 46,
-                  height: 46,
-                  borderRadius: "8px",
-                }}
-              >
-                <Plus size={18} />
-              </Button>
+              />
             </Tooltip>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <Table
         columns={columns}
@@ -806,7 +681,7 @@ const ServiceProvider = () => {
           />
         </Modal>
       )}
-    </Box>
+    </div>
   );
 };
 

@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
 import { Select, Spin, Table, message } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { CircleCheck, CircleX } from "lucide-react";
 import {
 	GetWeeklyChecklistWithStatus,
 	GetJanitor,
 } from "../../services/Api/DailyChecklistApi";
-
-const { Option } = Select;
+import PageHeader from "../../components/PageHeader";
+import "./DailyChecklist.scss";
 
 const WeeklyChecklistView = () => {
 	const [loading, setLoading] = useState(false);
@@ -128,9 +124,19 @@ const WeeklyChecklistView = () => {
 			align: "center",
 			render: (val) =>
 				val ? (
-					<CheckCircleOutlined style={{ color: "green", fontSize: 18 }} />
+					<CircleCheck
+						size={18}
+						color="var(--color-success-strong)"
+						role="img"
+						aria-label="Completed"
+					/>
 				) : (
-					<CloseCircleOutlined style={{ color: "red", fontSize: 18 }} />
+					<CircleX
+						size={18}
+						color="var(--color-error)"
+						role="img"
+						aria-label="Not completed"
+					/>
 				),
 		}));
 
@@ -138,63 +144,33 @@ const WeeklyChecklistView = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap
-					direction="row"
-					spacing={2}
-					sx={{
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							WEEKLY CHECKLIST VIEW
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							Track weekly task completion by employee
-						</Typography>
-					</Box>
-
+			<PageHeader
+				className="weekly-checklist__header"
+				title="WEEKLY CHECKLIST VIEW"
+				subtitle="Track weekly task completion by employee"
+				actions={
 					<Select
+						className="weekly-checklist__user"
 						placeholder="Select Cleaner or Housekeeping User"
-						style={{ width: 350, maxWidth: "100%", flexShrink: 0 }}
 						onChange={(val) => setSelectedUser(val)}
 						value={selectedUser}
 						loading={users.length === 0}
-					>
-						{users.map((user) => (
-							<Option key={user.id} value={user.id}>
-								{user.user_profile?.name || user.user_name} (
-								{getRoleName(user.sub_role_id)})
-							</Option>
-						))}
-					</Select>
-				</Stack>
-			</Paper>
+						options={users.map((user) => ({
+							value: user.id,
+							label: `${user.user_profile?.name || user.user_name} (${getRoleName(
+								user.sub_role_id
+							)})`,
+						}))}
+					/>
+				}
+			/>
 
 			{loading ? (
-				<Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+				<div className="weekly-checklist__loading">
 					<Spin size="large" />
-				</Box>
+				</div>
 			) : (
 				Object.keys(checklistData).length > 0 && (
 					<Table
@@ -207,7 +183,7 @@ const WeeklyChecklistView = () => {
 					/>
 				)
 			)}
-		</Box>
+		</div>
 	);
 };
 

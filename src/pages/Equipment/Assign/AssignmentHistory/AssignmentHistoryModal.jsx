@@ -14,24 +14,24 @@ import "./AssignmentHistoryModal.scss";
 import { GetAssignmentHistory } from "../../../../services/Api/equipmentApi";
 
 const STATUS_META = {
-  ASSIGNED: { color: "#4338ca", bg: "#eef2ff", label: "Assigned" },
-  RETURNED: { color: "#059669", bg: "#ecfdf5", label: "Returned" },
-  PARTIALLY_RETURNED: { color: "#b45309", bg: "#fef3c7", label: "Partially Returned" },
-  OVERDUE: { color: "#dc2626", bg: "#fee2e2", label: "Overdue" },
+  ASSIGNED: { color: "var(--color-primary-strong)", bg: "var(--color-primary-soft)", label: "Assigned" },
+  RETURNED: { color: "var(--color-success-strong)", bg: "var(--color-success-subtle)", label: "Returned" },
+  PARTIALLY_RETURNED: { color: "var(--color-warning-strong)", bg: "var(--color-warning-subtle)", label: "Partially Returned" },
+  OVERDUE: { color: "var(--color-error-strong)", bg: "var(--color-error-subtle)", label: "Overdue" },
 };
 
 const ACTION_META = {
   ASSIGNED: {
     icon: PackageCheck,
-    color: "#4338ca",
-    bg: "#eef2ff",
+    color: "var(--color-primary-strong)",
+    bg: "var(--color-primary-soft)",
     label: "Assigned",
     describe: (sig) => `Assigned ${sig.quantity ?? "—"} unit(s) to the employee.`,
   },
   RETURNED: {
     icon: CheckCircle2,
-    color: "#059669",
-    bg: "#ecfdf5",
+    color: "var(--color-success-strong)",
+    bg: "var(--color-success-subtle)",
     label: "Returned",
     describe: (sig) =>
       `Returned ${sig.quantity ?? "—"} unit(s). ${
@@ -40,37 +40,37 @@ const ACTION_META = {
   },
   PARTIAL_RETURN: {
     icon: RotateCcw,
-    color: "#b45309",
-    bg: "#fef3c7",
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-subtle)",
     label: "Partial Return",
     describe: (sig) =>
       `Returned ${sig.quantity ?? "—"} unit(s) — ${sig.remaining_quantity ?? "—"} still with employee.`,
   },
   PARTIALLY_RETURNED: {
     icon: RotateCcw,
-    color: "#b45309",
-    bg: "#fef3c7",
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-subtle)",
     label: "Partial Return",
     describe: (sig) =>
       `Returned ${sig.quantity ?? "—"} unit(s) — ${sig.remaining_quantity ?? "—"} still with employee.`,
   },
   OVERDUE: {
     icon: Clock,
-    color: "#dc2626",
-    bg: "#fee2e2",
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
     label: "Overdue",
     describe: () => "This assignment passed its expected return date.",
   },
 };
 
 const getStatusMeta = (status) =>
-  STATUS_META[status] || { color: "#4b5f58", bg: "#f1f4f2", label: status || "—" };
+  STATUS_META[status] || { color: "var(--color-text-secondary)", bg: "var(--color-bg-muted)", label: status || "—" };
 
 const getActionMeta = (action) =>
   ACTION_META[action] || {
     icon: History,
-    color: "#4b5f58",
-    bg: "#f1f4f2",
+    color: "var(--color-text-secondary)",
+    bg: "var(--color-bg-muted)",
     label: action || "Update",
     describe: () => "Assignment updated.",
   };
@@ -266,6 +266,7 @@ const AssignmentHistoryModal = ({ open, onClose, assignmentId, equipmentName }) 
           <button
             type="button"
             className="assignment-history__lightbox-close"
+            aria-label="Close"
             onClick={() => setPreviewImg(null)}
           >
             <X size={18} />

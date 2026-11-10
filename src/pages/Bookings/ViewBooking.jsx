@@ -1,26 +1,16 @@
 import dayjs from "@/lib/dayjs";
 import { useLayoutEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  Box,
-  Paper,
-  Card,
-  CardContent,
-  Typography,
-  Divider,
-  Button,
-} from "@mui/material";
-import { Row, Col, Table } from "antd";
-import { UserOutlined } from "@ant-design/icons";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { Row, Col, Table, Button, Divider } from "antd";
+import { ArrowLeft, CircleCheck, User } from "lucide-react";
 
 import {
   GetBookingById,
   GetAllServiceCheckListByBookingId,
 } from "../../services/Api/BookingApi";
+import PageHeader from "../../components/PageHeader";
 import "./Bookings.css";
 import { BASE_URL_IMAGE } from "../../services/Host";
-import { CheckCircleOutlined } from "@ant-design/icons";
 
 const ViewBooking = () => {
   const { id } = useParams();
@@ -52,7 +42,7 @@ const ViewBooking = () => {
     fetchBookingData();
   }, [id]);
 
-  if (!bookingData) return <Typography>Loading booking details...</Typography>;
+  if (!bookingData) return <p>Loading booking details...</p>;
 
   // Extract Employee Details
   const employees = bookingData.booking_employee_details?.map(
@@ -82,394 +72,288 @@ const ViewBooking = () => {
   );
 
   return (
-    <Box>
-      {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BOOKING MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              View Booking Details
-            </Typography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="BOOKING MANAGEMENT"
+        subtitle="View Booking Details"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={() => navigate("/bookings")}
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Bookings
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
       {/* Booking Information Card */}
-      <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-            General Information
-          </Typography>
-          <Divider />
-          <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>Booking ID:</strong> {bookingData?.booking_unique_id}
-              </Typography>
-              <Typography variant="body1">
-                <strong>Booking Status:</strong> {bookingData?.booking_status}
-              </Typography>
-              <Typography variant="body1">
-                <strong>Client Name:</strong>{" "}
-                {bookingData?.booking_user?.user_profile?.name ||
-                  bookingData?.client_name ||
-                  "--"}
-              </Typography>
-            </Col>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>Service Name:</strong>{" "}
-                {bookingData?.service_booking?.name ||
-                  bookingData?.service_booking_archieve?.name ||
-                  "--"}
-              </Typography>
+      <section className="surface surface--padded booking-view__card">
+        <h2 className="section-title booking-view__title">
+          General Information
+        </h2>
+        <Divider className="booking-view__divider" />
+        <Row gutter={24} style={{ marginTop: "15px" }}>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>Booking ID:</strong> {bookingData?.booking_unique_id}
+            </p>
+            <p className="booking-view__field">
+              <strong>Booking Status:</strong> {bookingData?.booking_status}
+            </p>
+            <p className="booking-view__field">
+              <strong>Client Name:</strong>{" "}
+              {bookingData?.booking_user?.user_profile?.name ||
+                bookingData?.client_name ||
+                "--"}
+            </p>
+          </Col>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>Service Name:</strong>{" "}
+              {bookingData?.service_booking?.name ||
+                bookingData?.service_booking_archieve?.name ||
+                "--"}
+            </p>
 
-              <Typography variant="body1">
-                <strong>Booking Name:</strong>{" "}
-                {bookingData?.booking_name || "--"}
-              </Typography>
+            <p className="booking-view__field">
+              <strong>Booking Name:</strong>{" "}
+              {bookingData?.booking_name || "--"}
+            </p>
 
-              {/* ✅ Updated Date & Time Section */}
-              <Typography variant="body1">
-                <strong>Date & Time:</strong>{" "}
-                {bookingData?.date && bookingData?.time
-                  ? (() => {
-                      const dateStr =
-                        typeof bookingData.date === "string"
-                          ? bookingData.date.split("T")[0]
-                          : dayjs.utc(bookingData.date).format("YYYY-MM-DD");
+            {/* ✅ Updated Date & Time Section */}
+            <p className="booking-view__field">
+              <strong>Date & Time:</strong>{" "}
+              {bookingData?.date && bookingData?.time
+                ? (() => {
+                    const dateStr =
+                      typeof bookingData.date === "string"
+                        ? bookingData.date.split("T")[0]
+                        : dayjs.utc(bookingData.date).format("YYYY-MM-DD");
 
-                      const combined = dayjs.utc(
-                        `${dateStr} ${bookingData.time}`,
-                        "YYYY-MM-DD HH:mm:ss",
-                      );
+                    const combined = dayjs.utc(
+                      `${dateStr} ${bookingData.time}`,
+                      "YYYY-MM-DD HH:mm:ss",
+                    );
 
-                      return combined.format("MM/DD/YYYY hh:mm A");
-                    })()
-                  : "--"}
-              </Typography>
-            </Col>
-          </Row>
-        </CardContent>
-      </Card>
+                    return combined.format("MM/DD/YYYY hh:mm A");
+                  })()
+                : "--"}
+            </p>
+          </Col>
+        </Row>
+      </section>
 
       {/* Employees Assigned */}
-      <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-            Employees Assigned
-          </Typography>
-          <Divider />
-          {employees?.length > 0 ? (
-            <Table
-              columns={[
-                {
-                  title: "Profile",
-                  dataIndex: "profile_image_uri",
-                  key: "profile_image_uri",
-                  render: (uri) =>
-                    uri ? (
-                      <img
-                        src={`${BASE_URL_IMAGE}${uri}`}
-                        alt="Profile"
-                        crossOrigin="anonymous"
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          boxShadow: "0 0 6px rgba(0,0,0,0.1)",
-                        }}
-                      />
-                    ) : (
-                      <UserOutlined
-                        style={{
-                          fontSize: "24px",
-                          color: "#ccc",
-                        }}
-                      />
-                    ),
-                },
-                { title: "Name", dataIndex: "name", key: "name" },
-                { title: "Email", dataIndex: "email", key: "email" },
-                { title: "Mobile", dataIndex: "mobile", key: "mobile" },
-              ]}
-              dataSource={employees}
-              pagination={false}
-              bordered
-              style={{ marginTop: "15px" }}
-            />
-          ) : (
-            <Typography sx={{ mt: 2 }} variant="body1" color="error">
-              No Employees Assigned
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+      <section className="surface surface--padded booking-view__card">
+        <h2 className="section-title booking-view__title">
+          Employees Assigned
+        </h2>
+        <Divider className="booking-view__divider" />
+        {employees?.length > 0 ? (
+          <Table
+            columns={[
+              {
+                title: "Profile",
+                dataIndex: "profile_image_uri",
+                key: "profile_image_uri",
+                render: (uri) =>
+                  uri ? (
+                    <img
+                      src={`${BASE_URL_IMAGE}${uri}`}
+                      alt="Profile"
+                      crossOrigin="anonymous"
+                      className="booking-view__avatar"
+                    />
+                  ) : (
+                    <User size={24} color="var(--color-text-subtle)" />
+                  ),
+              },
+              { title: "Name", dataIndex: "name", key: "name" },
+              { title: "Email", dataIndex: "email", key: "email" },
+              { title: "Mobile", dataIndex: "mobile", key: "mobile" },
+            ]}
+            dataSource={employees}
+            pagination={false}
+            bordered
+            style={{ marginTop: "15px" }}
+          />
+        ) : (
+          <p className="booking-view__error">No Employees Assigned</p>
+        )}
+      </section>
 
       {/* Booking Timings */}
-      <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-            Booking Schedule
-          </Typography>
-          <Divider />
-          <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>Start Time:</strong>{" "}
-                {bookingData?.start_time
-                  ? new Date(bookingData.start_time).toLocaleString()
-                  : "---"}
-              </Typography>
-            </Col>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>End Time:</strong>{" "}
-                {bookingData?.end_time
-                  ? new Date(bookingData.end_time).toLocaleString()
-                  : "---"}
-              </Typography>
-            </Col>
-          </Row>
-        </CardContent>
-      </Card>
+      <section className="surface surface--padded booking-view__card">
+        <h2 className="section-title booking-view__title">Booking Schedule</h2>
+        <Divider className="booking-view__divider" />
+        <Row gutter={24} style={{ marginTop: "15px" }}>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>Start Time:</strong>{" "}
+              {bookingData?.start_time
+                ? new Date(bookingData.start_time).toLocaleString()
+                : "---"}
+            </p>
+          </Col>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>End Time:</strong>{" "}
+              {bookingData?.end_time
+                ? new Date(bookingData.end_time).toLocaleString()
+                : "---"}
+            </p>
+          </Col>
+        </Row>
+      </section>
 
       {/* Booking Address */}
-      <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-            Address & Notes
-          </Typography>
-          <Divider />
-          <Row gutter={24} style={{ marginTop: "15px" }}>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>Address:</strong> {fullAddress}
-              </Typography>
-            </Col>
-            <Col xs={24} md={12}>
-              <Typography variant="body1">
-                <strong>Notes:</strong> {bookingData?.notes || "---"}
-              </Typography>
-            </Col>
-          </Row>
-        </CardContent>
-      </Card>
+      <section className="surface surface--padded booking-view__card">
+        <h2 className="section-title booking-view__title">Address & Notes</h2>
+        <Divider className="booking-view__divider" />
+        <Row gutter={24} style={{ marginTop: "15px" }}>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>Address:</strong> {fullAddress}
+            </p>
+          </Col>
+          <Col xs={24} md={12}>
+            <p className="booking-view__field">
+              <strong>Notes:</strong> {bookingData?.notes || "---"}
+            </p>
+          </Col>
+        </Row>
+      </section>
 
-      <Card sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-            Service Images
-          </Typography>
-          <Divider />
-          <Typography sx={{ fontWeight: "bold", mt: 2 }} variant="body1">
-            Before Service
-          </Typography>
-          {beforeServiceImages?.length > 0 ? (
-            beforeServiceImages.map((img) => (
-              <img
-                key={img.id}
-                src={`${BASE_URL_IMAGE}${img.file_name}`}
-                alt="Before Service"
-                style={{ width: "100px", margin: "10px" }}
-                crossOrigin="anonymous"
-              />
-            ))
-          ) : (
-            <Typography variant="body2" color="error">
-              No images uploaded
-            </Typography>
-          )}
+      <section className="surface surface--padded booking-view__card">
+        <h2 className="section-title booking-view__title">Service Images</h2>
+        <Divider className="booking-view__divider" />
+        <h3 className="booking-view__subheading">Before Service</h3>
+        {beforeServiceImages?.length > 0 ? (
+          beforeServiceImages.map((img) => (
+            <img
+              key={img.id}
+              src={`${BASE_URL_IMAGE}${img.file_name}`}
+              alt="Before Service"
+              className="booking-view__image"
+              crossOrigin="anonymous"
+            />
+          ))
+        ) : (
+          <p className="booking-view__error">No images uploaded</p>
+        )}
 
-          <Typography sx={{ fontWeight: "bold", mt: 2 }} variant="body1">
-            After Service
-          </Typography>
-          {afterServiceImages?.length > 0 ? (
-            afterServiceImages.map((img) => (
-              <img
-                key={img.id}
-                src={`${BASE_URL_IMAGE}/${img.file_name}`}
-                alt="After Service"
-                style={{ width: "100px", margin: "10px" }}
-                crossOrigin="anonymous"
-              />
-            ))
-          ) : (
-            <Typography variant="body2" color="error">
-              No images uploaded
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
+        <h3 className="booking-view__subheading">After Service</h3>
+        {afterServiceImages?.length > 0 ? (
+          afterServiceImages.map((img) => (
+            <img
+              key={img.id}
+              src={`${BASE_URL_IMAGE}/${img.file_name}`}
+              alt="After Service"
+              className="booking-view__image"
+              crossOrigin="anonymous"
+            />
+          ))
+        ) : (
+          <p className="booking-view__error">No images uploaded</p>
+        )}
+      </section>
 
       {checkListData?.length > 0 ? (
         checkListData.map((headingGroup, index) => (
-          <Card key={index} sx={{ mb: 3, boxShadow: 3, borderRadius: "10px" }}>
-            <CardContent>
-              <Typography sx={{ fontWeight: "bold", mb: 2 }} variant="h6" color="primary">
-                {headingGroup.heading_title}
-              </Typography>
+          <section
+            key={index}
+            className="surface surface--padded booking-view__card"
+          >
+            <h2 className="section-title booking-view__title">
+              {headingGroup.heading_title}
+            </h2>
 
-              {headingGroup.tasks && headingGroup.tasks.length > 0 ? (
-                <>
-                  {/* Table Header */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      fontWeight: "bold",
-                      border: "1px solid #ccc",
-                      backgroundColor: "#f5f5f5",
-                    }}
-                  >
-                    <Box
-                      sx={{ width: "75%", p: 1, borderRight: "1px solid #ccc" }}
-                    >
-                      Task
-                    </Box>
-                    <Box
-                      sx={{
-                        width: "12%",
-                        p: 1,
-                        borderRight: "1px solid #ccc",
-                        textAlign: "center",
-                      }}
-                    >
-                      Day 1
-                    </Box>
-                    <Box sx={{ width: "12%", p: 1, textAlign: "center" }}>
-                      Day 2
-                    </Box>
-                  </Box>
+            {headingGroup.tasks && headingGroup.tasks.length > 0 ? (
+              <>
+                {/* Table Header */}
+                <div className="booking-view__checklist-head">
+                  <div className="booking-view__checklist-task">Task</div>
+                  <div className="booking-view__checklist-day">Day 1</div>
+                  <div className="booking-view__checklist-day">Day 2</div>
+                </div>
 
-                  {/* Task Rows */}
-                  {(() => {
-                    const groupedTasks = {};
+                {/* Task Rows */}
+                {(() => {
+                  const groupedTasks = {};
 
-                    headingGroup.tasks?.forEach((item) => {
-                      if (!groupedTasks[item.task]) {
-                        groupedTasks[item.task] = {
-                          day_1: false,
-                          day_2: false,
-                        };
-                      }
-                      if (item.day === "Day 1" && item.is_completed) {
-                        groupedTasks[item.task].day_1 = true;
-                      }
-                      if (item.day === "Day 2" && item.is_completed) {
-                        groupedTasks[item.task].day_2 = true;
-                      }
-                    });
+                  headingGroup.tasks?.forEach((item) => {
+                    if (!groupedTasks[item.task]) {
+                      groupedTasks[item.task] = {
+                        day_1: false,
+                        day_2: false,
+                      };
+                    }
+                    if (item.day === "Day 1" && item.is_completed) {
+                      groupedTasks[item.task].day_1 = true;
+                    }
+                    if (item.day === "Day 2" && item.is_completed) {
+                      groupedTasks[item.task].day_2 = true;
+                    }
+                  });
 
-                    return Object.entries(groupedTasks).map(
-                      ([task, status], taskIndex) => (
-                        <Box
-                          key={taskIndex}
-                          sx={{
-                            display: "flex",
-                            borderLeft: "1px solid #ccc",
-                            borderRight: "1px solid #ccc",
-                            borderBottom: "1px solid #ccc",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: "75%",
-                              p: 1,
-                              borderRight: "1px solid #ccc",
-                            }}
-                          >
-                            {task}
-                          </Box>
-                          <Box
-                            sx={{
-                              width: "12%",
-                              p: 1,
-                              borderRight: "1px solid #ccc",
-                              textAlign: "center",
-                            }}
-                          >
-                            {status.day_1 && (
-                              <CheckCircleOutlined sx={{ color: "green" }} />
-                            )}
-                          </Box>
-                          <Box sx={{ width: "12%", p: 1, textAlign: "center" }}>
-                            {status.day_2 && (
-                              <CheckCircleOutlined sx={{ color: "green" }} />
-                            )}
-                          </Box>
-                        </Box>
-                      ),
-                    );
-                  })()}
-                </>
-              ) : (
-                <Typography sx={{ color: "text.secondary", mt: 2 }}>
-                  You haven’t allotted any checklist to this service.{" "}
-                  <Link
-                    to={`/edit-checklist/${headingGroup.booking_id}`}
-                    style={{ textDecoration: "underline", color: "#1976d2" }}
-                  >
-                    Click here to allot checklist
-                  </Link>
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
+                  return Object.entries(groupedTasks).map(
+                    ([task, status], taskIndex) => (
+                      <div
+                        key={taskIndex}
+                        className="booking-view__checklist-row"
+                      >
+                        <div className="booking-view__checklist-task">
+                          {task}
+                        </div>
+                        <div className="booking-view__checklist-day">
+                          {status.day_1 && (
+                            <CircleCheck
+                              size={16}
+                              color="var(--color-success-strong)"
+                            />
+                          )}
+                        </div>
+                        <div className="booking-view__checklist-day">
+                          {status.day_2 && (
+                            <CircleCheck
+                              size={16}
+                              color="var(--color-success-strong)"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ),
+                  );
+                })()}
+              </>
+            ) : (
+              <p className="text-muted booking-view__note">
+                You haven’t allotted any checklist to this service.{" "}
+                <Link
+                  to={`/edit-checklist/${headingGroup.booking_id}`}
+                  className="booking-view__link"
+                >
+                  Click here to allot checklist
+                </Link>
+              </p>
+            )}
+          </section>
         ))
       ) : (
-        <Card sx={{ p: 3, boxShadow: 3 }}>
-          <Typography sx={{ color: "text.secondary" }}>
+        <section className="surface surface--padded">
+          <p className="text-muted booking-view__note booking-view__note--flush">
             You haven’t allotted any checklist to this service.{" "}
             <Link
               to={`/editService/${bookingData?.service_id}`}
-              style={{ textDecoration: "underline", color: "#1976d2" }}
+              className="booking-view__link"
             >
               Click here to allot checklist
             </Link>
-          </Typography>
-        </Card>
+          </p>
+        </section>
       )}
-    </Box>
+    </div>
   );
 };
 

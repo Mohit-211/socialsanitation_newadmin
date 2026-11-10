@@ -1,13 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { Table, Tag, Button, message, Modal, Input, Select } from "antd";
+import { Table, Tag, Button, message, Modal, Input, Select, Flex } from "antd";
 import dayjs from "@/lib/dayjs";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import MuiButton from "@mui/material/Button";
 import InvoiceViewModal from "./InvoiceViewModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
   GetInvoices,
   GetMonthlyInvoicesSummary,
@@ -15,49 +10,40 @@ import {
   MarkInvoiceCheckPaid,
   MarkInvoiceACHPaid,
 } from "../../services/Api/InvoiceApi";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import { DeleteServiceQuote } from "../../services/Api/BookingApi";
-import Tooltip from "@mui/material/Tooltip";
-import IconButton from "@mui/material/IconButton";
+import { BASE_URL } from "../../services/Host";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { saveXlsx, excelStyles } from "../../utils/excel";
+import { cssVar } from "../../theme/antdTheme";
 import {
   Search as SearchIcon,
   Download,
   Eye,
   FileText,
-  CheckCircle2,
+  CircleCheck,
   Banknote,
   Trash2,
   Pencil,
 } from "lucide-react";
+import "./Invoices.scss";
 
+// Status colors are antd Tag presets, themed by the app's antd theme.
 const jobStatusConfig = {
-  NOT_BOOKED: { label: "NOT BOOKED", color: "gold" },
-  BOOKED: { label: "BOOKED", color: "blue" },
-  EXPIRED: { label: "EXPIRED", color: "red" },
+  NOT_BOOKED: { label: "NOT BOOKED", color: "warning" },
+  BOOKED: { label: "BOOKED", color: "processing" },
+  EXPIRED: { label: "EXPIRED", color: "error" },
 };
 
 const paymentStatusConfig = {
-  NOT_PAID: { label: "NOT PAID", color: "orange" },
-  PAID: { label: "PAID", color: "green" },
-  CASH_PAID: { label: "PAID (CASH)", color: "green" },
-  CHECK_PAID: { label: "PAID (CHECK)", color: "green" },
-  ACH_PAID: { label: "PAID (ACH)", color: "green" },
+  NOT_PAID: { label: "NOT PAID", color: "warning" },
+  PAID: { label: "PAID", color: "success" },
+  CASH_PAID: { label: "PAID (CASH)", color: "success" },
+  CHECK_PAID: { label: "PAID (CHECK)", color: "success" },
+  ACH_PAID: { label: "PAID (ACH)", color: "success" },
 };
 
-const actionIconBtn = (color) => ({
-  width: 34,
-  height: 34,
-  border: "1px solid",
-  borderColor: color,
-  color,
-  "&:hover": {
-    backgroundColor: `${color}14`,
-    borderColor: color,
-  },
-});
-
-const PDF_BASE_URL = "https://node.socialsanitation.com/api/v1/docs";
+const PDF_BASE_URL = `${BASE_URL}docs`;
 
 const getPdfUrl = (record) => {
   if (record.pdf_url) return record.pdf_url;
@@ -207,71 +193,48 @@ const Invoices = () => {
     {
       title: "Actions",
       render: (_, record) => (
-        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.75}>
-          <Tooltip title="View Details">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#F59E0B")}
-              onClick={() => setSelectedInvoice(record)}
-            >
-              <Eye size={16} />
-            </IconButton>
-          </Tooltip>
+        <Flex gap={6} className="invoices__actions">
+          <IconAction
+            icon={Eye}
+            title="View Details"
+            onClick={() => setSelectedInvoice(record)}
+          />
 
-          <Tooltip title="Edit Quote">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#6366F1")}
-              onClick={() => navigate("/edit-service-quote/" + record.id)}
-            >
-              <Pencil size={16} />
-            </IconButton>
-          </Tooltip>
+          <IconAction
+            icon={Pencil}
+            title="Edit Quote"
+            onClick={() => navigate("/edit-service-quote/" + record.id)}
+          />
 
-          <Tooltip title="View PDF">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#8B5CF6")}
-              onClick={() => handleViewPdf(record)}
-            >
-              <FileText size={16} />
-            </IconButton>
-          </Tooltip>
+          <IconAction
+            icon={FileText}
+            title="View PDF"
+            onClick={() => handleViewPdf(record)}
+          />
 
           {record.job_status === "NOT_BOOKED" && (
-            <Tooltip title="Mark Booked">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#2563EB")}
-                onClick={() => handleMarkBooked(record.id)}
-              >
-                <CheckCircle2 size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={CircleCheck}
+              title="Mark Booked"
+              onClick={() => handleMarkBooked(record.id)}
+            />
           )}
 
           {record.payment_status === "NOT_PAID" && (
-            <Tooltip title="Mark Paid by Check/ACH">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#16A34A")}
-                onClick={() => openPayModal(record.id)}
-              >
-                <Banknote size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Banknote}
+              title="Mark Paid by Check/ACH"
+              onClick={() => openPayModal(record.id)}
+            />
           )}
 
-          <Tooltip title="Delete Invoice">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#EF4444")}
-              onClick={() => handleDelete(record.id)}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+          <IconAction
+            icon={Trash2}
+            title="Delete Invoice"
+            danger
+            onClick={() => handleDelete(record.id)}
+          />
+        </Flex>
       ),
     },
   ];
@@ -311,26 +274,8 @@ const Invoices = () => {
 
       const dayNumbers = Array.from(new Set(allDates)).sort((a, b) => a - b);
 
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Service Quotes " + monthName, {
-        properties: { defaultRowHeight: 34 },
-      });
-
-      sheet.pageSetup = {
-        paperSize: 9,
-        orientation: "landscape",
-        fitToPage: true,
-        fitToWidth: 1,
-        fitToHeight: 0,
-        horizontalCentered: true,
-        verticalCentered: false, // top-anchored, not centered — content should start at the top, extra space (if any) goes below
-      };
-      sheet.pageSetup.printTitlesRow = "5:5";
-
-      const colors = {
-        PAID: "FFE8F5E9",
-        NOT_PAID: "FFFFF4E5",
-      };
+      // Themed cell styles (header, status fills, currency format...).
+      const styles = excelStyles();
 
       const paidStatuses = ["PAID", "CASH_PAID", "CHECK_PAID", "ACH_PAID"];
 
@@ -364,109 +309,117 @@ const Invoices = () => {
 
       const mergeSpan = Math.max(6, dayNumbers.length + 1);
 
-      const titleRow = sheet.addRow(["Service Quote Invoices - " + monthName]);
-      titleRow.getCell(1).font = { bold: true, size: 16 };
-      titleRow.getCell(1).alignment = { horizontal: "center" };
-      sheet.mergeCells(1, 1, 1, mergeSpan);
+      // Rows are 34pt high (the sheet's row height); client rows grow with
+      // the number of quotes on their busiest day.
+      const ROW_HEIGHT = 34;
 
-      const summaryHeader = sheet.addRow([
-        "Total Invoices",
-        "Total Amount",
-        "Paid",
-        "Paid Amount",
-        "Not Paid",
-        "Not Paid Amount",
-      ]);
+      // One cell merged across the full report width.
+      const mergedRow = (cell) => [
+        { ...cell, columnSpan: mergeSpan, height: ROW_HEIGHT },
+        ...Array(mergeSpan - 1).fill(null),
+      ];
 
-      summaryHeader.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF1F4E79" },
-        };
-        cell.alignment = { horizontal: "center", vertical: "middle" };
-      });
+      const rows = [];
 
-      const summaryRow = sheet.addRow([
-        totalInvoices,
-        totalAmount,
-        paidCount,
-        paidAmount,
-        notPaidCount,
-        notPaidAmount,
-      ]);
+      rows.push(
+        mergedRow({
+          value: "Service Quote Invoices - " + monthName,
+          ...styles.title,
+        }),
+      );
 
-      summaryRow.eachCell((cell, col) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: "center" };
-        if (col % 2 === 0) cell.numFmt = "$#,##0.00";
-      });
+      rows.push(
+        [
+          "Total Invoices",
+          "Total Amount",
+          "Paid",
+          "Paid Amount",
+          "Not Paid",
+          "Not Paid Amount",
+        ].map((value) => ({ value, ...styles.header, height: ROW_HEIGHT })),
+      );
 
-      const legendRow = sheet.addRow([
-        "🟢 Paid (Card / Check / ACH / Cash)     🟠 Not Paid",
-      ]);
-      legendRow.getCell(1).font = { italic: true, size: 11 };
-      sheet.mergeCells(legendRow.number, 1, legendRow.number, mergeSpan);
+      rows.push(
+        [
+          totalInvoices,
+          totalAmount,
+          paidCount,
+          paidAmount,
+          notPaidCount,
+          notPaidAmount,
+        ].map((value, i) => ({
+          value,
+          fontWeight: "bold",
+          align: "center",
+          height: ROW_HEIGHT,
+          // 2nd, 4th and 6th columns are amounts
+          ...(i % 2 === 1 ? { format: styles.currency } : {}),
+        })),
+      );
+
+      rows.push(
+        mergedRow({
+          value: "🟢 Paid (Card / Check / ACH / Cash)     🟠 Not Paid",
+          ...styles.note,
+          fontSize: 11,
+        }),
+      );
 
       const header = ["Client Name"].concat(dayNumbers.map(formatDayHeader));
 
-      const headerRow = sheet.addRow(header);
-      headerRow.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF1F4E79" },
-        };
-        cell.alignment = { horizontal: "center" };
-      });
+      rows.push(
+        header.map((value) => ({
+          value,
+          ...styles.header,
+          height: ROW_HEIGHT,
+        })),
+      );
 
-      users.forEach((user) => {
-        const rowValues = [user.name || "Unknown"];
+      // Sheet row number of the first client row (rows are striped by it).
+      const firstDataRow = rows.length + 1;
+
+      users.forEach((user, userIndex) => {
+        const userInvoices = user.invoices || [];
+        const hasUnpaid = userInvoices.some(
+          (inv) => getFinalStatus(inv) === "NOT_PAID",
+        );
+
+        // Fill for the whole row; day cells with quotes use a status fill.
+        const rowFill = hasUnpaid
+          ? styles.error
+          : (firstDataRow + userIndex) % 2 === 0
+            ? styles.muted
+            : { backgroundColor: cssVar("--color-bg") };
+
+        const maxQuotesInADay = Math.max(
+          1,
+          ...dayNumbers.map(
+            (d) =>
+              userInvoices.filter((inv) => dayjs(inv.created_at).date() === d)
+                .length,
+          ),
+        );
+
+        const row = [
+          {
+            value: user.name || "Unknown",
+            ...rowFill,
+            fontWeight: "bold",
+            textColor: cssVar(
+              hasUnpaid ? "--color-error-strong" : "--color-text",
+            ),
+            alignVertical: "center",
+            height: Math.max(34, 20 + maxQuotesInADay * 16),
+          },
+        ];
 
         dayNumbers.forEach((d) => {
-          const dayInvoices = (user.invoices || []).filter(
+          const invoices = userInvoices.filter(
             (inv) => dayjs(inv.created_at).date() === d,
           );
-          rowValues.push(dayInvoices);
-        });
 
-        const row = sheet.addRow(rowValues);
-
-        row.eachCell((cell, colIndex) => {
-          if (colIndex === 1) {
-            const userInvoices = user.invoices || [];
-            const hasUnpaid = userInvoices.some(
-              (inv) => getFinalStatus(inv) === "NOT_PAID",
-            );
-
-            row.eachCell((entireRowCell) => {
-              entireRowCell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: {
-                  argb: hasUnpaid
-                    ? "FFFFCCCC"
-                    : row.number % 2 === 0
-                      ? "FFF9F9F9"
-                      : "FFFFFFFF",
-                },
-              };
-            });
-
-            cell.font = {
-              bold: true,
-              color: { argb: hasUnpaid ? "FF9C0006" : "FF000000" },
-            };
-            cell.alignment = { vertical: "middle" };
-            return;
-          }
-
-          const invoices = cell.value;
-          if (!invoices || invoices.length === 0) {
-            cell.value = "—";
-            cell.alignment = { horizontal: "center" };
+          if (invoices.length === 0) {
+            row.push({ value: "—", ...rowFill, align: "center" });
             return;
           }
 
@@ -482,40 +435,31 @@ const Invoices = () => {
             if (status === "NOT_PAID") cellStatus = "NOT_PAID";
           });
 
-          cell.value = text.trim();
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: colors[cellStatus] },
-          };
-          cell.alignment = {
-            wrapText: true,
-            vertical: "top",
-            horizontal: "center",
-          };
+          row.push({
+            value: text.trim(),
+            ...(cellStatus === "PAID" ? styles.success : styles.warning),
+            wrap: true,
+            alignVertical: "top",
+            align: "center",
+          });
         });
 
-        const maxQuotesInADay = Math.max(
-          1,
-          ...dayNumbers.map(
-            (d) =>
-              (user.invoices || []).filter(
-                (inv) => dayjs(inv.created_at).date() === d,
-              ).length,
-          ),
-        );
-        row.height = Math.max(34, 20 + maxQuotesInADay * 16);
+        rows.push(row);
       });
 
-      sheet.columns.forEach((col, i) => {
-        if (i === 0) col.width = 36;
-        else col.width = 20;
-      });
-
-      sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buffer]), "Service Quote Invoices - " + monthName + ".xlsx");
+      await saveXlsx(
+        rows,
+        {
+          sheet: "Service Quotes " + monthName,
+          columns: Array.from({ length: mergeSpan }, (_, i) => ({
+            width: i === 0 ? 36 : 20,
+          })),
+          stickyRowsCount: 5,
+          stickyColumnsCount: 1,
+          orientation: "landscape",
+        },
+        "Service Quote Invoices - " + monthName + ".xlsx",
+      );
 
       message.success(
         "Service Quote Invoices - " + monthName + " downloaded successfully!",
@@ -547,103 +491,59 @@ const Invoices = () => {
   };
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
-        <Stack spacing={2}>
-          <Stack useFlexGap
-            direction="row"
-            spacing={2}
-            sx={{
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-            }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography className="page-title" noWrap>
-                SERVICE QUOTE MANAGEMENT
-              </Typography>
-              <Typography
-                className="page-sub-title"
-                sx={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                View &amp; manage service quotes
-              </Typography>
-            </Box>
-
-            <MuiButton
-              variant="contained"
-              disableElevation
-              startIcon={<Download size={17} />}
+    <>
+      <div className="surface surface--padded invoices__header">
+        <PageHeader
+          card={false}
+          title="SERVICE QUOTE MANAGEMENT"
+          subtitle="View & manage service quotes"
+          actions={
+            <Button
+              type="primary"
+              size="large"
+              icon={<Download size={16} />}
               onClick={handleDownloadExcel}
               disabled={selectedMonth === null || selectedYear === null}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
             >
               Download Excel ({dayjs().month(selectedMonth).format("MMM")}{" "}
               {selectedYear})
-            </MuiButton>
-          </Stack>
+            </Button>
+          }
+        />
 
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}
-          >
-            <Input
-              allowClear
-              prefix={<SearchIcon size={18} color="#9CA3AF" />}
-              placeholder="Search invoices..."
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 240, height: 44 }}
-            />
+        <div className="invoices__toolbar">
+          <Input
+            allowClear
+            size="large"
+            className="invoices__search"
+            prefix={<SearchIcon size={16} className="text-subtle" />}
+            placeholder="Search invoices..."
+            onChange={(e) => setSearchText(e.target.value)}
+          />
 
-            <Select
-              value={selectedMonth}
-              style={{ width: 120, height: 44 }}
-              onChange={(m) => {
-                setSelectedMonth(m);
-                fetchInvoices(m, selectedYear);
-              }}
-            >
-              {months.map((m, i) => (
-                <Select.Option key={i} value={i}>
-                  {m}
-                </Select.Option>
-              ))}
-            </Select>
+          <Select
+            size="large"
+            className="invoices__month"
+            value={selectedMonth}
+            onChange={(m) => {
+              setSelectedMonth(m);
+              fetchInvoices(m, selectedYear);
+            }}
+            options={months.map((m, i) => ({ value: i, label: m }))}
+          />
 
-            <Select
-              value={selectedYear}
-              style={{ width: 100, height: 44 }}
-              onChange={(y) => {
-                setSelectedYear(y);
-                fetchInvoices(selectedMonth, y);
-              }}
-            >
-              {years.map((y) => (
-                <Select.Option key={y} value={y}>
-                  {y}
-                </Select.Option>
-              ))}
-            </Select>
-          </Stack>
-        </Stack>
-      </Paper>
+          <Select
+            size="large"
+            className="invoices__year"
+            value={selectedYear}
+            onChange={(y) => {
+              setSelectedYear(y);
+              fetchInvoices(selectedMonth, y);
+            }}
+            options={years.map((y) => ({ value: y, label: y }))}
+          />
+        </div>
+      </div>
 
       <Table
         rowKey="id"
@@ -690,7 +590,7 @@ const Invoices = () => {
       >
         <p>How was this invoice paid?</p>
       </Modal>
-    </Box>
+    </>
   );
 };
 

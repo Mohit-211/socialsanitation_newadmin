@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, message, Modal, Input } from "antd";
+import { Button, Table, message, Modal, Input, Space } from "antd";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import TextField from "@mui/material/TextField";
 import { Eye, Pencil, Trash2, Plus, Search } from "lucide-react";
 import {
 	DeleteChecklist,
@@ -16,6 +8,9 @@ import {
 	GetChecklistMainTitle,
 	CreateOrUpdateChecklistMainTitle,
 } from "../../services/Api/DailyChecklistApi";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import "./DailyChecklist.scss";
 
 const DailyChecklist = () => {
 	const navigate = useNavigate();
@@ -27,18 +22,6 @@ const DailyChecklist = () => {
 	const [newChecklist, setNewChecklist] = useState("");
 	const [checklistLoading, setChecklistLoading] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
-
-	const actionIconBtn = (color) => ({
-		width: 34,
-		height: 34,
-		border: "1px solid",
-		borderColor: color,
-		color,
-		"&:hover": {
-			backgroundColor: `${color}14`,
-			borderColor: color,
-		},
-	});
 
 	useEffect(() => {
 		getData();
@@ -88,37 +71,24 @@ const DailyChecklist = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
-					<Tooltip title="View Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#F59E0B")}
-							onClick={(event) => navigateToView(event, record.id)}
-						>
-							<Eye size={16} />
-						</IconButton>
-					</Tooltip>
-
-					<Tooltip title="Edit Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#6366F1")}
-							onClick={(event) => navigateToEdit(event, record.id)}
-						>
-							<Pencil size={16} />
-						</IconButton>
-					</Tooltip>
-
-					<Tooltip title="Delete Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#EF4444")}
-							onClick={() => handleDelete([record.id])}
-						>
-							<Trash2 size={16} />
-						</IconButton>
-					</Tooltip>
-				</Stack>
+				<Space>
+					<IconAction
+						icon={Eye}
+						title="View Checklist"
+						onClick={(event) => navigateToView(event, record.id)}
+					/>
+					<IconAction
+						icon={Pencil}
+						title="Edit Checklist"
+						onClick={(event) => navigateToEdit(event, record.id)}
+					/>
+					<IconAction
+						icon={Trash2}
+						title="Delete Checklist"
+						danger
+						onClick={() => handleDelete([record.id])}
+					/>
+				</Space>
 			),
 		},
 	];
@@ -210,190 +180,78 @@ const DailyChecklist = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap
-					direction="row"
-					spacing={2}
-					sx={{
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							HOUSEKEEPING CHECKLIST MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							View all checklists
-						</Typography>
-					</Box>
-
-					<Stack useFlexGap
-						direction="row"
-						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-					>
+			<PageHeader
+				title="HOUSEKEEPING CHECKLIST MANAGEMENT"
+				subtitle="View all checklists"
+				actions={
+					<>
 						<Input
 							allowClear
-							prefix={<Search size={18} color="#9CA3AF" />}
+							size="large"
+							className="daily-checklist__search"
+							prefix={<Search size={16} className="text-subtle" />}
 							placeholder="Search..."
-							style={{ width: 240, height: 44 }}
 							value={searchTerm}
 							onChange={(e) => onSearch(e.target.value)}
 						/>
 
 						{selectedRowKeys.length > 0 && (
 							<Button
-								variant="contained"
-								disableElevation
-								startIcon={<Trash2 size={16} />}
+								type="primary"
+								danger
+								size="large"
+								icon={<Trash2 size={16} />}
 								onClick={() => handleDelete(selectedRowKeys)}
-								sx={{
-									height: 44,
-									px: 2.5,
-									borderRadius: "8px",
-									textTransform: "none",
-									fontWeight: 600,
-									whiteSpace: "nowrap",
-									backgroundColor: "#ef4444",
-									"&:hover": { backgroundColor: "#dc2626" },
-								}}
 							>
 								Delete Selected ({selectedRowKeys.length})
 							</Button>
 						)}
 
 						<Button
-							variant="contained"
-							disableElevation
-							startIcon={<Plus size={18} />}
+							type="primary"
+							size="large"
+							icon={<Plus size={16} />}
 							onClick={navigateToAddUser}
-							sx={{
-								height: 44,
-								px: 2.5,
-								borderRadius: "8px",
-								textTransform: "none",
-								fontWeight: 600,
-								whiteSpace: "nowrap",
-							}}
 						>
 							Add Checklist
 						</Button>
-					</Stack>
-				</Stack>
-			</Paper>
+					</>
+				}
+			/>
 
 			{/* MAIN TITLE UPDATE CARD */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap sx={{ alignItems: "flex-end", flexWrap: "wrap" }}
-	direction="row"
-	spacing={2.5}
->
-	<Box>
-		<Typography
-			sx={{
-				fontSize: "11.5px",
-				fontWeight: 700,
-				color: "#6b7280",
-				letterSpacing: "0.04em",
-				textTransform: "uppercase",
-				mb: 0.5,
-			}}
-		>
-			Current Title
-		</Typography>
-		<Typography sx={{ fontSize: "14.5px", fontWeight: 600, color: "#111827", height: "42px", display: "flex", alignItems: "center" }}>
-			{oldChecklist || "Loading..."}
-		</Typography>
-	</Box>
+			<div className="surface surface--padded daily-checklist__title-card">
+				<div>
+					<div className="daily-checklist__label">Current Title</div>
+					<div className="daily-checklist__current">
+						{oldChecklist || "Loading..."}
+					</div>
+				</div>
 
-	<Box sx={{ flexGrow: 1, minWidth: 220 }}>
-		<Typography
-			sx={{
-				fontSize: "11.5px",
-				fontWeight: 700,
-				color: "#6b7280",
-				letterSpacing: "0.04em",
-				textTransform: "uppercase",
-				mb: 0.5,
-			}}
-		>
-			New Title
-		</Typography>
-		<TextField
-			fullWidth
-			size="small"
-			value={newChecklist}
-			onChange={(e) => setNewChecklist(e.target.value)}
-			placeholder="Enter new title"
-			sx={{
-				"& .MuiOutlinedInput-root": {
-					height: "42px",
-					borderRadius: "6px",
-				},
-			}}
-		/>
-	</Box>
+				<div className="daily-checklist__title-input">
+					<label className="daily-checklist__label" htmlFor="checklist-new-title">
+						New Title
+					</label>
+					<Input
+						id="checklist-new-title"
+						size="large"
+						value={newChecklist}
+						onChange={(e) => setNewChecklist(e.target.value)}
+						placeholder="Enter new title"
+					/>
+				</div>
 
-	<Box>
-		<Typography
-			sx={{
-				fontSize: "11.5px",
-				fontWeight: 700,
-				color: "transparent",
-				letterSpacing: "0.04em",
-				textTransform: "uppercase",
-				mb: 0.5,
-				userSelect: "none",
-			}}
-		>
-			.
-		</Typography>
-		<Button
-			variant="contained"
-			disableElevation
-			disabled={checklistLoading || !newChecklist}
-			onClick={handleUpdatePrice}
-			sx={{
-				height: 42,
-				px: 2.5,
-				borderRadius: "8px",
-				textTransform: "none",
-				fontWeight: 600,
-				whiteSpace: "nowrap",
-			}}
-		>
-			Update Title
-		</Button>
-	</Box>
-</Stack>
-			</Paper>
+				<Button
+					type="primary"
+					size="large"
+					disabled={checklistLoading || !newChecklist}
+					onClick={handleUpdatePrice}
+				>
+					Update Title
+				</Button>
+			</div>
 
 			{/* CHECKLIST TABLE */}
 			<Table
@@ -405,7 +263,7 @@ const DailyChecklist = () => {
 				bordered
 				size="middle"
 			/>
-		</Box>
+		</div>
 	);
 };
 

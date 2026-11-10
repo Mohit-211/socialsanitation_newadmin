@@ -16,10 +16,6 @@ import {
 	Col,
 	Radio,
 } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -27,7 +23,11 @@ import {
 	CreateGuestBookingByAdmin,
 } from "../../services/Api/BookingApi";
 import { CityAPI, StateAPI } from "../../services/Api/Api";
-import { debounce } from "lodash";
+import { debounce } from "../../utils/debounce";
+import { geocodeAddress } from "../../utils/geocode";
+import { GOOGLE_MAPS_API_KEY } from "../../config/google";
+import PageHeader from "../../components/PageHeader";
+import "./Bookings.css";
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -89,12 +89,7 @@ const GuestBooking = () => {
 		if (!address) return;
 
 		try {
-			const res = await fetch(
-				`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-					address
-				)}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`
-			);
-			const data = await res.json();
+			const data = await geocodeAddress(address);
 
 			if (data.status === "OK") {
 				const location = data.results[0].geometry.location;
@@ -115,6 +110,8 @@ const GuestBooking = () => {
 
 	useEffect(() => {
 		debouncedFetchCoordinates(address);
+		// Drop a pending lookup when the address changes again or the page unmounts.
+		return () => debouncedFetchCoordinates.cancel();
 	}, [address, debouncedFetchCoordinates]);
 
 	const mapRef = React.useRef(null);
@@ -124,8 +121,7 @@ const GuestBooking = () => {
 	useEffect(() => {
 		if (!window.google) {
 			const script = document.createElement("script");
-			script.src =
-				"https://maps.googleapis.com/maps/api/js?key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o&libraries=places";
+			script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
 			script.async = true;
 			script.defer = true;
 			document.head.appendChild(script);
@@ -236,67 +232,22 @@ const GuestBooking = () => {
 	}, [bookingType]);
 
 	return (
-		<Box>
-			{/* Header Section */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 3,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-						alignItems: "center",
-						gap: 2,
-					}}
-				>
-					<Box>
-						<Typography className="page-title">BOOKING MANAGEMENT</Typography>
-						<Typography className="page-sub-title">
-							Create a new non-client booking
-						</Typography>
-					</Box>
-
-					<MuiButton
-						variant="contained"
-						disableElevation
-						startIcon={<ArrowLeft size={18} />}
+		<div>
+			<PageHeader
+				title="BOOKING MANAGEMENT"
+				subtitle="Create a new non-client booking"
+				actions={
+					<Button
+						size="large"
+						icon={<ArrowLeft size={16} />}
 						onClick={() => navigate("/bookings")}
-						sx={{
-							ml: "auto",
-							height: 46,
-							px: 3,
-							borderRadius: "8px",
-							minWidth: 180,
-							textTransform: "none",
-							fontWeight: 600,
-							backgroundColor: "#2c3345",
-							"&:hover": {
-								backgroundColor: "#1f2433",
-							},
-						}}
 					>
 						Return to Bookings
-					</MuiButton>
-				</Box>
-			</Paper>
+					</Button>
+				}
+			/>
 
-			<Paper
-				variant="outlined"
-				sx={{
-					px: 1,
-					pt: 0.5,
-					mb: 3,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
+			<div className="surface bookings-tabs">
 				<Tabs
 					defaultActiveKey="guest"
 					onChange={(key) => {
@@ -317,7 +268,7 @@ const GuestBooking = () => {
 						},
 					]}
 				/>
-			</Paper>
+			</div>
 
 			<Card title="Create New Booking">
 				<Form
@@ -434,20 +385,11 @@ const GuestBooking = () => {
 						<Col xs={24} md={12}>
 							<Form.Item label="Map Preview">
 								{!window.google ? (
-									<div style={{ color: "red" }}>
+									<div className="booking-form__map-error">
 										Google Maps script not loaded
 									</div>
 								) : (
-									<div
-										ref={mapRef}
-										style={{
-											border: "1px solid #d9d9d9",
-											borderRadius: "8px",
-											overflow: "hidden",
-											height: "280px",
-											boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-										}}
-									/>
+									<div ref={mapRef} className="booking-form__map" />
 								)}
 							</Form.Item>
 						</Col>
@@ -517,16 +459,7 @@ const GuestBooking = () => {
 					)}
 
 					{bookingType === "Recurring Booking" && (
-						<Card
-							title="Custom Recurrence"
-							style={{
-								background: "#f9f9f9",
-								borderRadius: "10px",
-								padding: "24px",
-								marginTop: 24,
-								boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-							}}
-						>
+						<Card title="Custom Recurrence" className="booking-form__recurrence">
 							<Row gutter={16}>
 								<Col xs={24} sm={12} md={8}>
 									<Form.Item
@@ -716,7 +649,7 @@ const GuestBooking = () => {
 					</Form.Item>
 				</Form>
 			</Card>
-		</Box>
+		</div>
 	);
 };
 

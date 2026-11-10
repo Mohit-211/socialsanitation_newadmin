@@ -5,13 +5,35 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Authorization and Acknowledgment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Authorization and Acknowledgment</title>
     <style>
+      /* Brand tokens mirrored from src/index.css (this template is rendered
+         outside the app, so it carries its own copy). */
+      :root {
+        --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+        --color-text: #111827;
+        --color-text-muted: #6b7280;
+        --color-text-subtle: #9ca3af;
+        --color-text-inverse: #ffffff;
+        --color-border: #e5e7eb;
+        --color-border-strong: #d1d5db;
+        --color-bg-subtle: #f9fafb;
+        --color-bg-muted: #f3f4f6;
+        --color-primary: #78e8f7;
+        --color-primary-soft: #cffdff;
+        --color-on-primary: #0b1f24;
+        --color-secondary: #08f621;
+        --color-ink: #0b1f24;
+      }
+
         body {
-            font-family: Georgia, "Times New Roman", Times, serif;
+            font-family: var(--font-sans);
             font-size: 11px;
             line-height: 1.6;
-            color: #000;
+            color: var(--color-text);
             margin: 40px;
         }
 
@@ -143,12 +165,12 @@
         }
 
         .personal-info-box {
-            border: 2px solid #000;
+            border: 2px solid var(--color-ink);
             text-align: center;
             place-self: center;
             padding: 10px;
             width: 100%;
-            background-color: #f9f9f9;
+            background-color: var(--color-bg-subtle);
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 10px;
             margin-top: 10px;
@@ -169,7 +191,7 @@
         table,
         th,
         td {
-            border: 1px solid #999;
+            border: 1px solid var(--color-border-strong);
         }
 
         th,
@@ -247,7 +269,7 @@
                 <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                 `
                 : `
-                <p style="font-style: italic; color: #999">sin firma</p>
+                <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                 `
                 }
             </div>
@@ -327,7 +349,7 @@
                     <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                     `
                     : `
-                    <p style="font-style: italic; color: #999">sin firma</p>
+                    <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                     `
                     }
                 </div>
@@ -382,7 +404,7 @@
                 <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                 `
                 : `
-                <p style="font-style: italic; color: #999">sin firma</p>
+                <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                 `
                 }
             </div>
@@ -486,7 +508,7 @@
                     <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                     `
                     : `
-                    <p style="font-style: italic; color: #999">sin firma</p>
+                    <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                     `
                     }
                 </div>
@@ -876,7 +898,7 @@
                     <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                     `
                     : `
-                    <p style="font-style: italic; color: #999">sin firma</p>
+                    <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                     `
                     }
                 </div>
@@ -1084,7 +1106,7 @@
                         <img src="${signatureCompanyBase64Url}" alt="Signature" crossorigin="anonymous" />
                         `
                         : `
-                        <p style="font-style: italic; color: #999">sin firma</p>
+                        <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                         `
                         }
                     </div>
@@ -1102,7 +1124,7 @@
                         <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                         `
                         : `
-                        <p style="font-style: italic; color: #999">sin firma</p>
+                        <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                         `
                         }
                     </div>
@@ -1153,7 +1175,7 @@
                     <img src="${signatureBase64Url}" alt="Signature" crossorigin="anonymous" />
                     `
                     : `
-                    <p style="font-style: italic; color: #999">sin firma</p>
+                    <p style="font-style: italic; color: var(--color-text-subtle)">sin firma</p>
                     `
                     }
                 </div>

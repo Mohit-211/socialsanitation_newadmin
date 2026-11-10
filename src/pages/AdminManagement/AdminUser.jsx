@@ -1,26 +1,10 @@
 import { useEffect, useState } from "react";
-import { Table, message, Space, Modal } from "antd";
-import { useNavigate } from "react-router-dom";
+import { Button, Table, message, Space, Modal } from "antd";
+import { useNavigate } from "react-router";
 import { GetAdmins, DeleteAdmin } from "../../services/Api/Api";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-
-const actionIconBtn = (color) => ({
-	width: 34,
-	height: 34,
-	border: "1px solid",
-	borderColor: color,
-	color,
-	"&:hover": {
-		backgroundColor: `${color}14`,
-		borderColor: color,
-	},
-});
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 const AdminUser = () => {
 	const navigate = useNavigate();
@@ -136,85 +120,38 @@ const AdminUser = () => {
 			width: 350,
 			render: (text, record) => (
 				<Space>
-					<Tooltip title="Edit Admin">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#6366F1")}
-							onClick={() => navigateToEditAdmin(record.id)}
-						>
-							<Pencil size={16} />
-						</IconButton>
-					</Tooltip>
-
-					<Tooltip title="Delete Admin">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#EF4444")}
-							onClick={() => handleDelete(record.id)}
-						>
-							<Trash2 size={16} />
-						</IconButton>
-					</Tooltip>
+					<IconAction
+						icon={Pencil}
+						title="Edit Admin"
+						onClick={() => navigateToEditAdmin(record.id)}
+					/>
+					<IconAction
+						icon={Trash2}
+						title="Delete Admin"
+						danger
+						onClick={() => handleDelete(record.id)}
+					/>
 				</Space>
 			),
 		},
 	];
 
 	return (
-		<Box>
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						gap: 2,
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							ADMIN MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							View, edit, delete, and create admins
-						</Typography>
-					</Box>
-
+		<div>
+			<PageHeader
+				title="ADMIN MANAGEMENT"
+				subtitle="View, edit, delete, and create admins"
+				actions={
 					<Button
-						variant="contained"
-						disableElevation
-						startIcon={<Plus size={18} />}
+						type="primary"
+						size="large"
+						icon={<Plus size={16} />}
 						onClick={navigateToAddAdmin}
-						sx={{
-							height: 44,
-							px: 2.5,
-							borderRadius: "8px",
-							textTransform: "none",
-							fontWeight: 600,
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-						}}
 					>
 						Add New Admin
 					</Button>
-				</Box>
-			</Paper>
+				}
+			/>
 
 			<Table
 				dataSource={roleData}
@@ -226,7 +163,7 @@ const AdminUser = () => {
 				bordered
 				size="middle"
 			/>
-		</Box>
+		</div>
 	);
 };
 

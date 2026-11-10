@@ -13,66 +13,26 @@ import {
   Image,
   TimePicker,
   Input,
-  Tooltip,
 } from "antd";
 import "./Attendance.css";
-import { FaRegCheckCircle } from "react-icons/fa";
-import { FaRegClock } from "react-icons/fa";
-import { TbBeach } from "react-icons/tb";
-import { AiOutlinePlusCircle } from "react-icons/ai";
 import { useNavigate } from "react-router";
 import { BASE_URL_IMAGE } from "../../services/Host";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { Search } from "lucide-react";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import {
+  CircleCheck,
+  CirclePlus,
+  Clock,
+  Search,
+  TreePalm,
+} from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 // 🔹 Small responsive stat card used in the daily-view summary strip
 const StatCard = ({ label, value }) => (
-  <Box
-    sx={{
-      flex: "1 1 160px",
-      minWidth: 140,
-      p: 1.5,
-      borderRadius: "8px",
-      border: "1px solid #f0f0f0",
-      backgroundColor: "#fafafa",
-    }}
-  >
-    <Typography variant="caption" sx={{ color: "#6b7280", fontWeight: 600 }}>
-      {label}
-    </Typography>
-    <Typography variant="h6" sx={{ fontWeight: 700, color: "#111827" }}>
-      {value ?? "--"}
-    </Typography>
-  </Box>
-);
-
-// 🔹 Accessible, unstyled-native-button wrapper for the clickable icons in
-// the table — avoids putting onClick directly on a bare <svg>/icon.
-const IconAction = ({ onClick, label, children }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-label={label}
-    style={{
-      background: "none",
-      border: "none",
-      padding: 0,
-      margin: 0,
-      cursor: "pointer",
-      display: "inline-flex",
-      alignItems: "center",
-    }}
-  >
-    {children}
-  </button>
+  <div className="attendance__stat">
+    <span className="attendance__stat-label">{label}</span>
+    <span className="attendance__stat-value">{value ?? "--"}</span>
+  </div>
 );
 
 const AllAttendance = () => {
@@ -336,19 +296,21 @@ const AllAttendance = () => {
         let displayStatus = status === "ABSENT" ? "--" : status;
         let color =
           status === "PRESENT"
-            ? "green"
+            ? "var(--color-success-strong)"
             : status === "LATE"
-              ? "orange"
+              ? "var(--color-warning-strong)"
               : status === "ON LEAVE"
-                ? "blue"
+                ? "var(--color-info)"
                 : status === "APPLIED LEAVE"
-                  ? "orange"
+                  ? "var(--color-warning-strong)"
                   : status === "ABSENT"
-                    ? "red"
-                    : "black";
+                    ? "var(--color-error)"
+                    : "var(--color-text)";
 
         return (
-          <span style={{ color, fontWeight: "bold" }}>{displayStatus}</span>
+          <span className="attendance__status" style={{ color }}>
+            {displayStatus}
+          </span>
         );
       },
     },
@@ -381,11 +343,7 @@ const AllAttendance = () => {
             crossOrigin="anonymous"
             width={50}
             height={50}
-            style={{
-              objectFit: "cover",
-              borderRadius: "8px",
-              boxShadow: "0 0 6px rgba(0,0,0,0.1)",
-            }}
+            className="attendance__thumb"
           />
         ) : (
           <span>---</span>
@@ -404,11 +362,7 @@ const AllAttendance = () => {
             crossOrigin="anonymous"
             width={50}
             height={50}
-            style={{
-              objectFit: "cover",
-              borderRadius: "8px",
-              boxShadow: "0 0 6px rgba(0,0,0,0.1)",
-            }}
+            className="attendance__thumb"
           />
         ) : (
           <span>---</span>
@@ -429,52 +383,26 @@ const AllAttendance = () => {
       key: "actions",
       width: 80,
       render: (text, record) => (
-        <Tooltip title="Manual Clock In/Out">
-          <IconAction
-            label="Manual clock in/out"
-            onClick={() => openManualModal(record)}
-          >
-            <AiOutlinePlusCircle
-              style={{ fontSize: "20px", color: "#1677ff" }}
-            />
-          </IconAction>
-        </Tooltip>
+        <IconAction
+          icon={CirclePlus}
+          title="Manual Clock In/Out"
+          onClick={() => openManualModal(record)}
+        />
       ),
     },
   ];
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">
-              ATTENDANCE MANAGEMENT
-            </Typography>
-            <Typography className="page-sub-title">
-              {isMonthlyView
-                ? "View Monthly Attendance"
-                : "View Daily Attendance"}
-            </Typography>
-          </Box>
-
-          {isMonthlyView ? (
-            <Stack useFlexGap
-              direction="row"
-              spacing={1.5}
-              sx={{ alignItems: "center", flexWrap: "wrap" }}
-            >
+    <div>
+      <PageHeader
+        className="attendance-header"
+        title="ATTENDANCE MANAGEMENT"
+        subtitle={
+          isMonthlyView ? "View Monthly Attendance" : "View Daily Attendance"
+        }
+        actions={
+          isMonthlyView ? (
+            <>
               <DatePicker
                 picker="month"
                 format="MMMM YYYY"
@@ -486,25 +414,19 @@ const AllAttendance = () => {
               <Button type="primary" onClick={() => setIsMonthlyView(false)}>
                 View Daily Attendance
               </Button>
-            </Stack>
+            </>
           ) : (
-            <Stack
-              spacing={2}
-              sx={{
-                width: { xs: "100%", sm: 470 },
-              }}
-            >
+            <div className="attendance__controls">
               {/* Top Row */}
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" } }}
-              >
+              <div className="attendance__toolbar">
                 <DatePicker
                   value={selectedDate}
                   onChange={handleDateChange}
                   placeholder="Select a date"
-                  style={{ width: 140,margin:5 }}
+                  style={{ width: 140 }}
                 />
 
-                <Button type="primary" onClick={() => setIsMonthlyView(true)}  style={{ margin:5 }}>
+                <Button type="primary" onClick={() => setIsMonthlyView(true)}>
                   Monthly Summary View
                 </Button>
 
@@ -514,55 +436,41 @@ const AllAttendance = () => {
                 >
                   Calendar View
                 </Button>
-              </Box>
+              </div>
 
               {/* Search */}
               <Input
                 allowClear
-                prefix={<Search size={18} color="#9CA3AF" />}
+                size="large"
+                prefix={<Search size={16} color="var(--color-text-subtle)" />}
                 placeholder="Search by employee name..."
-                style={{
-                  width: "100%",
-                  height: 44,
-                }}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </Stack>
-          )}
-        </Stack>
-      </Paper>
+            </div>
+          )
+        }
+      />
 
       {isMonthlyView ? (
-        <div style={{ overflowX: "auto" }}>
-          <Stack useFlexGap
-            direction="row"
-            spacing={3}
-            sx={{
-              flexWrap: "wrap",
-              alignItems: "center",
-              padding: "10px 0",
-              borderBottom: "1px solid #ddd",
-              marginBottom: "8px",
-              minWidth: "1000px", // so legend aligns with table scroll
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <FaRegCheckCircle style={{ color: "green", fontSize: "18px" }} />
+        <div className="attendance__monthly">
+          <div className="attendance__legend">
+            <div className="attendance__legend-item">
+              <CircleCheck size={18} color="var(--color-success-strong)" />
               <span>Present</span>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <TbBeach style={{ color: "#f39c12", fontSize: "18px" }} />
+            </div>
+            <div className="attendance__legend-item">
+              <TreePalm size={18} color="var(--color-warning-strong)" />
               <span>On Leave</span>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <FaRegClock style={{ color: "#3498db", fontSize: "18px" }} />
+            </div>
+            <div className="attendance__legend-item">
+              <Clock size={18} color="var(--color-primary-strong)" />
               <span>Applied Leave</span>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            </div>
+            <div className="attendance__legend-item">
               <span>--</span>
               <span>Absent</span>
-            </Box>
-          </Stack>
+            </div>
+          </div>
 
           <Table
             dataSource={monthlyData.map((emp) => {
@@ -587,28 +495,30 @@ const AllAttendance = () => {
                 if (statusEntry) {
                   if (statusEntry.status === "PRESENT")
                     symbol = (
-                      <IconAction
-                        label={`View ${emp.user_name} attendance on ${fullDate}`}
+                      <Button
+                        type="text"
+                        size="small"
+                        aria-label={`View ${emp.user_name} attendance on ${fullDate}`}
+                        icon={
+                          <CircleCheck
+                            size={15}
+                            color="var(--color-success-strong)"
+                          />
+                        }
                         onClick={() =>
                           openDetailsModal(emp.user_name, statusEntry)
                         }
-                      >
-                        <FaRegCheckCircle
-                          style={{ color: "green", fontSize: "15px" }}
-                        />
-                      </IconAction>
+                      />
                     );
                   else if (statusEntry.status === "ON LEAVE")
                     symbol = (
-                      <TbBeach style={{ color: "#f39c12", fontSize: "15px" }} />
+                      <TreePalm size={15} color="var(--color-warning-strong)" />
                     );
                   else if (statusEntry.status === "ABSENT")
                     symbol = "--"; // keep "--" for absent
                   else if (statusEntry.status === "APPLIED LEAVE")
                     symbol = (
-                      <FaRegClock
-                        style={{ color: "#3498db", fontSize: "15px" }}
-                      />
+                      <Clock size={15} color="var(--color-primary-strong)" />
                     );
                 }
                 row[`day${i}`] = symbol;
@@ -639,16 +549,12 @@ const AllAttendance = () => {
         </div>
       ) : (
         <>
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ flexWrap: "wrap", mb: 2.5 }}
-          >
+          <div className="attendance__stats">
             <StatCard label="Total Staff" value={stats?.total_employees} />
             <StatCard label="Marked Present" value={stats?.present} />
             <StatCard label="Marked Absent" value={stats?.absent} />
             <StatCard label="On Approved Leave" value={stats?.on_leave} />
-          </Stack>
+          </div>
 
           <Table
             columns={columns}
@@ -672,7 +578,7 @@ const AllAttendance = () => {
         footer={null}
       >
         {selectedEntry && (
-          <div style={{ fontSize: "15px", lineHeight: "2" }}>
+          <div className="attendance__details">
             <p>
               <strong>Date:</strong>{" "}
               {dayjs(selectedEntry.date).format("dddd, DD MMMM, YYYY")}
@@ -711,7 +617,7 @@ const AllAttendance = () => {
         </p>
 
         <div style={{ marginTop: "10px" }}>
-          <label>Clock In:</label>
+          <label className="field-label">Clock In:</label>
           <TimePicker
             use12Hours
             format="hh:mm A"
@@ -729,7 +635,7 @@ const AllAttendance = () => {
         </div>
 
         <div>
-          <label>Clock Out:</label>
+          <label className="field-label">Clock Out:</label>
           <TimePicker
             use12Hours
             format="hh:mm A"
@@ -746,7 +652,7 @@ const AllAttendance = () => {
           />
         </div>
       </Modal>
-    </Box>
+    </div>
   );
 };
 

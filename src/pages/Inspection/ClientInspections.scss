@@ -1,60 +1,272 @@
+// Client inspections list: quick stats, toolbar and the inspection cards.
 .inspection-page {
-  // MUI Stack's justifyContent="space-between" keeps losing the cascade in
-  // this app (same root cause as page-title/page-sub-title needing
-  // !important) — these two classes replace Stack in the spots where that
-  // showed up: the page header row and each card's score/view footer.
-  .inspection-header-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
-    flex-wrap: wrap;
-    gap: 16px;
+  &__loading {
+    display: flex;
+    justify-content: center;
+    padding: 64px 0;
   }
 
+  &__empty {
+    padding: 64px 0;
+  }
+
+  // ===== Quick stats =====
+  .inspection-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+
+  .inspection-stat {
+    flex: 1;
+    min-width: 160px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+
+    &__icon {
+      display: flex;
+
+      &--primary {
+        color: var(--color-primary-strong);
+      }
+
+      &--success {
+        color: var(--color-success-strong);
+      }
+
+      &--warning {
+        color: var(--color-warning-strong);
+      }
+    }
+
+    &__value {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-bold);
+      line-height: 1.1;
+      color: var(--color-text);
+    }
+
+    &__label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+  }
+
+  // ===== Toolbar =====
   .inspection-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
   .inspection-toolbar__label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+  }
+
+  // ===== Cards: 1 column on phones, 2 from 600px, 3 from 1200px =====
+  .inspection-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+
+    @media (min-width: 600px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   .inspection-card {
     position: relative;
     height: 100%;
+    padding: 18px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      border-color: var(--color-border-strong);
+      box-shadow: var(--shadow-md);
+    }
+
+    &--reopened {
+      border-color: var(--color-warning-border);
+
+      &:hover {
+        border-color: var(--color-warning);
+      }
+    }
 
     &__top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      gap: 12px;
+      gap: var(--space-3);
+    }
+
+    &__badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    &__status {
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 0.02em;
+    }
+
+    &__reopen-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-warning-border);
+      background: var(--color-warning-subtle);
+      color: var(--color-warning-strong);
+      font-size: 10.5px;
+      font-weight: var(--font-weight-bold);
+    }
+
+    &__title {
+      margin: var(--space-3) 0 10px;
+      font-size: 14.5px;
+      font-weight: var(--font-weight-semibold);
+      line-height: 1.35;
+      color: var(--color-text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    &__meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    &__meta-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12.5px;
+      color: var(--color-text-muted);
+
+      &--remark {
+        align-items: flex-start;
+        color: var(--color-warning-strong);
+      }
+    }
+
+    &__remark-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    &__remark {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     &__footer {
-      display: flex !important;
-      justify-content: space-between !important;
-      align-items: center !important;
-      width: 100% !important;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
       margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid #f1f2f4;
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
     }
 
+    &__score {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-success-strong);
+    }
+
+    &__unrated {
+      font-size: 12.5px;
+      color: var(--color-text-subtle);
+    }
+
+    &__view {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 12.5px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-primary-strong);
+    }
+
+    // antd's own button transition also animates the opacity change
     &__delete {
       opacity: 0.5;
-      transition: opacity 0.15s ease, background-color 0.15s ease;
       flex-shrink: 0;
     }
 
-    &:hover &__delete {
+    // Written out: a nested "&:hover &__delete" would repeat the
+    // .inspection-page ancestor and never match.
+    &:hover .inspection-card__delete,
+    &__delete:focus-visible {
       opacity: 1;
     }
+  }
+}
+
+// Create-inspection modal. antd renders modals in a portal outside
+// .inspection-page, so these rules are top level.
+.inspection-create-modal {
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--color-primary-subtle);
+    color: var(--color-primary-strong);
+  }
+
+  &__alert {
+    margin-top: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+
+  &__label.field-label {
+    margin: var(--space-4) 0 var(--space-2);
+  }
+
+  &__hint {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: var(--color-text-muted);
   }
 }

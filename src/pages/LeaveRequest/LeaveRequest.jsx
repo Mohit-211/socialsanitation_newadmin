@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Table, Space, message, Select, Tag, Input } from "antd";
-import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router";
 import {
   GetAllLeaveRequest,
@@ -8,6 +7,8 @@ import {
 } from "../../services/Api/leaveRequestApi";
 import dayjs from "@/lib/dayjs";
 import { Search } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import "./LeaveRequest.scss";
 
 const LeaveRequest = () => {
   const navigate = useNavigate();
@@ -86,10 +87,10 @@ const LeaveRequest = () => {
             <Tag
               color={
                 record.leave_status === "APPROVED"
-                  ? "green"
+                  ? "success"
                   : record.leave_status === "DECLINED"
-                  ? "red"
-                  : "orange"
+                  ? "error"
+                  : "warning"
               }
             ></Tag>
           )}
@@ -153,42 +154,23 @@ const LeaveRequest = () => {
   );
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">LEAVE REQUESTS</Typography>
-            <Typography className="page-sub-title">
-              View and manage employee leave requests
-            </Typography>
-          </Box>
-
-          <Box sx={{ width: { xs: "100%", sm: 320 } }}>
-            <Input
-              allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
-              placeholder="Search by employee name..."
-              style={{
-                width: "100%",
-                height: 44,
-              }}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </Box>
-        </Stack>
-      </Paper>
+    <div>
+      <PageHeader
+        className="leave-requests-header"
+        title="LEAVE REQUESTS"
+        subtitle="View and manage employee leave requests"
+        actions={
+          <Input
+            allowClear
+            size="large"
+            className="leave-requests__search"
+            prefix={<Search size={16} color="var(--color-text-subtle)" />}
+            placeholder="Search by employee name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        }
+      />
 
       <Table
         columns={columns}
@@ -198,7 +180,7 @@ const LeaveRequest = () => {
         loading={loading}
         onChange={handleTableChange}
       />
-    </Box>
+    </div>
   );
 };
 

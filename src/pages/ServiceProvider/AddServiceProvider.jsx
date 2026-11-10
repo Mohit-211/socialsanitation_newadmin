@@ -1,22 +1,14 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
-  Button,
-  Paper,
-  Typography,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  FormLabel,
-  CircularProgress,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  Chip,
-  Divider,
-  Collapse,
-} from "@mui/material";
+    Button,
+    Divider,
+    Input,
+    Radio,
+    Select,
+    Spin,
+    Tag,
+    message,
+} from "antd";
 
 import {
     AddUser,
@@ -25,8 +17,10 @@ import {
     CityAPI,
 } from "../../services/Api/Api";
 
-import { useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { useNavigate } from "react-router";
+import PageHeader from "../../components/PageHeader";
+import { geocodeAddress } from "../../utils/geocode";
+import "./ServiceProviderForm.scss";
 import {
     ArrowLeft,
     Check,
@@ -37,7 +31,7 @@ import {
     FileText,
     MapPin,
     ClipboardList,
-    CheckCircle2,
+    CircleCheck,
     Info,
     ChevronDown,
     Phone,
@@ -149,38 +143,19 @@ const resolveCountryId = (countryName) => {
     return COUNTRY_IDS.USA;
 };
 
-// SHARED STYLE TOKENS (kept consistent with the rest of the
-// admin panel — navy / green, outlined 10px paper, #eef0f2)
+// SELECT OPTIONS
 
-const NAVY = "#16324f";
-const NAVY_DARK = "#2c3345";
-const GREEN = "#1b7a43";
-const GREEN_LIGHT = "#3ea56f";
-const BORDER = "#eef0f2";
+const USER_TYPE_OPTIONS = [
+    { value: "7", label: "Inspector/Supervisor" },
+    { value: "8", label: "Quality Assurance Technician" },
+    { value: "9-10", label: "Cleaner" },
+    { value: "9-11", label: "HouseKeeping" },
+];
 
-const sectionCard = {
-    borderRadius: "10px",
-    borderColor: BORDER,
-    p: 3,
-};
-
-const fieldLabel = {
-    display: "flex",
-    alignItems: "center",
-    gap: 0.75,
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-    fontSize: "0.9rem",
-};
-
-const inputSx = {
-    "& .MuiOutlinedInput-root": {
-        height: "45px",
-        borderRadius: "8px",
-        backgroundColor: "#fff",
-    },
-};
+const EMPLOYEE_TYPE_OPTIONS = [
+    { value: "W2_BI_WEEKLY", label: "W2 Bi-Weekly" },
+    { value: "1099", label: "1099 Contractor" },
+];
 
 const AddServiceProvider = () => {
     const [name, setName] = useState("");
@@ -450,15 +425,8 @@ const AddServiceProvider = () => {
 
             // GOOGLE GEOCODING
 
-            const geocodeResponse =
-                await fetch(
-                    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-                        fullAddress,
-                    )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-                );
-
             const geocodeData =
-                await geocodeResponse.json();
+                await geocodeAddress(fullAddress);
 
             if (
                 geocodeData.status !==
@@ -790,142 +758,50 @@ const AddServiceProvider = () => {
     );
 
     return (
-        <Box>
+        <div>
             {/* HEADER */}
 
-            <Paper
-                variant="outlined"
-                sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "10px",
-                    borderColor: BORDER,
-                }}
-            >
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        flexWrap: { xs: "wrap", md: "nowrap" },
-                        alignItems: "center",
-                        gap: 2,
-                    }}
-                >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.75 }}>
-                        <Box
-                            sx={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: `linear-gradient(135deg, ${NAVY} 0%, ${GREEN} 100%)`,
-                                flexShrink: 0,
-                            }}
-                        >
-                            <User size={22} color="#fff" />
-                        </Box>
-
-                        <Box>
-                            <Typography className="page-title">
-                                EMPLOYEE MANAGEMENT
-                            </Typography>
-
-                            <Typography className="page-sub-title">
-                                Create New Employee
-                            </Typography>
-                        </Box>
-                    </Box>
-
+            <PageHeader
+                title="EMPLOYEE MANAGEMENT"
+                subtitle="Create New Employee"
+                actions={
                     <Button
-                        variant="contained"
-                        disableElevation
-                        startIcon={<ArrowLeft size={18} />}
+                        size="large"
+                        icon={<ArrowLeft size={16} />}
                         onClick={navigateToUser}
-                        sx={{
-                            ml: "auto",
-                            height: 46,
-                            px: 3,
-                            borderRadius: "8px",
-                            minWidth: 180,
-                            textTransform: "none",
-                            fontWeight: 600,
-                            backgroundColor: NAVY_DARK,
-                            "&:hover": {
-                                backgroundColor: "#1f2433",
-                            },
-                        }}
                     >
                         Return to Employees
                     </Button>
-                </Box>
-            </Paper>
+                }
+            />
 
             {/* HOW THIS WORKS */}
 
-            <Paper
-                variant="outlined"
-                sx={{
-                    borderRadius: "10px",
-                    borderColor: "#d7ecdf",
-                    backgroundColor: "#f5faf7",
-                    mb: 3,
-                    overflow: "hidden",
-                }}
-            >
-                <Box
+            <section className="employee-help">
+                <button
+                    type="button"
+                    className="employee-help__toggle"
+                    aria-expanded={showHelp}
                     onClick={() => setShowHelp((v) => !v)}
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        px: 2.5,
-                        py: 1.5,
-                        cursor: "pointer",
-                        userSelect: "none",
-                    }}
                 >
-                    <Info size={18} color={GREEN} />
+                    <Info size={18} className="employee-help__icon" />
 
-                    <Typography
-                        sx={{
-                            fontWeight: 700,
-                            fontSize: "0.9rem",
-                            color: NAVY,
-                            flexGrow: 1,
-                        }}
-                    >
+                    <span className="employee-help__title">
                         How the hiring form auto-fill works
-                    </Typography>
+                    </span>
 
                     <ChevronDown
                         size={18}
-                        color="#6b7280"
-                        style={{
-                            transform: showHelp
-                                ? "rotate(180deg)"
-                                : "rotate(0deg)",
-                            transition: "transform 150ms ease",
-                        }}
+                        className={
+                            showHelp
+                                ? "employee-help__chevron employee-help__chevron--open"
+                                : "employee-help__chevron"
+                        }
                     />
-                </Box>
+                </button>
 
-                <Collapse in={showHelp}>
-                    <Divider sx={{ borderColor: "#d7ecdf" }} />
-
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gridTemplateColumns: {
-                                xs: "1fr",
-                                md: "repeat(3, 1fr)",
-                            },
-                            gap: 2,
-                            px: 2.5,
-                            py: 2,
-                        }}
-                    >
+                {showHelp && (
+                    <div className="employee-help__steps">
                         {[
                             {
                                 icon: <Search size={16} />,
@@ -943,231 +819,137 @@ const AddServiceProvider = () => {
                                 text: "Name, address, city, state and coordinates are pulled from the form automatically.",
                             },
                         ].map((step) => (
-                            <Box
+                            <div
                                 key={step.title}
-                                sx={{
-                                    display: "flex",
-                                    gap: 1.25,
-                                    alignItems: "flex-start",
-                                }}
+                                className="employee-help__step"
                             >
-                                <Box
-                                    sx={{
-                                        width: 30,
-                                        height: 30,
-                                        borderRadius: "8px",
-                                        backgroundColor: "#e7f5ec",
-                                        color: GREEN,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                    }}
-                                >
+                                <span className="employee-help__step-icon">
                                     {step.icon}
-                                </Box>
+                                </span>
 
-                                <Box>
-                                    <Typography
-                                        sx={{
-                                            fontWeight: 700,
-                                            fontSize: "0.82rem",
-                                            color: NAVY,
-                                            mb: 0.25,
-                                        }}
-                                    >
+                                <div>
+                                    <p className="employee-help__step-title">
                                         {step.title}
-                                    </Typography>
+                                    </p>
 
-                                    <Typography
-                                        sx={{
-                                            fontSize: "0.8rem",
-                                            color: "#6b7280",
-                                            lineHeight: 1.5,
-                                        }}
-                                    >
+                                    <p className="employee-help__step-text">
                                         {step.text}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                                    </p>
+                                </div>
+                            </div>
                         ))}
-                    </Box>
-                </Collapse>
-            </Paper>
+                    </div>
+                )}
+            </section>
 
             {/* FORM */}
 
-            <Paper variant="outlined" sx={sectionCard}>
+            <div className="surface employee-form__card">
                 <form onSubmit={handleSubmit}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 3,
-                        }}
-                    >
+                    <div className="employee-form__body">
                         {/* BASIC INFO */}
 
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: {
-                                    xs: "1fr",
-                                    md: "1fr 1fr",
-                                },
-                                gap: 2.5,
-                            }}
-                        >
-                            <FormControl fullWidth>
-                                <FormLabel sx={fieldLabel}>
-                                    <User size={15} color="#6b7280" />
+                        <div className="employee-form__grid">
+                            <div>
+                                <label
+                                    htmlFor="employee-name"
+                                    className="field-label employee-form__label"
+                                >
+                                    <User size={15} color="var(--color-text-muted)" />
                                     Full Name
-                                    <Typography
-                                        component="span"
-                                        sx={{
-                                            fontSize: "0.72rem",
-                                            fontWeight: 500,
-                                            color: "#9ca3af",
-                                        }}
-                                    >
+                                    <span className="employee-form__label-hint">
                                         (searches hiring forms too)
-                                    </Typography>
-                                </FormLabel>
+                                    </span>
+                                </label>
 
-                                <Box sx={{ position: "relative" }}>
-                                    <TextField
-                                        fullWidth
-                                        placeholder="Enter name"
-                                        value={name}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
+                                {/* The suffix is always rendered (an empty
+                                    span when idle) so the input keeps its
+                                    DOM node — and focus — when the
+                                    spinner appears. */}
+                                <Input
+                                    id="employee-name"
+                                    size="large"
+                                    placeholder="Enter name"
+                                    value={name}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
 
-                                            setName(value);
-                                            setNameQuery(value);
-                                        }}
-                                        size="small"
-                                        sx={inputSx}
-                                    />
+                                        setName(value);
+                                        setNameQuery(value);
+                                    }}
+                                    suffix={
+                                        loadingHiringForms && nameQuery.trim() ? (
+                                            <Spin size="small" />
+                                        ) : (
+                                            <span />
+                                        )
+                                    }
+                                />
+                            </div>
 
-                                    {loadingHiringForms && nameQuery.trim() && (
-                                        <CircularProgress
-                                            size={18}
-                                            sx={{
-                                                position: "absolute",
-                                                right: 14,
-                                                top: "50%",
-                                                transform: "translateY(-50%)",
-                                                color: GREEN,
-                                            }}
-                                        />
-                                    )}
-                                </Box>
-                            </FormControl>
-
-                            <FormControl fullWidth>
-                                <FormLabel sx={fieldLabel}>
-                                    <Mail size={15} color="#6b7280" />
+                            <div>
+                                <label
+                                    htmlFor="employee-email"
+                                    className="field-label employee-form__label"
+                                >
+                                    <Mail size={15} color="var(--color-text-muted)" />
                                     Email address
-                                    <Typography
-                                        component="span"
-                                        sx={{
-                                            fontSize: "0.72rem",
-                                            fontWeight: 500,
-                                            color: "#9ca3af",
-                                        }}
-                                    >
+                                    <span className="employee-form__label-hint">
                                         (searches hiring forms too)
-                                    </Typography>
-                                </FormLabel>
+                                    </span>
+                                </label>
 
-                                <Box sx={{ position: "relative" }}>
-                                    <TextField
-                                        fullWidth
-                                        type="email"
-                                        placeholder="Enter email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        size="small"
-                                        sx={inputSx}
-                                    />
-
-                                    {loadingHiringForms && email.trim() && (
-                                        <CircularProgress
-                                            size={18}
-                                            sx={{
-                                                position: "absolute",
-                                                right: 14,
-                                                top: "50%",
-                                                transform: "translateY(-50%)",
-                                                color: GREEN,
-                                            }}
-                                        />
-                                    )}
-                                </Box>
-                            </FormControl>
-                        </Box>
+                                <Input
+                                    id="employee-email"
+                                    size="large"
+                                    type="email"
+                                    placeholder="Enter email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    suffix={
+                                        loadingHiringForms && email.trim() ? (
+                                            <Spin size="small" />
+                                        ) : (
+                                            <span />
+                                        )
+                                    }
+                                />
+                            </div>
+                        </div>
 
                         {/* HIRING FORMS */}
 
                         {hasSearchInput && (
-                            <Box>
-                                <FormLabel sx={{ ...fieldLabel, mb: 1.5 }}>
-                                    <ClipboardList size={15} color="#6b7280" />
+                            <div>
+                                <div className="field-label employee-form__label employee-form__label--spaced">
+                                    <ClipboardList size={15} color="var(--color-text-muted)" />
                                     Select Hiring Form
                                     {hiringForms.length > 0 && (
-                                        <Chip
-                                            size="small"
-                                            label={`${hiringForms.length} found`}
-                                            sx={{
-                                                ml: 0.5,
-                                                height: 20,
-                                                fontSize: "0.7rem",
-                                                fontWeight: 600,
-                                                backgroundColor: "#e7f5ec",
-                                                color: GREEN,
-                                            }}
-                                        />
+                                        <Tag
+                                            color="success"
+                                            variant="filled"
+                                            className="hiring-forms__count"
+                                        >
+                                            {`${hiringForms.length} found`}
+                                        </Tag>
                                     )}
-                                </FormLabel>
+                                </div>
 
                                 {loadingHiringForms && hiringForms.length === 0 ? (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1.25,
-                                            color: "#6b7280",
-                                            fontSize: "0.85rem",
-                                            py: 2,
-                                        }}
-                                    >
-                                        <CircularProgress size={16} sx={{ color: GREEN }} />
+                                    <div className="hiring-forms__status">
+                                        <Spin size="small" />
                                         Searching hiring forms…
-                                    </Box>
+                                    </div>
                                 ) : hasSearched && hiringForms.length === 0 ? (
-                                    <Box
-                                        sx={{
-                                            border: "1px dashed #e5e7eb",
-                                            borderRadius: "10px",
-                                            p: 2.5,
-                                            textAlign: "center",
-                                            backgroundColor: "#fafbfc",
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                color: "#9ca3af",
-                                                fontSize: "0.88rem",
-                                            }}
-                                        >
-                                            No hiring forms match that email or name.
-                                        </Typography>
-                                    </Box>
+                                    <div className="hiring-forms__empty">
+                                        No hiring forms match that email or name.
+                                    </div>
                                 ) : (
-                                    <RadioGroup
-                                        value={
-                                            selectedHiringForm?.submission_id || ""
-                                        }
+                                    <Radio.Group
+                                        className="hiring-forms__group"
+                                        value={String(
+                                            selectedHiringForm?.submission_id || "",
+                                        )}
                                         onChange={(e) => {
                                             const selected = hiringForms.find(
                                                 (form) =>
@@ -1180,231 +962,97 @@ const AddServiceProvider = () => {
                                             }
                                         }}
                                     >
-                                        <Box
-                                            sx={{
-                                                display: "grid",
-                                                gap: 1.25,
-                                            }}
-                                        >
+                                        <div className="hiring-forms__list">
                                             {hiringForms.map((form) => {
                                                 const isSelected =
                                                     selectedHiringForm?.submission_id ===
                                                     form.submission_id;
 
                                                 return (
-                                                    <Paper
+                                                    <div
                                                         key={form.submission_id}
-                                                        variant="outlined"
+                                                        className={
+                                                            isSelected
+                                                                ? "hiring-forms__card hiring-forms__card--selected"
+                                                                : "hiring-forms__card"
+                                                        }
                                                         onClick={() =>
                                                             handleHiringFormSelect(form)
                                                         }
-                                                        sx={{
-                                                            p: 1.75,
-                                                            borderRadius: "10px",
-                                                            borderColor: isSelected
-                                                                ? GREEN_LIGHT
-                                                                : "#e5e7eb",
-                                                            borderWidth: isSelected
-                                                                ? "1.5px"
-                                                                : "1px",
-                                                            backgroundColor: isSelected
-                                                                ? "#f4fbf7"
-                                                                : "#fff",
-                                                            cursor: "pointer",
-                                                            transition:
-                                                                "border-color 120ms ease, background-color 120ms ease",
-                                                            "&:hover": {
-                                                                borderColor: isSelected
-                                                                    ? GREEN_LIGHT
-                                                                    : "#c7cdd6",
-                                                            },
-                                                        }}
                                                     >
-                                                        <FormControlLabel
+                                                        <Radio
+                                                            className="hiring-forms__radio"
                                                             value={String(
                                                                 form.submission_id,
                                                             )}
-                                                            control={
-                                                                <Radio
-                                                                    size="small"
-                                                                    disabled={
-                                                                        loadingLocation &&
-                                                                        isSelected
-                                                                    }
-                                                                    sx={{
-                                                                        color: "#c7cdd6",
-                                                                        "&.Mui-checked": {
-                                                                            color: GREEN,
-                                                                        },
-                                                                    }}
-                                                                />
+                                                            disabled={
+                                                                loadingLocation &&
+                                                                isSelected
                                                             }
-                                                            sx={{
-                                                                width: "100%",
-                                                                alignItems: "flex-start",
-                                                                m: 0,
-                                                            }}
-                                                            label={
-                                                                <Box
-                                                                    sx={{
-                                                                        display: "flex",
-                                                                        alignItems:
-                                                                            "flex-start",
-                                                                        justifyContent:
-                                                                            "space-between",
-                                                                        flexWrap: { xs: "wrap", md: "nowrap" },
-                                                                        gap: 1,
-                                                                        width: "100%",
-                                                                        pl: 0.5,
-                                                                    }}
-                                                                >
-                                                                    <Box>
-                                                                        <Typography
-                                                                            sx={{
-                                                                                fontWeight: 700,
-                                                                                color: "#1f2937",
-                                                                                fontSize: "0.92rem",
-                                                                            }}
-                                                                        >
-                                                                            {form.name}
-                                                                        </Typography>
+                                                        >
+                                                            <span className="hiring-forms__content">
+                                                                <span className="hiring-forms__details">
+                                                                    <span className="hiring-forms__name">
+                                                                        {form.name}
+                                                                    </span>
 
-                                                                        {form.email && (
-                                                                            <Box
-                                                                                sx={{
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: 0.75,
-                                                                                    mt: 0.5,
-                                                                                    color: "#6b7280",
-                                                                                    fontSize: "0.82rem",
-                                                                                }}
-                                                                            >
-                                                                                <Mail size={13} />
-                                                                                {form.email}
-                                                                            </Box>
-                                                                        )}
+                                                                    {form.email && (
+                                                                        <span className="hiring-forms__meta">
+                                                                            <Mail size={13} />
+                                                                            {form.email}
+                                                                        </span>
+                                                                    )}
 
-                                                                        <Box
-                                                                            sx={{
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                gap: 0.75,
-                                                                                mt: 0.5,
-                                                                                color: "#6b7280",
-                                                                                fontSize: "0.82rem",
-                                                                            }}
-                                                                        >
-                                                                            <MapPin size={13} />
-                                                                            {form.full_address}
-                                                                        </Box>
+                                                                    <span className="hiring-forms__meta">
+                                                                        <MapPin size={13} />
+                                                                        {form.full_address}
+                                                                    </span>
 
-                                                                        <Box
-                                                                            sx={{
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                gap: 0.75,
-                                                                                mt: 0.35,
-                                                                                color: "#6b7280",
-                                                                                fontSize: "0.82rem",
-                                                                            }}
-                                                                        >
-                                                                            <Phone size={13} />
-                                                                            {form.phone}
-                                                                        </Box>
+                                                                    <span className="hiring-forms__meta">
+                                                                        <Phone size={13} />
+                                                                        {form.phone}
+                                                                    </span>
 
-                                                                        <Box
-                                                                            sx={{
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                gap: 0.75,
-                                                                                mt: 0.35,
-                                                                                color: "#6b7280",
-                                                                                fontSize: "0.82rem",
-                                                                            }}
-                                                                        >
-                                                                            <Globe size={13} />
-                                                                            {/* Older hiring forms predate the country
-                                                                                field entirely — shown as USA rather
-                                                                                than blank, to stay consistent with
-                                                                                how that's resolved everywhere else. */}
-                                                                            {form.country || "USA"}
-                                                                        </Box>
-                                                                    </Box>
+                                                                    <span className="hiring-forms__meta">
+                                                                        <Globe size={13} />
+                                                                        {/* Older hiring forms predate the country
+                                                                            field entirely — shown as USA rather
+                                                                            than blank, to stay consistent with
+                                                                            how that's resolved everywhere else. */}
+                                                                        {form.country || "USA"}
+                                                                    </span>
+                                                                </span>
 
-                                                                    <Box
-                                                                        sx={{
-                                                                            textAlign: "right",
-                                                                            flexShrink: 0,
-                                                                        }}
-                                                                    >
-                                                                        <Box
-                                                                            sx={{
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                justifyContent: "flex-end",
-                                                                                gap: 0.5,
-                                                                                color: "#9ca3af",
-                                                                                fontSize: "0.72rem",
-                                                                            }}
-                                                                        >
-                                                                            <Clock size={11} />
-                                                                            {formatSubmittedDate(
-                                                                                form.submitted_at,
-                                                                            )}
-                                                                        </Box>
-                                                                    </Box>
-                                                                </Box>
-                                                            }
-                                                        />
-                                                    </Paper>
+                                                                <span className="hiring-forms__date">
+                                                                    <Clock size={11} />
+                                                                    {formatSubmittedDate(
+                                                                        form.submitted_at,
+                                                                    )}
+                                                                </span>
+                                                            </span>
+                                                        </Radio>
+                                                    </div>
                                                 );
                                             })}
-                                        </Box>
-                                    </RadioGroup>
+                                        </div>
+                                    </Radio.Group>
                                 )}
-                            </Box>
+                            </div>
                         )}
 
                         {/* SELECTED HIRING FORM DETAILS */}
 
                         {selectedHiringForm && (
-                            <Paper
-                                variant="outlined"
-                                sx={{
-                                    p: 2.25,
-                                    borderRadius: "10px",
-                                    backgroundColor: "#f8fafc",
-                                    borderColor: "#dbeafe",
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0.75,
-                                        mb: 1.75,
-                                    }}
-                                >
-                                    <CheckCircle2 size={17} color={GREEN} />
+                            <div className="hiring-forms__selected">
+                                <div className="hiring-forms__selected-title">
+                                    <CircleCheck
+                                        size={17}
+                                        className="hiring-forms__selected-icon"
+                                    />
+                                    Selected Hiring Form
+                                </div>
 
-                                    <Typography
-                                        sx={{ fontWeight: 700, color: "#1f2937" }}
-                                    >
-                                        Selected Hiring Form
-                                    </Typography>
-                                </Box>
-
-                                <Box
-                                    sx={{
-                                        display: "grid",
-                                        gridTemplateColumns: {
-                                            xs: "1fr 1fr",
-                                            md: "repeat(4, 1fr)",
-                                        },
-                                        gap: 2,
-                                    }}
-                                >
+                                <div className="hiring-forms__selected-grid">
                                     {[
                                         {
                                             label: "Name",
@@ -1470,185 +1118,105 @@ const AddServiceProvider = () => {
                                                 hiringFormLocation.lat !== null,
                                         },
                                     ].map((field) => (
-                                        <Box
+                                        <div
                                             key={field.label}
-                                            sx={{
-                                                gridColumn: field.span
-                                                    ? { xs: "1 / -1", md: "1 / -1" }
-                                                    : "auto",
-                                            }}
+                                            className={
+                                                field.span
+                                                    ? "hiring-forms__field hiring-forms__field--span"
+                                                    : "hiring-forms__field"
+                                            }
                                         >
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "0.72rem",
-                                                    color: "#9ca3af",
-                                                    fontWeight: 600,
-                                                    mb: 0.25,
-                                                }}
-                                            >
+                                            <div className="hiring-forms__field-label">
                                                 {field.label}
-                                            </Typography>
+                                            </div>
 
-                                            <Typography
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "0.88rem",
-                                                    color:
-                                                        field.good === false
-                                                            ? "#9ca3af"
-                                                            : "#1f2937",
-                                                }}
+                                            <div
+                                                className={
+                                                    field.good === false
+                                                        ? "hiring-forms__field-value hiring-forms__field-value--muted"
+                                                        : "hiring-forms__field-value"
+                                                }
                                             >
                                                 {field.value}
-                                            </Typography>
-                                        </Box>
+                                            </div>
+                                        </div>
                                     ))}
-                                </Box>
-                            </Paper>
+                                </div>
+                            </div>
                         )}
 
-                        <Divider sx={{ borderColor: BORDER }} />
+                        <Divider className="employee-form__divider" />
 
                         {/* ROLE / TYPE */}
 
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: {
-                                    xs: "1fr",
-                                    md: "1fr 1fr",
-                                },
-                                gap: 2.5,
-                            }}
-                        >
-                            <FormControl fullWidth>
-                                <FormLabel sx={fieldLabel}>
-                                    <Briefcase size={15} color="#6b7280" />
+                        <div className="employee-form__grid">
+                            <div>
+                                <label
+                                    htmlFor="employee-role"
+                                    className="field-label employee-form__label"
+                                >
+                                    <Briefcase size={15} color="var(--color-text-muted)" />
                                     User Type
-                                </FormLabel>
+                                </label>
 
                                 <Select
-                                    displayEmpty
-                                    value={roleId}
-                                    onChange={(e) => setRoleId(e.target.value)}
-                                    size="small"
-                                    IconComponent={(props) => (
+                                    id="employee-role"
+                                    size="large"
+                                    className="employee-form__select"
+                                    placeholder="Select User Type"
+                                    value={roleId || undefined}
+                                    onChange={(value) => setRoleId(value)}
+                                    suffix={
                                         <ChevronDown
-                                            {...props}
                                             size={16}
-                                            color={NAVY_DARK}
+                                            color="var(--color-text-secondary)"
                                         />
-                                    )}
-                                    sx={{
-                                        height: "45px",
-                                        borderRadius: "8px",
-                                        backgroundColor: "#fff",
-                                    }}
-                                >
-                                    <MenuItem value="" disabled>
-                                        <Typography sx={{ color: "text.secondary" }}>
-                                            Select User Type
-                                        </Typography>
-                                    </MenuItem>
-
-                                    <MenuItem value="7">
-                                        Inspector/Supervisor
-                                    </MenuItem>
-
-                                    <MenuItem value="8">
-                                        Quality Assurance Technician
-                                    </MenuItem>
-
-                                    <MenuItem value="9-10">Cleaner</MenuItem>
-
-                                    <MenuItem value="9-11">
-                                        HouseKeeping
-                                    </MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth>
-                                <FormLabel sx={fieldLabel}>
-                                    <FileText size={15} color="#6b7280" />
-                                    Employee Type
-                                </FormLabel>
-
-                                <Select
-                                    displayEmpty
-                                    value={employeeType}
-                                    onChange={(e) =>
-                                        setEmployeeType(e.target.value)
                                     }
-                                    size="small"
-                                    IconComponent={(props) => (
-                                        <ChevronDown
-                                            {...props}
-                                            size={16}
-                                            color={NAVY_DARK}
-                                        />
-                                    )}
-                                    sx={{
-                                        height: "45px",
-                                        borderRadius: "8px",
-                                        backgroundColor: "#fff",
-                                    }}
+                                    options={USER_TYPE_OPTIONS}
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="employee-type"
+                                    className="field-label employee-form__label"
                                 >
-                                    <MenuItem value="" disabled>
-                                        <Typography sx={{ color: "text.secondary" }}>
-                                            Select Employee Type
-                                        </Typography>
-                                    </MenuItem>
+                                    <FileText size={15} color="var(--color-text-muted)" />
+                                    Employee Type
+                                </label>
 
-                                    <MenuItem value="W2_BI_WEEKLY">
-                                        W2 Bi-Weekly
-                                    </MenuItem>
-
-                                    <MenuItem value="1099">
-                                        1099 Contractor
-                                    </MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
+                                <Select
+                                    id="employee-type"
+                                    size="large"
+                                    className="employee-form__select"
+                                    placeholder="Select Employee Type"
+                                    value={employeeType || undefined}
+                                    onChange={(value) => setEmployeeType(value)}
+                                    suffix={
+                                        <ChevronDown
+                                            size={16}
+                                            color="var(--color-text-secondary)"
+                                        />
+                                    }
+                                    options={EMPLOYEE_TYPE_OPTIONS}
+                                />
+                            </div>
+                        </div>
 
                         {/* ACTION BUTTONS */}
 
-                        <Box
-                            sx={{
-                                display: "flex",
-                                gap: 1.5,
-                                mt: 0.5,
-                            }}
-                        >
+                        <div className="employee-form__actions">
                             <Button
-                                variant="contained"
-                                disableElevation
-                                type="submit"
+                                type="primary"
+                                htmlType="submit"
+                                size="large"
                                 disabled={
                                     disable ||
                                     loadingLocation ||
                                     loadingHiringForms
                                 }
-                                startIcon={
-                                    disable ? (
-                                        <CircularProgress
-                                            size={16}
-                                            sx={{ color: "#fff" }}
-                                        />
-                                    ) : (
-                                        <Check size={18} />
-                                    )
-                                }
-                                sx={{
-                                    height: 44,
-                                    px: 3.5,
-                                    borderRadius: "8px",
-                                    textTransform: "none",
-                                    fontWeight: 600,
-                                    backgroundColor: GREEN,
-                                    "&:hover": {
-                                        backgroundColor: "#156437",
-                                    },
-                                }}
+                                loading={disable}
+                                icon={<Check size={16} />}
                             >
                                 {disable
                                     ? "Saving..."
@@ -1658,58 +1226,39 @@ const AddServiceProvider = () => {
                             </Button>
 
                             <Button
-                                variant="outlined"
-                                startIcon={<X size={18} />}
+                                size="large"
+                                icon={<X size={16} />}
                                 onClick={navigateToUser}
-                                sx={{
-                                    height: 44,
-                                    px: 3,
-                                    borderRadius: "8px",
-                                    textTransform: "none",
-                                    fontWeight: 600,
-                                    borderColor: "#d1d5db",
-                                    color: "#4b5563",
-                                    "&:hover": {
-                                        borderColor: "#9ca3af",
-                                        backgroundColor: "#f9fafb",
-                                    },
-                                }}
                             >
                                 Cancel
                             </Button>
 
                             {selectedHiringForm && (
-                                <Box
-                                    sx={{
-                                        ml: "auto",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 0.75,
-                                        color: locationReady
-                                            ? GREEN
-                                            : "#9ca3af",
-                                        fontSize: "0.8rem",
-                                        fontWeight: 600,
-                                    }}
+                                <div
+                                    className={
+                                        locationReady
+                                            ? "employee-form__location employee-form__location--ready"
+                                            : "employee-form__location"
+                                    }
                                 >
                                     {locationReady ? (
                                         <>
-                                            <CheckCircle2 size={16} />
+                                            <CircleCheck size={16} />
                                             Location ready
                                         </>
                                     ) : (
                                         <>
-                                            <CircularProgress size={14} />
+                                            <Spin size="small" />
                                             Resolving location…
                                         </>
                                     )}
-                                </Box>
+                                </div>
                             )}
-                        </Box>
-                    </Box>
+                        </div>
+                    </div>
                 </form>
-            </Paper>
-        </Box>
+            </div>
+        </div>
     );
 };
 

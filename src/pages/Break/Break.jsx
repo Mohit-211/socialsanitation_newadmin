@@ -2,17 +2,9 @@ import { useEffect, useState } from "react";
 import { GetAllBreaks } from "../../services/Api/leaveRequestApi";
 import { Table, DatePicker, Tag, Input } from "antd";
 import "./Break.scss";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { Search } from "lucide-react";
 import dayjs from "@/lib/dayjs";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import PageHeader from "../../components/PageHeader";
 
 const Break = () => {
   const [breakData, setBreakData] = useState([]);
@@ -137,7 +129,7 @@ const Break = () => {
               break_end_est ? (
                 dayjs.utc(break_end_est).format("hh:mm A")
               ) : (
-                <Tag color="orange">Ongoing</Tag>
+                <Tag color="warning">Ongoing</Tag>
               ),
           },
           {
@@ -153,9 +145,9 @@ const Break = () => {
             render: (val) => {
               const color =
                 val === "active"
-                  ? "green"
+                  ? "success"
                   : val === "completed"
-                  ? "blue"
+                  ? "processing"
                   : "default";
               return <Tag color={color}>{val.toUpperCase()}</Tag>;
             },
@@ -170,36 +162,15 @@ const Break = () => {
   };
 
   return (
-    <Box className="break-page">
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BREAK MONITORING</Typography>
-            <Typography className="page-sub-title">
-              View Employee Breaks
-            </Typography>
-          </Box>
-
-          <Stack
-            spacing={2}
-            sx={{
-              width: { xs: "100%", sm: 470 },
-            }}
-          >
+    <div>
+      <PageHeader
+        className="break-header"
+        title="BREAK MONITORING"
+        subtitle="View Employee Breaks"
+        actions={
+          <div className="break__controls">
             {/* Top Row */}
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}
-            >
+            <div className="break__date-row">
               <DatePicker
                 format="MM/DD/YYYY"
                 value={selectedDate}
@@ -207,31 +178,28 @@ const Break = () => {
                 allowClear={false}
                 style={{ width: 180 }}
               />
-            </Box>
+            </div>
 
             {/* Search */}
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              prefix={<Search size={16} color="var(--color-text-subtle)" />}
               placeholder="Search by employee name..."
-              style={{
-                width: "100%",
-                height: 44,
-              }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </Stack>
-        </Stack>
-      </Paper>
+          </div>
+        }
+      />
 
-      <div style={{ overflowX: "auto" }}>
+      <div className="break__table">
         <Table
           columns={columns}
           dataSource={breakData.filter((item) =>
             item.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
           )}
-          expandedRowRender={expandedRowRender}
+          expandable={{ expandedRowRender }}
           rowKey="user_id"
           loading={loading}
           pagination={{ pageSize: 50 }}
@@ -240,7 +208,7 @@ const Break = () => {
           scroll={{ x: "max-content" }}
         />
       </div>
-    </Box>
+    </div>
   );
 };
 

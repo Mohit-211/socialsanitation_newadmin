@@ -1,71 +1,90 @@
 import { useRef, useState } from "react";
-import SignaturePad from "react-signature-canvas";
-import { Modal, Button } from "antd";
+import SignaturePad from "signature_pad";
+import { Button, Modal } from "antd";
+import { PenLine } from "lucide-react";
+import { cssVar } from "../../theme/antdTheme";
+import "./SignatureField.scss";
 
 const SignatureField = ({ formData, setFormData }) => {
-	const [modalVisible, setModalVisible] = useState(false);
-	const sigPadRef = useRef();
+  const [open, setOpen] = useState(false);
+  const canvasRef = useRef(null);
+  const padRef = useRef(null);
 
-	const openModal = () => setModalVisible(true);
-	const closeModal = () => setModalVisible(false);
+  // The canvas only exists while the modal is open, so the pad is created
+  // after it opens. The canvas is scaled for crisp lines on high-DPI screens.
+  const handleAfterOpenChange = (visible) => {
+    if (!visible) {
+      padRef.current?.off();
+      padRef.current = null;
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+    padRef.current = new SignaturePad(canvas, {
+      penColor: cssVar("--color-text"),
+    });
+  };
 
-	const clearSignature = () => {
-		sigPadRef.current.clear();
-	};
+  const clearSignature = () => padRef.current?.clear();
 
-	const saveSignature = () => {
-		if (!sigPadRef.current.isEmpty()) {
-			const dataUrl = sigPadRef.current.toDataURL();
-			setFormData({ ...formData, signature: dataUrl });
-			closeModal();
-		}
-	};
+  const saveSignature = () => {
+    const pad = padRef.current;
+    if (pad && !pad.isEmpty()) {
+      setFormData({ ...formData, signature: pad.toDataURL() });
+      setOpen(false);
+    }
+  };
 
-	return (
-		<>
-			{formData.signature ? (
-				<img
-					src={formData.signature}
-					alt="Signature"
-					style={{ marginTop: 10, width: 300, maxWidth: "100%", border: "1px solid #ccc" }}
-				/>
-			) : (
-				<Button type="primary" onClick={openModal} style={{ marginTop: 10 }}>
-					Click to Sign
-				</Button>
-			)}
+  return (
+    <>
+      {formData.signature ? (
+        <img
+          src={formData.signature}
+          alt="Signature"
+          className="signature-field__preview"
+        />
+      ) : (
+        <Button
+          type="primary"
+          icon={<PenLine size={16} />}
+          onClick={() => setOpen(true)}
+          className="signature-field__open"
+        >
+          Click to Sign
+        </Button>
+      )}
 
-			<Modal
-				title="Draw Your Signature"
-				open={modalVisible}
-				onCancel={closeModal}
-				footer={[
-					<Button key="clear" onClick={clearSignature}>
-						Clear
-					</Button>,
-					<Button key="cancel" onClick={closeModal}>
-						Cancel
-					</Button>,
-					<Button key="save" type="primary" onClick={saveSignature}>
-						Save
-					</Button>,
-				]}
-			>
-				<SignaturePad
-					ref={sigPadRef}
-					canvasProps={{
-						width: Math.min(500, window.innerWidth - 80),
-						height: 200,
-						style: { border: "1px solid #ccc", borderRadius: 4 },
-					}}
-				/>
-			</Modal>
-			<div className="signature-block" style={{ marginTop: 16 }}>
-				Social Sanitation Legal Representative Signature{" "}
-				<span style={{ color: "red" }}>*</span>
-			</div>
-		</>
-	);
+      <Modal
+        title="Draw Your Signature"
+        open={open}
+        onCancel={() => setOpen(false)}
+        afterOpenChange={handleAfterOpenChange}
+        destroyOnHidden
+        footer={[
+          <Button key="clear" onClick={clearSignature}>
+            Clear
+          </Button>,
+          <Button key="cancel" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>,
+          <Button key="save" type="primary" onClick={saveSignature}>
+            Save
+          </Button>,
+        ]}
+      >
+        <canvas ref={canvasRef} className="signature-field__canvas" />
+      </Modal>
+
+      <div className="signature-block signature-field__label">
+        Social Sanitation Legal Representative Signature{" "}
+        <span className="required-mark">*</span>
+      </div>
+    </>
+  );
 };
 
 export default SignatureField;

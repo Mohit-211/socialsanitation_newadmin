@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { Table, Button, Space, Popconfirm, message } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import QuestionModal from "./QuestionModal";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 import {
 	createQuestion,
 	deleteQuestion,
@@ -93,12 +90,16 @@ const QuoteQuestions = () => {
 			title: "Actions",
 			render: (_, record) => (
 				<Space>
-					<Button icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+					<IconAction
+						icon={Pencil}
+						title="Edit Question"
+						onClick={() => handleEdit(record)}
+					/>
 					<Popconfirm
 						title="Delete this question?"
 						onConfirm={() => handleDelete(record.id)}
 					>
-						<Button danger icon={<DeleteOutlined />} />
+						<IconAction icon={Trash2} title="Delete Question" danger />
 					</Popconfirm>
 				</Space>
 			),
@@ -106,61 +107,22 @@ const QuoteQuestions = () => {
 	];
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						gap: 2,
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							QUOTE MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							Manage quote form questions
-						</Typography>
-					</Box>
-
-					<MuiButton
-						variant="contained"
-						disableElevation
-						startIcon={<Plus size={18} />}
+			<PageHeader
+				title="QUOTE MANAGEMENT"
+				subtitle="Manage quote form questions"
+				actions={
+					<Button
+						type="primary"
+						size="large"
+						icon={<Plus size={16} />}
 						onClick={handleAdd}
-						sx={{
-							height: 44,
-							px: 2.5,
-							borderRadius: "8px",
-							textTransform: "none",
-							fontWeight: 600,
-							whiteSpace: "nowrap",
-							flexShrink: 0,
-						}}
 					>
 						Add Question
-					</MuiButton>
-				</Box>
-			</Paper>
+					</Button>
+				}
+			/>
 
 			<Table
 				rowKey="id"
@@ -177,7 +139,7 @@ const QuoteQuestions = () => {
 				onSubmit={handleSubmit}
 				editingQuestion={editingQuestion}
 			/>
-		</Box>
+		</div>
 	);
 };
 

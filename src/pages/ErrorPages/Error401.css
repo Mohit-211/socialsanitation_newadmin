@@ -1,34 +1,36 @@
-/* Error401.css */
+/* Full-page status screens: access denied (Error401) and the calendar
+   authorization result pages (Login/AuthorizationSuccess and
+   Login/AuthrizationFailure import this file too). */
 
-.main_container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
-  
-  .error_image {
-    max-width: 100%;
-    height: auto;
-    margin-bottom: 20px;
-  }
-  
-  .main_box {
-    text-align: center;
-  }
-  
-  .error_heading {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  
-  .text-muted {
-    margin: 0;
-  }
-  
-  .back_button {
-    margin-top: 20px;
-  }
-  
+.status-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-height: 100vh;
+  padding: var(--space-6);
+  box-sizing: border-box;
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.status-page__image {
+  max-width: 100%;
+  height: auto;
+}
+
+.status-page__title {
+  margin: 0 0 10px;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.status-page__text {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+

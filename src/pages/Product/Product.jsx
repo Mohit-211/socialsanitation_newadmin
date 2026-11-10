@@ -1,27 +1,11 @@
 import { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Input } from "antd";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
+import { Table, Space, message, Modal, Tooltip, Input, Button } from "antd";
 import { useNavigate } from "react-router";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { DeleteProduct, GetProduct } from "../../services/Api/Product";
-
-const actionIconBtn = (color) => ({
-	width: 34,
-	height: 34,
-	border: "1px solid",
-	borderColor: color,
-	color,
-	"&:hover": {
-		backgroundColor: `${color}14`,
-		borderColor: color,
-	},
-});
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 const Product = () => {
 	const navigate = useNavigate();
@@ -93,25 +77,18 @@ const Product = () => {
 			dataIndex: "action",
 			render: (_, record) => (
 				<Space size="middle">
-					<Tooltip title="Edit Product">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#6366F1")}
-							onClick={() => navigate(`/editProduct/${record.id}`)}
-						>
-							<Pencil size={16} />
-						</IconButton>
-					</Tooltip>
+					<IconAction
+						icon={Pencil}
+						title="Edit Product"
+						onClick={() => navigate(`/editProduct/${record.id}`)}
+					/>
 
-					<Tooltip title="Delete Product">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#EF4444")}
-							onClick={() => handleDelete([record.id])}
-						>
-							<Trash2 size={16} />
-						</IconButton>
-					</Tooltip>
+					<IconAction
+						icon={Trash2}
+						title="Delete Product"
+						danger
+						onClick={() => handleDelete([record.id])}
+					/>
 				</Space>
 			),
 		},
@@ -243,96 +220,46 @@ const Product = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap
-					direction="row"
-					spacing={2}
-					sx={{
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							PRODUCT MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							View, delete, and add Product
-						</Typography>
-					</Box>
-
-					<Stack useFlexGap
-						direction="row"
-						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-					>
+			<PageHeader
+				title="PRODUCT MANAGEMENT"
+				subtitle="View, delete, and add Product"
+				actions={
+					<>
 						<Input
 							allowClear
-							prefix={<Search size={18} color="#9CA3AF" />}
+							size="large"
+							prefix={<Search size={16} color="var(--color-text-subtle)" />}
 							placeholder="Search..."
-							style={{ width: 240, height: 44 }}
+							style={{ width: 240, maxWidth: "100%" }}
 							value={searchTerm}
 							onChange={(e) => onSearch(e.target.value)}
 						/>
 
 						{selectedRowKeys.length > 0 && (
 							<Button
-								variant="contained"
-								disableElevation
-								startIcon={<Trash2 size={16} />}
+								type="primary"
+								danger
+								size="large"
+								icon={<Trash2 size={16} />}
 								onClick={() => handleDelete(selectedRowKeys)}
-								sx={{
-									height: 44,
-									px: 2.5,
-									borderRadius: "8px",
-									textTransform: "none",
-									fontWeight: 600,
-									whiteSpace: "nowrap",
-									backgroundColor: "#ef4444",
-									"&:hover": { backgroundColor: "#dc2626" },
-								}}
 							>
 								Delete Selected ({selectedRowKeys.length})
 							</Button>
 						)}
 
 						<Button
-							variant="contained"
-							disableElevation
-							startIcon={<Plus size={18} />}
+							type="primary"
+							size="large"
+							icon={<Plus size={16} />}
 							onClick={navigateToAddProduct}
-							sx={{
-								height: 44,
-								px: 2.5,
-								borderRadius: "8px",
-								textTransform: "none",
-								fontWeight: 600,
-								whiteSpace: "nowrap",
-							}}
 						>
 							Add Product
 						</Button>
-					</Stack>
-				</Stack>
-			</Paper>
+					</>
+				}
+			/>
 
 			<Table
 				columns={columns}
@@ -345,7 +272,7 @@ const Product = () => {
 				bordered
 				size="middle"
 			/>
-		</Box>
+		</div>
 	);
 };
 

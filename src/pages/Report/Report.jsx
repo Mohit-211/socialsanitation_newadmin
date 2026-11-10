@@ -1,26 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import { Select, message, Table, Drawer } from "antd";
+import { Select, message, Table, Drawer, Tooltip } from "antd";
 import { GetAllReports, UpdateReport } from "../../services/Api/ReportApi";
+import { BASE_URL_IMAGE } from "../../services/Host";
 import dayjs from "@/lib/dayjs";
 import { Eye } from "lucide-react";
-
-const actionIconBtn = (color) => ({
-	width: 34,
-	height: 34,
-	border: "1px solid",
-	borderColor: color,
-	color,
-	"&:hover": {
-		backgroundColor: `${color}14`,
-		borderColor: color,
-	},
-});
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 const Report = () => {
 	const navigate = useNavigate();
@@ -124,17 +110,19 @@ const Report = () => {
 							value={currentStatus}
 							style={{ width: 150 }}
 							onChange={handleStatusChange}
-						>
-							<Select.Option value="COMPLETED">COMPLETED</Select.Option>
-						</Select>
+							options={[{ value: "COMPLETED", label: "COMPLETED" }]}
+						/>
 					);
 				} else {
 					// Show static status if it's not PENDING
 					return (
 						<span
 							style={{
-								fontWeight: "bold",
-								color: status === "COMPLETED" ? "green" : "red",
+								fontWeight: "var(--font-weight-bold)",
+								color:
+									status === "COMPLETED"
+										? "var(--color-success-strong)"
+										: "var(--color-error)",
 							}}
 						>
 							{status}
@@ -155,18 +143,14 @@ const Report = () => {
 			dataIndex: "action",
 			width: "10%",
 			render: (_, record) => (
-				<Tooltip title="View Report">
-					<IconButton
-						size="small"
-						sx={actionIconBtn("#F59E0B")}
-						onClick={() => {
-							setSelectedReport(record);
-							setDrawerVisible(true);
-						}}
-					>
-						<Eye size={16} />
-					</IconButton>
-				</Tooltip>
+				<IconAction
+					icon={Eye}
+					title="View Report"
+					onClick={() => {
+						setSelectedReport(record);
+						setDrawerVisible(true);
+					}}
+				/>
 			),
 		},
 	];
@@ -237,24 +221,9 @@ const Report = () => {
 	}, []);
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box>
-					<Typography className="page-title">REPORT MANAGEMENT</Typography>
-					<Typography className="page-sub-title">
-						View all reports
-					</Typography>
-				</Box>
-			</Paper>
+			<PageHeader title="REPORT MANAGEMENT" subtitle="View all reports" />
 
 			<Table
 				columns={columns}
@@ -268,12 +237,12 @@ const Report = () => {
 			/>
 
 			<Drawer
-	width={400}
-	open={drawerVisible}
-	onClose={() => setDrawerVisible(false)}
-	title="Report Details"
->
-				<Box sx={{ padding: 2 }}>
+				size={400}
+				open={drawerVisible}
+				onClose={() => setDrawerVisible(false)}
+				title="Report Details"
+			>
+				<div style={{ padding: "var(--space-4)" }}>
 					{selectedReport && (
 						<>
 							<p>
@@ -299,16 +268,15 @@ const Report = () => {
 									(img, index) => (
 										<img
 											key={index}
-											src={`https://node.socialsanitation.com/api/v1/images/${img.file_name}`}
+											src={`${BASE_URL_IMAGE}${img.file_name}`}
 											alt="Report Attachment"
 											crossOrigin="anonymous"
 											style={{
 												width: "100%",
-												height: "150px",
+												height: 150,
 												objectFit: "cover",
-												marginTop: "10px",
-												marginBottom: "10px",
-												borderRadius: "8px",
+												margin: "10px 0",
+												borderRadius: "var(--radius-md)",
 											}}
 										/>
 									),
@@ -318,9 +286,9 @@ const Report = () => {
 							)}
 						</>
 					)}
-				</Box>
+				</div>
 			</Drawer>
-		</Box>
+		</div>
 	);
 };
 

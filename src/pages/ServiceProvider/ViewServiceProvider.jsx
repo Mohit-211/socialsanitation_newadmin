@@ -1,6 +1,6 @@
 import dayjs from "@/lib/dayjs";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import {
   GetUserById,
   StateAPI,
@@ -11,24 +11,17 @@ import {
 } from "../../services/Api/Api";
 import { GetBookingBySPId } from "../../services/Api/BookingApi";
 import { BASE_URL_IMAGE } from "../../services/Host";
+import { geocodeAddress } from "../../utils/geocode";
 import Attendance from "../Attendance/Attendance";
-import "../Customer/Customers.css";
-
-// MUI Components
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Card,
-  Stack,
-  IconButton,
-  Tooltip,
-  Divider,
-} from "@mui/material";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import "./ServiceProviderForm.scss";
+import "./ViewServiceProvider.scss";
 
 // Ant Design Components
 import {
+  Button,
+  Divider,
   Table,
   Tag,
   Image,
@@ -37,16 +30,14 @@ import {
   Form,
   Input,
   Select,
+  Tooltip,
   message,
 } from "antd";
 
 // Icons
 import {
-  IoArrowForwardCircleOutline,
-  IoLocationOutline,
-} from "react-icons/io5";
-import {
   ArrowLeft,
+  CircleArrowRight,
   Plus,
   Pencil,
   Trash2,
@@ -72,48 +63,15 @@ const COUNTRY_IDS = {
 // GENERIC "COMING SOON" COMPONENT
 
 const ComingSoon = ({ icon, label }) => (
-  <Card
-    variant="outlined"
-    sx={{
-      p: 2.5,
-      borderRadius: "10px",
-      borderColor: "#eef0f2",
-      boxShadow: "none",
-    }}
-  >
-    <Box
-      sx={{
-        textAlign: "center",
-        padding: "60px 20px",
-        color: "#9ca3af",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 1.5,
-      }}
-    >
+  <div className="surface surface--padded surface--flat">
+    <div className="employee-view__coming-soon">
       {icon}
 
-      <Typography
-        sx={{
-          fontSize: "1rem",
-          fontWeight: 600,
-          color: "#6b7280",
-        }}
-      >
-        {label}
-      </Typography>
+      <p className="employee-view__coming-soon-label">{label}</p>
 
-      <Typography
-        sx={{
-          fontSize: "0.875rem",
-          color: "#9ca3af",
-        }}
-      >
-        Coming soon
-      </Typography>
-    </Box>
-  </Card>
+      <p className="employee-view__coming-soon-text">Coming soon</p>
+    </div>
+  </div>
 );
 
 const ViewServiceProvider = () => {
@@ -213,13 +171,7 @@ const ViewServiceProvider = () => {
     if (!address) return;
 
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-
-      const data = await res.json();
+      const data = await geocodeAddress(address);
 
       if (data.status === "OK") {
         const location =
@@ -502,24 +454,25 @@ const ViewServiceProvider = () => {
     },
   ];
 
+  // antd Tag status presets (themed from the design tokens).
   const getStatusColor = (status) => {
     switch (status) {
       case "DELETED":
       case "REJECTED":
-        return "red";
+        return "error";
 
       case "SUCCESS":
       case "COMPLETED":
-        return "green";
+        return "success";
 
       case "ACCEPTED":
-        return "purple";
+        return "processing";
 
       case "PENDING":
-        return "yellow";
+        return "warning";
 
       default:
-        return "geekblue";
+        return "default";
     }
   };
 
@@ -624,12 +577,9 @@ const ViewServiceProvider = () => {
       key: "redirect",
 
       render: (text, record) => (
-        <IoArrowForwardCircleOutline
-          style={{
-            fontSize: "20px",
-            cursor: "pointer",
-          }}
-          className="redirect_button"
+        <CircleArrowRight
+          size={20}
+          className="employee-view__redirect"
           onClick={() =>
             navigate(
               `/viewBooking/${record.id}`,
@@ -655,218 +605,92 @@ const ViewServiceProvider = () => {
   /* Overview tab content                                               */
 
   const overviewContent = (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2.5,
-      }}
-    >
+    <div className="employee-view__overview">
       {/* Employee Details Header Card */}
 
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2.5,
-          alignItems: "stretch",
-        }}
-      >
+      <div className="employee-view__summary">
         {/* Optional Profile Image Preview */}
 
         {userData?.user_attachments?.length >
           0 &&
           userData.user_attachments[0]
             .file_type === "Image" && (
-            <Card
-              variant="outlined"
-              sx={{
-                width: "180px",
-                p: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "10px",
-                borderColor: "#eef0f2",
-                boxShadow: "none",
-              }}
-            >
+            <div className="surface surface--flat employee-view__photo">
               <Image
                 src={`${BASE_URL_IMAGE}${userData.user_attachments[0].file_name}`}
                 alt="User Profile"
                 crossOrigin="anonymous"
                 preview={true}
                 style={{
-                  width: "130px",
-                  height: "130px",
-                  borderRadius: "50%",
+                  width: 130,
+                  height: 130,
+                  borderRadius: "var(--radius-full)",
                   objectFit: "cover",
                 }}
               />
-            </Card>
+            </div>
           )}
 
         {/* Info Card */}
 
-        <Card
-          variant="outlined"
-          sx={{
-            width: "100%",
-            p: 2.5,
-            borderRadius: "10px",
-            borderColor: "#eef0f2",
-            boxShadow: "none",
-          }}
-        >
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(4, 1fr)",
-              },
-              gap: 3,
-            }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  color: "#111827",
-                  mb: 0.5,
-                }}
-              >
+        <div className="surface surface--padded surface--flat employee-view__info">
+          <div className="employee-view__info-grid">
+            <div>
+              <p className="employee-view__info-label">
                 Employee's Name:
-              </Typography>
+              </p>
 
-              <Typography
-                sx={{
-                  color: "#4b5563",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <p className="employee-view__info-value">
                 {userData?.user_profile?.name ||
                   "---"}
-              </Typography>
-            </Box>
+              </p>
+            </div>
 
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  color: "#111827",
-                  mb: 0.5,
-                }}
-              >
+            <div>
+              <p className="employee-view__info-label">
                 Email
-              </Typography>
+              </p>
 
-              <Typography
-                sx={{
-                  color: "#4b5563",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <p className="employee-view__info-value">
                 {userData?.email || "---"}
-              </Typography>
-            </Box>
+              </p>
+            </div>
 
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  color: "#111827",
-                  mb: 0.5,
-                }}
-              >
+            <div>
+              <p className="employee-view__info-label">
                 Mobile:
-              </Typography>
+              </p>
 
-              <Typography
-                sx={{
-                  color: "#4b5563",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <p className="employee-view__info-value">
                 {userData?.user_profile?.mobile ||
                   "---"}
-              </Typography>
-            </Box>
+              </p>
+            </div>
 
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  color: "#111827",
-                  mb: 0.5,
-                }}
-              >
+            <div>
+              <p className="employee-view__info-label">
                 Employee Type:
-              </Typography>
+              </p>
 
-              <Typography
-                sx={{
-                  color: "#4b5563",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <p className="employee-view__info-value">
                 {employeeTypeLabel}
-              </Typography>
-            </Box>
-          </Box>
-        </Card>
-      </Box>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Employee Address Card */}
 
-      <Card
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-          boxShadow: "none",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2.5,
-            flexWrap: "wrap",
-            gap: 1.5,
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <IoLocationOutline
-              style={{
-                fontSize: 18,
-                color: "#667eea",
-              }}
+      <section className="surface surface--padded surface--flat">
+        <div className="employee-section__header employee-address__header">
+          <h3 className="employee-eyebrow">
+            <MapPin
+              size={18}
+              className="employee-address__icon"
             />
-
-            <Typography
-              sx={{
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: "#6c757d",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              Employee Address
-            </Typography>
-          </Box>
+            Employee Address
+          </h3>
 
           <Tooltip
             title={
@@ -875,78 +699,34 @@ const ViewServiceProvider = () => {
                 : ""
             }
           >
-            <span>
+            <span className="employee-address__tooltip-target">
               <Button
-                variant="contained"
-                disableElevation
-                size="small"
+                type="primary"
                 disabled={hasAddress}
-                startIcon={<Plus size={16} />}
+                icon={<Plus size={16} />}
                 onClick={openAddAddress}
-                sx={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  height: 36,
-                }}
               >
                 Add Address
               </Button>
             </span>
           </Tooltip>
-        </Box>
+        </div>
 
         {hasAddress ? (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
-              gap: "16px",
-            }}
-          >
+          <div className="employee-address__grid">
             {userData.user_address.map(
               (addr) => (
-                <Box
+                <div
                   key={addr.id}
-                  sx={{
-                    border:
-                      "1px solid #eef0f2",
-                    borderRadius: "12px",
-                    padding: "16px",
-                    background: "#fafbfc",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1.25,
-                  }}
+                  className="employee-address__card"
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems:
-                        "flex-start",
-                      gap: 1,
-                    }}
-                  >
+                  <div className="employee-address__line">
                     <MapPin
                       size={16}
-                      color="#667eea"
-                      style={{
-                        marginTop: 2,
-                        flexShrink: 0,
-                      }}
+                      className="employee-address__pin"
                     />
 
-                    <Typography
-                      sx={{
-                        fontSize:
-                          "13.5px",
-                        color:
-                          "#2c3e50",
-                        fontWeight: 500,
-                        lineHeight: 1.5,
-                      }}
-                    >
+                    <p className="employee-address__text">
                       {addr.address},{" "}
                       {addr.user_city
                         ?.name}
@@ -956,131 +736,67 @@ const ViewServiceProvider = () => {
                       ,{" "}
                       {addr.user_country
                         ?.name}
-                    </Typography>
-                  </Box>
+                    </p>
+                  </div>
 
-                  <Divider
-                    sx={{ my: 0.5 }}
-                  />
+                  <Divider className="employee-address__divider" />
 
-                  <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }}
-                    direction="row"
-                    spacing={1}
-                  >
-                    <Tooltip title="Edit Address">
-                      <IconButton
-                        size="small"
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          border:
-                            "1px solid #6366F1",
-                          color:
-                            "#6366F1",
-                          "&:hover": {
-                            backgroundColor:
-                              "#6366F114",
-                          },
-                        }}
-                        onClick={() =>
-                          openEditAddress(
-                            addr,
-                          )
-                        }
-                      >
-                        <Pencil size={14} />
-                      </IconButton>
-                    </Tooltip>
+                  <div className="employee-address__actions">
+                    <IconAction
+                      icon={Pencil}
+                      iconSize={14}
+                      title="Edit Address"
+                      onClick={() =>
+                        openEditAddress(
+                          addr,
+                        )
+                      }
+                    />
 
-                    <Tooltip title="Delete Address">
-                      <IconButton
-                        size="small"
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          border:
-                            "1px solid #EF4444",
-                          color:
-                            "#EF4444",
-                          "&:hover": {
-                            backgroundColor:
-                              "#EF444414",
-                          },
-                        }}
-                        onClick={() =>
-                          handleDeleteAddress(
-                            addr.id,
-                          )
-                        }
-                      >
-                        <Trash2 size={14} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </Box>
+                    <IconAction
+                      icon={Trash2}
+                      iconSize={14}
+                      title="Delete Address"
+                      danger
+                      onClick={() =>
+                        handleDeleteAddress(
+                          addr.id,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               ),
             )}
-          </Box>
+          </div>
         ) : (
-          <Box
-            sx={{
-              border:
-                "1px dashed #e5e7eb",
-              borderRadius: "12px",
-              padding: "24px",
-              textAlign: "center",
-              background: "#fafbfc",
-            }}
-          >
+          <div className="employee-address__empty">
             <MapPin
               size={20}
-              color="#c4c9d4"
-              style={{
-                marginBottom: 8,
-              }}
+              className="employee-address__empty-icon"
             />
 
-            <Typography
-              sx={{
-                color: "#9ca3af",
-                fontSize: "0.9rem",
-              }}
-            >
+            <p className="employee-address__empty-text">
               No address added yet.
               This employee can have
               one address.
-            </Typography>
-          </Box>
+            </p>
+          </div>
         )}
-      </Card>
-    </Box>
+      </section>
+    </div>
   );
 
   /* Booking tab content                                              */
 
   const bookingContent = (
-    <Card
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        borderRadius: "10px",
-        borderColor: "#eef0f2",
-        boxShadow: "none",
-      }}
-    >
-      <Typography
-        sx={{
-          fontSize: "1.05rem",
-          fontWeight: 600,
-          color: "#374151",
-          mb: 2,
-        }}
-      >
+    <div className="surface surface--padded surface--flat">
+      <h2 className="employee-view__bookings-title">
         View all the bookings associated
         with{" "}
         {userData?.user_profile?.name ||
           ""}
-      </Typography>
+      </h2>
 
       <Tabs
         activeKey={activeTab}
@@ -1090,7 +806,7 @@ const ViewServiceProvider = () => {
             key: tab.key,
             label: tab.label,
             children: (
-              <Box sx={{ mt: 2 }}>
+              <div className="employee-view__bookings-table">
                 <Table
                   columns={columns}
                   dataSource={
@@ -1101,28 +817,20 @@ const ViewServiceProvider = () => {
                     pageSize: 10,
                   }}
                 />
-              </Box>
+              </div>
             ),
           }),
         )}
       />
-    </Card>
+    </div>
   );
 
   /* Attendance tab content                                           */
 
   const attendanceContent = (
-    <Card
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        borderRadius: "10px",
-        borderColor: "#eef0f2",
-        boxShadow: "none",
-      }}
-    >
+    <div className="surface surface--padded surface--flat">
       <Attendance />
-    </Card>
+    </div>
   );
 
   const mainTabItems = [
@@ -1152,7 +860,7 @@ const ViewServiceProvider = () => {
           icon={
             <UserCog
               size={28}
-              color="#c4c9d4"
+              color="var(--color-text-subtle)"
             />
           }
           label="Hiring Form"
@@ -1168,7 +876,7 @@ const ViewServiceProvider = () => {
           icon={
             <Wrench
               size={28}
-              color="#c4c9d4"
+              color="var(--color-text-subtle)"
             />
           }
           label="Equipment"
@@ -1184,7 +892,7 @@ const ViewServiceProvider = () => {
           icon={
             <ClipboardList
               size={28}
-              color="#c4c9d4"
+              color="var(--color-text-subtle)"
             />
           }
           label="Inspection"
@@ -1194,116 +902,47 @@ const ViewServiceProvider = () => {
   ];
 
   return (
-    <Box>
+    <div>
       {/* Page Header */}
 
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent:
-              "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">
-              EMPLOYEE MANAGEMENT
-            </Typography>
-
-            <Typography className="page-sub-title">
-              View Information related
-              with Employee
-            </Typography>
-          </Box>
-
+      <PageHeader
+        title="EMPLOYEE MANAGEMENT"
+        subtitle="View Information related with Employee"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={
-              <ArrowLeft size={18} />
-            }
-            onClick={
-              navigateToUser
-            }
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor:
-                "#2c3345",
-              "&:hover": {
-                backgroundColor:
-                  "#1f2433",
-              },
-            }}
+            size="large"
+            icon={<ArrowLeft size={16} />}
+            onClick={navigateToUser}
           >
             Return to Employees
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <div className="admin_details_form">
-        <Tabs
-          activeKey={mainTab}
-          onChange={(k) =>
-            setMainTab(k)
-          }
-          className="mb-4 client-main-tabs"
-          items={mainTabItems}
-        />
-      </div>
+      <Tabs
+        activeKey={mainTab}
+        onChange={(k) =>
+          setMainTab(k)
+        }
+        items={mainTabItems}
+      />
 
       {/* Add / Edit Address modal                                        */}
 
       {addressModalVisible && (
         <Modal
           title={
-            <Stack sx={{ alignItems: "center" }}
-              direction="row"
-              spacing={1.25}
-            >
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent:
-                    "center",
-                  background: "#eef2ff",
-                  color: "#667eea",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="employee-view__modal-title">
+              <span className="employee-view__modal-badge">
                 <MapPin size={17} />
-              </Box>
+              </span>
 
-              <span
-                style={{
-                  fontWeight: 600,
-                }}
-              >
+              <span>
                 {editingAddress
                   ? "Edit Address"
                   : "Add New Address"}
               </span>
-            </Stack>
+            </div>
           }
           open={addressModalVisible}
           onCancel={() => {
@@ -1332,12 +971,7 @@ const ViewServiceProvider = () => {
           }
           forceRender
         >
-          <Divider
-            sx={{
-              mt: 1,
-              mb: 2,
-            }}
-          />
+          <Divider className="employee-view__modal-divider" />
 
           <Form
             form={addressForm}
@@ -1582,38 +1216,18 @@ const ViewServiceProvider = () => {
             {/* Map */}
 
             <Form.Item label="Map Preview">
-              <div
-                style={{
-                  border:
-                    "1px solid #eef0f2",
-                  height: 220,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                }}
-              >
+              <div className="employee-address__map">
                 {addressCoordinates.lat !==
                   null &&
                 addressCoordinates.lng !==
                   null ? (
                   <iframe
-                    width="100%"
-                    height="100%"
-                    style={{
-                      border: "none",
-                      borderRadius: 8,
-                    }}
+                    title="Map Preview"
                     src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
                     allowFullScreen
                   />
                 ) : (
-                  <p
-                    style={{
-                      textAlign:
-                        "center",
-                      paddingTop: 80,
-                      color: "#999",
-                    }}
-                  >
+                  <p className="employee-address__map-placeholder">
                     Enter address to
                     show map
                   </p>
@@ -1623,7 +1237,7 @@ const ViewServiceProvider = () => {
           </Form>
         </Modal>
       )}
-    </Box>
+    </div>
   );
 };
 

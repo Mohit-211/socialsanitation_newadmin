@@ -1,0 +1,64 @@
+// Housekeeping checklist pages: list and weekly view.
+
+// ---- List page ----
+
+.daily-checklist__search.ant-input-affix-wrapper {
+  width: 240px;
+  max-width: 100%;
+}
+
+// "Current title / New title / Update" card
+.daily-checklist__title-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.daily-checklist__title-input {
+  flex-grow: 1;
+  min-width: 220px;
+}
+
+.daily-checklist__label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.daily-checklist__current {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+// ---- Weekly view ----
+
+.weekly-checklist__user.ant-select {
+  width: 350px;
+  max-width: 100%;
+}
+
+.weekly-checklist__loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-12) 0;
+}
+
+@media (max-width: 767.98px) {
+  .weekly-checklist__header .page-header__actions {
+    width: 100%;
+  }
+
+  .weekly-checklist__user.ant-select {
+    width: 100%;
+  }
+}

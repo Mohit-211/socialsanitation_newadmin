@@ -15,13 +15,9 @@ import {
   Typography as AntTypography,
   Alert,
   Tooltip,
+  Button,
+  Space,
 } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
 import {
   Download,
   Plus,
@@ -48,7 +44,9 @@ import {
   UpdateAssignment,
 } from "../../../services/Api/equipmentApi";
 import AssignmentHistoryModal from "./AssignmentHistory/AssignmentHistoryModal";
-import XLSX from "xlsx-js-style";
+import PageHeader from "../../../components/PageHeader";
+import IconAction from "../../../components/IconAction";
+import { saveXlsx, excelStyles } from "../../../utils/excel";
 
 const { Text } = AntTypography;
 const { Option } = Select;
@@ -59,42 +57,28 @@ const ROLE_LABELS = {
   9: "CLEANER",
 };
 
-// Shared row-action icon button pattern used across the admin panel:
-// circular 34x34 with a colored border matching the action's intent.
-const actionIconBtn = (color) => ({
-  width: 34,
-  height: 34,
-  borderRadius: "50%",
-  border: `1.5px solid ${color}33`,
-  color,
-  "&:hover": {
-    backgroundColor: `${color}14`,
-    borderColor: color,
-  },
-});
-
 const STATUS_META = {
   ASSIGNED: {
-    color: "#4338ca",
-    bg: "#eef2ff",
+    color: "var(--color-primary-strong)",
+    bg: "var(--color-primary-soft)",
     icon: PackageCheck,
     label: "Assigned",
   },
   PARTIALLY_RETURNED: {
-    color: "#b45309",
-    bg: "#fef3c7",
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-subtle)",
     icon: RotateCcw,
     label: "Partially Returned",
   },
   RETURNED: {
-    color: "#059669",
-    bg: "#ecfdf5",
+    color: "var(--color-success-strong)",
+    bg: "var(--color-success-subtle)",
     icon: CircleCheck,
     label: "Returned",
   },
   OVERDUE: {
-    color: "#dc2626",
-    bg: "#fee2e2",
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
     icon: TriangleAlert,
     label: "Overdue",
   },
@@ -102,8 +86,8 @@ const STATUS_META = {
 
 const getStatusMeta = (status) =>
   STATUS_META[status] || {
-    color: "#4b5f58",
-    bg: "#f1f4f2",
+    color: "var(--color-text-secondary)",
+    bg: "var(--color-bg-muted)",
     icon: PackageCheck,
     label: status || "—",
   };
@@ -289,7 +273,7 @@ const AssignmentPage = () => {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!assignments.length) {
       message.info("No assignments to export.");
       return;
@@ -325,62 +309,45 @@ const AssignmentPage = () => {
       item.remarks || "",
     ]);
 
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-    // Fixed column widths — Remarks stays a set width; long text wraps
-    // down inside the cell instead of overflowing into columns to the right.
-    worksheet["!cols"] = [
-      { wch: 18 }, // Employee
-      { wch: 18 }, // Equipment
-      { wch: 12 }, // Assigned Qty
-      { wch: 12 }, // Returned Qty
-      { wch: 12 }, // Pending Qty
-      { wch: 14 }, // Assigned Date
-      { wch: 18 }, // Expected Return Date
-      { wch: 16 }, // Actual Return Date
-      { wch: 18 }, // Status
-      { wch: 45 }, // Remarks
-    ];
-
-    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    const styles = excelStyles();
     const remarksColIndex = 9; // 0-based: Employee=0 ... Remarks=9
 
-    const headerStyle = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "2563EB" } }, // blue instead of green
-      alignment: { vertical: "center", horizontal: "left" },
-    };
+    // Header row in the theme's header style, left-aligned as before.
+    const headerRow = headers.map((title) => ({
+      value: title,
+      ...styles.header,
+      align: "left",
+    }));
 
-    for (let col = range.s.c; col <= range.e.c; col++) {
-      const headerCellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-      if (worksheet[headerCellAddress]) {
-        worksheet[headerCellAddress].s = headerStyle;
-      }
-    }
+    // Wrap text + top-align every Remarks cell, and give data rows enough
+    // height (45pt) to show a few wrapped lines rather than clipping them.
+    const dataRows = rows.map((row) =>
+      row.map((value, col) =>
+        col === remarksColIndex
+          ? { value, wrap: true, alignVertical: "top", align: "left", height: 45 }
+          : value,
+      ),
+    );
 
-    // Wrap text + top-align every Remarks cell, and set a row height so
-    // wrapped text is actually visible rather than clipped.
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
-      const cellAddress = XLSX.utils.encode_cell({
-        r: row,
-        c: remarksColIndex,
-      });
-      const cell = worksheet[cellAddress];
-      if (cell) {
-        cell.s = {
-          alignment: { wrapText: true, vertical: "top", horizontal: "left" },
-        };
-      }
-    }
-
-    // Give data rows enough height to show a few wrapped lines
-    worksheet["!rows"] = rows.map(() => ({ hpt: 45 }));
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Assignments");
-
-    XLSX.writeFile(
-      workbook,
+    await saveXlsx(
+      [headerRow, ...dataRows],
+      {
+        sheet: "Assignments",
+        // Fixed column widths — Remarks stays a set width; long text wraps
+        // down inside the cell instead of overflowing into columns to the right.
+        columns: [
+          { width: 18 }, // Employee
+          { width: 18 }, // Equipment
+          { width: 12 }, // Assigned Qty
+          { width: 12 }, // Returned Qty
+          { width: 12 }, // Pending Qty
+          { width: 14 }, // Assigned Date
+          { width: 18 }, // Expected Return Date
+          { width: 16 }, // Actual Return Date
+          { width: 18 }, // Status
+          { width: 45 }, // Remarks
+        ],
+      },
       `equipment-assignments-${dayjs().format("MM-DD-YYYY")}.xlsx`,
     );
   };
@@ -483,28 +450,18 @@ const AssignmentPage = () => {
       key: "action",
       width: 130, // was 90 — too narrow for two 34px icon buttons + padding
       render: (_, record) => (
-        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
-          <Tooltip title="Update Assignment">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#4F46E5")}
-              onClick={() => openUpdateModal(record)}
-            >
-              <Pencil size={16} strokeWidth={2} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="View History">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#6B7280")}
-              onClick={() =>
-                openHistoryModal(record.id, record.equipment?.name)
-              }
-            >
-              <HistoryIcon size={16} strokeWidth={2} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+        <Space wrap>
+          <IconAction
+            icon={Pencil}
+            title="Update Assignment"
+            onClick={() => openUpdateModal(record)}
+          />
+          <IconAction
+            icon={HistoryIcon}
+            title="View History"
+            onClick={() => openHistoryModal(record.id, record.equipment?.name)}
+          />
+        </Space>
       ),
     },
   ];
@@ -512,70 +469,29 @@ const AssignmentPage = () => {
   return (
     <div className="assignment-page">
       {/* ── Standard shared header ── */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">
-              EQUIPMENT ASSIGNMENTS
-            </Typography>
-            <Typography className="page-sub-title">
-              Track who has what equipment, expected returns, and current stock
-              levels.
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
-            <MuiButton
-              variant="outlined"
-              startIcon={<Download size={17} />}
+      <PageHeader
+        title="EQUIPMENT ASSIGNMENTS"
+        subtitle="Track who has what equipment, expected returns, and current stock levels."
+        actions={
+          <>
+            <Button
+              size="large"
+              icon={<Download size={16} />}
               onClick={handleExportCSV}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               Export CSV
-            </MuiButton>
-
-            <MuiButton
-              variant="contained"
-              disableElevation
-              startIcon={<Plus size={18} />}
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={openAssignModal}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               Assign Equipment
-            </MuiButton>
-          </Box>
-        </Box>
-      </Paper>
+            </Button>
+          </>
+        }
+      />
       {overview && (
         <Row gutter={12} className="assignment-page__overview">
           {OVERVIEW_CARDS.map((card) => {
@@ -609,7 +525,7 @@ const AssignmentPage = () => {
           })}
         </Row>
       )}
-      <Paper variant="outlined" className="assignment-page__table-paper">
+      <div className="surface assignment-page__table-paper">
         <Table
           rowKey="id"
           columns={columns}
@@ -619,7 +535,7 @@ const AssignmentPage = () => {
           pagination={false}
           tableLayout="fixed"
         />
-      </Paper>
+      </div>
       <Modal
         title="Assign Equipment"
         open={isAssignModalOpen}
@@ -627,7 +543,7 @@ const AssignmentPage = () => {
         onCancel={closeAssignModal}
         confirmLoading={submitting}
         okText="Assign"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={assignForm} layout="vertical">
           <Form.Item
@@ -714,8 +630,8 @@ const AssignmentPage = () => {
             <Alert
               type="warning"
               showIcon
-              message="This equipment currently has no available stock."
-              style={{ marginBottom: 16 }}
+              title="This equipment currently has no available stock."
+              style={{ marginBottom: "var(--space-4)" }}
             />
           )}
 
@@ -743,7 +659,7 @@ const AssignmentPage = () => {
         onCancel={closeUpdateModal}
         confirmLoading={submitting}
         okText="Save"
-        destroyOnClose
+        destroyOnHidden
       >
         {editingRecord && (
           <div className="update-modal-summary">

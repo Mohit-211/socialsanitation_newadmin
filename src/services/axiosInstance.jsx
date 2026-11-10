@@ -1,7 +1,8 @@
 import axios from "axios";
+import { BASE_URL } from "./Host";
 
 const axiosInstance = axios.create({
-  baseURL: "https://node.socialsanitation.com/api/v1/",
+  baseURL: BASE_URL,
 });
 
 axiosInstance.interceptors.response.use(

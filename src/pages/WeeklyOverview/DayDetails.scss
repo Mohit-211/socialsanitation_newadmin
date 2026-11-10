@@ -1,0 +1,12 @@
+// Booking overview (day details) page.
+
+.day-details {
+  &__descriptions {
+    margin-bottom: 30px;
+  }
+
+  // Map pin next to the clock-in / clock-out distance
+  &__map-icon {
+    vertical-align: -0.125em;
+  }
+}

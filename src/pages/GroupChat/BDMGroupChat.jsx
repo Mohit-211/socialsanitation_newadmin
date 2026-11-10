@@ -13,16 +13,16 @@ import {
 	Empty,
 } from "antd";
 import {
-	ArrowLeftOutlined,
-	CloseCircleFilled,
-	EditOutlined,
-	FilePdfOutlined,
-	InfoCircleOutlined,
-	PaperClipOutlined,
-	SendOutlined,
-	SmileOutlined,
-	TeamOutlined,
-} from "@ant-design/icons";
+	ArrowLeft,
+	CircleX,
+	FileText,
+	Info,
+	Paperclip,
+	Pencil,
+	Send,
+	Smile,
+	Users,
+} from "lucide-react";
 import {
 	ref as dbRef,
 	onValue,
@@ -358,7 +358,7 @@ const BDMGroupChat = () => {
 					rel="noreferrer"
 				>
 					<span className="group-chat__file-icon">
-						<FilePdfOutlined />
+						<FileText size={18} />
 					</span>
 					<span className="group-chat__file-info">
 						<span className="group-chat__file-name">
@@ -403,7 +403,7 @@ const BDMGroupChat = () => {
 				}`}
 				onClick={() => handleGroupClick(group)}
 			>
-				<Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+				<Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
 				<div className="group-chat__item-body">
 					<div className="group-chat__item-top">
 						<span className="group-chat__item-name">{group.name}</span>
@@ -427,10 +427,10 @@ const BDMGroupChat = () => {
 				className="chat-layout__back"
 				type="text"
 				aria-label="Back to chats"
-				icon={<ArrowLeftOutlined />}
+				icon={<ArrowLeft size={16} />}
 				onClick={() => setSelectedGroup(null)}
 			/>
-			<Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+			<Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
 
 			{isEditingGroupName ? (
 				<div className="group-chat__rename">
@@ -455,7 +455,8 @@ const BDMGroupChat = () => {
 					<Tooltip title="Rename group">
 						<Button
 							type="text"
-							icon={<EditOutlined />}
+							aria-label="Rename group"
+							icon={<Pencil size={16} />}
 							onClick={() => {
 								setEditedGroupName(selectedGroup.name);
 								setIsEditingGroupName(true);
@@ -466,7 +467,8 @@ const BDMGroupChat = () => {
 						<Button
 							type="text"
 							className="group-chat__header-end"
-							icon={<InfoCircleOutlined />}
+							aria-label="Group Info"
+							icon={<Info size={16} />}
 							onClick={fetchGroupDetails}
 						/>
 					</Tooltip>
@@ -537,13 +539,14 @@ const BDMGroupChat = () => {
 							)}
 							{preview.kind === "pdf" && (
 								<div className="group-chat__preview-file">
-									<FilePdfOutlined />
+									<FileText size={20} />
 									<span className="group-chat__preview-name">
 										{preview.name}
 									</span>
 								</div>
 							)}
-							<CloseCircleFilled
+							<CircleX
+								size={16}
 								className="group-chat__preview-remove"
 								onClick={() => removeFile(index)}
 							/>
@@ -573,14 +576,20 @@ const BDMGroupChat = () => {
 					beforeUpload={handleBeforeUpload}
 				>
 					<Tooltip title="Attach Images, Videos or PDFs">
-						<Button shape="circle" type="text" icon={<PaperClipOutlined />} />
+						<Button
+							shape="circle"
+							type="text"
+							aria-label="Attach files"
+							icon={<Paperclip size={18} />}
+						/>
 					</Tooltip>
 				</Upload>
 				<Tooltip title="Add Emoji">
 					<Button
 						shape="circle"
 						type="text"
-						icon={<SmileOutlined />}
+						aria-label="Add emoji"
+						icon={<Smile size={18} />}
 						onClick={() => setShowEmojiPicker((open) => !open)}
 					/>
 				</Tooltip>
@@ -603,7 +612,7 @@ const BDMGroupChat = () => {
 				<Button
 					type="primary"
 					shape="circle"
-					icon={<SendOutlined />}
+					icon={<Send size={16} />}
 					aria-label="Send"
 					onClick={handleSend}
 					loading={sending}
@@ -623,7 +632,7 @@ const BDMGroupChat = () => {
 			<aside className="group-chat__panel group-chat__list chat-layout__list">
 				<div className="group-chat__list-header">
 					<h2 className="group-chat__title">Chats</h2>
-					<Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
+					<Button icon={<ArrowLeft size={16} />} onClick={() => navigate("/")}>
 						Dashboard
 					</Button>
 				</div>
@@ -669,7 +678,7 @@ const BDMGroupChat = () => {
 					{groupCreatedAt ? new Date(groupCreatedAt).toLocaleString() : "N/A"}
 				</p>
 
-				<Divider style={{ margin: "12px 0" }} />
+				<Divider style={{ margin: "var(--space-3) 0" }} />
 
 				<h4>Participants</h4>
 				<div className="group-chat__participants">

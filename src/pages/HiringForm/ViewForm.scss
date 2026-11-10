@@ -1,0 +1,180 @@
+// Employee hiring form: read-only view of one submission.
+
+.hiring-view {
+  min-height: 100vh;
+  padding: var(--space-6);
+  background: var(--color-bg-subtle);
+}
+
+.hiring-view__loading {
+  display: flex;
+  justify-content: center;
+  padding: 64px 0;
+}
+
+// Error / empty messages
+.hiring-view__message {
+  padding: var(--space-6);
+  font-size: var(--text-base);
+}
+
+.hiring-view__message--error {
+  border-color: var(--color-error-border);
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+// ---- Section card ----
+
+.hiring-view__section {
+  overflow: hidden;
+  margin-bottom: var(--space-5);
+}
+
+.hiring-view__section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary-subtle);
+}
+
+.hiring-view__section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-primary-strong);
+}
+
+.hiring-view__section-title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.hiring-view__section-body {
+  padding: var(--space-5);
+}
+
+// ---- Field grids: one column on phones, two from the sm breakpoint ----
+
+.hiring-view__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.hiring-view__grid--entries {
+  gap: var(--space-4);
+}
+
+.hiring-view__grid--nested {
+  gap: 10px;
+}
+
+.hiring-view__grid--object {
+  margin-top: var(--space-1);
+  gap: var(--space-2);
+}
+
+@media (min-width: 600px) {
+  .hiring-view__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.hiring-view__field--full {
+  grid-column: 1 / -1;
+}
+
+.hiring-view__label {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.hiring-view__sublabel {
+  margin-bottom: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.hiring-view__value {
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.hiring-view__empty {
+  font-size: var(--text-base);
+  font-style: italic;
+  color: var(--color-text-subtle);
+}
+
+// Signature / image values
+.hiring-view__image {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+
+  img {
+    display: block;
+    max-width: 220px;
+    max-height: 90px;
+  }
+}
+
+// Lists of plain values
+.hiring-view__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-1);
+}
+
+.hiring-view__chip {
+  padding: var(--space-1) 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-subtle);
+  color: var(--color-primary-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+// Lists of objects (e.g. references, previous employers)
+.hiring-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--space-1);
+}
+
+.hiring-view__list--entries {
+  gap: var(--space-4);
+  margin-top: 0;
+}
+
+.hiring-view__card {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.hiring-view__card--entry {
+  padding: var(--space-4);
+}

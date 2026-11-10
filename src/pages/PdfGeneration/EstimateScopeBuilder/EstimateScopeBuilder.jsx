@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Switch, message, Empty, Modal, Tooltip } from "antd";
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-  HolderOutlined,
-  CheckCircleFilled,
-  EditOutlined,
-  DownOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
+  ChartColumn,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  ClipboardList,
+  FolderOpen,
+  GripVertical,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import "./EstimateScopeBuilder.scss";
 import {
   CreateEstimateSection,
@@ -311,7 +314,9 @@ const EstimateScopeBuilder = ({
       {/* ── HEADER ── */}
       <div className="usb-header">
         <div className="usb-header__left">
-          <span className="usb-header__icon">📋</span>
+          <span className="usb-header__icon">
+            <ClipboardList size={28} />
+          </span>
           <div>
             <h2 className="usb-header__title">Client Scope of Work</h2>
             <p className="usb-header__sub">
@@ -326,7 +331,7 @@ const EstimateScopeBuilder = ({
         </div>
 
         <button className="usb-btn-add-section" onClick={createSection}>
-          <PlusOutlined />
+          <Plus size={16} />
           <span>Add Section</span>
         </button>
       </div>
@@ -337,15 +342,20 @@ const EstimateScopeBuilder = ({
           className="usb-chart-card__toggle"
           onClick={() => setChartCollapsed((v) => !v)}
         >
+          <ChartColumn size={16} className="usb-chart-card__toggle-icon" />
           <span className="usb-chart-card__toggle-title">
-            📊 Initial Client Chart
+            Initial Client Chart
           </span>
           <span className="usb-chart-card__toggle-meta">
             {chartCollapsed
               ? `${clientChecklist.length} row${clientChecklist.length !== 1 ? "s" : ""} · click to expand`
               : "click to collapse"}
           </span>
-          {chartCollapsed ? <DownOutlined /> : <UpOutlined />}
+          {chartCollapsed ? (
+            <ChevronDown size={16} className="usb-chart-card__chevron" />
+          ) : (
+            <ChevronUp size={16} className="usb-chart-card__chevron" />
+          )}
         </button>
 
         {!chartCollapsed && (
@@ -423,10 +433,12 @@ const EstimateScopeBuilder = ({
       {/* ── NO SECTIONS ── */}
       {sections.length === 0 && (
         <div className="usb-empty usb-empty--inner">
-          <div className="usb-empty__icon">🗂️</div>
+          <div className="usb-empty__icon">
+            <FolderOpen size={40} />
+          </div>
           <p className="usb-empty__text">No scope generated for this client.</p>
           <button className="usb-btn-add-section" onClick={createSection}>
-            <PlusOutlined /> Add First Section
+            <Plus size={16} /> Add First Section
           </button>
         </div>
       )}
@@ -448,7 +460,7 @@ const EstimateScopeBuilder = ({
               {/* SECTION HEADER */}
               <div className="usb-section-card__header">
                 <div className="usb-section-card__drag" title="Drag to reorder">
-                  <HolderOutlined />
+                  <GripVertical size={14} />
                 </div>
 
                 <input
@@ -486,7 +498,7 @@ const EstimateScopeBuilder = ({
                       onClick={() => saveSection(section, sectionIndex)}
                       disabled={isSavingSection}
                     >
-                      <CheckCircleFilled />
+                      <CircleCheck size={14} />
                       <span>Save</span>
                     </button>
                   </Tooltip>
@@ -497,7 +509,7 @@ const EstimateScopeBuilder = ({
                       className="usb-btn usb-btn--danger"
                       onClick={() => deleteSection(sectionIndex)}
                     >
-                      <DeleteOutlined />
+                      <Trash2 size={14} />
                       <span>Delete</span>
                     </button>
                   </Tooltip>
@@ -508,7 +520,7 @@ const EstimateScopeBuilder = ({
                     onClick={() => toggleSection(sectionIndex)}
                     title={isCollapsed ? "Expand section" : "Collapse section"}
                   >
-                    {isCollapsed ? <DownOutlined /> : <UpOutlined />}
+                    {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                   </button>
                 </div>
               </div>
@@ -549,7 +561,7 @@ const EstimateScopeBuilder = ({
                           className="usb-task-row__drag"
                           title="Drag to reorder"
                         >
-                          <HolderOutlined />
+                          <GripVertical size={14} />
                         </div>
 
                         <input
@@ -621,12 +633,12 @@ const EstimateScopeBuilder = ({
                           >
                             {isSaved ? (
                               <>
-                                <EditOutlined />
+                                <Pencil size={14} />
                                 <span>Update</span>
                               </>
                             ) : (
                               <>
-                                <SaveOutlined />
+                                <Save size={14} />
                                 <span>Save</span>
                               </>
                             )}
@@ -639,7 +651,7 @@ const EstimateScopeBuilder = ({
                             className="usb-btn usb-btn--danger"
                             onClick={() => deleteItem(sectionIndex, itemIndex)}
                           >
-                            <DeleteOutlined />
+                            <Trash2 size={14} />
                             <span>Delete</span>
                           </button>
                         </Tooltip>
@@ -651,7 +663,7 @@ const EstimateScopeBuilder = ({
                     className="usb-btn-add-task"
                     onClick={() => addItem(sectionIndex)}
                   >
-                    <PlusOutlined /> Add Task
+                    <Plus size={14} /> Add Task
                   </button>
                 </div>
               )}

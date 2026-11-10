@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { Tabs, message } from "antd";
-import { EditOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
+import { Space, Tabs, message } from "antd";
+import { Pencil, Save, X } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 import {
   GetCostCalculationSettings,
   UpdateCostCalculationSetting,
 } from "../../services/Api/CalculatorApi";
+import "./Calculator.scss";
 
 const CostCalculationSettings = () => {
   const [activeTab, setActiveTab] = useState("COMMERCIAL");
@@ -49,24 +49,10 @@ const CostCalculationSettings = () => {
   return (
     <div className="cc-settings-page">
       {/* ── Standard shared header ── */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box>
-          <Typography className="page-title">
-            COST CALCULATION SETTINGS
-          </Typography>
-          <Typography className="page-sub-title">
-            Configure calculation minutes by client type
-          </Typography>
-        </Box>
-      </Paper>
+      <PageHeader
+        title="COST CALCULATION SETTINGS"
+        subtitle="Configure calculation minutes by client type"
+      />
 
       <div className="cc-card">
         <Tabs
@@ -118,33 +104,24 @@ const CostCalculationSettings = () => {
 
                 <td>
                   {editingId === item.id ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                      }}
-                    >
-                      <SaveOutlined
+                    <Space>
+                      <IconAction
+                        icon={Save}
+                        title="Save"
                         onClick={() => saveSetting(item.id)}
-                        style={{
-                          color: "#16a34a",
-                          cursor: "pointer",
-                        }}
                       />
 
-                      <CloseOutlined
+                      <IconAction
+                        icon={X}
+                        title="Cancel"
+                        danger
                         onClick={() => setEditingId(null)}
-                        style={{
-                          color: "#dc2626",
-                          cursor: "pointer",
-                        }}
                       />
-                    </div>
+                    </Space>
                   ) : (
-                    <EditOutlined
-                      style={{
-                        cursor: "pointer",
-                      }}
+                    <IconAction
+                      icon={Pencil}
+                      title="Edit"
                       onClick={() => {
                         setEditingId(item.id);
                         setMinutes(item.minutes_per_unit);

@@ -13,8 +13,10 @@ import {
   Popconfirm,
 } from "antd";
 import { DatePicker } from "antd";
+import { ArrowLeft } from "lucide-react";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
 import SignatureField from "../Customer/SignatureField";
+import "./UpdateServiceQuote.scss";
 
 const { Option } = Select;
 
@@ -318,7 +320,7 @@ const UpdateServiceQuote = () => {
     {
       title: (
         <span>
-          Frequency <span style={{ color: "red" }}>*</span>
+          Frequency <span className="required-mark">*</span>
         </span>
       ),
       dataIndex: "frequency",
@@ -473,25 +475,29 @@ const UpdateServiceQuote = () => {
 
   return (
     <Spin spinning={isLoading}>
-      <div className="quote-form">
-        <div className="header">
+      <div className="update-service-quote">
+        <div className="update-service-quote__header">
           <img
             src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg"
             alt="Logo"
-            className="logo1"
+            className="update-service-quote__logo"
           />
-          <div className="quote-title">SERVICE QUOTE</div>
+          <div className="update-service-quote__title">SERVICE QUOTE</div>
         </div>
 
-        <div className="quote-form-toolbar">
-          <div className="toolbar-left">
-            <Button type="text" icon={<span>←</span>} onClick={handleBack}>
+        <div className="update-service-quote__toolbar">
+          <div>
+            <Button
+              type="text"
+              icon={<ArrowLeft size={16} />}
+              onClick={handleBack}
+            >
               Back to User
             </Button>
           </div>
         </div>
 
-        <div className="meta-table" style={{ marginBottom: 28 }}>
+        <div className="update-service-quote__meta">
           <div>
             <strong>REF TYPE:</strong>
             <Input value={formData.reference_type} readOnly />
@@ -504,7 +510,7 @@ const UpdateServiceQuote = () => {
 
           <div>
             <strong>
-              SERVICE DATE <span style={{ color: "red" }}>*</span>:
+              SERVICE DATE <span className="required-mark">*</span>:
             </strong>
             <DatePicker
               format="MM-DD-YYYY"
@@ -516,7 +522,7 @@ const UpdateServiceQuote = () => {
           </div>
           <div>
             <strong>
-              DUE DATE <span style={{ color: "red" }}>*</span>:
+              DUE DATE <span className="required-mark">*</span>:
             </strong>
             <DatePicker
               format="MM-DD-YYYY"
@@ -528,7 +534,7 @@ const UpdateServiceQuote = () => {
           </div>
         </div>
 
-        <div className="address-table" style={{ marginBottom: 24 }}>
+        <div className="update-service-quote__address">
           <div>
             <strong>FROM:</strong>
             <br />
@@ -540,7 +546,7 @@ const UpdateServiceQuote = () => {
           </div>
           <div>
             <strong>
-              TO: <span style={{ color: "red" }}>*</span>
+              TO: <span className="required-mark">*</span>
             </strong>
             <br />
 
@@ -584,24 +590,22 @@ const UpdateServiceQuote = () => {
           columns={columns}
           pagination={false}
           footer={() => (
-            <div style={{ textAlign: "right", fontWeight: "bold" }}>
+            <div className="update-service-quote__total">
               Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />
 
-        <div style={{ marginTop: 16, marginBottom: 16 }}>
-          <Button onClick={addItem} style={{ marginRight: 8 }}>
-            + Add Item
-          </Button>
+        <div className="update-service-quote__item-actions">
+          <Button onClick={addItem}>+ Add Item</Button>
           <Button type="primary" onClick={calculateTotal}>
             Calculate Total
           </Button>
         </div>
 
-        <div className="footer-section" style={{ marginBottom: 24 }}>
-          <div style={{ marginTop: "40px" }}>
-            Date <span style={{ color: "red" }}>*</span>:{" "}
+        <div className="update-service-quote__footer">
+          <div className="update-service-quote__date">
+            Date <span className="required-mark">*</span>:{" "}
             <DatePicker
               format="MM-DD-YYYY"
               value={formData.date}
@@ -610,20 +614,14 @@ const UpdateServiceQuote = () => {
               placeholder="Date"
             />
           </div>
-          <div className="signature-block" style={{ marginTop: 16 }}>
+          <div className="update-service-quote__signature">
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
 
         {/* Square Payment Link Section */}
 
-        <div
-          className="disclaimer"
-          style={{
-            marginTop: "60px", // ✅ increased from 0 to 60 for better spacing
-            textAlign: "justify",
-          }}
-        >
+        <div className="update-service-quote__disclaimer">
           All quotes and estimates are valid within thirty days from signed
           date. Prices are set for a thirty-day period, once the document is
           signed and dated by by a Social Sanitation legal representative.
@@ -637,7 +635,7 @@ const UpdateServiceQuote = () => {
           contact your representative.
         </div>
 
-        <div className="quote-form" style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="update-service-quote__submit">
           <Button
             type="primary"
             onClick={handleSubmit}

@@ -8,16 +8,12 @@ import {
   Radio,
   Input as AntInput,
   Image,
+  Divider,
+  Tooltip,
 } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import Tooltip from "@mui/material/Tooltip";
 import {
   ArrowLeft,
-  CheckCircle2,
+  CircleCheck,
   Circle,
   ImageOff,
   Pencil,
@@ -29,7 +25,7 @@ import {
   UserRound,
   ShieldCheck,
   ClipboardCheck,
-  AlertTriangle,
+  TriangleAlert,
   ChevronDown,
   ChevronsDownUp,
   RotateCcw,
@@ -45,6 +41,8 @@ import {
   ReopenInspection,
 } from "../../services/Api/InspectionApi";
 import { BASE_URL_IMAGE } from "../../services/Host";
+import { cssVar } from "../../theme/antdTheme";
+import PageHeader from "../../components/PageHeader";
 import "./InspectionDetail.scss";
 
 const { TextArea } = AntInput;
@@ -52,20 +50,60 @@ const { TextArea } = AntInput;
 const DATE_FORMAT = "MM/DD/YYYY hh:mm A";
 
 const STATUS_CONFIG = {
-  ASSIGNED: { color: "#2563EB", bg: "#EFF6FF", label: "Assigned" },
-  IN_PROGRESS: { color: "#D97706", bg: "#FFFBEB", label: "In Progress" },
-  SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
-  UNDER_REVIEW: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
-  REOPENED: { color: "#EA580C", bg: "#FFF7ED", label: "Reopened" },
-  COMPLETED: { color: "#16A34A", bg: "#F0FDF4", label: "Completed" },
-  CANCELLED: { color: "#EF4444", bg: "#FEF2F2", label: "Cancelled" },
+  ASSIGNED: {
+    color: "var(--color-text-secondary)",
+    bg: "var(--color-bg-muted)",
+    label: "Assigned",
+  },
+  IN_PROGRESS: {
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-subtle)",
+    label: "In Progress",
+  },
+  SUBMITTED: {
+    color: "var(--color-primary-strong)",
+    bg: "var(--color-primary-subtle)",
+    label: "Submitted",
+  },
+  UNDER_REVIEW: {
+    color: "var(--color-text-inverse)",
+    bg: "var(--color-ink)",
+    label: "Under Review",
+  },
+  REOPENED: {
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-border)",
+    label: "Reopened",
+  },
+  COMPLETED: {
+    color: "var(--color-success-strong)",
+    bg: "var(--color-success-subtle)",
+    label: "Completed",
+  },
+  CANCELLED: {
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
+    label: "Cancelled",
+  },
 };
 
 // Shared by item reviews and section reviews — same three states.
 const REVIEW_STATUS_CONFIG = {
-  PENDING: { color: "#9ca3af", bg: "#f3f4f6", label: "Pending Review" },
-  APPROVED: { color: "#16A34A", bg: "#F0FDF4", label: "Approved" },
-  ISSUE: { color: "#EF4444", bg: "#FEF2F2", label: "Issue Flagged" },
+  PENDING: {
+    color: "var(--color-text-muted)",
+    bg: "var(--color-bg-muted)",
+    label: "Pending Review",
+  },
+  APPROVED: {
+    color: "var(--color-success-strong)",
+    bg: "var(--color-success-subtle)",
+    label: "Approved",
+  },
+  ISSUE: {
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
+    label: "Issue Flagged",
+  },
 };
 
 // Backend accepts item/section reviews in these states.
@@ -84,11 +122,41 @@ const FreqBadge = ({ label, active, variant }) => (
 
 const scoreColor = (score) => {
   if (score === null || score === undefined)
-    return { color: "#9ca3af", bg: "#f8f9fa", border: "#eef0f2" };
-  if (score >= 8) return { color: "#059669", bg: "#ecfdf5", border: "#a7f3d0" };
-  if (score >= 5) return { color: "#b45309", bg: "#fef3c7", border: "#fde68a" };
-  return { color: "#dc2626", bg: "#fee2e2", border: "#fecaca" };
+    return {
+      color: "var(--color-text-muted)",
+      bg: "var(--color-bg-subtle)",
+      border: "var(--color-border-subtle)",
+    };
+  if (score >= 8)
+    return {
+      color: "var(--color-success-strong)",
+      bg: "var(--color-success-subtle)",
+      border: "var(--color-success-border)",
+    };
+  if (score >= 5)
+    return {
+      color: "var(--color-warning-strong)",
+      bg: "var(--color-warning-subtle)",
+      border: "var(--color-warning-border)",
+    };
+  return {
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
+    border: "var(--color-error-border)",
+  };
 };
+
+// Icon + text title used by the four modals. tone: primary | success | warning
+const ModalTitle = ({ icon, tone, children }) => (
+  <span className="inspection-detail-modal__title">
+    <span
+      className={`inspection-detail-modal__icon inspection-detail-modal__icon--${tone}`}
+    >
+      {icon}
+    </span>
+    <span>{children}</span>
+  </span>
+);
 
 const InspectionDetail = () => {
   const navigate = useNavigate();
@@ -325,9 +393,9 @@ const InspectionDetail = () => {
 
   if (!loading && !inspection) {
     return (
-      <Box sx={{ py: 8 }}>
+      <div className="inspection-detail__not-found">
         <Empty description="Inspection not found" />
-      </Box>
+      </div>
     );
   }
 
@@ -379,8 +447,8 @@ const InspectionDetail = () => {
   };
 
   const statusCfg = STATUS_CONFIG[inspection?.status] || {
-    color: "#6B7280",
-    bg: "#F3F4F6",
+    color: "var(--color-text-muted)",
+    bg: "var(--color-bg-muted)",
     label: inspection?.status,
   };
 
@@ -425,6 +493,12 @@ const InspectionDetail = () => {
     ? reviewingSection.items.filter((i) => i.employee_completed).length
     : 0;
 
+  const headerSubtitle = `${
+    inspection?.inspection_date
+      ? dayjs(inspection.inspection_date).format("MM/DD/YYYY")
+      : ""
+  }${inspection?.employee?.name ? ` · ${inspection.employee.name}` : ""}`;
+
   /* RENDER HELPERS */
 
   const renderImageGroup = (images, groupKey) => (
@@ -452,7 +526,10 @@ const InspectionDetail = () => {
                   src={`${BASE_URL_IMAGE}${img.image}`}
                   width={56}
                   height={56}
-                  style={{ objectFit: "cover", borderRadius: 8 }}
+                  style={{
+                    objectFit: "cover",
+                    borderRadius: "var(--radius-md)",
+                  }}
                   crossOrigin="anonymous"
                 />
                 <span className="timeline-entry__image-time">
@@ -466,42 +543,26 @@ const InspectionDetail = () => {
     </div>
   );
 
-  const modalLabelSx = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-  };
-
   return (
-    <Box className="inspection-detail">
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 3, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
+    <div className="inspection-detail">
+      <section className="surface surface--padded inspection-detail__header">
         <div className="detail-header-row">
           <div className="detail-header-row__left">
             <Tooltip title="Back">
               <button
                 type="button"
                 className="back-btn"
+                aria-label="Back"
                 onClick={() => navigate(-1)}
               >
                 <ArrowLeft size={17} />
               </button>
             </Tooltip>
-            <Box>
-              <Typography className="page-title">
-                {inspection?.name || "Inspection"}
-              </Typography>
-              <Typography className="page-sub-title">
-                {inspection?.inspection_date
-                  ? dayjs(inspection.inspection_date).format("MM/DD/YYYY")
-                  : ""}
-                {inspection?.employee?.name && ` · ${inspection.employee.name}`}
-              </Typography>
-            </Box>
+            <PageHeader
+              card={false}
+              title={inspection?.name || "Inspection"}
+              subtitle={headerSubtitle}
+            />
           </div>
 
           <div className="detail-header-row__right">
@@ -609,76 +670,70 @@ const InspectionDetail = () => {
           </div>
         )}
 
-        <Divider sx={{ my: 2 }} />
+        <Divider className="inspection-detail__divider" />
 
-        <Stack sx={{ alignItems: "center", flexWrap: "wrap" }}
-          direction="row"
-          spacing={4}
-          useFlexGap
-        >
-          <Box sx={{ minWidth: 260, flex: 1 }}>
-            <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+        <div className="inspection-detail__summary">
+          <div className="inspection-detail__summary-item inspection-detail__summary-item--wide">
+            <div className="inspection-detail__summary-label">
               Completion — {summary.completed_items}/{summary.total_items} items
-            </Typography>
+            </div>
             <Progress
               percent={summary.completion_percentage}
               size="small"
-              strokeColor="#6366F1"
+              strokeColor={cssVar("--color-primary-border")}
             />
-          </Box>
+          </div>
 
           {!isCompleted && (
-            <Box sx={{ minWidth: 220 }}>
-              <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+            <div className="inspection-detail__summary-item inspection-detail__summary-item--review">
+              <div className="inspection-detail__summary-label">
                 Review progress
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: allSectionsReviewed ? "#059669" : "#1a1a1a",
-                }}
+              </div>
+              <div
+                className={`inspection-detail__summary-value${
+                  allSectionsReviewed
+                    ? " inspection-detail__summary-value--success"
+                    : ""
+                }`}
               >
                 {reviewedSectionCount}/{totalSections} sections reviewed
-              </Typography>
-              <Typography sx={{ fontSize: 11.5, color: "#9ca3af", mt: 0.5 }}>
+              </div>
+              <div className="inspection-detail__summary-hint">
                 {reviewedItemCount}/{summary.total_items} items reviewed
                 (optional). Every section must be reviewed before completing.
-              </Typography>
-            </Box>
+              </div>
+            </div>
           )}
 
           {inspection?.overall_remark && (
-            <Box sx={{ flex: 1, minWidth: 260 }}>
-              <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+            <div className="inspection-detail__summary-item inspection-detail__summary-item--wide">
+              <div className="inspection-detail__summary-label">
                 Overall Remark
-              </Typography>
-              <Typography sx={{ fontSize: 13.5, color: "#374151" }}>
+              </div>
+              <div className="inspection-detail__summary-text">
                 {inspection.overall_remark}
-              </Typography>
-            </Box>
+              </div>
+            </div>
           )}
 
           {isCompleted && (
-            <Box sx={{ minWidth: 200 }}>
-              <Typography sx={{ fontSize: 12.5, color: "#9ca3af", mb: 0.5 }}>
+            <div className="inspection-detail__summary-item inspection-detail__summary-item--client">
+              <div className="inspection-detail__summary-label">
                 Client report
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: inspection?.client_email_sent ? "#059669" : "#9ca3af",
-                }}
+              </div>
+              <div
+                className={`inspection-detail__summary-value inspection-detail__summary-value--${
+                  inspection?.client_email_sent ? "success" : "muted"
+                }`}
               >
                 {inspection?.client_email_sent
                   ? `Sent ${dayjs(inspection.client_email_sent_at).format(DATE_FORMAT)}`
                   : "Not sent yet"}
-              </Typography>
-            </Box>
+              </div>
+            </div>
           )}
-        </Stack>
-      </Paper>
+        </div>
+      </section>
 
       {/* SECTIONS TOOLBAR */}
       {sections.length > 0 && (
@@ -712,20 +767,15 @@ const InspectionDetail = () => {
         const isExpanded = expandedSections.has(section.key);
 
         return (
-          <Paper
+          <div
             key={section.key}
-            variant="outlined"
-            sx={{
-              p: 2,
-              mb: 1.5,
-              borderRadius: "10px",
-              borderColor:
-                review?.status === "ISSUE"
-                  ? "#fbdada"
-                  : review?.status === "APPROVED"
-                    ? "#d6f2e2"
-                    : "#eef0f2",
-            }}
+            className={`surface section-card${
+              review?.status === "ISSUE"
+                ? " section-card--issue"
+                : review?.status === "APPROVED"
+                  ? " section-card--approved"
+                  : ""
+            }`}
           >
             <div className="section-card__header">
               <button
@@ -748,7 +798,7 @@ const InspectionDetail = () => {
                 </span>
                 {itemIssueCount > 0 && (
                   <span className="section-card__issue-chip">
-                    <AlertTriangle size={11} />
+                    <TriangleAlert size={11} />
                     {itemIssueCount} item issue{itemIssueCount > 1 ? "s" : ""}
                   </span>
                 )}
@@ -803,7 +853,7 @@ const InspectionDetail = () => {
                 <div className="section-review-note__meta">
                   <span className="section-review-note__who">
                     {review.status === "ISSUE" ? (
-                      <AlertTriangle size={12} />
+                      <TriangleAlert size={12} />
                     ) : (
                       <ShieldCheck size={12} />
                     )}
@@ -819,24 +869,22 @@ const InspectionDetail = () => {
                     </span>
                   )}
                 </div>
-                <Typography
-                  sx={{
-                    fontSize: 12.5,
-                    color: review.remark
-                      ? review.status === "ISSUE"
-                        ? "#b91c1c"
-                        : "#374151"
-                      : "#9ca3af",
-                    fontStyle: review.remark ? "normal" : "italic",
-                  }}
+                <p
+                  className={`section-review-note__remark${
+                    !review.remark
+                      ? " section-review-note__remark--empty"
+                      : review.status === "ISSUE"
+                        ? " section-review-note__remark--issue"
+                        : ""
+                  }`}
                 >
                   {review.remark || "No remark"}
-                </Typography>
+                </p>
               </div>
             )}
 
             {isExpanded && (
-              <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+              <div className="section-card__items">
                 {section.items.map((item) => {
                   const itemStatusCfg =
                     REVIEW_STATUS_CONFIG[item.bdm_status] ||
@@ -867,22 +915,17 @@ const InspectionDetail = () => {
                       <div className="item-row__top">
                         <div className="item-row__left">
                           {item.employee_completed ? (
-                            <CheckCircle2
+                            <CircleCheck
                               size={18}
-                              color="#22c55e"
-                              style={{ marginTop: 2, flexShrink: 0 }}
+                              className="item-row__check item-row__check--done"
                             />
                           ) : (
-                            <Circle
-                              size={18}
-                              color="#d1d5db"
-                              style={{ marginTop: 2, flexShrink: 0 }}
-                            />
+                            <Circle size={18} className="item-row__check" />
                           )}
-                          <Box>
-                            <Typography className="item-row__name">
+                          <div>
+                            <div className="item-row__name">
                               {item.item_name}
-                            </Typography>
+                            </div>
                             <div className="item-row__freqs">
                               <FreqBadge
                                 label="D"
@@ -900,7 +943,7 @@ const InspectionDetail = () => {
                                 active={item.is_monthly}
                               />
                             </div>
-                          </Box>
+                          </div>
                         </div>
 
                         <div className="item-row__right">
@@ -919,6 +962,7 @@ const InspectionDetail = () => {
                                 <button
                                   type="button"
                                   className="review-btn"
+                                  aria-label="Review item"
                                   disabled={reviewDisabled}
                                   onClick={() => openReviewModal(item)}
                                 >
@@ -946,11 +990,9 @@ const InspectionDetail = () => {
                                   {dayjs(item.updated_at).format(DATE_FORMAT)}
                                 </span>
                               </div>
-                              <Typography
-                                sx={{ fontSize: 12.5, color: "#4b5563" }}
-                              >
+                              <p className="timeline-entry__text">
                                 {item.employee_note}
-                              </Typography>
+                              </p>
                             </div>
                           </div>
                         )}
@@ -983,18 +1025,15 @@ const InspectionDetail = () => {
                                     : ""}
                                 </span>
                               </div>
-                              <Typography
-                                sx={{
-                                  fontSize: 12.5,
-                                  color:
-                                    item.bdm_status === "ISSUE"
-                                      ? "#EF4444"
-                                      : "#374151",
-                                  fontWeight: 500,
-                                }}
+                              <p
+                                className={`timeline-entry__text timeline-entry__text--remark${
+                                  item.bdm_status === "ISSUE"
+                                    ? " timeline-entry__text--issue"
+                                    : ""
+                                }`}
                               >
                                 {item.bdm_remark}
-                              </Typography>
+                              </p>
                             </div>
                           </div>
                         )}
@@ -1011,40 +1050,25 @@ const InspectionDetail = () => {
                     </div>
                   );
                 })}
-              </Stack>
+              </div>
             )}
-          </Paper>
+          </div>
         );
       })}
 
       {sections.length === 0 && !loading && (
-        <Box sx={{ py: 6, textAlign: "center", color: "#9ca3af" }}>
-          <ImageOff size={28} style={{ marginBottom: 8 }} />
+        <div className="inspection-detail__empty">
+          <ImageOff size={28} className="inspection-detail__empty-icon" />
           <div>No scope items on this inspection.</div>
-        </Box>
+        </div>
       )}
 
       {/* ITEM REVIEW MODAL */}
       <Modal
         title={
-          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#eef2ff",
-                color: "#6366F1",
-                flexShrink: 0,
-              }}
-            >
-              <Pencil size={16} />
-            </Box>
-            <span style={{ fontWeight: 600 }}>Review Item</span>
-          </Stack>
+          <ModalTitle icon={<Pencil size={16} />} tone="primary">
+            Review Item
+          </ModalTitle>
         }
         open={reviewModalVisible}
         onCancel={() => setReviewModalVisible(false)}
@@ -1053,25 +1077,25 @@ const InspectionDetail = () => {
         okText="Save Review"
         width={480}
       >
-        <Typography sx={{ fontSize: 13.5, color: "#374151", mt: 2, mb: 2 }}>
+        <p className="inspection-detail-modal__subject">
           {reviewingItem?.item_name}
-        </Typography>
+        </p>
 
-        <Typography component="label" sx={modalLabelSx}>
+        <label className="field-label inspection-detail-modal__label">
           Status
-        </Typography>
+        </label>
         <Radio.Group
           value={reviewStatus}
           onChange={(e) => setReviewStatus(e.target.value)}
-          style={{ marginBottom: 18 }}
+          className="inspection-detail-modal__radio"
         >
           <Radio.Button value="APPROVED">Approve</Radio.Button>
           <Radio.Button value="ISSUE">Flag Issue</Radio.Button>
         </Radio.Group>
 
-        <Typography component="label" sx={modalLabelSx}>
+        <label className="field-label inspection-detail-modal__label">
           Remark
-        </Typography>
+        </label>
         <TextArea
           rows={3}
           value={reviewRemark}
@@ -1083,9 +1107,9 @@ const InspectionDetail = () => {
           }
         />
 
-        <Typography component="label" sx={{ ...modalLabelSx, mt: 2 }}>
+        <label className="field-label inspection-detail-modal__label inspection-detail-modal__label--spaced">
           Photos (optional)
-        </Typography>
+        </label>
         <input
           type="file"
           accept="image/*"
@@ -1093,33 +1117,18 @@ const InspectionDetail = () => {
           onChange={(e) => setReviewFiles(Array.from(e.target.files || []))}
         />
         {reviewFiles.length > 0 && (
-          <Typography sx={{ fontSize: 12, color: "#9ca3af", mt: 0.5 }}>
+          <p className="inspection-detail-modal__hint">
             {reviewFiles.length} file(s) selected
-          </Typography>
+          </p>
         )}
       </Modal>
 
       {/* SECTION REVIEW MODAL */}
       <Modal
         title={
-          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#ecfeff",
-                color: "#0891B2",
-                flexShrink: 0,
-              }}
-            >
-              <ClipboardCheck size={16} />
-            </Box>
-            <span style={{ fontWeight: 600 }}>Review Section</span>
-          </Stack>
+          <ModalTitle icon={<ClipboardCheck size={16} />} tone="primary">
+            Review Section
+          </ModalTitle>
         }
         open={sectionModalVisible}
         onCancel={() => setSectionModalVisible(false)}
@@ -1128,33 +1137,33 @@ const InspectionDetail = () => {
         okText="Save Section Review"
         width={480}
       >
-        <div className="suggested-score-card" style={{ marginTop: 16 }}>
-          <span className="suggested-score-card__label">
+        <div className="inspection-detail-modal__score-card inspection-detail-modal__score-card--spaced">
+          <span className="inspection-detail-modal__score-label">
             {reviewingSection?.section_name}
           </span>
-          <span className="suggested-score-card__value">
+          <span className="inspection-detail-modal__score-value">
             {reviewingSectionCompleted}/{reviewingSection?.items.length || 0}
           </span>
-          <span className="suggested-score-card__hint">
+          <span className="inspection-detail-modal__score-hint">
             Items completed by the employee — saved as the section score
           </span>
         </div>
 
-        <Typography component="label" sx={{ ...modalLabelSx, mt: 2.25 }}>
+        <label className="field-label inspection-detail-modal__label inspection-detail-modal__label--spaced">
           Status
-        </Typography>
+        </label>
         <Radio.Group
           value={sectionStatus}
           onChange={(e) => setSectionStatus(e.target.value)}
-          style={{ marginBottom: 18 }}
+          className="inspection-detail-modal__radio"
         >
           <Radio.Button value="APPROVED">Approve</Radio.Button>
           <Radio.Button value="ISSUE">Flag Issue</Radio.Button>
         </Radio.Group>
 
-        <Typography component="label" sx={modalLabelSx}>
+        <label className="field-label inspection-detail-modal__label">
           Remark{sectionStatus === "ISSUE" ? " *" : ""}
-        </Typography>
+        </label>
         <TextArea
           rows={3}
           value={sectionRemark}
@@ -1170,28 +1179,11 @@ const InspectionDetail = () => {
       {/* COMPLETE MODAL */}
       <Modal
         title={
-          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#f0fdf4",
-                color: "#16A34A",
-                flexShrink: 0,
-              }}
-            >
-              <Award size={17} />
-            </Box>
-            <span style={{ fontWeight: 600 }}>
-              {inspection?.reopened_at
-                ? "Complete Inspection Again"
-                : "Complete Inspection"}
-            </span>
-          </Stack>
+          <ModalTitle icon={<Award size={17} />} tone="success">
+            {inspection?.reopened_at
+              ? "Complete Inspection Again"
+              : "Complete Inspection"}
+          </ModalTitle>
         }
         open={completeModalVisible}
         onCancel={() => setCompleteModalVisible(false)}
@@ -1201,57 +1193,37 @@ const InspectionDetail = () => {
         okText="Mark Completed"
         width={460}
       >
-        <div className="suggested-score-card">
-          <span className="suggested-score-card__label">
+        <div className="inspection-detail-modal__score-card">
+          <span className="inspection-detail-modal__score-label">
             Score (auto-calculated)
           </span>
-          <span className="suggested-score-card__value">
+          <span className="inspection-detail-modal__score-value">
             {suggestedScore}/10
           </span>
-          <span className="suggested-score-card__hint">
+          <span className="inspection-detail-modal__score-hint">
             Based on {summary.completed_items} of {summary.total_items} items
             completed by the employee
           </span>
         </div>
 
         {!allSectionsReviewed && (
-          <Typography
-            sx={{
-              fontSize: 12,
-              color: "#b91c1c",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "8px",
-              padding: "8px 12px",
-              mt: 2,
-            }}
-          >
+          <p className="inspection-detail-modal__notice inspection-detail-modal__notice--error">
             {totalSections === 0
               ? "This inspection has no section reviews, so it can't be completed."
               : `${pendingSectionCount} section(s) still need a review before this inspection can be completed.`}
-          </Typography>
+          </p>
         )}
 
         {allSectionsReviewed && reviewedItemCount < summary.total_items && (
-          <Typography
-            sx={{
-              fontSize: 12,
-              color: "#b45309",
-              background: "#fffbeb",
-              border: "1px solid #fde68a",
-              borderRadius: "8px",
-              padding: "8px 12px",
-              mt: 2,
-            }}
-          >
+          <p className="inspection-detail-modal__notice inspection-detail-modal__notice--warning">
             {summary.total_items - reviewedItemCount} item(s) haven't been
             individually reviewed — that's fine, item review is optional.
-          </Typography>
+          </p>
         )}
 
-        <Typography component="label" sx={{ ...modalLabelSx, mt: 2.25 }}>
+        <label className="field-label inspection-detail-modal__label inspection-detail-modal__label--spaced">
           Overall Remark
-        </Typography>
+        </label>
         <TextArea
           rows={4}
           value={completionRemark}
@@ -1263,24 +1235,9 @@ const InspectionDetail = () => {
       {/* REOPEN MODAL */}
       <Modal
         title={
-          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#fff7ed",
-                color: "#EA580C",
-                flexShrink: 0,
-              }}
-            >
-              <RotateCcw size={16} />
-            </Box>
-            <span style={{ fontWeight: 600 }}>Reopen Inspection</span>
-          </Stack>
+          <ModalTitle icon={<RotateCcw size={16} />} tone="warning">
+            Reopen Inspection
+          </ModalTitle>
         }
         open={reopenModalVisible}
         onCancel={() => setReopenModalVisible(false)}
@@ -1290,27 +1247,16 @@ const InspectionDetail = () => {
         okButtonProps={{ disabled: !reopenRemark.trim() }}
         width={480}
       >
-        <Typography
-          sx={{
-            fontSize: 12.5,
-            color: "#9a3412",
-            background: "#fff7ed",
-            border: "1px solid #fed7aa",
-            borderRadius: "8px",
-            padding: "10px 12px",
-            mt: 2,
-            lineHeight: 1.55,
-          }}
-        >
+        <p className="inspection-detail-modal__notice inspection-detail-modal__notice--warning inspection-detail-modal__notice--intro">
           The final score will be cleared and the inspection unlocked. The
           employee can update items and resubmit, and you can edit any review.
           Existing reviews are kept. Once you complete it again, you can send
           the client an updated report.
-        </Typography>
+        </p>
 
-        <Typography component="label" sx={{ ...modalLabelSx, mt: 2.25 }}>
+        <label className="field-label inspection-detail-modal__label inspection-detail-modal__label--spaced">
           Reason *
-        </Typography>
+        </label>
         <TextArea
           rows={3}
           value={reopenRemark}
@@ -1318,7 +1264,7 @@ const InspectionDetail = () => {
           placeholder="e.g. Client reported restrooms weren't restocked — please recheck and update."
         />
       </Modal>
-    </Box>
+    </div>
   );
 };
 

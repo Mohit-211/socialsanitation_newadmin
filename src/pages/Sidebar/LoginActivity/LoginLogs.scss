@@ -1,0 +1,47 @@
+// User login activity: one row per user, expandable login history.
+
+.login-logs__loading {
+  display: flex;
+  justify-content: center;
+  padding: 64px 0;
+}
+
+.login-logs__name {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.login-logs__muted {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// Expanded row
+.login-logs__history {
+  margin: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.login-logs__history-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.login-logs__history-table .ant-table-cell {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.login-logs__empty {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--color-text-subtle);
+}

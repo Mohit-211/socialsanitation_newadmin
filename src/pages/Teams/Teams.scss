@@ -1,19 +1,9 @@
 // Team-only styles. Shared layout, bubbles, composer and participant rows
 // come from GroupChat.scss, which Teams.jsx imports.
 
-$border: #eaecf0;
-$muted: #8c8c8c;
-
 .team-chat {
 	&__toolbar {
-		padding: 12px 16px 0;
-	}
-
-	&__new-btn.ant-btn {
-		width: 100%;
-		height: 40px;
-		border-radius: 10px;
-		font-weight: 600;
+		padding: var(--space-3) var(--space-4) 0;
 	}
 
 	&__heading {
@@ -24,8 +14,8 @@ $muted: #8c8c8c;
 	}
 
 	&__subtitle {
-		font-size: 12px;
-		color: $muted;
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
 	}
 
 	// Modal content is portalled outside .team-chat, so these rules
@@ -33,8 +23,8 @@ $muted: #8c8c8c;
 	&__modal-toolbar {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		margin: 12px 0;
+		gap: var(--space-2);
+		margin: var(--space-3) 0;
 	}
 
 	&__search {
@@ -42,15 +32,15 @@ $muted: #8c8c8c;
 	}
 
 	&__modal-count {
-		margin-bottom: 8px;
-		font-size: 12px;
-		color: $muted;
+		margin-bottom: var(--space-2);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
 	}
 
 	&__member-list {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: var(--space-2);
 		max-height: 50vh;
 		overflow-y: auto;
 	}
@@ -65,28 +55,30 @@ $muted: #8c8c8c;
 		align-items: center;
 		gap: 6px;
 		min-width: 0;
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
 
-    	&__option {
+	&__option {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: var(--space-2);
 		min-width: 0;
 	}
 
+	// Primary fills take the dark "on" color for their text.
 	&__option-avatar.ant-avatar {
 		flex-shrink: 0;
-		background: #1677ff;
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 	}
 
 	&__option-name {
 		flex: 1;
 		min-width: 0;
-		color: #1f1f1f;
+		color: var(--color-text);
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;

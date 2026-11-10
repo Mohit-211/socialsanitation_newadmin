@@ -1,13 +1,6 @@
 import dayjs from "@/lib/dayjs";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import Button from "@mui/material/Button";
-import { Box, Typography } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Divider from "@mui/material/Divider";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import {
   DeleteContractAgreement,
   DeleteServiceEstimate,
@@ -22,10 +15,19 @@ import {
 import {
   CheckUserScopeExists,
 } from "../../services/Api/ScopeApi";
-import Card from "@mui/material/Card";
-import { Table, Tag, message, Modal, Tabs, Input, Select, Form } from "antd";
-import EditIcon from "@mui/icons-material/Edit";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import {
+  Button,
+  Divider,
+  Table,
+  Tag,
+  Tooltip,
+  message,
+  Modal,
+  Tabs,
+  Input,
+  Select,
+  Form,
+} from "antd";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 
 import {
@@ -38,95 +40,78 @@ import {
   GetServiceRequestsByUserId,
 } from "../../services/Api/BookingApi";
 import {
-  IoArrowForwardCircleOutline,
-  IoCalendarOutline,
-  IoMailOutline,
-  IoBusinessOutline,
-  IoPersonOutline,
-  IoDocumentTextOutline,
-  IoLocationOutline,
-  IoNavigateOutline,
-  IoRefreshOutline,
-  IoClipboardOutline,
-} from "react-icons/io5";
-import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
+  AlarmClock,
+  ArrowLeft,
+  Building2,
+  Calendar,
+  CircleArrowRight,
+  CircleCheck,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  Mail,
+  MapPin,
+  Navigation,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+  User as UserIcon,
+} from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { GOOGLE_MAPS_API_KEY } from "../../config/google";
+import { geocodeAddress } from "../../utils/geocode";
+import { cssVar } from "../../theme/antdTheme";
 import "./Customers.css";
-import { DeleteOutlined } from "@mui/icons-material";
+import "./ViewCustomer.scss";
 import { CreateInvoice, DeleteInvoice } from "../../services/Api/InvoiceApi";
 
 /* Shared presentational helpers for the Invoices / Contracts / Estimates tabs */
 
+// Status chip tones; the colors live in ViewCustomer.scss
+// (.view-customer__status-tag--<tone>).
 const STATUS_STYLES = {
-  PAID: { bg: "#2ecc71", label: "PAID" },
-  CASH_PAID: { bg: "#2ecc71", label: "PAID (CASH)" },
-  NOT_PAID: { bg: "#e67e22", label: "NOT PAID" },
-  EXPIRED: { bg: "#95a5a6", label: "EXPIRED" },
-  SIGNED: { bg: "#2ecc71", label: "SIGNED" },
-  PENDING: { bg: "#f1c40f", label: "PENDING" },
-  DRAFT: { bg: "#95a5a6", label: "DRAFT" },
-  SENT: { bg: "#3498db", label: "SENT" },
+  PAID: { tone: "success", label: "PAID" },
+  CASH_PAID: { tone: "success", label: "PAID (CASH)" },
+  NOT_PAID: { tone: "warning", label: "NOT PAID" },
+  EXPIRED: { tone: "neutral", label: "EXPIRED" },
+  SIGNED: { tone: "success", label: "SIGNED" },
+  PENDING: { tone: "warning", label: "PENDING" },
+  DRAFT: { tone: "neutral", label: "DRAFT" },
+  SENT: { tone: "info", label: "SENT" },
 };
 
 const getStatusStyle = (status) => {
   const key = status?.toUpperCase();
   if (STATUS_STYLES[key]) return STATUS_STYLES[key];
   return {
-    bg: "#95a5a6",
+    tone: "neutral",
     label: status ? status.replace(/_/g, " ").toUpperCase() : "N/A",
   };
 };
 
+const StatusTag = ({ tone = "neutral", children }) => (
+  <span className={`view-customer__status-tag view-customer__status-tag--${tone}`}>
+    {children}
+  </span>
+);
+
 const SectionHeader = ({ title }) => (
-  <div
-    style={{
-      borderBottom: "2px solid #f0f0f0",
-      paddingBottom: "16px",
-      marginBottom: "24px",
-    }}
-  >
-    <h5
-      style={{
-        margin: 0,
-        fontWeight: "600",
-        fontSize: "1.25rem",
-        color: "#1a1a1a",
-        letterSpacing: "-0.02em",
-      }}
-    >
-      {title}
-    </h5>
+  <div className="view-customer__section-header">
+    <h2 className="section-title view-customer__section-title">{title}</h2>
   </div>
 );
 
 const EmptyState = ({ message }) => (
-  <div style={{ textAlign: "center", padding: "60px 20px", color: "#999" }}>
-    <p style={{ fontSize: "15px", margin: 0 }}>{message}</p>
+  <div className="view-customer__empty">
+    <p>{message}</p>
   </div>
 );
 
 const CardGrid = ({ children }) => (
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))",
-      gap: "24px",
-    }}
-  >
-    {children}
-  </div>
-);
-
-// Small square icon-button used for the Edit/Delete pair on every card header
-const CardIconButton = ({ color, onClick, children }) => (
-  <Button
-    variant="contained"
-    color={color}
-    size="small"
-    sx={{ minWidth: 32, width: 32, height: 32, padding: 0 }}
-    onClick={onClick}
-  >
-    {children}
-  </Button>
+  <div className="view-customer__card-grid">{children}</div>
 );
 
 /**
@@ -143,192 +128,65 @@ const DocumentCard = ({
   onEdit,
   onDelete,
 }) => (
-  <Card
-    style={{
-      border: "1px solid #e8e8e8",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-      borderRadius: "12px",
-      overflow: "hidden",
-      transition: "all 0.3s ease",
-    }}
-  >
+  <div className="view-customer__doc-card">
     {/* Header */}
-    <div
-      style={{
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        padding: "20px",
-        color: "white",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-          width: "100%",
-        }}
-      >
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+    <div className="view-customer__doc-head">
+      <div className="view-customer__doc-head-row">
+        <div className="view-customer__doc-tags">
           {statusTags.map((tag, i) => (
-            <Tag
-              key={i}
-              style={{
-                background: tag.color,
-                color: "white",
-                fontWeight: 700,
-                fontSize: "11px",
-                padding: "4px 10px",
-                borderRadius: "4px",
-                border: "none",
-                margin: 0,
-              }}
-            >
+            <StatusTag key={i} tone={tag.tone}>
               {tag.label}
-            </Tag>
+            </StatusTag>
           ))}
         </div>
 
         {(onEdit || onDelete) && (
-          <div style={{ display: "flex", gap: "8px" }}>
-            {onEdit && (
-              <CardIconButton color="warning" onClick={onEdit}>
-                <EditIcon fontSize="small" />
-              </CardIconButton>
-            )}
+          <div className="view-customer__doc-actions">
+            {onEdit && <IconAction icon={Pencil} title="Edit" onClick={onEdit} />}
             {onDelete && (
-              <CardIconButton color="error" onClick={onDelete}>
-                <DeleteOutlined style={{ fontSize: 16 }} />
-              </CardIconButton>
+              <IconAction icon={Trash2} title="Delete" danger onClick={onDelete} />
             )}
           </div>
         )}
       </div>
 
       <div>
-        <span
-          style={{
-            fontSize: "11px",
-            fontWeight: "600",
-            opacity: 0.8,
-            letterSpacing: "0.05em",
-            display: "block",
-            marginBottom: "2px",
-          }}
-        >
-          {eyebrow}
-        </span>
-        <div
-          style={{
-            fontSize: "22px",
-            fontWeight: "700",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {title}
-        </div>
+        <span className="view-customer__eyebrow">{eyebrow}</span>
+        <div className="view-customer__doc-title">{title}</div>
       </div>
     </div>
 
     {/* Body */}
-    <div style={{ padding: "20px" }}>
+    <div className="view-customer__doc-body">
       {company && (
-        <div
-          style={{
-            background: "#f8f9fa",
-            padding: "14px",
-            borderRadius: "8px",
-            marginBottom: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <IoBusinessOutline
-            style={{ fontSize: 16, color: "#667eea", flexShrink: 0 }}
-          />
-          <p
-            style={{
-              margin: 0,
-              fontSize: "15px",
-              fontWeight: "600",
-              color: "#2c3e50",
-              minWidth: 0,
-              wordBreak: "break-word",
-            }}
-          >
-            {company}
-          </p>
+        <div className="view-customer__company">
+          <Building2 size={16} />
+          <p>{company}</p>
         </div>
       )}
 
       <div
-        style={{
-          display: "grid",
-          gap: "12px",
-          marginBottom: actions.length ? "20px" : 0,
-        }}
+        className={`view-customer__details${
+          actions.length ? " view-customer__details--spaced" : ""
+        }`}
       >
         {details.map((d, i) => (
-          <div
-            key={i}
-            style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}
-          >
-            {d.icon && (
-              <span
-                style={{
-                  color: "#667eea",
-                  fontSize: 15,
-                  marginTop: 1,
-                  flexShrink: 0,
-                }}
-              >
-                {d.icon}
-              </span>
-            )}
-            <span
-              style={{
-                fontSize: "13px",
-                color: "#6c757d",
-                minWidth: "95px",
-                fontWeight: "500",
-                flexShrink: 0,
-              }}
-            >
-              {d.label}:
-            </span>
-            <span
-              style={{
-                fontSize: "14px",
-                color: "#2c3e50",
-                fontWeight: "500",
-                flex: 1,
-                minWidth: 0,
-                wordBreak: "break-word",
-                overflowWrap: "anywhere",
-              }}
-            >
-              {d.value || "N/A"}
-            </span>
+          <div key={i} className="view-customer__detail">
+            {d.icon && <span className="view-customer__detail-icon">{d.icon}</span>}
+            <span className="view-customer__detail-label">{d.label}:</span>
+            <span className="view-customer__detail-value">{d.value || "N/A"}</span>
           </div>
         ))}
       </div>
 
       {actions.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="view-customer__doc-links">
           {actions.map((a, i) =>
             a.disabledMessage ? (
               <div
                 key={i}
-                style={{
-                  textAlign: "center",
-                  padding: "12px",
-                  background: a.bg || "#f8f9fa",
-                  color: a.color || "#6c757d",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                }}
+                className="view-customer__notice"
+                style={{ background: a.bg, color: a.color }}
               >
                 {a.disabledMessage}
               </div>
@@ -338,32 +196,9 @@ const DocumentCard = ({
                 href={a.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  textAlign: "center",
-                  padding: "12px",
-                  background:
-                    a.background ||
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.02)";
-                  e.currentTarget.style.boxShadow =
-                    "0 4px 12px rgba(102, 126, 234, 0.4)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                className={`view-customer__doc-link${
+                  a.tone === "success" ? " view-customer__doc-link--success" : ""
+                }`}
               >
                 {a.icon} {a.label}
               </a>
@@ -372,19 +207,24 @@ const DocumentCard = ({
         </div>
       )}
     </div>
-  </Card>
+  </div>
 );
-
-const IoCardOutlineFallback = () => <span>💰</span>;
 
 const NEARBY_ROLE_LABELS = {
   7: "INSPECTOR/SUPERVISOR",
   8: "QUALITY ASSURANCE TECHNICIAN",
   9: "CLEANER",
 };
-const NEARBY_CLIENT_COLOR = "#667eea";
-const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
-const NEARBY_SELECTED_COLOR = "#FB8C00";
+
+// Google Maps needs real color values, so the tokens are resolved at runtime.
+const getNearbyMarkerColors = () => ({
+  address: cssVar("--color-primary-strong"),
+  employee: cssVar("--color-success-strong"),
+  selected: cssVar("--color-warning"),
+  stroke: cssVar("--color-bg"),
+  label: cssVar("--color-text-inverse"),
+  selectedLabel: cssVar("--color-on-primary"),
+});
 
 /* Initial Client Chart helpers (read-only view)                       */
 
@@ -479,9 +319,10 @@ const ViewCustomer = () => {
   const [selectedNearbyId, setSelectedNearbyId] = useState(null);
   const nearbyMapRef = useRef(null);
   const NEARBY_CLUSTER_THRESHOLD_MI = 2;
+  const markerColors = useMemo(() => getNearbyMarkerColors(), []);
 
   const { isLoaded: isNearbyMapLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: ["maps"],
   });
 
@@ -524,12 +365,7 @@ const ViewCustomer = () => {
   const fetchAddressCoordinates = async (address) => {
     if (!address) return;
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-      const data = await res.json();
+      const data = await geocodeAddress(address);
       if (data.status === "OK") {
         const location = data.results[0].geometry.location;
         setAddressCoordinates({ lat: location.lat, lng: location.lng });
@@ -879,17 +715,17 @@ const ViewCustomer = () => {
     switch (status) {
       case "DELETED":
       case "REJECTED":
-        return "red";
+        return "error";
       case "SUCCESS":
-        return "green";
+        return "success";
       case "ACCEPTED":
-        return "purple";
+        return "processing";
       case "PENDING":
-        return "yellow";
+        return "warning";
       case "COMPLETED":
-        return "green";
+        return "success";
       default:
-        return "geekblue";
+        return "processing";
     }
   };
 
@@ -920,14 +756,14 @@ const ViewCustomer = () => {
             .join(", ");
           return (
             employeeNames || (
-              <span style={{ color: "red", fontWeight: 300 }}>
+              <span className="view-customer__no-employee">
                 No Employee Assigned
               </span>
             )
           );
         }
         return (
-          <span style={{ color: "red", fontWeight: 300 }}>
+          <span className="view-customer__no-employee">
             No Employee Assigned
           </span>
         );
@@ -962,9 +798,9 @@ const ViewCustomer = () => {
       title: "",
       key: "redirect",
       render: (text, record) => (
-        <IoArrowForwardCircleOutline
-          style={{ fontSize: "20px" }}
-          className="redirect_button"
+        <IconAction
+          icon={CircleArrowRight}
+          title="View Booking"
           onClick={() => navigate(`/viewBooking/${record.id}`)}
         />
       ),
@@ -978,42 +814,16 @@ const ViewCustomer = () => {
   };
 
   const jobStatusConfig = {
-    NOT_BOOKED: { label: "NOT BOOKED", color: "#f1c40f" },
-    BOOKED: { label: "BOOKED", color: "#3498db" },
-    EXPIRED: { label: "EXPIRED", color: "#e74c3c" },
+    NOT_BOOKED: { label: "NOT BOOKED", tone: "warning" },
+    BOOKED: { label: "BOOKED", tone: "info" },
+    EXPIRED: { label: "EXPIRED", tone: "error" },
   };
 
   const paymentStatusConfig = {
-    NOT_PAID: { label: "NOT PAID", color: "#e67e22" },
-    PAID: { label: "PAID", color: "#2ecc71" },
-    CASH_PAID: { label: "PAID (CASH)", color: "#2ecc71" },
-    EXPIRED: { label: "EXPIRED", color: "#95a5a6" },
-  };
-
-  const sectionCardStyle = {
-    marginTop: "20px",
-    marginBottom: "40px",
-    background: "linear-gradient(to bottom, #ffffff, #fafafa)",
-    borderRadius: "16px",
-    border: "1px solid #e8e8e8",
-    padding: "20px",
-  };
-
-  // Reusable label style used across the overview info grid
-  const infoLabelStyle = {
-    fontSize: "0.8rem",
-    fontWeight: 700,
-    color: "#6c757d",
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    marginBottom: "6px",
-  };
-
-  const infoValueStyle = {
-    fontSize: "0.95rem",
-    fontWeight: 500,
-    color: "#1a1a1a",
-    margin: 0,
+    NOT_PAID: { label: "NOT PAID", tone: "warning" },
+    PAID: { label: "PAID", tone: "success" },
+    CASH_PAID: { label: "PAID (CASH)", tone: "success" },
+    EXPIRED: { label: "EXPIRED", tone: "neutral" },
   };
 
     /* Booking status sub-tabs (All / Ongoing / Upcoming / Completed)     */
@@ -1026,7 +836,7 @@ const ViewCustomer = () => {
     key: tab.key,
     label: tab.label,
     children: (
-      <div style={{ marginTop: "20px" }}>
+      <div className="view-customer__booking-table">
         <Table
           columns={columns}
           dataSource={bookingData}
@@ -1085,200 +895,119 @@ const ViewCustomer = () => {
   );
 
   const renderCountCell = (value) => (
-    <span style={{ fontWeight: 500, color: value ? "#1a1a1a" : "#c4c9d4" }}>
+    <span
+      className={`view-customer__count${
+        value ? "" : " view-customer__count--empty"
+      }`}
+    >
       {value || 0}
     </span>
   );
 
-  const chartThStyle = {
-    textAlign: "left",
-    padding: "12px 14px",
-    background: "#fafafa",
-    borderBottom: "1px solid #e5e7eb",
-    borderRight: "1px solid #e5e7eb",
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    verticalAlign: "top",
-  };
-
-  const chartTdStyle = {
-    padding: "12px 14px",
-    borderBottom: "1px solid #e5e7eb",
-    borderRight: "1px solid #e5e7eb",
-    verticalAlign: "middle",
-    background: "#fff",
-    fontSize: "14px",
-    color: "#2c3e50",
-  };
-
   const initialClientChartContent = (
-    <Card
-      style={{
-        borderRadius: "16px",
-        border: "1px solid #e8e8e8",
-        padding: "28px",
-        marginBottom: "24px",
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          flexWrap: { xs: "wrap", md: "nowrap" },
-          rowGap: 1.5,
-          alignItems: "center",
-          mb: 2.5,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IoClipboardOutline style={{ fontSize: 18, color: "#667eea" }} />
-          <span style={{ ...infoLabelStyle, marginBottom: 0 }}>
-            Initial Client Chart
-          </span>
-        </Box>
+    <div className="view-customer__panel">
+      <div className="customer-card-head">
+        <div className="customer-card-head__title">
+          <ClipboardList size={18} />
+          <span className="customer-label">Initial Client Chart</span>
+        </div>
 
-        <Stack useFlexGap direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <span
-            style={{
-              fontSize: "12px",
-              color: "#6b7280",
-              background: "#f5f7fa",
-              border: "1px solid #e5e7eb",
-              borderRadius: "20px",
-              padding: "4px 12px",
-              fontWeight: 600,
-            }}
-          >
+        <div className="view-customer__pills">
+          <span className="customer-pill customer-pill--sm customer-pill--neutral">
             Total Count: {chartTotalCount}
           </span>
           <span
-            style={{
-              fontSize: "12px",
-              color: floorCompositionTotal === 100 ? "#15803d" : "#dc2626",
-              background: floorCompositionTotal === 100 ? "#ecfdf5" : "#fef2f2",
-              border:
-                floorCompositionTotal === 100
-                  ? "1px solid #bbf7d0"
-                  : "1px solid #fecaca",
-              borderRadius: "20px",
-              padding: "4px 12px",
-              fontWeight: 600,
-            }}
+            className={`customer-pill customer-pill--sm ${
+              floorCompositionTotal === 100
+                ? "customer-pill--success"
+                : "customer-pill--error"
+            }`}
           >
             Floor Composition: {floorCompositionTotal}% / 100%
           </span>
-        </Stack>
-      </Box>
+        </div>
+      </div>
 
-      <Box
-        sx={{
-          display: "flex",
-          gap: 3,
-          flexWrap: "wrap",
-          mb: 2.5,
-          fontSize: "13px",
-          color: "#374151",
-        }}
-      >
+      <div className="view-customer__floor-breakdown">
         {FLOORING_COMPOSITION_FIELDS.map((f) => (
           <span key={f.key}>
-            <span style={{ color: "#6b7280" }}>{f.label}:</span>{" "}
+            <span className="text-muted">{f.label}:</span>{" "}
             <strong>{Number(clientChecklist?.[f.key] || 0)}%</strong>
           </span>
         ))}
-      </Box>
+      </div>
 
-      <div
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: "10px",
-          overflowX: "auto",
-        }}
-      >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="customer-chart customer-chart--compact">
+        <table>
           <thead>
             <tr>
-              <th style={{ ...chartThStyle, minWidth: 200 }}>Service Area</th>
+              <th style={{ minWidth: 200 }}>Service Area</th>
               {isCommercialChart ? (
                 <>
-                  <th style={chartThStyle}>
+                  <th>
                     # of Trash Cans
                     <br />
-                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                      or Stalls
-                    </small>
+                    <small className="customer-chart__sub">or Stalls</small>
                   </th>
-                  <th style={chartThStyle}>
+                  <th>
                     # of Desks
                     <br />
-                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                      or Sinks
-                    </small>
+                    <small className="customer-chart__sub">or Sinks</small>
                   </th>
-                  <th style={chartThStyle}>
+                  <th>
                     # of Rooms
                     <br />
-                    <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                      or Restrooms
-                    </small>
+                    <small className="customer-chart__sub">or Restrooms</small>
                   </th>
                 </>
               ) : (
-                <th style={chartThStyle}>
+                <th>
                   # of Desks / Trash Cans (Big Buildings)
                   <br />
                   <strong>OR</strong>
                   <br /># of Restrooms
                 </th>
               )}
-              <th style={chartThStyle}>
+              <th>
                 Type of Flooring
                 <br />
-                <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                <small className="customer-chart__sub">
                   (Carpet, Hard Floor, VCT)
                 </small>
               </th>
-              <th style={{ ...chartThStyle, borderRight: "none" }}>
-                Special Requests / Hot Spots
-              </th>
+              <th>Special Requests / Hot Spots</th>
             </tr>
           </thead>
           <tbody>
             {chartRows.map((row, index) => (
               <tr key={`${row.service_area}-${index}`}>
-                <td style={chartTdStyle}>
+                <td>
                   <strong>{row.service_area}</strong>
                 </td>
                 {isCommercialChart ? (
                   <>
-                    <td style={chartTdStyle}>{renderCountCell(row.stalls)}</td>
-                    <td style={chartTdStyle}>{renderCountCell(row.sinks)}</td>
-                    <td style={chartTdStyle}>
-                      {renderCountCell(row.restrooms)}
-                    </td>
+                    <td>{renderCountCell(row.stalls)}</td>
+                    <td>{renderCountCell(row.sinks)}</td>
+                    <td>{renderCountCell(row.restrooms)}</td>
                   </>
                 ) : (
-                  <td style={chartTdStyle}>
-                    {renderCountCell(row.num_desks_trash_cans)}
-                  </td>
+                  <td>{renderCountCell(row.num_desks_trash_cans)}</td>
                 )}
-                <td style={chartTdStyle}>
+                <td>
                   {row.flooring_type ? (
-                    <Tag color="geekblue" style={{ margin: 0 }}>
+                    <Tag color="processing" style={{ margin: 0 }}>
                       {row.flooring_type}
                     </Tag>
                   ) : (
-                    <span style={{ color: "#c4c9d4" }}>—</span>
+                    <span className="text-subtle">—</span>
                   )}
                 </td>
                 <td
-                  style={{
-                    ...chartTdStyle,
-                    borderRight: "none",
-                    color: row.special_requests ? "#2c3e50" : "#c4c9d4",
-                    whiteSpace: "pre-wrap",
-                  }}
+                  className={`view-customer__requests${
+                    row.special_requests
+                      ? ""
+                      : " view-customer__requests--empty"
+                  }`}
                 >
                   {row.special_requests || "—"}
                 </td>
@@ -1288,255 +1017,129 @@ const ViewCustomer = () => {
         </table>
       </div>
 
-      <Divider sx={{ my: 2.5 }} />
+      <Divider />
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: { xs: "wrap", md: "nowrap" },
-          rowGap: 1.5,
-          gap: 2,
-        }}
-      >
-        <Box>
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#1a1a1a" }}>
-            Client Scope of Work
-          </div>
-          <div style={{ fontSize: "12.5px", color: "#9ca3af", marginTop: 4 }}>
+      <div className="view-customer__scope">
+        <div>
+          <div className="view-customer__scope-title">Client Scope of Work</div>
+          <div className="view-customer__scope-text">
             {scopeExists
               ? "A scope of work has been generated for this client."
               : "No scope of work has been generated for this client yet."}
           </div>
-        </Box>
+        </div>
 
         {scopeExists && (
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<IoDocumentTextOutline size={15} />}
+            type="primary"
+            icon={<FileText size={16} />}
             onClick={() => navigate(`/client-scope/${id}`)}
-            sx={{
-              borderRadius: "8px",
-              textTransform: "none",
-              fontWeight: 600,
-              height: 36,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #5a6fd8 0%, #6a4392 100%)",
-              },
-            }}
           >
             View Scope of Work
           </Button>
         )}
-      </Box>
-    </Card>
+      </div>
+    </div>
   );
 
   /* Overview tab content                                               */
   const overviewContent = (
     <>
-      <Card
-        style={{
-          width: "100%",
-          marginTop: "20px",
-          marginBottom: "24px",
-          borderRadius: "16px",
-          border: "1px solid #e8e8e8",
-          padding: "28px",
-        }}
-      >
-        <div className="responsive-grid-3" style={{ gap: "32px" }}>
+      <div className="view-customer__panel view-customer__panel--first">
+        <div className="responsive-grid-3 view-customer__info-grid">
           <div>
-            <div style={infoLabelStyle}>User's Name</div>
-            <p style={infoValueStyle}>
+            <div className="customer-label view-customer__info-label">
+              User's Name
+            </div>
+            <p className="view-customer__info-value">
               {userData?.user_profile?.name || "---"}
             </p>
           </div>
           <div>
-            <div style={infoLabelStyle}>Email</div>
-            <p style={infoValueStyle}>{userData?.email || "---"}</p>
+            <div className="customer-label view-customer__info-label">Email</div>
+            <p className="view-customer__info-value">{userData?.email || "---"}</p>
           </div>
           <div>
-            <div style={infoLabelStyle}>Mobile</div>
-            <p style={infoValueStyle}>
+            <div className="customer-label view-customer__info-label">Mobile</div>
+            <p className="view-customer__info-value">
               {userData?.user_profile?.mobile || "---"}
             </p>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Client Addresses */}
-      <Card
-        style={{
-          borderRadius: "16px",
-          border: "1px solid #e8e8e8",
-          padding: "28px",
-          marginBottom: "24px",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            rowGap: 1.5,
-            alignItems: "center",
-            mb: 2.5,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IoLocationOutline style={{ fontSize: 18, color: "#667eea" }} />
-            <span style={{ ...infoLabelStyle, marginBottom: 0 }}>
-              Client's Addresses
-            </span>
-          </Box>
+      <div className="view-customer__panel">
+        <div className="customer-card-head">
+          <div className="customer-card-head__title">
+            <MapPin size={18} />
+            <span className="customer-label">Client's Addresses</span>
+          </div>
 
-          <Button
-            variant="contained"
-            disableElevation
-            size="small"
-            startIcon={<Plus size={16} />}
-            onClick={openAddAddress}
-            sx={{
-              borderRadius: "8px",
-              textTransform: "none",
-              fontWeight: 600,
-              height: 36,
-            }}
-          >
+          <Button type="primary" icon={<Plus size={16} />} onClick={openAddAddress}>
             Add Address
           </Button>
-        </Box>
+        </div>
 
         {userData?.user_address?.length > 0 ? (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
-              gap: "16px",
-            }}
-          >
+          <div className="customer-address-grid">
             {userData.user_address.map((address) => (
-              <Box
-                key={address.id}
-                sx={{
-                  border: "1px solid #eef0f2",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  background: "#fafbfc",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1.25,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                  <MapPin
-                    size={16}
-                    color="#667eea"
-                    style={{ marginTop: 2, flexShrink: 0 }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: "13.5px",
-                      color: "#2c3e50",
-                      fontWeight: 500,
-                      lineHeight: 1.5,
-                    }}
-                  >
+              <div key={address.id} className="customer-address-card">
+                <p className="customer-address-card__text">
+                  <MapPin size={16} />
+                  <span>
                     {address.address}, {address.user_city?.name},{" "}
                     {address.user_state?.name}, {address.user_country?.name}
-                  </Typography>
-                </Box>
+                  </span>
+                </p>
 
-                <Divider sx={{ my: 0.5 }} />
-
-                <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
-                  <Tooltip title="Edit Address">
-                    <IconButton
-                      size="small"
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        border: "1px solid #6366F1",
-                        color: "#6366F1",
-                        "&:hover": { backgroundColor: "#6366F114" },
-                      }}
-                      onClick={() => openEditAddress(address)}
-                    >
-                      <Pencil size={14} />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Delete Address">
-                    <IconButton
-                      size="small"
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        border: "1px solid #EF4444",
-                        color: "#EF4444",
-                        "&:hover": { backgroundColor: "#EF444414" },
-                      }}
-                      onClick={() => handleDeleteAddress(address.id)}
-                    >
-                      <Trash2 size={14} />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="View Nearest Employees">
-                    <IconButton
-                      size="small"
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        border: "1px solid #667eea",
-                        color: "#667eea",
-                        "&:hover": { backgroundColor: "#667eea14" },
-                      }}
-                      onClick={() => openNearestEmployeesModal(address)}
-                    >
-                      <IoNavigateOutline size={15} />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              </Box>
+                <div className="customer-address-card__actions">
+                  <IconAction
+                    icon={Pencil}
+                    title="Edit Address"
+                    onClick={() => openEditAddress(address)}
+                  />
+                  <IconAction
+                    icon={Trash2}
+                    title="Delete Address"
+                    danger
+                    onClick={() => handleDeleteAddress(address.id)}
+                  />
+                  <IconAction
+                    icon={Navigation}
+                    title="View Nearest Employees"
+                    onClick={() => openNearestEmployeesModal(address)}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         ) : (
-          <p style={{ ...infoValueStyle, color: "#999" }}>
+          <p className="view-customer__info-value view-customer__info-value--empty">
             No address available
           </p>
         )}
-      </Card>
+      </div>
 
       {/* Initial Client Chart + Scope of Work (view only) */}
       {initialClientChartContent}
 
-      <Card
-        style={{
-          borderRadius: "16px",
-          border: "1px solid #e8e8e8",
-          padding: "28px",
-        }}
-      >
-        <h5 style={{ marginBottom: "24px", marginTop: 0, fontWeight: 600 }}>
+      <div className="view-customer__panel view-customer__panel--last">
+        <h3 className="section-title view-customer__bookings-title">
           View all the bookings associated with {clientName}
-        </h5>
+        </h3>
         <Tabs
           activeKey={activeTab}
           onChange={handleTabSelect}
           items={bookingStatusTabItems}
         />
-      </Card>
+      </div>
     </>
   );
 
   /* Service Quotes tab content                                         */
   const quotesContent = (
-    <Card style={sectionCardStyle}>
+    <section className="view-customer__section">
       <SectionHeader title={`Service Quotes for ${clientName}`} />
 
       {serviceQuotes.length === 0 ? (
@@ -1544,189 +1147,64 @@ const ViewCustomer = () => {
       ) : (
         <CardGrid>
           {serviceQuotes.map((quote) => (
-            <Card
+            <div
               key={quote.id}
-              style={{
-                border: "1px solid #e8e8e8",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                borderRadius: "12px",
-                overflow: "hidden",
-                transition: "all 0.3s ease",
-                cursor: "default",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.12)";
-                e.currentTarget.style.transform = "translateY(-4px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
+              className="view-customer__doc-card view-customer__doc-card--interactive"
             >
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  padding: "20px",
-                  color: "white",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "16px",
-                    width: "100%",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "6px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Tag
-                      style={{
-                        background: jobStatusConfig[quote.job_status]?.color,
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "11px",
-                        padding: "4px 10px",
-                        borderRadius: "4px",
-                        border: "none",
-                        margin: 0,
-                      }}
-                    >
+              <div className="view-customer__doc-head">
+                <div className="view-customer__doc-head-row">
+                  <div className="view-customer__doc-tags">
+                    <StatusTag tone={jobStatusConfig[quote.job_status]?.tone}>
                       {jobStatusConfig[quote.job_status]?.label}
-                    </Tag>
+                    </StatusTag>
 
-                    <Tag
-                      style={{
-                        background:
-                          paymentStatusConfig[quote.payment_status]?.color,
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "11px",
-                        padding: "4px 10px",
-                        borderRadius: "4px",
-                        border: "none",
-                        margin: 0,
-                      }}
+                    <StatusTag
+                      tone={paymentStatusConfig[quote.payment_status]?.tone}
                     >
                       {paymentStatusConfig[quote.payment_status]?.label}
-                    </Tag>
+                    </StatusTag>
                   </div>
 
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <CardIconButton
-                      color="warning"
+                  <div className="view-customer__doc-actions">
+                    <IconAction
+                      icon={Pencil}
+                      title="Edit"
                       onClick={() =>
                         navigate(`/edit-service-quote/${quote.id}`)
                       }
-                    >
-                      <EditIcon fontSize="small" />
-                    </CardIconButton>
-                    <CardIconButton
-                      color="error"
+                    />
+                    <IconAction
+                      icon={Trash2}
+                      title="Delete"
+                      danger
                       onClick={() => handleDelete(quote.id)}
-                    >
-                      <DeleteOutlined style={{ fontSize: 16 }} />
-                    </CardIconButton>
+                    />
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+                <div className="view-customer__doc-head-row view-customer__doc-head-row--flush">
                   <div>
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        opacity: 0.8,
-                        letterSpacing: "0.05em",
-                        display: "block",
-                        marginBottom: "2px",
-                      }}
-                    >
-                      QUOTE REFERENCE
-                    </span>
-                    <div
-                      style={{
-                        fontSize: "22px",
-                        fontWeight: "700",
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {quote.ref_no}
-                    </div>
+                    <span className="view-customer__eyebrow">QUOTE REFERENCE</span>
+                    <div className="view-customer__doc-title">{quote.ref_no}</div>
                   </div>
 
-                  <Tag
-                    style={{
-                      background: "rgba(255,255,255,0.25)",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      color: "white",
-                      fontWeight: "700",
-                      fontSize: "18px",
-                      padding: "6px 14px",
-                      borderRadius: "6px",
-                      margin: 0,
-                    }}
-                  >
+                  <span className="view-customer__amount-tag">
                     ${Number(quote.total_due).toFixed(2)}
-                  </Tag>
+                  </span>
                 </div>
               </div>
 
-              <div style={{ padding: "20px" }}>
-                <div
-                  style={{
-                    background: "#f8f9fa",
-                    padding: "14px",
-                    borderRadius: "8px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "15px",
-                      fontWeight: "600",
-                      color: "#2c3e50",
-                    }}
-                  >
-                    {quote.to_company_name}
-                  </p>
+              <div className="view-customer__doc-body">
+                <div className="view-customer__company">
+                  <p>{quote.to_company_name}</p>
                 </div>
 
-                <div
-                  style={{ display: "grid", gap: "12px", marginBottom: "16px" }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#6c757d",
-                        minWidth: "100px",
-                        fontWeight: "500",
-                      }}
-                    >
+                <div className="view-customer__details view-customer__details--quote">
+                  <div className="view-customer__detail">
+                    <span className="view-customer__detail-label view-customer__detail-label--wide">
                       Service Dates:
                     </span>
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        color: "#2c3e50",
-                        fontWeight: "500",
-                      }}
-                    >
+                    <span className="view-customer__detail-value">
                       {quote.service_dates
                         ? dayjs(quote.service_dates).format(
                             "MM-DD-YYYY hh:mm A",
@@ -1735,24 +1213,11 @@ const ViewCustomer = () => {
                     </span>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#6c757d",
-                        minWidth: "100px",
-                        fontWeight: "500",
-                      }}
-                    >
+                  <div className="view-customer__detail">
+                    <span className="view-customer__detail-label view-customer__detail-label--wide">
                       Due Date:
                     </span>
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        color: "#2c3e50",
-                        fontWeight: "500",
-                      }}
-                    >
+                    <span className="view-customer__detail-value">
                       {quote.due_date
                         ? dayjs(quote.due_date).format("MM-DD-YYYY hh:mm A")
                         : "N/A"}
@@ -1760,76 +1225,28 @@ const ViewCustomer = () => {
                   </div>
 
                   {(quote.address_1 || quote.address_2) && (
-                    <div style={{ display: "flex", alignItems: "flex-start" }}>
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          color: "#6c757d",
-                          minWidth: "100px",
-                          fontWeight: "500",
-                        }}
-                      >
+                    <div className="view-customer__detail">
+                      <span className="view-customer__detail-label view-customer__detail-label--wide">
                         Address:
                       </span>
-                      <span
-                        style={{ fontSize: "14px", color: "#2c3e50", flex: 1 }}
-                      >
+                      <span className="view-customer__detail-value view-customer__detail-value--regular">
                         {quote.address_1 || ""} {quote.address_2 || ""}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div
-                  style={{
-                    borderTop: "1px solid #e9ecef",
-                    paddingTop: "16px",
-                    marginTop: "16px",
-                  }}
-                >
-                  <h6
-                    style={{
-                      margin: "0 0 12px 0",
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      color: "#495057",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    Items
-                  </h6>
-                  <div style={{ display: "grid", gap: "8px" }}>
+                <div className="view-customer__items">
+                  <h6 className="view-customer__items-title">Items</h6>
+                  <div className="view-customer__items-list">
                     {quote.service_quote_item?.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          background: "#f8f9fa",
-                          padding: "10px 12px",
-                          borderRadius: "6px",
-                          borderLeft: "3px solid #667eea",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#2c3e50",
-                            marginBottom: "4px",
-                            fontWeight: "500",
-                          }}
-                        >
+                      <div key={item.id} className="view-customer__item">
+                        <div className="view-customer__item-desc">
                           {item.description}
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "13px",
-                            color: "#6c757d",
-                          }}
-                        >
+                        <div className="view-customer__item-meta">
                           <span>{item.frequency || "N/A"}</span>
-                          <span style={{ fontWeight: "600", color: "#667eea" }}>
+                          <span className="view-customer__item-amount">
                             ${Number(item.amount).toFixed(2)}
                           </span>
                         </div>
@@ -1838,138 +1255,70 @@ const ViewCustomer = () => {
                   </div>
                 </div>
 
-                <div style={{ marginTop: "16px" }}>
+                <div className="view-customer__payment">
                   {quote.payment_status === "PAID" ? (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "12px",
-                        background: "#d4edda",
-                        color: "#155724",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      ✅ Payment Completed
+                    <div className="view-customer__notice view-customer__notice--success">
+                      <CircleCheck size={16} /> Payment Completed
                     </div>
                   ) : quote.payment_status === "EXPIRED" ? (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "12px",
-                        background: "#fff3cd",
-                        color: "#856404",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      ⏰ Payment Link Expired
+                    <div className="view-customer__notice view-customer__notice--warning">
+                      <AlarmClock size={16} /> Payment Link Expired
                     </div>
                   ) : quote.square_payment_url ? (
                     <a
                       href={quote.square_payment_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        display: "block",
-                        textAlign: "center",
-                        padding: "12px",
-                        background:
-                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        color: "white",
-                        borderRadius: "8px",
-                        textDecoration: "none",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                        transition: "all 0.3s ease",
-                        border: "none",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.02)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(102, 126, 234, 0.4)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
+                      className="view-customer__doc-link"
                     >
-                      💳 View Payment Link
+                      <CreditCard size={16} /> View Payment Link
                     </a>
                   ) : (
-                    <div
-                      style={{
-                        textAlign: "center",
-                        padding: "12px",
-                        background: "#f8f9fa",
-                        color: "#6c757d",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      ⚠️ Payment Link Not Available
+                    <div className="view-customer__notice view-customer__notice--muted">
+                      <TriangleAlert size={16} /> Payment Link Not Available
                     </div>
                   )}
                 </div>
 
                 {/* Create/Edit Invoice button */}
-<div style={{ marginTop: "12px" }}>
-  {quote.invoice_created ? (
-    <Button
-      fullWidth
-      variant="contained"
-      disableElevation
-      startIcon={<Pencil size={15} />}
-      onClick={() => navigate(`/edit-invoice/${quote.invoice_id}`)}
-      sx={{
-        background: "#6366F1",
-        textTransform: "none",
-        fontWeight: 600,
-        borderRadius: "8px",
-        py: 1.2,
-        "&:hover": { background: "#4F46E5" },
-      }}
-    >
-      Edit Invoice
-    </Button>
-  ) : (
-    <Button
-      fullWidth
-      variant="contained"
-      disableElevation
-      startIcon={<Plus size={15} />}
-      loading={creatingInvoiceId === quote.id}
-      disabled={creatingInvoiceId === quote.id}
-      onClick={() => handleCreateInvoiceFromQuote(quote)}
-      sx={{
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textTransform: "none",
-        fontWeight: 600,
-        borderRadius: "8px",
-        py: 1.2,
-        "&:hover": {
-          background: "linear-gradient(135deg, #5a6fd8 0%, #6a4392 100%)",
-        },
-      }}
-    >
-      {creatingInvoiceId === quote.id ? "Creating..." : "Create Invoice"}
-    </Button>
-  )}
-</div>
+                <div className="view-customer__invoice-action">
+                  {quote.invoice_created ? (
+                    <Button
+                      type="primary"
+                      size="large"
+                      block
+                      icon={<Pencil size={16} />}
+                      onClick={() => navigate(`/edit-invoice/${quote.invoice_id}`)}
+                    >
+                      Edit Invoice
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      size="large"
+                      block
+                      icon={<Plus size={16} />}
+                      loading={creatingInvoiceId === quote.id}
+                      disabled={creatingInvoiceId === quote.id}
+                      onClick={() => handleCreateInvoiceFromQuote(quote)}
+                    >
+                      {creatingInvoiceId === quote.id
+                        ? "Creating..."
+                        : "Create Invoice"}
+                    </Button>
+                  )}
+                </div>
               </div>
-            </Card>
+            </div>
           ))}
         </CardGrid>
       )}
-    </Card>
+    </section>
   );
 
   /* Monthly Invoices tab content                                       */
   const invoicesContent = (
-    <Card style={sectionCardStyle}>
+    <section className="view-customer__section">
       <SectionHeader title={`Monthly Invoices for ${clientName}`} />
 
       {monthlyInvoices.length === 0 ? (
@@ -1982,7 +1331,7 @@ const ViewCustomer = () => {
               <DocumentCard
                 key={invoice.id}
                 statusTags={[
-                  { label: paymentStatus.label, color: paymentStatus.bg },
+                  { label: paymentStatus.label, tone: paymentStatus.tone },
                 ]}
                 eyebrow="INVOICE REF"
                 title={invoice.ref_no}
@@ -1995,26 +1344,26 @@ const ViewCustomer = () => {
                 }}
                 details={[
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Billing Date",
                     value: invoice.billing_date
                       ? dayjs(invoice.billing_date).format("MM/DD/YYYY")
                       : null,
                   },
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Due Date",
                     value: invoice.due_date
                       ? dayjs(invoice.due_date).format("MM/DD/YYYY")
                       : null,
                   },
                   {
-                    icon: <IoDocumentTextOutline />,
+                    icon: <FileText size={15} />,
                     label: "Service Dates",
                     value: invoice.service_dates,
                   },
                   {
-                    icon: <IoCardOutlineFallback />,
+                    icon: <CreditCard size={15} />,
                     label: "Amount Due",
                     value: `$${Number(invoice.total_due || 0).toFixed(2)}`,
                   },
@@ -2023,13 +1372,13 @@ const ViewCustomer = () => {
                   invoice.pdf_url && {
                     href: invoice.pdf_url,
                     label: "View Invoice",
-                    icon: "📄",
+                    icon: <FileText size={16} />,
                   },
                   invoice.payment_url && {
                     href: invoice.payment_url,
                     label: "Payment Link",
-                    icon: "💳",
-                    background: "#2ecc71",
+                    icon: <CreditCard size={16} />,
+                    tone: "success",
                   },
                 ].filter(Boolean)}
               />
@@ -2037,12 +1386,12 @@ const ViewCustomer = () => {
           })}
         </CardGrid>
       )}
-    </Card>
+    </section>
   );
 
   /* Contract Agreements tab content                                    */
   const contractsContent = (
-    <Card style={sectionCardStyle}>
+    <section className="view-customer__section">
       <SectionHeader title={`Contract Agreements for ${clientName}`} />
 
       {contractAgreements.length === 0 ? (
@@ -2054,7 +1403,7 @@ const ViewCustomer = () => {
             return (
               <DocumentCard
                 key={agreement.id}
-                statusTags={[{ label: status.label, color: status.bg }]}
+                statusTags={[{ label: status.label, tone: status.tone }]}
                 eyebrow="AGREEMENT"
                 title="Contract Agreement"
                 company={agreement.client_company_name}
@@ -2068,17 +1417,17 @@ const ViewCustomer = () => {
                 }}
                 details={[
                   {
-                    icon: <IoPersonOutline />,
+                    icon: <UserIcon size={15} />,
                     label: "Client",
                     value: agreement.client_name,
                   },
                   {
-                    icon: <IoMailOutline />,
+                    icon: <Mail size={15} />,
                     label: "Email",
                     value: agreement.client_email,
                   },
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Created",
                     value: agreement.created_at
                       ? dayjs(agreement.created_at).format("MM/DD/YYYY")
@@ -2089,13 +1438,13 @@ const ViewCustomer = () => {
                   agreement.file_url && {
                     href: agreement.file_url,
                     label: "View Agreement",
-                    icon: "📄",
+                    icon: <FileText size={16} />,
                   },
                   agreement.payment_url && {
                     href: agreement.payment_url,
                     label: "Payment Link",
-                    icon: "💳",
-                    background: "#2ecc71",
+                    icon: <CreditCard size={16} />,
+                    tone: "success",
                   },
                 ].filter(Boolean)}
               />
@@ -2103,12 +1452,12 @@ const ViewCustomer = () => {
           })}
         </CardGrid>
       )}
-    </Card>
+    </section>
   );
 
   /* Service Estimates tab content                                      */
   const estimatesContent = (
-    <Card style={sectionCardStyle}>
+    <section className="view-customer__section">
       <SectionHeader title={`Service Estimates for ${clientName}`} />
 
       {serviceEstimates.length === 0 ? (
@@ -2120,7 +1469,7 @@ const ViewCustomer = () => {
             return (
               <DocumentCard
                 key={estimate.id}
-                statusTags={[{ label: status.label, color: status.bg }]}
+                statusTags={[{ label: status.label, tone: status.tone }]}
                 eyebrow="ESTIMATE"
                 title="Service Estimate"
                 company={estimate.client_company_name}
@@ -2132,12 +1481,12 @@ const ViewCustomer = () => {
                 }}
                 details={[
                   {
-                    icon: <IoMailOutline />,
+                    icon: <Mail size={15} />,
                     label: "Email",
                     value: estimate.client_email,
                   },
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Created",
                     value: estimate.created_at
                       ? dayjs(estimate.created_at).format("MM/DD/YYYY")
@@ -2148,7 +1497,7 @@ const ViewCustomer = () => {
                   estimate.file_url && {
                     href: estimate.file_url,
                     label: "View Service Estimate",
-                    icon: "📄",
+                    icon: <FileText size={16} />,
                   },
                 ].filter(Boolean)}
               />
@@ -2156,12 +1505,12 @@ const ViewCustomer = () => {
           })}
         </CardGrid>
       )}
-    </Card>
+    </section>
   );
 
   /* Service Requests tab content                                       */
   const serviceRequestsContent = (
-    <Card style={sectionCardStyle}>
+    <section className="view-customer__section">
       <SectionHeader title={`Service Requests for ${clientName}`} />
 
       {serviceRequests.length === 0 ? (
@@ -2175,7 +1524,7 @@ const ViewCustomer = () => {
               <DocumentCard
                 key={request.id}
                 statusTags={[
-                  { label: paymentStatus.label, color: paymentStatus.bg },
+                  { label: paymentStatus.label, tone: paymentStatus.tone },
                 ]}
                 eyebrow="SERVICE REQUEST"
                 title={request.ref_no}
@@ -2184,26 +1533,26 @@ const ViewCustomer = () => {
                 onDelete={() => handleDelete(request.id)}
                 details={[
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Date",
                     value: request.date
                       ? dayjs(request.date).format("MM/DD/YYYY")
                       : null,
                   },
                   {
-                    icon: <IoCalendarOutline />,
+                    icon: <Calendar size={15} />,
                     label: "Due Date",
                     value: request.due_date
                       ? dayjs(request.due_date).format("MM/DD/YYYY")
                       : null,
                   },
                   {
-                    icon: <IoDocumentTextOutline />,
+                    icon: <FileText size={15} />,
                     label: "Service Days",
                     value: request.service_days,
                   },
                   {
-                    icon: <IoCardOutlineFallback />,
+                    icon: <CreditCard size={15} />,
                     label: "Amount",
                     value: `$${Number(request.total_due || 0).toFixed(2)}`,
                   },
@@ -2212,7 +1561,7 @@ const ViewCustomer = () => {
                   request.file_url && {
                     href: request.file_url,
                     label: "View Service Request",
-                    icon: "📄",
+                    icon: <FileText size={16} />,
                   },
                 ].filter(Boolean)}
               />
@@ -2220,7 +1569,7 @@ const ViewCustomer = () => {
           })}
         </CardGrid>
       )}
-    </Card>
+    </section>
   );
 
   const mainTabItems = [
@@ -2253,93 +1602,40 @@ const ViewCustomer = () => {
   ];
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            width: "100%",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">
-              CLIENT MANAGEMENT
-            </Typography>
-            <Typography className="page-sub-title">
-              View Information related with Client
-            </Typography>
-          </Box>
-
+    <div className="view-customer">
+      <PageHeader
+        title="CLIENT MANAGEMENT"
+        subtitle="View Information related with Client"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowBackIcon />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToUser}
-            sx={{
-              height: 47,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              flexShrink: 0,
-              ml: "auto",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Clients
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <div className="admin_details_form">
-        <Tabs
-          activeKey={mainTab}
-          onChange={(k) => setMainTab(k)}
-          className="mb-4 client-main-tabs"
-          items={mainTabItems}
-        />
-      </div>
+      <Tabs
+        activeKey={mainTab}
+        onChange={(k) => setMainTab(k)}
+        className="view-customer__tabs"
+        items={mainTabItems}
+      />
 
       {/* Add / Edit Address modal                                           */}
       {addressModalVisible && (
         <Modal
           title={
-            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#eef2ff",
-                  color: "#667eea",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="customer-modal-title">
+              <span className="customer-modal-title__icon customer-modal-title__icon--primary">
                 <MapPin size={17} />
-              </Box>
-              <span style={{ fontWeight: 600 }}>
+              </span>
+              <span className="customer-modal-title__text">
                 {editingAddress ? "Edit Address" : "Add New Address"}
               </span>
-            </Stack>
+            </div>
           }
           open={addressModalVisible}
           onCancel={() => {
@@ -2353,7 +1649,7 @@ const ViewCustomer = () => {
           okText={editingAddress ? "Save Changes" : "Add Address"}
           forceRender
         >
-          <Divider sx={{ mt: 1, mb: 2 }} />
+          <Divider className="customer-modal-divider" />
           <Form
             form={addressForm}
             layout="vertical"
@@ -2424,29 +1720,16 @@ const ViewCustomer = () => {
             </Form.Item>
 
             <Form.Item label="Map Preview">
-              <div
-                style={{
-                  border: "1px solid #eef0f2",
-                  height: 220,
-                  borderRadius: 8,
-                }}
-              >
+              <div className="customer-map-preview">
                 {addressCoordinates.lat && addressCoordinates.lng ? (
                   <iframe
                     width="100%"
                     height="100%"
-                    style={{ border: "none", borderRadius: 8 }}
                     src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
                     allowFullScreen
                   />
                 ) : (
-                  <p
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 80,
-                      color: "#999",
-                    }}
-                  >
+                  <p className="customer-map-preview__empty">
                     Enter address to show map
                   </p>
                 )}
@@ -2460,120 +1743,60 @@ const ViewCustomer = () => {
       {nearbyModalVisible && (
         <Modal
           title={
-            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#F3F4F6",
-                  color: "#6B7280",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="customer-modal-title">
+              <span className="customer-modal-title__icon customer-modal-title__icon--neutral">
                 <MapPin size={17} />
-              </Box>
-              <Box>
-                <div style={{ fontWeight: 600, lineHeight: 1.3 }}>
-                  Nearest Employees
-                </div>
+              </span>
+              <div>
+                <div className="customer-modal-title__text">Nearest Employees</div>
                 {nearbyAddress?.address && (
-                  <div
-                    style={{
-                      fontSize: "12.5px",
-                      fontWeight: 400,
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <div className="customer-modal-title__sub">
                     For {nearbyAddress.address}
                   </div>
                 )}
-              </Box>
-            </Stack>
+              </div>
+            </div>
           }
           open={nearbyModalVisible}
           onCancel={() => setNearbyModalVisible(false)}
           footer={null}
           width={900}
         >
-          <Divider sx={{ mt: 1, mb: 2 }} />
+          <Divider className="customer-modal-divider" />
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: "20px",
-              alignItems: "center",
-              marginBottom: "10px",
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}
-            >
-              <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
-                <IoNavigateOutline size={14} color="#9ca3af" />
-                <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
-                  Address & closest employees
-                </Typography>
-              </Stack>
+          <div className="customer-nearby__bar">
+            <div className="customer-nearby__controls">
+              <p className="customer-nearby__hint">
+                <Navigation size={14} />
+                Address & closest employees
+              </p>
               <Tooltip title="Zoom back out to all nearby employees">
                 <Button
-                  startIcon={<IoRefreshOutline size={14} />}
+                  type="link"
                   size="small"
+                  className="customer-nearby__reset"
+                  icon={<RefreshCw size={14} />}
                   onClick={handleResetMapView}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "12px",
-                    p: 0,
-                  }}
                 >
                   Reset View
                 </Button>
               </Tooltip>
-            </Box>
+            </div>
 
-            <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+            <p className="customer-nearby__hint">
               {nearbyEmployees.length > 0
                 ? `${nearbyEmployees.length} employee${
                     nearbyEmployees.length > 1 ? "s" : ""
                   } found`
                 : "Closest employees"}
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: "20px",
-              alignItems: "stretch",
-              width: "100%",
-            }}
-          >
+          <div className="customer-nearby__panels">
             {/* Map Panel */}
-            <Box
-              sx={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "380px",
-              }}
-            >
+            <div className="customer-nearby__panel">
               {nearbyLoading || !isNearbyMapLoaded ? (
-                <Box
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#9ca3af",
-                  }}
-                >
-                  Loading map...
-                </Box>
+                <div className="customer-nearby__loading">Loading map...</div>
               ) : (
                 <GoogleMap
                   mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -2600,14 +1823,14 @@ const ViewCustomer = () => {
                       icon={{
                         path: window.google.maps.SymbolPath.CIRCLE,
                         scale: 12,
-                        fillColor: NEARBY_CLIENT_COLOR,
+                        fillColor: markerColors.address,
                         fillOpacity: 1,
-                        strokeColor: "#ffffff",
+                        strokeColor: markerColors.stroke,
                         strokeWeight: 2,
                       }}
                       label={{
                         text: "A",
-                        color: "#ffffff",
+                        color: markerColors.label,
                         fontSize: "12px",
                         fontWeight: "bold",
                       }}
@@ -2630,15 +1853,17 @@ const ViewCustomer = () => {
                           path: window.google.maps.SymbolPath.CIRCLE,
                           scale: isSelected ? 14 : 11,
                           fillColor: isSelected
-                            ? NEARBY_SELECTED_COLOR
-                            : NEARBY_EMPLOYEE_COLOR,
+                            ? markerColors.selected
+                            : markerColors.employee,
                           fillOpacity: 1,
-                          strokeColor: "#ffffff",
+                          strokeColor: markerColors.stroke,
                           strokeWeight: 2,
                         }}
                         label={{
                           text: `${index + 1}`,
-                          color: "#ffffff",
+                          color: isSelected
+                            ? markerColors.selectedLabel
+                            : markerColors.label,
                           fontSize: "12px",
                           fontWeight: "bold",
                         }}
@@ -2675,19 +1900,10 @@ const ViewCustomer = () => {
                   )}
                 </GoogleMap>
               )}
-            </Box>
+            </div>
 
             {/* List Panel */}
-            <Box
-              sx={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "380px",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
+            <div className="customer-nearby__panel customer-nearby__panel--list">
               <Table
                 columns={[
                   {
@@ -2695,14 +1911,14 @@ const ViewCustomer = () => {
                     width: 40,
                     align: "center",
                     render: (_, __, index) => (
-                      <span style={{ color: "#9ca3af" }}>{index + 1}</span>
+                      <span className="customer-nearby__index">{index + 1}</span>
                     ),
                   },
                   {
                     title: "Name",
                     dataIndex: "name",
                     render: (name) => (
-                      <span style={{ fontWeight: 500 }}>{name}</span>
+                      <span className="customer-nearby__medium">{name}</span>
                     ),
                   },
                   {
@@ -2710,7 +1926,7 @@ const ViewCustomer = () => {
                     dataIndex: "role_id",
                     width: 190,
                     render: (role_id) => (
-                      <strong style={{ fontSize: "12.5px" }}>
+                      <strong className="customer-nearby__role">
                         {NEARBY_ROLE_LABELS[role_id] || "-"}
                       </strong>
                     ),
@@ -2723,7 +1939,9 @@ const ViewCustomer = () => {
                     sorter: (a, b) => a.distance - b.distance,
                     defaultSortOrder: "ascend",
                     render: (distance) => (
-                      <span style={{ fontWeight: 500 }}>{distance} mi</span>
+                      <span className="customer-nearby__medium">
+                        {distance} mi
+                      </span>
                     ),
                   },
                 ]}
@@ -2738,15 +1956,17 @@ const ViewCustomer = () => {
                   style: {
                     cursor: "pointer",
                     background:
-                      record.id === selectedNearbyId ? "#fff7e6" : undefined,
+                      record.id === selectedNearbyId
+                        ? "var(--color-warning-subtle)"
+                        : undefined,
                   },
                 })}
               />
-            </Box>
-          </Box>
+            </div>
+          </div>
         </Modal>
       )}
-    </Box>
+    </div>
   );
 };
 

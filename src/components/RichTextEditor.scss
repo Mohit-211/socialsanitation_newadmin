@@ -1,0 +1,155 @@
+.rte {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    border-color: var(--color-primary-active);
+  }
+
+  &:focus-within {
+    border-color: var(--color-primary-border);
+    box-shadow: var(--focus-ring);
+  }
+
+  &--disabled,
+  &--disabled:hover {
+    border-color: var(--color-border);
+    background: var(--color-bg-subtle);
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--color-bg-subtle);
+  }
+
+  &__block-select {
+    min-width: 120px;
+  }
+
+  // antd stretches every Select inside a Form.Item to 100% width
+  // (.ant-select-in-form-item); the toolbar's block-style select stays compact.
+  .rte__toolbar .rte__block-select.ant-select {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  &__divider {
+    width: 1px;
+    height: 20px;
+    margin: 0 var(--space-1);
+    background: var(--color-border);
+  }
+
+  &__btn.ant-btn {
+    color: var(--color-text-secondary);
+  }
+
+  &__btn--active.ant-btn,
+  &__btn--active.ant-btn:not(:disabled):hover {
+    color: var(--color-on-primary);
+    background: var(--color-primary-soft);
+  }
+
+  &__link-form {
+    width: 320px;
+    max-width: 80vw;
+  }
+
+  &__content .tiptap {
+    min-height: var(--rte-min-height, 200px);
+    padding: var(--space-3) var(--space-4);
+    outline: none;
+    font-size: var(--text-base);
+    line-height: 1.6;
+    color: var(--color-text);
+
+    > :first-child {
+      margin-top: 0;
+    }
+
+    p {
+      margin: 0 0 var(--space-2);
+    }
+
+    h2,
+    h3,
+    h4 {
+      margin: var(--space-4) 0 var(--space-2);
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-tight);
+      color: var(--color-text);
+    }
+
+    h2 {
+      font-size: var(--text-2xl);
+    }
+
+    h3 {
+      font-size: var(--text-xl);
+    }
+
+    h4 {
+      font-size: var(--text-lg);
+    }
+
+    ul,
+    ol {
+      margin: 0 0 var(--space-2);
+      padding-left: var(--space-6);
+    }
+
+    blockquote {
+      margin: var(--space-2) 0;
+      padding-left: var(--space-3);
+      border-left: 3px solid var(--color-primary-border);
+      color: var(--color-text-secondary);
+    }
+
+    a {
+      color: var(--color-primary-strong);
+      text-decoration: underline;
+    }
+
+    hr {
+      margin: var(--space-4) 0;
+      border: none;
+      border-top: 1px solid var(--color-border);
+    }
+
+    table {
+      width: 100%;
+      margin: var(--space-2) 0;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: var(--space-1) var(--space-2);
+      border: 1px solid var(--color-border);
+      vertical-align: top;
+    }
+
+    th {
+      font-weight: var(--font-weight-semibold);
+      background: var(--color-bg-subtle);
+    }
+
+    p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      float: left;
+      height: 0;
+      color: var(--color-text-subtle);
+      pointer-events: none;
+    }
+  }
+}

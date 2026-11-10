@@ -1,633 +1,607 @@
-@use "sass:color";
 // ScopeBuilder.scss
+// Colors, fonts, radii and shadows come from the design tokens in
+// src/index.css. Every rule is nested under .scope-builder so the generic
+// class names below (.section-card, .freq-badge, .btn-icon...) cannot leak
+// into other pages that use the same names.
 
-// ─── Tokens ───────────────────────────────────────────────
-$bg-page:        #f5f6fa;
-$bg-card:        #ffffff;
-$bg-card-inner:  #fafbfc;
-$bg-task:        #f8f9fb;
+$transition: all 0.18s ease;
 
-$border:         #e8eaef;
-$border-focus:   #3b82f6;
-
-$text-primary:   #1a1a2e;
-$text-secondary: #6b7280;
-$text-muted:     #adb5bd;
-
-$blue:           #3b82f6;
-$blue-light:     #eff6ff;
-$blue-dark:      #1d4ed8;
-
-$green:          #22c55e;
-$green-light:    #dcfce7;
-$green-dark:     #15803d;
-
-$red:            #ef4444;
-$red-light:      #fee2e2;
-$red-accent:     #fef2f2;
-$red-border:     #fca5a5;
-
-$orange:         #f97316;
-$orange-light:   #fff7ed;
-
-$amber:          #f59e0b;
-$amber-light:    #fffbeb;
-
-$radius-lg:      16px;
-$radius-md:      12px;
-$radius-sm:      8px;
-$radius-xs:      6px;
-
-$shadow-card:    0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.04);
-$shadow-hover:   0 4px 20px rgba(0,0,0,.12);
-$transition:     all 0.18s ease;
-
-// ─── Spinner keyframe ─────────────────────────────────────
+// ─── Keyframes ────────────────────────────────────────────
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulse-save {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%       { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-warning) 25%, transparent); }
+}
+
 // ─── Base ─────────────────────────────────────────────────
 .scope-builder {
-  font-family: 'DM Sans', 'Segoe UI', sans-serif;
-  background: $bg-page;
+  font-family: var(--font-sans);
+  background: var(--color-bg-layout);
   padding: 28px;
   min-height: 100vh;
-  color: $text-primary;
-}
+  color: var(--color-text);
 
-// ─── Header ───────────────────────────────────────────────
-.scope-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: $bg-card;
-  padding: 20px 28px;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-card;
-  margin-bottom: 24px;
+  // Native buttons and inputs do not inherit the page font.
+  button,
+  input {
+    font-family: var(--font-sans);
+  }
 
-  &__left {
+  // ─── Header ───────────────────────────────────────────────
+  .scope-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 14px;
-  }
+    background: var(--color-bg);
+    padding: var(--space-5) 28px;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-6);
 
-  &__icon {
-    font-size: 28px;
-    line-height: 1;
-  }
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
 
-  &__title {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: $text-primary;
-    letter-spacing: -0.3px;
-  }
+    &__icon {
+      display: inline-flex;
+      line-height: 1;
+      color: var(--color-primary-strong);
+    }
 
-  &__sub {
-    margin: 2px 0 0;
-    font-size: 13px;
-    color: $text-secondary;
-  }
-}
+    &__title {
+      margin: 0;
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text);
+      letter-spacing: -0.3px;
+    }
 
-// ─── Add Section button ───────────────────────────────────
-.btn-add-section {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 18px;
-  background: $blue;
-  color: #fff;
-  border: none;
-  border-radius: $radius-sm;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: $transition;
-  white-space: nowrap;
-
-  &:hover {
-    background: $blue-dark;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($blue, .35);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-// ─── Empty state ─────────────────────────────────────────
-.scope-empty {
-  text-align: center;
-  padding: 64px 32px;
-  background: $bg-card;
-  border-radius: $radius-lg;
-  border: 2px dashed $border;
-
-  &__icon {
-    font-size: 40px;
-    margin-bottom: 12px;
-  }
-
-  &__text {
-    color: $text-secondary;
-    margin-bottom: 20px;
-    font-size: 15px;
-  }
-}
-
-// ─── Sections list ────────────────────────────────────────
-.sections-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-// ─── Section card ─────────────────────────────────────────
-.section-card {
-  background: $bg-card;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-card;
-  border: 1.5px solid $border;
-  overflow: hidden;
-  transition: box-shadow 0.2s, border-radius 0.2s;
-
-  &:hover {
-    box-shadow: $shadow-hover;
-  }
-
-  // Collapsed variant — tighten radius
-  &--collapsed {
-    .section-card__header {
-      border-bottom: none;
+    &__sub {
+      margin: 2px 0 0;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
     }
   }
 
-  // Red variant
-  &--red {
-    border-color: $red-border;
-    border-left: 4px solid $red;
-
-    .section-card__header {
-      background: $red-accent;
-    }
-
-    .section-card__title-input {
-      color: $red;
-    }
-  }
-
-  // Header
-  &__header {
-    display: flex;
+  // ─── Add Section button ───────────────────────────────────
+  .btn-add-section {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 18px;
-    background: $bg-card-inner;
-    border-bottom: 1.5px solid $border;
-  }
-
-  &__drag {
-    color: $text-muted;
-    cursor: grab;
-    font-size: 14px;
-    flex-shrink: 0;
-    padding: 2px;
+    gap: 7px;
+    padding: 9px 18px;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: $transition;
+    white-space: nowrap;
 
     &:hover {
-      color: $text-secondary;
+      background: var(--color-primary-active);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
   }
 
-  &__title-input {
-    flex: 1;
-    border: 1.5px solid transparent;
-    background: transparent;
-    font-size: 15px;
-    font-weight: 600;
-    color: $text-primary;
-    padding: 6px 10px;
-    border-radius: $radius-xs;
-    outline: none;
-    transition: $transition;
-    min-width: 0;
-
-    &::placeholder {
-      color: $text-muted;
-      font-weight: 400;
-    }
-
-    &:focus {
-      border-color: $border-focus;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba($blue, .1);
-    }
-
-    // Read-only (saved) state
-    &[readonly] {
-      cursor: default;
-      color: $text-primary;
-
-      &:focus {
-        border-color: transparent;
-        background: transparent;
-        box-shadow: none;
-      }
-    }
-  }
-
-  &__controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  &__empty {
-    color: $text-muted;
-    font-size: 13px;
-    padding: 8px 0 12px;
+  // ─── Empty state ─────────────────────────────────────────
+  .scope-empty {
     text-align: center;
+    padding: 64px var(--space-8);
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--color-border);
+
+    &__icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--space-3);
+      color: var(--color-text-subtle);
+    }
+
+    &__text {
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-5);
+      font-size: var(--text-md);
+    }
   }
 
-  // Body
-  &__body {
-    padding: 14px 18px;
+  // ─── Sections list ────────────────────────────────────────
+  .sections-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-4);
   }
 
-  // Collapsed summary bar
-  &__collapsed-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 18px 10px;
-    gap: 12px;
-  }
-
-  &__collapsed-count {
-    font-size: 12px;
-    font-weight: 600;
-    color: $text-muted;
-    background: $bg-card-inner;
-    border: 1px solid $border;
-    padding: 3px 10px;
-    border-radius: 20px;
-  }
-
-  &__collapsed-expand {
-    font-size: 12px;
-    color: $blue;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    font-weight: 500;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+  // ─── Section card ─────────────────────────────────────────
+  .section-card {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1.5px solid var(--color-border);
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-radius 0.2s;
 
     &:hover {
-      color: $blue-dark;
-    }
-  }
-}
-
-// ─── Red toggle label ─────────────────────────────────────
-.red-toggle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  user-select: none;
-
-  &__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: $red;
-    flex-shrink: 0;
-  }
-
-  &__label {
-    font-size: 12px;
-    color: $text-secondary;
-    font-weight: 500;
-  }
-}
-
-// ─── Icon buttons ─────────────────────────────────────────
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-xs;
-  border: 1.5px solid $border;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: 13px;
-  color: $text-secondary;
-  transition: $transition;
-  flex-shrink: 0;
-
-  &:hover {
-    border-color: currentColor;
-  }
-}
-
-// ─── Save button ──────────────────────────────────────────
-.btn-save {
-  color: $text-secondary;
-
-  &:hover {
-    color: $blue;
-    background: $blue-light;
-    border-color: $blue;
-  }
-
-  // Dirty = unsaved changes → highlight amber/orange so user notices
-  &--dirty {
-    color: $amber;
-    border-color: $amber;
-    background: $amber-light;
-    animation: pulse-save 1.4s ease-in-out infinite;
-
-    &:hover {
-      color: color.adjust($amber, $lightness: -12%);
-      background: color.adjust($amber-light, $lightness: -4%);
-      border-color: color.adjust($amber, $lightness: -12%);
-      animation: none;
-    }
-  }
-
-  &--saving {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-}
-
-@keyframes pulse-save {
-  0%, 100% { box-shadow: 0 0 0 0 rgba($amber, 0); }
-  50%       { box-shadow: 0 0 0 4px rgba($amber, .25); }
-}
-
-// ─── Edit button (shown when record is saved) ─────────────
-.btn-edit {
-  color: $green-dark;
-  border-color: $green-light;
-  background: $green-light;
-
-  &:hover {
-    color: $green-dark;
-    background: color.adjust($green-light, $lightness: -4%);
-    border-color: $green;
-  }
-}
-
-// ─── Delete button ────────────────────────────────────────
-.btn-delete {
-  color: $red;
-
-  &:hover {
-    background: $red-light;
-    border-color: $red;
-  }
-}
-
-// ─── Collapse button ──────────────────────────────────────
-.btn-collapse {
-  color: $text-secondary;
-
-  &:hover {
-    color: $text-primary;
-    background: $bg-card-inner;
-  }
-
-  &--collapsed {
-    color: $blue;
-    border-color: $blue-light;
-    background: $blue-light;
-
-    &:hover {
-      background: color.adjust($blue-light, $lightness: -3%);
-    }
-  }
-}
-
-// ─── Spinner inside button ────────────────────────────────
-.btn-spinner {
-  display: block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.65s linear infinite;
-}
-
-// ─── Task row ─────────────────────────────────────────────
-.task-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: $radius-sm;
-  background: $bg-task;
-  border: 1.5px solid transparent;
-  transition: $transition;
-
-  &:hover {
-    border-color: $border;
-    background: #fff;
-  }
-
-  // Saved row — subtle green left accent
-  &--saved {
-    border-left: 3px solid $green-light;
-  }
-
-  &__drag {
-    color: $text-muted;
-    cursor: grab;
-    font-size: 13px;
-    flex-shrink: 0;
-
-    &:hover { color: $text-secondary; }
-  }
-
-  &__input {
-    flex: 1;
-    border: 1.5px solid transparent;
-    background: transparent;
-    font-size: 13.5px;
-    color: $text-primary;
-    padding: 5px 8px;
-    border-radius: $radius-xs;
-    outline: none;
-    transition: $transition;
-    min-width: 0;
-
-    &::placeholder {
-      color: $text-muted;
+      box-shadow: var(--shadow-md);
     }
 
-    &:focus {
-      border-color: $border-focus;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba($blue, .08);
+    // Collapsed variant — tighten radius
+    &--collapsed {
+      .section-card__header {
+        border-bottom: none;
+      }
     }
 
-    // Read-only saved state
-    &[readonly] {
-      cursor: default;
+    // Red variant
+    &--red {
+      border-color: var(--color-error-border);
+      border-left: 4px solid var(--color-error);
+
+      .section-card__header {
+        background: var(--color-error-subtle);
+      }
+
+      .section-card__title-input {
+        color: var(--color-error-strong);
+      }
+    }
+
+    // Header
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: var(--color-bg-subtle);
+      border-bottom: 1.5px solid var(--color-border);
+    }
+
+    &__drag {
+      display: flex;
+      align-items: center;
+      color: var(--color-text-subtle);
+      cursor: grab;
+      flex-shrink: 0;
+      padding: 2px;
+
+      &:hover {
+        color: var(--color-text-muted);
+      }
+    }
+
+    &__title-input {
+      flex: 1;
+      border: 1.5px solid transparent;
+      background: transparent;
+      font-size: var(--text-md);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: $transition;
+      min-width: 0;
+
+      &::placeholder {
+        color: var(--color-text-subtle);
+        font-weight: var(--font-weight-regular);
+      }
 
       &:focus {
-        border-color: transparent;
-        background: transparent;
-        box-shadow: none;
+        border-color: var(--color-primary-border);
+        background: var(--color-bg);
+        box-shadow: var(--focus-ring);
+      }
+
+      // Read-only (saved) state
+      &[readonly] {
+        cursor: default;
+        color: var(--color-text);
+
+        &:focus {
+          border-color: transparent;
+          background: transparent;
+          box-shadow: none;
+        }
+      }
+    }
+
+    &__controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-shrink: 0;
+    }
+
+    &__empty {
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      padding: 8px 0 12px;
+      text-align: center;
+    }
+
+    // Body
+    &__body {
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    // Collapsed summary bar
+    &__collapsed-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 18px 10px;
+      gap: var(--space-3);
+    }
+
+    &__collapsed-count {
+      font-size: var(--text-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      background: var(--color-bg-subtle);
+      border: 1px solid var(--color-border);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    &__collapsed-expand {
+      font-size: var(--text-xs);
+      color: var(--color-primary-strong);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-weight: var(--font-weight-medium);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+
+      &:hover {
+        color: var(--color-primary-stronger);
       }
     }
   }
 
-  &__freq {
+  // ─── Red toggle label ─────────────────────────────────────
+  .red-toggle {
     display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-}
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
 
-// ─── Frequency badges ─────────────────────────────────────
-.freq-badge {
-  width: 30px;
-  height: 28px;
-  border-radius: 6px;
-  border: 1.5px solid $border;
-  background: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  color: $text-secondary;
-  cursor: pointer;
-  transition: $transition;
-  letter-spacing: 0.03em;
+    &__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--color-error);
+      flex-shrink: 0;
+    }
 
-  &:hover {
-    border-color: $blue;
-    color: $blue;
-    background: $blue-light;
-  }
-
-  &--active {
-    background: $blue;
-    border-color: $blue;
-    color: #fff;
-    box-shadow: 0 2px 6px rgba($blue, .35);
-
-    &:hover {
-      background: $blue-dark;
-      border-color: $blue-dark;
-      color: #fff;
+    &__label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-weight: var(--font-weight-medium);
     }
   }
-}
 
-// ─── Add task button ─────────────────────────────────────
-.btn-add-task {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 9px;
-  border: 1.5px dashed $border;
-  border-radius: $radius-sm;
-  background: transparent;
-  color: $text-secondary;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: $transition;
-  margin-top: 4px;
+  // ─── Icon buttons ─────────────────────────────────────────
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: $transition;
+    flex-shrink: 0;
 
-  &:hover {
-    border-color: $blue;
-    color: $blue;
-    background: $blue-light;
+    &:hover {
+      border-color: currentColor;
+    }
+  }
+
+  // ─── Save button ──────────────────────────────────────────
+  .btn-save {
+    color: var(--color-text-muted);
+
+    &:hover {
+      color: var(--color-primary-strong);
+      background: var(--color-primary-subtle);
+      border-color: var(--color-primary-border);
+    }
+
+    // Dirty = unsaved changes → highlight in the warning color so user notices
+    &--dirty {
+      color: var(--color-warning-strong);
+      border-color: var(--color-warning);
+      background: var(--color-warning-subtle);
+      animation: pulse-save 1.4s ease-in-out infinite;
+
+      &:hover {
+        color: var(--color-warning-strong);
+        background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+        border-color: var(--color-warning-strong);
+        animation: none;
+      }
+    }
+
+    &--saving {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  // ─── Edit button (shown when record is saved) ─────────────
+  .btn-edit {
+    color: var(--color-success-strong);
+    border-color: var(--color-success-subtle);
+    background: var(--color-success-subtle);
+
+    &:hover {
+      color: var(--color-success-strong);
+      background: color-mix(in srgb, var(--color-success) 15%, transparent);
+      border-color: var(--color-success);
+    }
+  }
+
+  // ─── Delete button ────────────────────────────────────────
+  .btn-delete {
+    color: var(--color-error);
+
+    &:hover {
+      background: var(--color-error-subtle);
+      border-color: var(--color-error);
+    }
+  }
+
+  // ─── Collapse button ──────────────────────────────────────
+  .btn-collapse {
+    color: var(--color-text-muted);
+
+    &:hover {
+      color: var(--color-text);
+      background: var(--color-bg-subtle);
+    }
+
+    &--collapsed {
+      color: var(--color-primary-strong);
+      border-color: var(--color-primary-soft);
+      background: var(--color-primary-soft);
+
+      &:hover {
+        background: var(--color-primary-hover);
+      }
+    }
+  }
+
+  // ─── Spinner inside button ────────────────────────────────
+  .btn-spinner {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: var(--radius-full);
+    animation: spin 0.65s linear infinite;
+  }
+
+  // ─── Task row ─────────────────────────────────────────────
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+    border: 1.5px solid transparent;
+    transition: $transition;
+
+    &:hover {
+      border-color: var(--color-border);
+      background: var(--color-bg);
+    }
+
+    // Saved row — subtle green left accent
+    &--saved {
+      border-left: 3px solid var(--color-success-border);
+    }
+
+    &__drag {
+      display: flex;
+      align-items: center;
+      color: var(--color-text-subtle);
+      cursor: grab;
+      flex-shrink: 0;
+
+      &:hover { color: var(--color-text-muted); }
+    }
+
+    &__input {
+      flex: 1;
+      border: 1.5px solid transparent;
+      background: transparent;
+      font-size: 13.5px;
+      color: var(--color-text);
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: $transition;
+      min-width: 0;
+
+      &::placeholder {
+        color: var(--color-text-subtle);
+      }
+
+      &:focus {
+        border-color: var(--color-primary-border);
+        background: var(--color-bg);
+        box-shadow: var(--focus-ring);
+      }
+
+      // Read-only saved state
+      &[readonly] {
+        cursor: default;
+
+        &:focus {
+          border-color: transparent;
+          background: transparent;
+          box-shadow: none;
+        }
+      }
+    }
+
+    &__freq {
+      display: flex;
+      gap: var(--space-1);
+      flex-shrink: 0;
+    }
+  }
+
+  // ─── Frequency badges ─────────────────────────────────────
+  .freq-badge {
+    width: 30px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: $transition;
+    letter-spacing: 0.03em;
+
+    &:hover {
+      border-color: var(--color-primary-border);
+      color: var(--color-primary-strong);
+      background: var(--color-primary-subtle);
+    }
+
+    &--active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: var(--color-on-primary);
+      box-shadow: var(--shadow-sm);
+
+      &:hover {
+        background: var(--color-primary-active);
+        border-color: var(--color-primary-active);
+        color: var(--color-on-primary);
+      }
+    }
+  }
+
+  // ─── Add task button ─────────────────────────────────────
+  .btn-add-task {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px;
+    border: 1.5px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: $transition;
+    margin-top: var(--space-1);
+
+    &:hover {
+      border-color: var(--color-primary-border);
+      color: var(--color-primary-strong);
+      background: var(--color-primary-subtle);
+    }
+  }
+
+  // ─── Client type toggle (Commercial / Residential) ────────
+  .client-type-toggle {
+    display: inline-flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    margin-bottom: var(--space-5);
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    &__btn {
+      padding: 7px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: $transition;
+
+      &:hover {
+        color: var(--color-primary-strong);
+      }
+
+      &--active {
+        background: var(--color-primary);
+        color: var(--color-on-primary);
+        box-shadow: var(--shadow-sm);
+
+        &:hover {
+          color: var(--color-on-primary);
+        }
+      }
+    }
+  }
+
+  // ─── Loading state ────────────────────────────────────────
+  .scope-loading {
+    text-align: center;
+    padding: var(--space-12) 0;
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
   }
 }
 
 // ─── Responsive ──────────────────────────────────────────
 @media (max-width: 640px) {
   .scope-builder {
-    padding: 16px;
-  }
+    padding: var(--space-4);
 
-  .scope-header {
-    flex-direction: column;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .task-row {
-    flex-wrap: wrap;
-
-    &__input {
-      width: 100%;
-      flex: unset;
-    }
-  }
-
-  .red-toggle__label {
-    display: none;
-  }
-}
-
-// ─── Client type toggle (Commercial / Residential) ────────
-.client-type-toggle {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 20px;
-  background: $bg-card;
-  border: 1.5px solid $border;
-  border-radius: $radius-sm;
-
-  &__btn {
-    padding: 7px 18px;
-    border: none;
-    border-radius: $radius-xs;
-    background: transparent;
-    font-size: 13px;
-    font-weight: 600;
-    color: $text-secondary;
-    cursor: pointer;
-    transition: $transition;
-
-    &:hover {
-      color: $blue;
+    .scope-header {
+      flex-direction: column;
+      gap: 14px;
+      align-items: flex-start;
     }
 
-    &--active {
-      background: $blue;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba($blue, .35);
+    .task-row {
+      flex-wrap: wrap;
 
-      &:hover {
-        color: #fff;
+      &__input {
+        width: 100%;
+        flex: unset;
       }
     }
-  }
-}
 
-// ─── Loading state ────────────────────────────────────────
-.scope-loading {
-  text-align: center;
-  padding: 48px 0;
-  font-size: 14px;
-  color: $text-secondary;
+    .red-toggle__label {
+      display: none;
+    }
+  }
 }

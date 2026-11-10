@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
 import { Table, Select, message, Divider, Drawer, Tag, Modal, Spin, Input } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import dayjs from "@/lib/dayjs";
-import { Eye, Search } from "lucide-react";
-import { UserOutlined, ClockCircleOutlined, ShoppingCartOutlined, FileImageOutlined } from "@ant-design/icons";
+import { Clock, Eye, FileImage, Search, ShoppingCart, User } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import "./InventoryRequest.scss";
 
 import {
     GetAllRequestsByAdmin,
@@ -16,18 +12,6 @@ import {
 } from "../../services/Api/Product";
 
 const IMAGE_BASE_URL = "https://node.socialsanitation.com:3000"; // Define the base URL once
-
-const actionIconBtn = (color) => ({
-    width: 34,
-    height: 34,
-    border: "1px solid",
-    borderColor: color,
-    color,
-    "&:hover": {
-        backgroundColor: `${color}14`,
-        borderColor: color,
-    },
-});
 
 const InventoryRequest = () => {
     const [data, setData] = useState([]);
@@ -69,13 +53,13 @@ const InventoryRequest = () => {
 
     const getStatusTag = (status) => {
         let color;
-        if (status === "Pending") color = "orange";
-        else if (status === "Approved") color = "green";
-        else if (status === "Rejected") color = "red";
+        if (status === "Pending") color = "warning";
+        else if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
         else color = "default";
 
         return (
-            <Tag color={color} style={{ fontWeight: 600, minWidth: '70px', textAlign: 'center' }}>
+            <Tag color={color} className="inventory-request__status-tag">
                 {status.toUpperCase()}
             </Tag>
         );
@@ -92,7 +76,7 @@ const InventoryRequest = () => {
             title: "Employee Name",
             dataIndex: ["requested_user", "user_profile", "name"],
             width: "20%",
-            filterIcon: <UserOutlined />, // Add filter icon
+            filterIcon: <User size={14} />, // Add filter icon
             onFilter: (value, record) =>
                 record.requested_user?.user_profile?.name?.toLowerCase().includes(value.toLowerCase()),
             render: (text) => text || "--",
@@ -101,7 +85,7 @@ const InventoryRequest = () => {
             title: "Product",
             dataIndex: ["requested_product", "name"],
             width: "25%",
-            filterIcon: <ShoppingCartOutlined />, // Add filter icon
+            filterIcon: <ShoppingCart size={14} />, // Add filter icon
             onFilter: (value, record) =>
                 record.requested_product?.name?.toLowerCase().includes(value.toLowerCase()),
         },
@@ -152,18 +136,14 @@ const InventoryRequest = () => {
             dataIndex: "action",
             width: "10%",
             render: (_, record) => (
-                <Tooltip title="View Request">
-                    <IconButton
-                        size="small"
-                        sx={actionIconBtn("#1890ff")}
-                        onClick={() => {
-                            setSelectedRequest(record);
-                            setOpenDrawer(true);
-                        }}
-                    >
-                        <Eye size={16} />
-                    </IconButton>
-                </Tooltip>
+                <IconAction
+                    icon={Eye}
+                    title="View Request"
+                    onClick={() => {
+                        setSelectedRequest(record);
+                        setOpenDrawer(true);
+                    }}
+                />
             ),
         },
     ].filter(col => !col.responsive || col.responsive.includes('md')); // Basic responsive filter for simplicity
@@ -211,67 +191,33 @@ const InventoryRequest = () => {
     };
 
     return (
-        <Box className="inventory-request-container">
+        <div className="inventory-request">
             {/* HEADER */}
-            <Paper
-                variant="outlined"
-                sx={{
-                    p: 2.5,
-                    mb: 2.5,
-                    borderRadius: "10px",
-                    borderColor: "#eef0f2",
-                }}
-            >
-                <Stack useFlexGap
-                    direction="row"
-                    spacing={2}
-                    sx={{
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: { xs: "wrap", md: "nowrap" },
-                    }}
-                >
-                    <Box sx={{ minWidth: 0 }}>
-                        <Typography className="page-title" noWrap>
-                            INVENTORY REQUESTS
-                        </Typography>
-                        <Typography
-                            className="page-sub-title"
-                            sx={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            Manage product restock requests and status updates
-                        </Typography>
-                    </Box>
-
+            <PageHeader
+                title="INVENTORY REQUESTS"
+                subtitle="Manage product restock requests and status updates"
+                actions={
                     <Input
                         allowClear
-                        prefix={<Search size={18} color="#9CA3AF" />}
+                        size="large"
+                        prefix={<Search size={16} color="var(--color-text-subtle)" />}
                         placeholder="Search by Employee, Product, or ID"
-                        style={{ width: 280, height: 44, flexShrink: 0 }}
+                        className="inventory-request__search"
                         value={searchTerm}
                         onChange={(e) => onSearch(e.target.value)}
                     />
-                </Stack>
-            </Paper>
+                }
+            />
 
             {/* Main Table */}
             <Table
+                className="inventory-request__table"
                 columns={columns}
                 rowKey={(record) => record.id}
                 dataSource={data}
                 loading={loading}
                 pagination={tableParams.pagination}
                 onChange={handleTableChange}
-                style={{
-                    border: "1px solid #e8e8e8",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)"
-                }}
                 locale={{
                     emptyText: loading ? <Spin /> : 'No Inventory Requests Found',
                 }}
@@ -279,50 +225,50 @@ const InventoryRequest = () => {
 
             {/* Request Details Drawer */}
             <Drawer
-                title={<span style={{ fontWeight: 700 }}>Request Details</span>}
-                width={selectedRequest?.product_request_attachments?.length ? 550 : 400} // Dynamic width
+                title={<span className="inventory-request__drawer-title">Request Details</span>}
+                size={selectedRequest?.product_request_attachments?.length ? 550 : 400} // Dynamic width
                 placement="right"
                 onClose={() => setOpenDrawer(false)}
                 open={openDrawer}
-                bodyStyle={{ padding: "0" }}
+                styles={{ body: { padding: 0 } }}
             >
                 {selectedRequest && (
-                    <div style={{ padding: "24px" }}>
+                    <div className="inventory-request__details">
 
                         {/* Request Summary */}
-                        <div style={{ padding: "16px", background: "#f5f5f5", borderRadius: "8px", marginBottom: "20px" }}>
-                            <p style={{ margin: 0, fontSize: "12px", color: "#606060" }}>REQUEST ID</p>
-                            <h2 style={{ margin: "4px 0 10px", fontSize: "20px", fontWeight: 700 }}>
+                        <div className="inventory-request__summary">
+                            <p className="inventory-request__summary-label">REQUEST ID</p>
+                            <h2 className="inventory-request__summary-id">
                                 #{selectedRequest.id}
                             </h2>
-                            <div>
-                                <ClockCircleOutlined style={{ marginRight: "8px" }} />
+                            <div className="inventory-request__summary-date">
+                                <Clock size={14} />
                                 Requested on:{dayjs(selectedRequest.created_at).format("MMMM D, YYYY [at] h:mm A")}
                             </div>
                         </div>
 
                         {/* Employee Details Section */}
-                        <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px", borderLeft: '4px solid #1890ff', paddingLeft: '8px' }}>
-                            <UserOutlined style={{ marginRight: '8px' }} /> Employee Information
+                        <h3 className="inventory-request__section-title inventory-request__section-title--employee">
+                            <User size={16} /> Employee Information
                         </h3>
 
-                        <div style={{ marginBottom: "20px", paddingLeft: '12px' }}>
-                            <p style={{ margin: '6px 0' }}>Name: {selectedRequest?.requested_user?.user_profile?.name || 'N/A'}</p>
-                            <p style={{ margin: '6px 0' }}>Email: {selectedRequest?.requested_user?.email || 'N/A'}</p>
+                        <div className="inventory-request__section-body">
+                            <p>Name: {selectedRequest?.requested_user?.user_profile?.name || 'N/A'}</p>
+                            <p>Email: {selectedRequest?.requested_user?.email || 'N/A'}</p>
                         </div>
 
                         <Divider style={{ margin: '10px 0' }} />
 
                         {/* Product Details */}
-                        <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px", borderLeft: '4px solid #52c41a', paddingLeft: '8px' }}>
-                            <ShoppingCartOutlined style={{ marginRight: '8px' }} /> Product Information
+                        <h3 className="inventory-request__section-title inventory-request__section-title--product">
+                            <ShoppingCart size={16} /> Product Information
                         </h3>
 
-                        <div style={{ marginBottom: "20px", paddingLeft: '12px' }}>
-                            <p style={{ margin: '6px 0' }}>Product: {selectedRequest?.requested_product?.name || 'N/A'}</p>
-                            <p style={{ margin: '6px 0' }}>Requested Quantity: <Tag color="blue" style={{ fontSize: '14px', padding: '4px 8px' }}>{selectedRequest?.requested_quantity}</Tag></p>
+                        <div className="inventory-request__section-body">
+                            <p>Product: {selectedRequest?.requested_product?.name || 'N/A'}</p>
+                            <p>Requested Quantity: <Tag color="processing" className="inventory-request__qty-tag">{selectedRequest?.requested_quantity}</Tag></p>
 
-                            <p style={{ margin: "10px 0 0" }}>
+                            <p className="inventory-request__current-status">
                                 Current Status: {getStatusTag(selectedRequest.status)}
                             </p>
                         </div>
@@ -330,76 +276,41 @@ const InventoryRequest = () => {
                         <Divider style={{ margin: '10px 0' }} />
 
                         {/* Notes Section */}
-                        <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px", borderLeft: '4px solid #faad14', paddingLeft: '8px' }}>
+                        <h3 className="inventory-request__section-title inventory-request__section-title--notes">
                             Notes
                         </h3>
 
-                        <div
-                            style={{
-                                background: "#fffbe6",
-                                padding: "12px",
-                                borderRadius: "8px",
-                                border: "1px solid #ffe58f",
-                                minHeight: "60px",
-                                lineHeight: "1.6",
-                                color: '#333'
-                            }}
-                        >
+                        <div className="inventory-request__notes">
                             {selectedRequest?.note || (
-                                <span style={{ color: "#888", fontStyle: 'italic' }}>No notes provided by the requester.</span>
+                                <span className="inventory-request__muted inventory-request__muted--italic">No notes provided by the requester.</span>
                             )}
                         </div>
 
                         <Divider style={{ margin: '20px 0' }} />
 
                         {/* Attachments Section */}
-                        <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px", borderLeft: '4px solid #eb2f96', paddingLeft: '8px' }}>
-                            <FileImageOutlined style={{ marginRight: '8px' }} /> Attachments ({selectedRequest?.product_request_attachments?.length || 0})
+                        <h3 className="inventory-request__section-title inventory-request__section-title--attachments">
+                            <FileImage size={16} /> Attachments ({selectedRequest?.product_request_attachments?.length || 0})
                         </h3>
 
                         {selectedRequest?.product_request_attachments?.length ? (
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 1fr",
-                                    gap: "15px",
-                                }}
-                            >
+                            <div className="inventory-request__attachments">
                                 {selectedRequest.product_request_attachments.map((img) => (
                                     <div
                                         key={img.id}
                                         onClick={() => showImageModal(img.file_uri, img.file_name)} // Click handler to open modal
-                                        style={{
-                                            overflow: "hidden",
-                                            borderRadius: "8px",
-                                            border: "2px solid #ddd",
-                                            cursor: "pointer",
-                                            transition: "transform 0.3s, box-shadow 0.3s",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.transform = "scale(1.03)";
-                                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.transform = "scale(1)";
-                                            e.currentTarget.style.boxShadow = "none";
-                                        }}
+                                        className="inventory-request__attachment"
                                     >
                                         <img
                                             src={`${IMAGE_BASE_URL}${img.file_uri}/${img.file_name}`}
                                             alt="attachment"
                                             crossOrigin="anonymous"
-                                            style={{
-                                                width: "100%",
-                                                height: "150px", // Increased size for better preview
-                                                objectFit: "cover",
-                                            }}
                                         />
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p style={{ color: "#888", paddingLeft: '12px' }}>No attachments uploaded for this request.</p>
+                            <p className="inventory-request__muted inventory-request__muted--indented">No attachments uploaded for this request.</p>
                         )}
                     </div>
                 )}
@@ -407,13 +318,13 @@ const InventoryRequest = () => {
 
             {/* Full-Screen Image Modal (Lightbox) */}
             <Modal
-                visible={isModalVisible}
+                open={isModalVisible}
                 title="Attachment View"
                 onCancel={() => setIsModalVisible(false)}
                 footer={null}
                 centered
                 width="80vw"
-                bodyStyle={{ padding: 0 }}
+                styles={{ body: { padding: 0 } }}
             >
                 {modalImageSrc && (
                     <img
@@ -424,7 +335,7 @@ const InventoryRequest = () => {
                     />
                 )}
             </Modal>
-        </Box>
+        </div>
     );
 };
 

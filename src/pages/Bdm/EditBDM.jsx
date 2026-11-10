@@ -1,14 +1,7 @@
 import { useLayoutEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { GetAdminById, UpdateAdmin } from "../../services/Api/Api.jsx";
-import { message } from "antd";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import InputAdornment from "@mui/material/InputAdornment";
+import { Button, Divider, Input, message } from "antd";
 import {
   ArrowLeft,
   Save,
@@ -19,6 +12,8 @@ import {
   ShieldCheck,
   UserCog,
 } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import "./BDM.scss";
 
 const EditBDM = () => {
   const { id } = useParams();
@@ -66,305 +61,140 @@ const EditBDM = () => {
     }
   };
 
-  const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-      height: "45px",
-      borderRadius: "6px",
-    },
-  };
-
-  const labelSx = {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-  };
-
-  const disabledLabelSx = {
-    ...labelSx,
-    color: "#9ca3af",
-  };
-
-  const sectionLabelSx = {
-    fontSize: "11.5px",
-    fontWeight: 700,
-    color: "#6b7280",
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    mb: 1.5,
-  };
-
   return (
-    <Box>
-      {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BDM MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              Modify account information and contact details
-            </Typography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="BDM MANAGEMENT"
+        subtitle="Modify account information and contact details"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={() => navigate("/bdm-list")}
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to BDM List
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-          p: 3,
-        }}
-      >
+      <div className="surface bdm-form">
         {/* Intro banner */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            background: "#eef2ff",
-            border: "1px solid #e0e7ff",
-            borderRadius: "10px",
-            padding: "12px 16px",
-            marginBottom: "20px",
-          }}
-        >
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#4f46e5",
-              color: "#fff",
-              flexShrink: 0,
-            }}
-          >
+        <div className="bdm-banner">
+          <span className="bdm-banner__icon">
             <UserCog size={18} />
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#1e1b4b",
-                lineHeight: 1.3,
-              }}
-            >
+          </span>
+          <div className="bdm-banner__body">
+            <p className="bdm-banner__title">
               Editing: {data?.name || "BDM Profile"}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "12px",
-                color: "#4338ca",
-                lineHeight: 1.4,
-                mt: 0.25,
-              }}
-            >
+            </p>
+            <p className="bdm-banner__text">
               Name and mobile number can be updated below. Email and role are
               locked.
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 3,
-            }}
-          >
+          <div className="bdm-form__columns">
             {/* Editable fields */}
-            <Box>
-              <Typography sx={sectionLabelSx}>General Information</Typography>
+            <div>
+              <h3 className="bdm-form__section-label">General Information</h3>
 
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={labelSx}>Full Name</Typography>
-                <TextField
+              <div className="bdm-form__field">
+                <label className="field-label" htmlFor="edit-bdm-name">
+                  Full Name
+                </label>
+                <Input
+                  id="edit-bdm-name"
+                  size="large"
                   name="name"
                   value={data?.name || ""}
                   onChange={handleChange}
                   placeholder="Enter full name"
-                  fullWidth
-                  size="small"
-                  sx={fieldSx}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <UserIcon size={16} color="#9ca3af" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<UserIcon size={16} className="text-subtle" />}
                 />
-              </Box>
+              </div>
 
-              <Box>
-                <Typography sx={labelSx}>Mobile Number</Typography>
-                <TextField
+              <div className="bdm-form__field">
+                <label className="field-label" htmlFor="edit-bdm-mobile">
+                  Mobile Number
+                </label>
+                <Input
+                  id="edit-bdm-mobile"
+                  size="large"
                   name="mobile"
                   value={data?.mobile || ""}
                   onChange={handleChange}
                   placeholder="Enter mobile number"
-                  fullWidth
-                  size="small"
-                  sx={fieldSx}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Phone size={16} color="#9ca3af" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<Phone size={16} className="text-subtle" />}
                 />
-              </Box>
-            </Box>
+              </div>
+            </div>
 
             {/* Locked fields */}
-            <Box>
-              <Typography sx={sectionLabelSx}>Account Details</Typography>
+            <div>
+              <h3 className="bdm-form__section-label">Account Details</h3>
 
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={disabledLabelSx}>Email Address</Typography>
-                <TextField
+              <div className="bdm-form__field">
+                <label
+                  className="field-label text-subtle"
+                  htmlFor="edit-bdm-email"
+                >
+                  Email Address
+                </label>
+                <Input
+                  id="edit-bdm-email"
+                  size="large"
                   value={data?.email || ""}
                   disabled
-                  fullWidth
-                  size="small"
-                  sx={{
-                    ...fieldSx,
-                    "& .MuiOutlinedInput-root": {
-                      ...fieldSx["& .MuiOutlinedInput-root"],
-                      backgroundColor: "#f5f5f5",
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Mail size={16} color="#bfbfbf" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<Mail size={16} className="text-subtle" />}
                 />
-              </Box>
+              </div>
 
-              <Box>
-                <Typography sx={disabledLabelSx}>Role</Typography>
-                <TextField
+              <div className="bdm-form__field">
+                <label
+                  className="field-label text-subtle"
+                  htmlFor="edit-bdm-role"
+                >
+                  Role
+                </label>
+                <Input
+                  id="edit-bdm-role"
+                  size="large"
                   value="Business Development Manager"
                   disabled
-                  fullWidth
-                  size="small"
-                  sx={{
-                    ...fieldSx,
-                    "& .MuiOutlinedInput-root": {
-                      ...fieldSx["& .MuiOutlinedInput-root"],
-                      backgroundColor: "#f5f5f5",
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ShieldCheck size={16} color="#bfbfbf" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<ShieldCheck size={16} className="text-subtle" />}
                 />
-              </Box>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </div>
 
-          <Divider sx={{ mt: 2.5, mb: 2 }} />
+          <Divider style={{ margin: "var(--space-5) 0 var(--space-4)" }} />
 
           {/* Action Buttons */}
-          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
+          <div className="bdm-form__actions bdm-form__actions--end">
             <Button
-              variant="contained"
-              disableElevation
-              type="button"
-              startIcon={<X size={18} />}
+              size="large"
+              icon={<X size={16} />}
               onClick={() => navigate("/bdm-list")}
-              sx={{
-                height: 42,
-                px: 3,
-                borderRadius: "6px",
-                textTransform: "none",
-                fontWeight: 600,
-                backgroundColor: "#6b7280",
-                color: "#ffffff",
-                "&:hover": {
-                  backgroundColor: "#4b5563",
-                },
-              }}
             >
               Cancel
             </Button>
 
             <Button
-              variant="contained"
-              disableElevation
-              type="submit"
+              type="primary"
+              htmlType="submit"
+              size="large"
+              className="bdm-form__save"
               disabled={loading}
-              startIcon={!loading ? <Save size={18} /> : null}
-              sx={{
-                height: 42,
-                px: 3,
-                borderRadius: "6px",
-                textTransform: "none",
-                fontWeight: 600,
-                minWidth: "160px",
-                backgroundColor: "#3b82f6",
-                "&:hover": {
-                  backgroundColor: "#2563eb",
-                },
-              }}
+              icon={!loading ? <Save size={16} /> : null}
             >
               {loading ? "Saving..." : "Save Changes"}
             </Button>
-          </Box>
+          </div>
         </form>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

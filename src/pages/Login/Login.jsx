@@ -1,9 +1,8 @@
 import { AdminLogin } from "../../services/Api/Api";
 import "./Login.scss";
-import Button from "@mui/material/Button";
-import { useNavigate } from "react-router-dom";
-import { Form, Input, message } from "antd";
-import logo from "../../assets/WhatsApp Image 2024-11-20 at 9.55.51 AM (1) 1.png";
+import { useNavigate } from "react-router";
+import { Button, Form, Input, message } from "antd";
+import logo from "../../assets/logo-mark.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -51,58 +50,52 @@ const Login = () => {
   const onFinishFailed = () => {};
 
   return (
-    <div className="LoginContainer">
-      <div className="Login">
-        <div className="Login_Container">
-          <div className="LogoContainer">
-            <img src={logo} alt="Logo" className="Logo" />
-          </div>
-          <div className="heading_two_content">
-            <h2 className="heading_2">Hi, Welcome Back</h2>
-            <span className="heading_two_item">
-              Enter Your Credentials To continue
-            </span>
-          </div>
-
-          <Form
-            name="basic"
-            layout="vertical"
-            initialValues={{ remember: true }}
-            onFinish={onFinish}
-            onFinishFailed={onFinishFailed}
-            autoComplete="off"
-          >
-            <Form.Item
-              label="Email Address"
-              name="email"
-              rules={[
-                { required: true, message: "Please enter your EmailId" },
-              ]}
-            >
-              <Input className="login_form_control" />
-            </Form.Item>
-            <Form.Item
-              label="Password"
-              name="password"
-              rules={[
-                { required: true, message: "Please enter your Password" },
-              ]}
-            >
-              <Input.Password className="login_form_control" />
-            </Form.Item>
-            <div className="button_div">
-              <Button
-                variant="contained"
-                type="submit"
-                className="login_button"
-              >
-                SIGN IN
-              </Button>
-            </div>
-          </Form>
+    <main className="login-page">
+      <div className="login-page__card">
+        <div className="login-page__logo">
+          <img src={logo} alt="Logo" />
         </div>
+        <div className="login-page__intro">
+          <h1 className="login-page__title">Hi, Welcome Back</h1>
+          <p className="login-page__subtitle">
+            Enter Your Credentials To continue
+          </p>
+        </div>
+
+        <Form
+          name="basic"
+          layout="vertical"
+          initialValues={{ remember: true }}
+          onFinish={onFinish}
+          onFinishFailed={onFinishFailed}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="Email Address"
+            name="email"
+            rules={[
+              { required: true, message: "Please enter your EmailId" },
+            ]}
+          >
+            <Input size="large" />
+          </Form.Item>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[
+              { required: true, message: "Please enter your Password" },
+            ]}
+          >
+            <Input.Password size="large" />
+          </Form.Item>
+          <div className="login-page__submit">
+            <Button type="primary" htmlType="submit" size="large" block>
+              SIGN IN
+            </Button>
+          </div>
+        </Form>
       </div>
-    </div>
+    </main>
   );
 };
 

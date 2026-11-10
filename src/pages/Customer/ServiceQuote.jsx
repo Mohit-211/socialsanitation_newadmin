@@ -23,6 +23,7 @@ import {
   Modal,
 } from "antd";
 import { DatePicker } from "antd";
+import { ArrowLeft, Folder } from "lucide-react";
 import SignatureField from "./SignatureField";
 import { GetAllServiceNameByAdmin } from "../../services/Api/BookingApi";
 
@@ -384,7 +385,7 @@ const ServiceQuoteForm = () => {
     {
       title: (
         <span>
-          Frequency <span style={{ color: "red" }}>*</span>
+          Frequency <span className="required-mark">*</span>
         </span>
       ),
       dataIndex: "frequency",
@@ -675,23 +676,23 @@ const ServiceQuoteForm = () => {
   return (
     <Spin spinning={isLoading}>
       <div className="quote-form">
-        <div className="header">
+        <div className="quote-form__header">
           <img
             src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg"
             alt="Logo"
-            className="logo1"
+            className="quote-form__logo"
           />
-          <div className="quote-title">SERVICE QUOTE</div>
+          <div className="quote-form__title">SERVICE QUOTE</div>
         </div>
 
-        <div className="quote-form-toolbar">
-          <div className="toolbar-left">
-            <Button type="text" icon={<span>←</span>} onClick={handleBack}>
+        <div className="quote-form__toolbar">
+          <div>
+            <Button type="text" icon={<ArrowLeft size={16} />} onClick={handleBack}>
               Back to Users
             </Button>
           </div>
 
-          <div className="toolbar-right">
+          <div className="quote-form__toolbar-right">
             {!selectedDraftId && (
               <Button
                 type="default"
@@ -703,7 +704,6 @@ const ServiceQuoteForm = () => {
             )}
             {drafts.length > 0 && (
               <Select
-                className="draft-selector"
                 style={{ width: 280 }}
                 value={selectedDraftId}
                 placeholder="Load a Draft"
@@ -711,7 +711,10 @@ const ServiceQuoteForm = () => {
               >
                 {drafts.map((d) => (
                   <Option key={d.id} value={d.id}>
-                    📁 {d.ref_type || "Draft"}: {d.ref_no || "No Ref"}
+                    <span className="quote-form__draft-option">
+                      <Folder size={14} />
+                      {d.ref_type || "Draft"}: {d.ref_no || "No Ref"}
+                    </span>
                   </Option>
                 ))}
               </Select>
@@ -725,10 +728,10 @@ const ServiceQuoteForm = () => {
           </div>
         </div>
 
-        <div className="meta-table" style={{ marginBottom: 28 }}>
+        <div className="quote-form__meta" style={{ marginBottom: 28 }}>
           <div>
             <strong>
-              REF TYPE <span style={{ color: "red" }}>*</span>:
+              REF TYPE <span className="required-mark">*</span>:
             </strong>
 
             <Select
@@ -772,7 +775,7 @@ const ServiceQuoteForm = () => {
 
           <div>
             <strong>
-              REF # <span style={{ color: "red" }}>*</span>:
+              REF # <span className="required-mark">*</span>:
             </strong>
 
             <Input
@@ -788,7 +791,7 @@ const ServiceQuoteForm = () => {
 
           <div>
             <strong>
-              SERVICE DATE <span style={{ color: "red" }}>*</span>:
+              SERVICE DATE <span className="required-mark">*</span>:
             </strong>
             <DatePicker
               format="MM-DD-YYYY"
@@ -800,7 +803,7 @@ const ServiceQuoteForm = () => {
           </div>
           <div>
             <strong>
-              DUE DATE <span style={{ color: "red" }}>*</span>:
+              DUE DATE <span className="required-mark">*</span>:
             </strong>
             <DatePicker
               format="MM-DD-YYYY"
@@ -812,7 +815,7 @@ const ServiceQuoteForm = () => {
           </div>
         </div>
 
-        <div className="address-table" style={{ marginBottom: 24 }}>
+        <div className="quote-form__address" style={{ marginBottom: 24 }}>
           <div>
             <strong>FROM:</strong>
             <br />
@@ -825,7 +828,7 @@ const ServiceQuoteForm = () => {
 
           <div>
             <strong>
-              TO: <span style={{ color: "red" }}>*</span>
+              TO: <span className="required-mark">*</span>
             </strong>
             <br />
 
@@ -875,7 +878,7 @@ const ServiceQuoteForm = () => {
                 style={{ marginTop: 5 }}
               />
               {isCcLocked && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div className="quote-form__hint">
                   CC email is set on the customer profile.
                 </div>
               )}
@@ -915,9 +918,9 @@ const ServiceQuoteForm = () => {
           </Button>
         </div>
 
-        <div className="footer-section" style={{ marginBottom: 24 }}>
+        <div className="quote-form__footer" style={{ marginBottom: 24 }}>
           <div style={{ marginTop: "40px" }}>
-            Date <span style={{ color: "red" }}>*</span>:{" "}
+            Date <span className="required-mark">*</span>:{" "}
             <DatePicker
               format="MM-DD-YYYY"
               value={formData.date}
@@ -926,7 +929,7 @@ const ServiceQuoteForm = () => {
               placeholder="Date"
             />
           </div>
-          <div className="signature-block" style={{ marginTop: 16 }}>
+          <div className="quote-form__signature" style={{ marginTop: 16 }}>
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
@@ -934,7 +937,7 @@ const ServiceQuoteForm = () => {
         {/* Square Payment Link Section */}
 
         <div
-          className="disclaimer"
+          className="quote-form__disclaimer"
           style={{
             marginTop: "60px", // ✅ increased from 0 to 60 for better spacing
             textAlign: "justify",
@@ -953,7 +956,7 @@ const ServiceQuoteForm = () => {
           contact your representative.
         </div>
 
-        <div className="quote-form" style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="quote-form__submit">
           <Button
             type="primary"
             onClick={handleSubmit}

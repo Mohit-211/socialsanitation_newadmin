@@ -295,7 +295,7 @@ const ServiceRequestPdf = () => {
     {
       title: (
         <span>
-          Frequency <span style={{ color: "red" }}>*</span>
+          Frequency <span className="required-mark">*</span>
         </span>
       ),
       dataIndex: "frequency",
@@ -375,120 +375,118 @@ const ServiceRequestPdf = () => {
 
   return (
     <Spin spinning={isLoading}>
-      <div className="invoice-form-container">
-        <div className="invoice-form">
-          <div className="header">
+      <div className="service-request-doc">
+        <div className="service-request-doc__brand">
+          <div className="service-request-doc__header">
             <img
               src="https://socialsanitation.com/wp-content/uploads/2022/12/New-Logo.jpg"
               alt="Logo"
-              className="logo1"
+              className="service-request-doc__logo"
             />
-            <div className="quote-title">SERVICE REQUEST</div>
+            <div className="service-request-doc__title">SERVICE REQUEST</div>
           </div>
         </div>
 
-        <div className="invoice-meta-container">
-          {/* ROW — REF TYPE, REF NO, SERVICE DAYS, DUE DATE */}
-          <div className="meta-table">
-            {/* REF TYPE */}
-            <div>
-              <strong>
-                REF TYPE <span style={{ color: "red" }}>*</span>:
-              </strong>
+        {/* ROW — REF TYPE, REF NO, SERVICE DAYS, DUE DATE */}
+        <div className="service-request-doc__meta">
+          {/* REF TYPE */}
+          <div>
+            <strong>
+              REF TYPE <span className="required-mark">*</span>:
+            </strong>
 
-              <Select
-                value={formData.reference_type || undefined}
-                placeholder="Select Ref Type"
-                style={{ width: "100%", marginTop: 5 }}
-                onChange={async (value) => {
+            <Select
+              value={formData.reference_type || undefined}
+              placeholder="Select Ref Type"
+              style={{ width: "100%", marginTop: 5 }}
+              onChange={async (value) => {
 
-                  setFormData((prev) => ({
-                    ...prev,
-                    reference_type: value,
-                  }));
+                setFormData((prev) => ({
+                  ...prev,
+                  reference_type: value,
+                }));
 
-                  if (!formData.ref || !isRefManuallyEdited) {
-                    try {
-                      const res = await GetNextServiceRequestRef(value);
+                if (!formData.ref || !isRefManuallyEdited) {
+                  try {
+                    const res = await GetNextServiceRequestRef(value);
 
-                      setFormData((prev) => ({
-                        ...prev,
-                        ref: res.data.data.ref_no,
-                      }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      ref: res.data.data.ref_no,
+                    }));
 
-                      setIsRefManuallyEdited(false);
-                    } catch {
-                      message.error("Failed to generate reference number");
-                    }
+                    setIsRefManuallyEdited(false);
+                  } catch {
+                    message.error("Failed to generate reference number");
                   }
-                }}
-              >
-                <Option value="RHK">RHK (Residential - Housekeeping)</Option>
-                <Option value="RM">RM (Residential - Maintenance)</Option>
-                <Option value="RFM">
-                  RFM (Residential - Floor Maintenance)
-                </Option>
-                <Option value="CHK">CHK (Commercial - Housekeeping)</Option>
-                <Option value="CM">CM (Commercial - Maintenance)</Option>
-                <Option value="CFM">
-                  CFM (Commercial - Floor Maintenance)
-                </Option>
-              </Select>
-            </div>
-
-            {/* REF NO */}
-            <div>
-              <strong>
-                REF # <span style={{ color: "red" }}>*</span>:
-              </strong>
-
-              <Input
-                value={formData.ref}
-                placeholder="Enter reference number"
-                onChange={(e) => {
-                  setIsRefManuallyEdited(true);
-                  setFormData({ ...formData, ref: e.target.value });
-                }}
-                style={{ width: "100%", marginTop: 5 }}
-              />
-            </div>
-
-            {/* SERVICE DAYS */}
-            <div>
-              <strong>
-                SERVICE DAYS <span style={{ color: "red" }}>*</span>
-              </strong>
-
-              <Input
-                placeholder="e.g. 2 Business Days, Same Day, Within 48 Hours"
-                value={formData.service_days}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    service_days: e.target.value,
-                  }))
                 }
-                style={{ width: "100%", marginTop: 5 }}
-              />
-            </div>
+              }}
+            >
+              <Option value="RHK">RHK (Residential - Housekeeping)</Option>
+              <Option value="RM">RM (Residential - Maintenance)</Option>
+              <Option value="RFM">
+                RFM (Residential - Floor Maintenance)
+              </Option>
+              <Option value="CHK">CHK (Commercial - Housekeeping)</Option>
+              <Option value="CM">CM (Commercial - Maintenance)</Option>
+              <Option value="CFM">
+                CFM (Commercial - Floor Maintenance)
+              </Option>
+            </Select>
+          </div>
 
-            {/* DUE DATE */}
-            <div>
-              <strong>
-                DUE DATE <span style={{ color: "red" }}>*</span>
-              </strong>
+          {/* REF NO */}
+          <div>
+            <strong>
+              REF # <span className="required-mark">*</span>:
+            </strong>
 
-              <DatePicker
-                format="MM-DD-YYYY"
-                value={formData.dueDate}
-                onChange={onDueDateChange}
-                style={{ width: "100%", marginTop: 5 }}
-              />
-            </div>
+            <Input
+              value={formData.ref}
+              placeholder="Enter reference number"
+              onChange={(e) => {
+                setIsRefManuallyEdited(true);
+                setFormData({ ...formData, ref: e.target.value });
+              }}
+              style={{ width: "100%", marginTop: 5 }}
+            />
+          </div>
+
+          {/* SERVICE DAYS */}
+          <div>
+            <strong>
+              SERVICE DAYS <span className="required-mark">*</span>
+            </strong>
+
+            <Input
+              placeholder="e.g. 2 Business Days, Same Day, Within 48 Hours"
+              value={formData.service_days}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  service_days: e.target.value,
+                }))
+              }
+              style={{ width: "100%", marginTop: 5 }}
+            />
+          </div>
+
+          {/* DUE DATE */}
+          <div>
+            <strong>
+              DUE DATE <span className="required-mark">*</span>
+            </strong>
+
+            <DatePicker
+              format="MM-DD-YYYY"
+              value={formData.dueDate}
+              onChange={onDueDateChange}
+              style={{ width: "100%", marginTop: 5 }}
+            />
           </div>
         </div>
 
-        <div className="address-table" style={{ marginBottom: 24 }}>
+        <div className="service-request-doc__address">
           <div>
             <strong>FROM:</strong>
             <br />
@@ -500,7 +498,7 @@ const ServiceRequestPdf = () => {
           </div>
           <div>
             <strong>
-              CLIENT <span style={{ color: "red" }}>*</span>
+              CLIENT <span className="required-mark">*</span>
             </strong>
 
             <Select
@@ -522,7 +520,7 @@ const ServiceRequestPdf = () => {
           </div>
           <div>
             <strong>
-              TO: <span style={{ color: "red" }}>*</span>
+              TO: <span className="required-mark">*</span>
             </strong>
             <br />
 
@@ -572,24 +570,22 @@ const ServiceRequestPdf = () => {
           columns={columns}
           pagination={false}
           footer={() => (
-            <div style={{ textAlign: "right", fontWeight: "bold" }}>
+            <div className="service-request-doc__total">
               Total: ${formatAmount(formData.totalAmount)}
             </div>
           )}
         />
 
-        <div style={{ marginTop: 16, marginBottom: 16 }}>
-          <Button onClick={addItem} style={{ marginRight: 8 }}>
-            + Add Item
-          </Button>
+        <div className="service-request-doc__item-actions">
+          <Button onClick={addItem}>+ Add Item</Button>
           <Button type="primary" onClick={calculateTotal}>
             Calculate Total
           </Button>
         </div>
 
-        <div className="footer-section" style={{ marginBottom: 24 }}>
-          <div style={{ marginTop: "40px" }}>
-            Date <span style={{ color: "red" }}>*</span>:{" "}
+        <div className="service-request-doc__footer">
+          <div className="service-request-doc__date">
+            Date <span className="required-mark">*</span>:{" "}
             <DatePicker
               format="MM-DD-YYYY"
               value={formData.date}
@@ -598,18 +594,12 @@ const ServiceRequestPdf = () => {
               placeholder="Date"
             />
           </div>
-          <div className="signature-block" style={{ marginTop: 16 }}>
+          <div className="service-request-doc__signature">
             <SignatureField formData={formData} setFormData={setFormData} />
           </div>
         </div>
 
-        <div
-          className="disclaimer"
-          style={{
-            marginTop: "60px", // ✅ increased from 0 to 60 for better spacing
-            textAlign: "justify",
-          }}
-        >
+        <div className="service-request-doc__disclaimer">
           All service requests are in addition to the monthly or weekly price.
           Total price is due at the next invoice, for all services provided in
           this document. Ten business days after the signed date, this document
@@ -623,7 +613,7 @@ const ServiceRequestPdf = () => {
           our representative.
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="service-request-doc__submit">
           <Button
             type="primary"
             onClick={handleSubmit}

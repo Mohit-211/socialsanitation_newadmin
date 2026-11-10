@@ -11,15 +11,14 @@ import {
   message,
   Space,
   Typography as AntTypography,
-  List,
 } from "antd";
-import { InboxOutlined, DownloadOutlined } from "@ant-design/icons";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import MuiButton from "@mui/material/Button";
-import { Search, Upload as UploadIcon, Plus } from "lucide-react";
+import {
+  Download,
+  Inbox,
+  Search,
+  Upload as UploadIcon,
+  Plus,
+} from "lucide-react";
 import "./EquipmentPage.scss";
 import {
   GetAllEquipments,
@@ -27,6 +26,7 @@ import {
   UpdateEquipment,
   DeleteEquipment,
 } from "../../../services/Api/equipmentApi";
+import PageHeader from "../../../components/PageHeader";
 
 const { Text } = AntTypography;
 const { Dragger } = Upload;
@@ -282,89 +282,40 @@ const EquipmentPage = () => {
   return (
     <div className="equipment-page">
       {/* ── Standard shared header ── */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              EQUIPMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Manage the equipment your team can be assigned.
-            </Typography>
-          </Box>
-
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-          >
+      <PageHeader
+        title="EQUIPMENT"
+        subtitle="Manage the equipment your team can be assigned."
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              prefix={<Search size={16} color="var(--color-text-subtle)" />}
               placeholder="Search equipment by name"
-              style={{ width: 220, height: 44 }}
+              className="equipment-page__search"
               value={searchText}
               onChange={(e) => handleSearch(e.target.value)}
             />
 
-            <MuiButton
-              variant="outlined"
-              startIcon={<UploadIcon size={17} />}
+            <Button
+              size="large"
+              icon={<UploadIcon size={16} />}
               onClick={openImportModal}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               Import
-            </MuiButton>
+            </Button>
 
-            <MuiButton
-              variant="contained"
-              disableElevation
-              startIcon={<Plus size={18} />}
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={openAddModal}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               Add Equipment
-            </MuiButton>
-          </Stack>
-        </Stack>
-      </Paper>
+            </Button>
+          </>
+        }
+      />
 
       <Table
         rowKey="id"
@@ -383,7 +334,7 @@ const EquipmentPage = () => {
         onCancel={handleCancel}
         confirmLoading={submitting}
         okText={editingRecord ? "Update" : "Create"}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -415,14 +366,14 @@ const EquipmentPage = () => {
         onOk={handleImportConfirm}
         okText={`Import${parsedRows.length ? ` ${parsedRows.length} item(s)` : ""}`}
         confirmLoading={importing}
-        destroyOnClose
+        destroyOnHidden
       >
         <Text type="secondary">
           Upload a CSV file with <b>name</b> and <b>quantity</b> columns.{" "}
           <Button
             type="link"
             size="small"
-            icon={<DownloadOutlined />}
+            icon={<Download size={14} />}
             onClick={handleDownloadSample}
           >
             Download sample
@@ -437,7 +388,11 @@ const EquipmentPage = () => {
           className="equipment-import-dragger"
         >
           <p className="ant-upload-drag-icon">
-            <InboxOutlined />
+            <Inbox
+              size={48}
+              strokeWidth={1.5}
+              className="equipment-import-dragger__icon"
+            />
           </p>
           <p className="ant-upload-text">Click or drag a CSV file here</p>
         </Dragger>
@@ -445,16 +400,13 @@ const EquipmentPage = () => {
         {parsedRows.length > 0 && (
           <div className="equipment-import-preview">
             <Text strong>{parsedRows.length} row(s) ready to import</Text>
-            <List
-              size="small"
-              bordered
-              dataSource={parsedRows}
-              renderItem={(row, index) => (
-                <List.Item key={index}>
+            <ul className="equipment-import-preview__list">
+              {parsedRows.map((row, index) => (
+                <li key={index} className="equipment-import-preview__item">
                   {row.name} — {row.quantity} unit(s)
-                </List.Item>
-              )}
-            />
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </Modal>

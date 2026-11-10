@@ -1,100 +1,153 @@
-.invoice-form {
-	font-family: Arial, sans-serif;
-	font-size: 12px;
+// Service request list page (ServiceRequest.jsx) and the service request
+// document editor (ServiceRequestPdf.jsx / EditServiceRequest.jsx).
+
+// ===== List page =====
+.service-request-list {
+  &__search {
+    width: 240px;
+  }
+
+  &__month {
+    width: 120px;
+  }
+
+  &__year {
+    width: 100px;
+  }
+
+  &__status {
+    font-weight: var(--font-weight-semibold);
+
+    &--signed {
+      color: var(--color-success-strong);
+    }
+
+    &--pending {
+      color: var(--color-warning-strong);
+    }
+  }
 }
 
-.invoice-form-container {
-	background: white;
-	padding: 30px;
-	border-radius: 6px;
-}
+// ===== Document editor =====
+.service-request-doc {
+  background: var(--color-bg);
+  padding: 30px;
+  border-radius: var(--radius-sm);
 
-.header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border-bottom: 2px solid #ccc;
-	padding-bottom: 10px;
-}
+  &__brand {
+    font-size: var(--text-xs);
+  }
 
-.logo1 {
-	width: 150px;
-}
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--color-border-strong);
+    padding-bottom: 10px;
+  }
 
-.quote-title {
-	font-size: 24px;
-	background: #3f4c5c;
-	color: white;
-	padding: 10px;
-}
+  &__logo {
+    width: 150px;
+  }
 
-.invoice-meta-container {
-	width: 100%;
-}
+  // Same dark title bar as the invoice / service quote documents
+  &__title {
+    font-size: var(--text-3xl);
+    background: var(--color-ink);
+    color: var(--color-text-inverse);
+    padding: 10px;
+  }
 
-.invoice-meta-container .meta-table {
-	display: flex;
-	gap: 20px;
-	margin-bottom: 28px;
-}
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-5);
+    margin-top: var(--space-5);
+    margin-bottom: 28px;
 
-.invoice-meta-container .meta-table div {
-	flex: 1;
-}
+    // Equal-width columns (direct children only, so the rule does not leak
+    // into the internal divs of antd Select / DatePicker).
+    > div {
+      flex: 1;
+    }
+  }
 
-.meta-table,
-.address-table {
-	display: flex;
-	justify-content: space-between;
-	margin-top: 20px;
-}
+  &__address {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-6);
+  }
 
-.meta-table input,
-.address-table input {
-	border: none;
-	border-bottom: 1px solid #ccc;
-	padding: 2px;
-	width: 150px;
-}
+  // Paper-form look: fields in the meta and address rows are underlined
+  &__meta input,
+  &__address input {
+    border: none;
+    border-bottom: 1px solid var(--color-border-strong);
+    padding: 2px;
+    width: 150px;
+  }
 
-.footer-section {
-	display: flex;
-	justify-content: space-between;
-	margin-top: 40px;
-}
+  &__total {
+    text-align: right;
+    font-weight: var(--font-weight-bold);
+  }
 
-.signature-block {
-	text-align: right;
-}
+  &__item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+  }
 
-.disclaimer {
-	margin-top: 60px;
-	margin-top: 20px;
-	font-size: 12px;
-	padding: 20px;
-	line-height: 1.4;
-	color: #333;
-}
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-10);
+    margin-bottom: var(--space-6);
+  }
 
-@media (max-width: 767.98px) {
-	.invoice-form-container {
-		padding: 16px;
-	}
+  &__date {
+    margin-top: var(--space-10);
+  }
 
-	.header {
-		flex-wrap: wrap;
-		gap: 12px;
-	}
+  &__signature {
+    text-align: right;
+    margin-top: var(--space-4);
+  }
 
-	.meta-table,
-	.address-table,
-	.footer-section {
-		flex-direction: column;
-		gap: 16px !important;
-	}
+  &__disclaimer {
+    margin-top: 60px;
+    padding: var(--space-5);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    color: var(--color-text);
+    text-align: justify;
+  }
 
-	.meta-table input,
-	.address-table input {
-		width: 100%;
-	}
+  &__submit {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 767.98px) {
+    padding: var(--space-4);
+
+    &__header {
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    &__meta,
+    &__address,
+    &__footer {
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    &__meta input,
+    &__address input {
+      width: 100%;
+    }
+  }
 }

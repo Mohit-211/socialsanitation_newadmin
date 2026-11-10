@@ -1,12 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, Spin, Button, Typography, Progress, Space } from "antd";
-import {
-  CheckCircleFilled,
-  ClockCircleOutlined,
-  CloseCircleFilled,
-} from "@ant-design/icons";
-import { useParams } from "react-router-dom";
+import { CircleCheck, CircleX, Clock } from "lucide-react";
+import { useParams } from "react-router";
 import { GetPaymentStatus } from "../../services/Api/InvoiceApi";
+import "./CheckoutStatus.scss";
 
 const { Title, Text } = Typography;
 
@@ -71,8 +68,8 @@ const CheckoutStatus = () => {
   // 🔄 Loading screen (Square-style)
   if (loading) {
     return (
-      <div style={pageStyle}>
-        <Spin size="large" tip="Confirming payment..." />
+      <div className="checkout-status">
+        <Spin size="large" description="Confirming payment..." />
       </div>
     );
   }
@@ -80,10 +77,10 @@ const CheckoutStatus = () => {
   // ✅ SUCCESS
   if (status === "SUCCESS" || status === "PAID") {
     return (
-      <div style={pageStyle}>
-        <Card style={cardStyle}>
-          <Space direction="vertical" size="large" align="center">
-            <CheckCircleFilled style={{ fontSize: 72, color: "#22c55e" }} />
+      <div className="checkout-status">
+        <Card className="checkout-status__card">
+          <Space orientation="vertical" size="large" align="center">
+            <CircleCheck size={72} color="var(--color-success)" />
 
             <Title level={3}>Payment complete</Title>
             <Text type="secondary">
@@ -95,7 +92,7 @@ const CheckoutStatus = () => {
               percent={(countdown / REDIRECT_SECONDS) * 100}
               format={() => `${countdown}s`}
               size={90}
-              strokeColor="#22c55e"
+              strokeColor="var(--color-success)"
             />
 
             <Text type="secondary">
@@ -119,10 +116,10 @@ const CheckoutStatus = () => {
   // ⏳ PENDING
   if (status === "PENDING") {
     return (
-      <div style={pageStyle}>
-        <Card style={cardStyle}>
-          <Space direction="vertical" size="large" align="center">
-            <ClockCircleOutlined style={{ fontSize: 72, color: "#1677ff" }} />
+      <div className="checkout-status">
+        <Card className="checkout-status__card">
+          <Space orientation="vertical" size="large" align="center">
+            <Clock size={72} color="var(--color-info)" />
 
             <Title level={3}>Processing payment</Title>
             <Text type="secondary">
@@ -142,10 +139,10 @@ const CheckoutStatus = () => {
 
   // ❌ FAILED
   return (
-    <div style={pageStyle}>
-      <Card style={cardStyle}>
-        <Space direction="vertical" size="large" align="center">
-          <CloseCircleFilled style={{ fontSize: 72, color: "#ef4444" }} />
+    <div className="checkout-status">
+      <Card className="checkout-status__card">
+        <Space orientation="vertical" size="large" align="center">
+          <CircleX size={72} color="var(--color-error)" />
 
           <Title level={3}>Payment failed</Title>
           <Text type="secondary">
@@ -165,25 +162,6 @@ const CheckoutStatus = () => {
       </Card>
     </div>
   );
-};
-
-// 🎨 Styles
-const pageStyle = {
-  minHeight: "100vh",
-  background: "#f8f9fb",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 24,
-};
-
-const cardStyle = {
-  width: "100%",
-  maxWidth: 420,
-  borderRadius: 16,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-  textAlign: "center",
-  padding: "32px 24px",
 };
 
 export default CheckoutStatus;

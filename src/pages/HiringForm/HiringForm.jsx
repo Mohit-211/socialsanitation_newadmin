@@ -2,15 +2,13 @@ import { useEffect, useState } from "react";
 import { Table, Input, Modal, message, Space, Button } from "antd";
 import { Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import dayjs from "@/lib/dayjs";
 import {
   DeleteHiringForm,
   GetAllHiringForm,
 } from "../../services/Api/HiringFormApi";
+import PageHeader from "../../components/PageHeader";
+import "./HiringForm.scss";
 
 const HiringForm = () => {
   const navigate = useNavigate();
@@ -176,8 +174,6 @@ const HiringForm = () => {
       render: (_, record) => (
         <Space size="middle">
           <Button
-            outlined
-            primary
             onClick={(event) => navigateToEditService(event, record.id)}
             size="small"
           >
@@ -186,7 +182,6 @@ const HiringForm = () => {
           <Button
             danger
             size="small"
-            outlined
             onClick={() => handleDelete([record.id])}
           >
             Delete
@@ -266,57 +261,20 @@ const HiringForm = () => {
   }, [searchText, data]);
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">
-              EMPLOYEE HIRING FORM MANAGEMENT
-            </Typography>
-
-            <Typography className="page-sub-title">
-              View Employee Hiring Form
-            </Typography>
-          </Box>
-
-          <Stack
-            useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{
-              alignItems: "center",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-              width: { xs: "100%", md: "auto" },
-            }}
-          >
+    <div>
+      <PageHeader
+        className="hiring-forms__header"
+        title="EMPLOYEE HIRING FORM MANAGEMENT"
+        subtitle="View Employee Hiring Form"
+        actions={
+          <>
             {selectedRowKeys.length > 0 && (
               <Button
                 danger
                 type="primary"
-                icon={<Trash2 size={14} />}
+                size="large"
+                icon={<Trash2 size={16} />}
                 onClick={handleBulkDelete}
-                style={{
-                  height: 44,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
               >
                 Delete Selected ({selectedRowKeys.length})
               </Button>
@@ -324,18 +282,15 @@ const HiringForm = () => {
 
             <Input
               allowClear
+              size="large"
+              className="hiring-forms__search"
               placeholder="Search by name, email, address, or country..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              style={{
-                width: 320,
-                maxWidth: "100%",
-                height: 44,
-              }}
             />
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <Table
         columns={columns}
@@ -346,7 +301,7 @@ const HiringForm = () => {
         onChange={handleTableChange}
         rowSelection={rowSelection}
       />
-    </Box>
+    </div>
   );
 };
 

@@ -579,17 +579,7 @@ const EditInvoice = () => {
       key: "drag_handle",
       width: 36,
       render: () => (
-        <div
-          title="Drag to reorder"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            color: "#a3a9b3",
-            cursor: "grab",
-          }}
-        >
+        <div title="Drag to reorder" className="invoice-editor__drag-handle">
           <GripVertical size={16} />
         </div>
       ),
@@ -638,7 +628,7 @@ const EditInvoice = () => {
     {
       title: (
         <span>
-          Frequency <span style={{ color: "red" }}>*</span>
+          Frequency <span className="required-mark">*</span>
         </span>
       ),
       dataIndex: "frequency",
@@ -710,7 +700,7 @@ const EditInvoice = () => {
         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
           Sqft / Hour
           <Tooltip title='For Hour type, enter a time range like "2:00 PM - 4:00 PM" or "14:00 - 16:00" — we calculate the total hours for you.'>
-            <Info size={14} color="#888" style={{ cursor: "help" }} />
+            <Info size={14} className="invoice-editor__info-icon" />
           </Tooltip>
         </span>
       ),
@@ -747,7 +737,7 @@ const EditInvoice = () => {
                 }}
               />
               {record.hour !== "" && record.hour !== undefined && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                <div className="invoice-editor__hint invoice-editor__hint--tight">
                   = {record.hour} hrs
                 </div>
               )}
@@ -880,7 +870,7 @@ const EditInvoice = () => {
           <div className="meta-table" style={{ gap: 20, marginBottom: 20 }}>
             <div>
               <strong>
-                BILLING DATE<span style={{ color: "red" }}>*</span>
+                BILLING DATE<span className="required-mark">*</span>
               </strong>
               <DatePicker
                 value={formData.billing_date}
@@ -894,7 +884,7 @@ const EditInvoice = () => {
 
             <div>
               <strong>
-                SERVICE START<span style={{ color: "red" }}>*</span>
+                SERVICE START<span className="required-mark">*</span>
               </strong>
               <DatePicker
                 value={formData.service_start}
@@ -908,7 +898,7 @@ const EditInvoice = () => {
 
             <div>
               <strong>
-                SERVICE END<span style={{ color: "red" }}>*</span>
+                SERVICE END<span className="required-mark">*</span>
               </strong>
               <DatePicker
                 value={formData.service_end}
@@ -922,7 +912,7 @@ const EditInvoice = () => {
 
             <div>
               <strong>
-                DUE DATE <span style={{ color: "red" }}>*</span>
+                DUE DATE <span className="required-mark">*</span>
               </strong>
               <DatePicker
                 format="MM-DD-YYYY"
@@ -940,7 +930,7 @@ const EditInvoice = () => {
               <Select
                 value={formData.is_recurring}
                 style={{ width: "100%", marginTop: 5 }}
-                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                suffix={<ChevronDown size={16} color="var(--color-text)" />}
                 onChange={(value) => {
                   setFormData((prev) => ({ ...prev, is_recurring: value }));
                 }}
@@ -957,7 +947,7 @@ const EditInvoice = () => {
               <Select
                 value={formData.recurring_frequency}
                 style={{ width: "100%", marginTop: 5 }}
-                suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+                suffix={<ChevronDown size={16} color="var(--color-text)" />}
                 onChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -982,7 +972,7 @@ const EditInvoice = () => {
                 format="MM-DD-YYYY"
                 style={{ width: "100%", marginTop: 5 }}
               />
-              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+              <div className="invoice-editor__hint">
                 Max 6 months from billing date
               </div>
             </div>
@@ -1006,7 +996,7 @@ const EditInvoice = () => {
                 style={{ width: "100%", marginTop: 5 }}
                 placeholder="Leave blank for unlimited"
               />
-              <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+              <div className="invoice-editor__hint">
                 Max 10 occurrences
               </div>
             </div>
@@ -1026,13 +1016,13 @@ const EditInvoice = () => {
                 </Checkbox>
               </div>
               {formData.deposit_required && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div className="invoice-editor__hint">
                   Due now: ${depositPreview} &nbsp;|&nbsp; Balance: $
                   {balancePreview}
                 </div>
               )}
               {depositTermsLocked && (
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div className="invoice-editor__hint">
                   Deposit terms are locked because payment has started.
                 </div>
               )}
@@ -1042,7 +1032,7 @@ const EditInvoice = () => {
               <div>
                 <strong>
                   BALANCE DATE ({100 - depositPct}%){" "}
-                  <span style={{ color: "red" }}>*</span>
+                  <span className="required-mark">*</span>
                 </strong>
                 <DatePicker
                   value={formData.balance_date}
@@ -1054,7 +1044,7 @@ const EditInvoice = () => {
                   placeholder="Date balance is sent"
                   disabled={balanceDateLocked}
                 />
-                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                <div className="invoice-editor__hint">
                   {balanceDateLocked
                     ? "Balance has already been sent."
                     : "Balance invoice goes to the client on this date"}
@@ -1079,7 +1069,7 @@ const EditInvoice = () => {
           </div>
           <div>
             <strong>
-              CLIENT <span style={{ color: "red" }}>*</span>
+              CLIENT <span className="required-mark">*</span>
             </strong>
 
             <Input
@@ -1090,7 +1080,7 @@ const EditInvoice = () => {
           </div>
           <div>
             <strong>
-              TO: <span style={{ color: "red" }}>*</span>
+              TO: <span className="required-mark">*</span>
             </strong>
 
             <div
@@ -1163,27 +1153,14 @@ const EditInvoice = () => {
           />
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 8,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "#888" }}>
-            Drag <GripVertical size={12} style={{ verticalAlign: "middle" }} />{" "}
+        <div className="invoice-editor__drag-tip">
+          <span>
+            Drag <GripVertical size={12} />{" "}
             to reorder items
           </span>
         </div>
 
-        <div
-          style={{
-            overflowX: "auto",
-            border: "1px solid #eef0f2",
-            borderRadius: 8,
-          }}
-        >
+        <div className="invoice-editor__items">
           <Table
             size="small"
             tableLayout="fixed"
@@ -1210,13 +1187,13 @@ const EditInvoice = () => {
                 opacity: draggedItemIndex === index ? 0.5 : 1,
                 backgroundColor:
                   dragOverIndex === index && draggedItemIndex !== index
-                    ? "#f0f7ff"
+                    ? "var(--color-primary-subtle)"
                     : undefined,
                 transition: "background-color 0.15s ease, opacity 0.15s ease",
               },
             })}
             footer={() => (
-              <div style={{ textAlign: "right", fontWeight: "bold" }}>
+              <div className="invoice-editor__total">
                 Total: ${formatAmount(formData.totalAmount)}
               </div>
             )}
@@ -1234,7 +1211,7 @@ const EditInvoice = () => {
 
         <div className="footer-section" style={{ marginBottom: 24 }}>
           <div style={{ marginTop: "40px" }}>
-            Date <span style={{ color: "red" }}>*</span>:{" "}
+            Date <span className="required-mark">*</span>:{" "}
             <DatePicker
               format="MM-DD-YYYY"
               value={formData.date}

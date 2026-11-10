@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { Table, Space, message, Modal, Tooltip, Select, Input } from "antd";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import Box from "@mui/material/Box";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Table,
+  Space,
+  message,
+  Modal,
+  Tooltip,
+  Select,
+  Input,
+  Button,
+  Divider,
+  Flex,
+} from "antd";
 import {
   DeleteUser,
   GetUsers,
@@ -39,6 +43,11 @@ import {
   Navigation,
   ClipboardList,
 } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { GOOGLE_MAPS_API_KEY } from "../../config/google";
+import { cssVar } from "../../theme/antdTheme";
+import "./Customers.css";
 import "./User.scss";
 
 // 🔹 role_id -> readable label for the nearby-employees panel
@@ -48,22 +57,14 @@ const NEARBY_ROLE_LABELS = {
   8: "QUALITY ASSURANCE TECHNICIAN",
 };
 
-const NEARBY_CLIENT_COLOR = "#1976D2";
-const NEARBY_EMPLOYEE_COLOR = "#2E7D32";
-const NEARBY_SELECTED_COLOR = "#FB8C00";
-
-// 🔹 Shared circular icon-button styling so every action button in the
-// table stays visually consistent instead of repeating sx objects.
-const actionIconBtn = (color) => ({
-  width: 38,
-  height: 38,
-  border: "1px solid",
-  borderColor: color,
-  color,
-  "&:hover": {
-    backgroundColor: `${color}14`, // subtle tint on hover
-    borderColor: color,
-  },
+// Google Maps needs real color values, so the tokens are resolved at runtime.
+const getNearbyMarkerColors = () => ({
+  client: cssVar("--color-primary-strong"),
+  employee: cssVar("--color-success-strong"),
+  selected: cssVar("--color-warning"),
+  stroke: cssVar("--color-bg"),
+  label: cssVar("--color-text-inverse"),
+  selectedLabel: cssVar("--color-on-primary"),
 });
 
 // 🔹 Shared "pretty" address renderer: icon + street on top, muted city/state
@@ -73,10 +74,10 @@ const renderAddress = (user_address, maxWidth = 220) => {
 
   if (!address) {
     return (
-      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "#9CA3AF" }}>
+      <span className="client-list__address client-list__address--empty">
         <MapPin size={14} />
-        <span style={{ fontSize: 13 }}>N/A</span>
-      </Stack>
+        <span>N/A</span>
+      </span>
     );
   }
 
@@ -91,45 +92,15 @@ const renderAddress = (user_address, maxWidth = 220) => {
 
   return (
     <Tooltip title={fullAddress}>
-      <Stack
-        direction="row"
-        spacing={0.75}
-        sx={{ alignItems: "flex-start", maxWidth, cursor: "default" }}
-      >
-        <MapPin
-          size={14}
-          style={{ marginTop: 3, flexShrink: 0, color: "#9CA3AF" }}
-        />
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#1a1a1a",
-              lineHeight: 1.35,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {street || "N/A"}
-          </Typography>
+      <div className="client-list__address" style={{ maxWidth }}>
+        <MapPin size={14} className="client-list__address-icon" />
+        <div className="client-list__address-text">
+          <div className="client-list__address-street">{street || "N/A"}</div>
           {location && (
-            <Typography
-              sx={{
-                fontSize: "11.5px",
-                color: "#9ca3af",
-                lineHeight: 1.35,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {location}
-            </Typography>
+            <div className="client-list__address-location">{location}</div>
           )}
-        </Box>
-      </Stack>
+        </div>
+      </div>
     </Tooltip>
   );
 };
@@ -199,11 +170,12 @@ const User = () => {
   const [selectedNearbyId, setSelectedNearbyId] = useState(null);
 
   const { isLoaded: isNearbyMapLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o", // ✅ your real key only here
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: ["maps"],
   });
 
   const nearbyMapRef = useRef(null);
+  const markerColors = useMemo(() => getNearbyMarkerColors(), []);
 
   // Employees this far outside the client's area would force the whole map
   // to zoom out just to fit them — keep them out of the *default* view so
@@ -310,21 +282,21 @@ const User = () => {
       width: 50,
       align: "center",
       render: (_, __, index) => (
-        <span style={{ color: "#9ca3af" }}>{index + 1}</span>
+        <span className="customer-nearby__index">{index + 1}</span>
       ),
     },
     {
       title: "Name",
       dataIndex: "name",
       width: "30%",
-      render: (name) => <span style={{ fontWeight: 500 }}>{name}</span>,
+      render: (name) => <span className="customer-nearby__medium">{name}</span>,
     },
     {
       title: "Role",
       dataIndex: "role_id",
       width: 220,
       render: (role_id) => (
-        <strong style={{ fontSize: "12.5px" }}>
+        <strong className="customer-nearby__role">
           {NEARBY_ROLE_LABELS[role_id] || "-"}
         </strong>
       ),
@@ -337,7 +309,7 @@ const User = () => {
       sorter: (a, b) => a.distance - b.distance,
       defaultSortOrder: "ascend",
       render: (distance) => (
-        <span style={{ fontWeight: 500 }}>{distance} mi</span>
+        <span className="customer-nearby__medium">{distance} mi</span>
       ),
     },
   ];
@@ -388,18 +360,7 @@ const User = () => {
       width: 150,
       render: (name) => (
         <Tooltip title={name}>
-          <span
-            style={{
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "block",
-              maxWidth: 130,
-            }}
-          >
-            {name}
-          </span>
+          <span className="client-list__name">{name}</span>
         </Tooltip>
       ),
     },
@@ -410,28 +371,15 @@ const User = () => {
       render: (email, record) => (
         <Space size={6} align="center">
           <Tooltip title={email}>
-            <span
-              style={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "inline-block",
-                maxWidth: 165,
-                verticalAlign: "middle",
-              }}
-            >
-              {email}
-            </span>
+            <span className="client-list__email">{email}</span>
           </Tooltip>
-          <Tooltip title="Reset Email / Password">
-            <IconButton
-              size="small"
-              sx={{ color: "#FF9800", flexShrink: 0 }}
-              onClick={() => openEditModal(record)}
-            >
-              <KeyRound size={16} />
-            </IconButton>
-          </Tooltip>
+          <IconAction
+            icon={KeyRound}
+            title="Reset Email / Password"
+            size="small"
+            iconSize={14}
+            onClick={() => openEditModal(record)}
+          />
         </Space>
       ),
     },
@@ -471,77 +419,44 @@ const User = () => {
       dataIndex: "action",
       width: 300,
       render: (_, record) => (
-        <Stack useFlexGap sx={{ flexWrap: "nowrap" }} direction="row" spacing={1}>
-          <Tooltip title="View Nearby Employees">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#6B7280")}
-              onClick={() => openNearbyEmployeesModal(record)}
-            >
-              <MapPin size={18} strokeWidth={2} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Inspections">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#0D9488")}
-              onClick={(event) => navigateToInspections(event, record)}
-            >
-              <ClipboardList size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Send Review Email">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#2563EB")}
-              onClick={() => handleSendReview(record.id)}
-            >
-              <Mail size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Send Quote">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#A855F7")}
-              onClick={(event) => navigateToQuote(event, record.id)}
-            >
-              <Send size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Edit Client">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#6366F1")}
-              onClick={(event) => navigateToEditUser(event, record.id)}
-            >
-              <Pencil size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="View Client">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#F59E0B")}
-              onClick={(event) => navigateToViewUser(event, record.id)}
-            >
-              <Eye size={16} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Delete Client">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#EF4444")}
-              onClick={() => handleDelete([record.id])}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+        <Flex gap={8}>
+          <IconAction
+            icon={MapPin}
+            title="View Nearby Employees"
+            onClick={() => openNearbyEmployeesModal(record)}
+          />
+          <IconAction
+            icon={ClipboardList}
+            title="Inspections"
+            onClick={(event) => navigateToInspections(event, record)}
+          />
+          <IconAction
+            icon={Mail}
+            title="Send Review Email"
+            onClick={() => handleSendReview(record.id)}
+          />
+          <IconAction
+            icon={Send}
+            title="Send Quote"
+            onClick={(event) => navigateToQuote(event, record.id)}
+          />
+          <IconAction
+            icon={Pencil}
+            title="Edit Client"
+            onClick={(event) => navigateToEditUser(event, record.id)}
+          />
+          <IconAction
+            icon={Eye}
+            title="View Client"
+            onClick={(event) => navigateToViewUser(event, record.id)}
+          />
+          <IconAction
+            icon={Trash2}
+            title="Delete Client"
+            danger
+            onClick={() => handleDelete([record.id])}
+          />
+        </Flex>
       ),
     },
   ];
@@ -726,106 +641,56 @@ const User = () => {
   };
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={2}
-          useFlexGap
-          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
-        >
-          {/* Left */}
-          <Box>
-            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
-
-            <Typography className="page-sub-title">
-              View, delete, and add Client
-            </Typography>
-          </Box>
-
-          {/* Right */}
-          <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{
-              ml: "auto",
-              alignItems: "center",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-            }}
-          >
+    <div>
+      <PageHeader
+        title="CLIENT MANAGEMENT"
+        subtitle="View, delete, and add Client"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              prefix={<Search size={16} className="text-subtle" />}
               placeholder="Search by name, email, address, or country..."
-              style={{
-                width: 260,
-                height: 44,
-              }}
+              style={{ width: 260 }}
               onChange={(e) => onSearch(e.target.value)}
             />
 
             <Tooltip title="Export CSV">
               <Button
-                variant="contained"
-                color="success"
-                sx={{
-                  minWidth: 46,
-                  width: 46,
-                  height: 46,
-                  borderRadius: "8px",
-                }}
+                size="large"
+                icon={<Download size={18} />}
+                aria-label="Export CSV"
                 onClick={exportToCSV}
-              >
-                <Download size={18} />
-              </Button>
+              />
             </Tooltip>
 
             <Tooltip title="Delete Selected">
-              <span>
+              <span className="client-list__tooltip-wrap">
                 <Button
-                  variant="contained"
-                  color="error"
+                  size="large"
+                  type="primary"
+                  danger
+                  icon={<Trash2 size={18} />}
+                  aria-label="Delete Selected"
                   disabled={!selectedRowKeys.length}
                   onClick={() => handleDelete(selectedRowKeys)}
-                  sx={{
-                    minWidth: 46,
-                    width: 46,
-                    height: 46,
-                    borderRadius: "8px",
-                  }}
-                >
-                  <Trash2 size={18} />
-                </Button>
+                />
               </span>
             </Tooltip>
 
             <Tooltip title="Add Client">
               <Button
-                variant="contained"
-                color="primary"
+                size="large"
+                type="primary"
+                icon={<Plus size={18} />}
+                aria-label="Add Client"
                 onClick={navigateToAddUser}
-                sx={{
-                  minWidth: 46,
-                  width: 46,
-                  height: 46,
-                  borderRadius: "8px",
-                }}
-              >
-                <Plus size={18} />
-              </Button>
+              />
             </Tooltip>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <Table
         columns={columns}
@@ -843,26 +708,14 @@ const User = () => {
       {editModalVisible && (
         <Modal
           title={
-            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#FFF3E0",
-                  color: "#FF9800",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="customer-modal-title">
+              <span className="customer-modal-title__icon customer-modal-title__icon--warning">
                 <KeyRound size={17} />
-              </Box>
-              <span style={{ fontWeight: 600 }}>
+              </span>
+              <span className="customer-modal-title__text">
                 Edit Client Email &amp; Reset Password
               </span>
-            </Stack>
+            </div>
           }
           open={editModalVisible}
           onCancel={() => setEditModalVisible(false)}
@@ -870,91 +723,38 @@ const User = () => {
           okText="Generate & Send New Password"
           width={460}
         >
-          <Divider sx={{ mt: 1, mb: 2.5 }} />
+          <Divider className="customer-modal-divider" />
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              background: "#f8f9fa",
-              border: "1px solid #eef0f2",
-              borderRadius: "10px",
-              padding: "12px 16px",
-              marginBottom: "20px",
-            }}
-          >
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#e8eaf6",
-                color: "#5c6bc0",
-                flexShrink: 0,
-              }}
-            >
+          <div className="client-list__client-card">
+            <span className="client-list__client-avatar">
               <UserIcon size={18} />
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "#9ca3af",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  lineHeight: 1.4,
-                }}
-              >
-                Client
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: "#1a1a1a",
-                  lineHeight: 1.3,
-                }}
-              >
+            </span>
+            <div className="client-list__client-info">
+              <div className="client-list__client-eyebrow">Client</div>
+              <div className="client-list__client-name">
                 {selectedUser?.user_profile?.name || "—"}
-              </Typography>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </div>
 
-          <Typography
-            component="label"
-            sx={{
-              display: "block",
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "#374151",
-              marginBottom: "8px",
-            }}
+          <label
+            htmlFor="client-new-email"
+            className="field-label client-list__field-label"
           >
             New Email Address
-          </Typography>
+          </label>
           <Input
+            id="client-new-email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="Enter new email"
             size="large"
             style={{ width: "100%" }}
           />
-          <Typography
-            sx={{
-              fontSize: "12.5px",
-              color: "#9ca3af",
-              marginTop: "10px",
-              lineHeight: 1.5,
-            }}
-          >
+          <p className="client-list__hint">
             A new temporary password will be generated and emailed to this
             client along with their updated login email.
-          </Typography>
+          </p>
         </Modal>
       )}
 
@@ -962,122 +762,62 @@ const User = () => {
       {nearbyModalVisible && (
         <Modal
           title={
-            <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-              <Box
-                sx={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#F3F4F6",
-                  color: "#6B7280",
-                  flexShrink: 0,
-                }}
-              >
+            <div className="customer-modal-title">
+              <span className="customer-modal-title__icon customer-modal-title__icon--neutral">
                 <MapPin size={17} />
-              </Box>
-              <Box>
-                <div style={{ fontWeight: 600, lineHeight: 1.3 }}>
-                  Nearby Employees
-                </div>
+              </span>
+              <div>
+                <div className="customer-modal-title__text">Nearby Employees</div>
                 {nearbyClient?.user_profile?.name && (
-                  <div
-                    style={{
-                      fontSize: "12.5px",
-                      fontWeight: 400,
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <div className="customer-modal-title__sub">
                     For {nearbyClient.user_profile.name}
                   </div>
                 )}
-              </Box>
-            </Stack>
+              </div>
+            </div>
           }
           open={nearbyModalVisible}
           onCancel={() => setNearbyModalVisible(false)}
           footer={null}
           width={900}
         >
-          <Divider sx={{ mt: 1, mb: 2 }} />
+          <Divider className="customer-modal-divider" />
 
           {/* Map Controls Row (Aligned at top) */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: "20px",
-              alignItems: "center",
-              marginBottom: "10px",
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: { xs: "wrap", md: "nowrap" }, rowGap: 1.5, alignItems: "center" }}
-            >
-              <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
-                <Navigation size={14} color="#9ca3af" />
-                <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
-                  Client & closest employees
-                </Typography>
-              </Stack>
+          <div className="customer-nearby__bar">
+            <div className="customer-nearby__controls">
+              <p className="customer-nearby__hint">
+                <Navigation size={14} />
+                Client & closest employees
+              </p>
               <Tooltip title="Zoom back out to all nearby employees">
                 <Button
-                  startIcon={<RefreshCw size={14} />}
+                  type="link"
                   size="small"
+                  className="customer-nearby__reset"
+                  icon={<RefreshCw size={14} />}
                   onClick={handleResetMapView}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontSize: "12px",
-                    p: 0,
-                  }}
                 >
                   Reset View
                 </Button>
               </Tooltip>
-            </Box>
+            </div>
 
-            <Typography sx={{ fontSize: "12px", color: "#9ca3af" }}>
+            <p className="customer-nearby__hint">
               {nearbyEmployees.length > 0
                 ? `${nearbyEmployees.length} employee${
                     nearbyEmployees.length > 1 ? "s" : ""
                   } found`
                 : "Closest employees"}
-            </Typography>
-          </Box>
+            </p>
+          </div>
 
           {/* Content Grid Row */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: "20px",
-              alignItems: "stretch",
-              width: "100%",
-            }}
-          >
+          <div className="customer-nearby__panels">
             {/* Map Panel */}
-            <Box
-              sx={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "380px",
-              }}
-            >
+            <div className="customer-nearby__panel">
               {!isNearbyMapLoaded ? (
-                <Box
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#9ca3af",
-                  }}
-                >
-                  Loading map...
-                </Box>
+                <div className="customer-nearby__loading">Loading map...</div>
               ) : (
                 <GoogleMap
                   mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -1104,14 +844,14 @@ const User = () => {
                       icon={{
                         path: window.google.maps.SymbolPath.CIRCLE,
                         scale: 12,
-                        fillColor: NEARBY_CLIENT_COLOR,
+                        fillColor: markerColors.client,
                         fillOpacity: 1,
-                        strokeColor: "#ffffff",
+                        strokeColor: markerColors.stroke,
                         strokeWeight: 2,
                       }}
                       label={{
                         text: "C",
-                        color: "#ffffff",
+                        color: markerColors.label,
                         fontSize: "12px",
                         fontWeight: "bold",
                       }}
@@ -1134,15 +874,17 @@ const User = () => {
                           path: window.google.maps.SymbolPath.CIRCLE,
                           scale: isSelected ? 14 : 11,
                           fillColor: isSelected
-                            ? NEARBY_SELECTED_COLOR
-                            : NEARBY_EMPLOYEE_COLOR,
+                            ? markerColors.selected
+                            : markerColors.employee,
                           fillOpacity: 1,
-                          strokeColor: "#ffffff",
+                          strokeColor: markerColors.stroke,
                           strokeWeight: 2,
                         }}
                         label={{
                           text: `${index + 1}`,
-                          color: "#ffffff",
+                          color: isSelected
+                            ? markerColors.selectedLabel
+                            : markerColors.label,
                           fontSize: "12px",
                           fontWeight: "bold",
                         }}
@@ -1179,19 +921,10 @@ const User = () => {
                   )}
                 </GoogleMap>
               )}
-            </Box>
+            </div>
 
             {/* List Panel */}
-            <Box
-              sx={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "380px",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
+            <div className="customer-nearby__panel customer-nearby__panel--list">
               <Table
                 columns={nearbyEmployeesColumns}
                 rowKey={(record) => record.id}
@@ -1205,15 +938,17 @@ const User = () => {
                   style: {
                     cursor: "pointer",
                     background:
-                      record.id === selectedNearbyId ? "#fff7e6" : undefined,
+                      record.id === selectedNearbyId
+                        ? "var(--color-warning-subtle)"
+                        : undefined,
                   },
                 })}
               />
-            </Box>
-          </Box>
+            </div>
+          </div>
         </Modal>
       )}
-    </Box>
+    </div>
   );
 };
 

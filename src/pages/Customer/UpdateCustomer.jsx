@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Form,
   Input,
-  Button as AntButton,
+  Button,
   Select,
   Row,
   Col,
@@ -10,21 +10,18 @@ import {
   Modal,
   Radio,
   InputNumber,
+  Flex,
+  Space,
 } from "antd";
+import { useNavigate, useParams } from "react-router";
 import {
-  Box,
-  Paper,
-  Button,
-  Stack,
-  IconButton,
-  Tooltip,
-  Divider,
-  Typography as MuiTypography,
-} from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useNavigate, useParams } from "react-router-dom";
-import { Plus, Pencil, Trash2, MapPin, ClipboardList } from "lucide-react";
-import { IoLocationOutline } from "react-icons/io5";
+  ArrowLeft,
+  Plus,
+  Pencil,
+  Trash2,
+  MapPin,
+  ClipboardList,
+} from "lucide-react";
 import {
   GetUserById,
   EditUserById,
@@ -38,32 +35,10 @@ import {
   CheckUserScopeExists,
   GetUserScope,
 } from "../../services/Api/ScopeApi";
-
-const tableWrapStyle = {
-  border: "1px solid #e5e7eb",
-  borderRadius: "10px",
-  overflow: "hidden",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "14px 16px",
-  background: "#fafafa",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  fontSize: "13px",
-  fontWeight: 600,
-  color: "#374151",
-  verticalAlign: "top",
-};
-
-const tdStyle = {
-  padding: "14px 16px",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  verticalAlign: "middle",
-  background: "#fff",
-};
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { geocodeAddress } from "../../utils/geocode";
+import "./Customers.css";
 
 // COUNTRIES
 // Client addresses predate the country field — older checklists and
@@ -372,12 +347,7 @@ const UpdateCustomer = () => {
   const fetchCoordinates = async (address) => {
     if (!address) return;
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-      const data = await res.json();
+      const data = await geocodeAddress(address);
       if (data.status === "OK") {
         const location = data.results[0].geometry.location;
         setAddressCoordinates({ lat: location.lat, lng: location.lng });
@@ -607,68 +577,22 @@ const UpdateCustomer = () => {
   };
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            width: "100%",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <MuiTypography className="page-title">
-              CLIENT MANAGEMENT
-            </MuiTypography>
-            <MuiTypography className="page-sub-title">
-              Update Client Details
-            </MuiTypography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="CLIENT MANAGEMENT"
+        subtitle="Update Client Details"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowBackIcon />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToUser}
-            sx={{
-              height: 47,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              flexShrink: 0,
-              ml: "auto",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Clients
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 4,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
+      <div className="surface customer-form">
         <Form
           layout="vertical"
           form={form}
@@ -752,202 +676,77 @@ const UpdateCustomer = () => {
               Address block, same simple pattern as Add Client. */}
 
           {/* Client Addresses Card */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              mb: 3,
-              borderRadius: "10px",
-              borderColor: "#eef0f2",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2.5,
-                flexWrap: "wrap",
-                gap: 1.5,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <IoLocationOutline style={{ fontSize: 18, color: "#667eea" }} />
-                <MuiTypography
-                  sx={{
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    color: "#6c757d",
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Client Addresses
-                </MuiTypography>
-              </Box>
+          <div className="surface surface--padded surface--flat customer-form__addresses">
+            <div className="customer-card-head">
+              <div className="customer-card-head__title">
+                <MapPin size={18} />
+                <span className="customer-label">Client Addresses</span>
+              </div>
 
               <Button
-                variant="contained"
-                disableElevation
-                size="small"
-                startIcon={<Plus size={16} />}
+                type="primary"
+                icon={<Plus size={16} />}
                 onClick={openAddAddress}
-                sx={{
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  height: 36,
-                }}
               >
                 Add Address
               </Button>
-            </Box>
+            </div>
 
             {userAddresses.length > 0 ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
-                  gap: "16px",
-                }}
-              >
+              <div className="customer-address-grid">
                 {userAddresses.map((addr) => (
-                  <Box
-                    key={addr.id}
-                    sx={{
-                      border: "1px solid #eef0f2",
-                      borderRadius: "12px",
-                      padding: "16px",
-                      background: "#fafbfc",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1.25,
-                    }}
-                  >
-                    <Box
-                      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
-                    >
-                      <MapPin
-                        size={16}
-                        color="#667eea"
-                        style={{ marginTop: 2, flexShrink: 0 }}
-                      />
-                      <MuiTypography
-                        sx={{
-                          fontSize: "13.5px",
-                          color: "#2c3e50",
-                          fontWeight: 500,
-                          lineHeight: 1.5,
-                        }}
-                      >
+                  <div key={addr.id} className="customer-address-card">
+                    <p className="customer-address-card__text">
+                      <MapPin size={16} />
+                      <span>
                         {addr.address}, {addr.user_city?.name},{" "}
                         {addr.user_state?.name},{" "}
                         {addr.user_country?.name || "USA"}
-                      </MuiTypography>
-                    </Box>
+                      </span>
+                    </p>
 
-                    <Divider sx={{ my: 0.5 }} />
-
-                    <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
-                      <Tooltip title="Edit Address">
-                        <IconButton
-                          size="small"
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            border: "1px solid #6366F1",
-                            color: "#6366F1",
-                            "&:hover": { backgroundColor: "#6366F114" },
-                          }}
-                          onClick={() => openEditAddress(addr)}
-                        >
-                          <Pencil size={14} />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title="Delete Address">
-                        <IconButton
-                          size="small"
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            border: "1px solid #EF4444",
-                            color: "#EF4444",
-                            "&:hover": { backgroundColor: "#EF444414" },
-                          }}
-                          onClick={() => handleDeleteAddress(addr.id)}
-                        >
-                          <Trash2 size={14} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Box>
+                    <div className="customer-address-card__actions">
+                      <IconAction
+                        icon={Pencil}
+                        title="Edit Address"
+                        onClick={() => openEditAddress(addr)}
+                      />
+                      <IconAction
+                        icon={Trash2}
+                        title="Delete Address"
+                        danger
+                        onClick={() => handleDeleteAddress(addr.id)}
+                      />
+                    </div>
+                  </div>
                 ))}
-              </Box>
+              </div>
             ) : (
-              <Box
-                sx={{
-                  border: "1px dashed #e5e7eb",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  textAlign: "center",
-                  background: "#fafbfc",
-                }}
-              >
-                <MapPin size={20} color="#c4c9d4" style={{ marginBottom: 8 }} />
-                <MuiTypography sx={{ color: "#9ca3af", fontSize: "0.9rem" }}>
-                  No address added yet.
-                </MuiTypography>
-              </Box>
+              <div className="customer-address-empty">
+                <MapPin size={20} />
+                <p>No address added yet.</p>
+              </div>
             )}
-          </Paper>
+          </div>
 
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "8px",
-              padding: "20px",
-              marginBottom: "24px",
-              background: "#fff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
+          <div className="customer-floor">
+            <div className="customer-floor__head">
               <div>
-                <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                <div className="customer-floor__title">
                   Overall Building Floor Composition
                 </div>
 
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "#6b7280",
-                    marginTop: "4px",
-                  }}
-                >
+                <div className="customer-floor__hint">
                   Enter the percentage of each flooring type for the entire
                   building. Total must equal 100%.
                 </div>
               </div>
               <div
-                style={{
-                  background:
-                    totalFloorPercentage === 100 ? "#ecfdf5" : "#fef2f2",
-                  color: totalFloorPercentage === 100 ? "#15803d" : "#dc2626",
-                  border:
-                    totalFloorPercentage === 100
-                      ? "1px solid #bbf7d0"
-                      : "1px solid #fecaca",
-                  borderRadius: "20px",
-                  padding: "6px 14px",
-                  fontWeight: 600,
-                }}
+                className={`customer-pill ${
+                  totalFloorPercentage === 100
+                    ? "customer-pill--success"
+                    : "customer-pill--error"
+                }`}
               >
                 Total: {totalFloorPercentage}% / 100%
               </div>
@@ -997,56 +796,35 @@ const UpdateCustomer = () => {
           </div>
 
           <Form.Item>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "4px",
-                gap: "16px",
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="customer-form__chart-head customer-form__chart-head--start">
               <div>
-                <label style={{ fontSize: "16px", fontWeight: 600 }}>
+                <label className="customer-form__chart-title">
                   Initial Client Chart
                 </label>
                 {/* 🔹 Short heads-up note per request — flags that this
                     chart feeds the scope of work, which in turn drives
                     the Estimate PDF and Inspection Sheets. */}
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    marginTop: "4px",
-                    maxWidth: "520px",
-                  }}
-                >
+                <div className="customer-form__chart-note">
                   Note: The Scope of Work below is also used to generate this
                   client's Estimate PDF and Inspection Sheets — keep it up to
                   date.
                 </div>
               </div>
 
-              <Stack useFlexGap sx={{ alignItems: "center", flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
-                <AntButton
+              <Flex gap={8} align="center" wrap>
+                <Button
                   type="primary"
                   loading={checkingScope}
-                  icon={
-                    <ClipboardList
-                      size={14}
-                      style={{ verticalAlign: "middle", marginRight: 6 }}
-                    />
-                  }
+                  icon={<ClipboardList size={16} />}
                   onClick={handleScopeOfWork}
                 >
                   {scopeExists
                     ? "View Scope of Work"
                     : "Generate Scope of Work"}
-                </AntButton>
+                </Button>
 
                 {clientType === "commercial" && (
-                  <AntButton
+                  <Button
                     type="primary"
                     onClick={() => {
                       const restroomCount = commercialAreas.filter((area) =>
@@ -1083,44 +861,40 @@ const UpdateCustomer = () => {
                     }}
                   >
                     + Add Rooms
-                  </AntButton>
+                  </Button>
                 )}
-              </Stack>
+              </Flex>
             </div>
 
-            <div style={{ ...tableWrapStyle, marginTop: "12px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="customer-chart">
+              <table>
                 <thead>
                   <tr>
-                    <th style={{ ...thStyle, width: "20%" }}>Service Area</th>
+                    <th style={{ width: "20%" }}>Service Area</th>
 
                     {clientType === "commercial" ? (
                       <>
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Trash Cans
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                            or Stalls
-                          </small>
+                          <small className="customer-chart__sub">or Stalls</small>
                         </th>
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Desks
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                            or Sinks
-                          </small>
+                          <small className="customer-chart__sub">or Sinks</small>
                         </th>
 
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Rooms
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                          <small className="customer-chart__sub">
                             or Restrooms
                           </small>
                         </th>
                       </>
                     ) : (
-                      <th style={{ ...thStyle, width: "22%" }}>
+                      <th style={{ width: "22%" }}>
                         # of Desks / Trash Cans (Big Buildings)
                         <br />
                         <strong>OR</strong>
@@ -1128,17 +902,15 @@ const UpdateCustomer = () => {
                       </th>
                     )}
 
-                    <th style={{ ...thStyle, width: "26%" }}>
+                    <th style={{ width: "26%" }}>
                       Type of Flooring
                       <br />
-                      <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                      <small className="customer-chart__sub">
                         (Carpet, Hard Floor, VCT)
                       </small>
                     </th>
 
-                    <th style={{ ...thStyle, borderRight: "none" }}>
-                      Special Requests / Hot Spots
-                    </th>
+                    <th>Special Requests / Hot Spots</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1147,16 +919,10 @@ const UpdateCustomer = () => {
                     : getServiceAreasByType(clientType)
                   ).map((area, index) => (
                     <tr key={index}>
-                      <td style={tdStyle}>
+                      <td>
                         {clientType === "commercial" &&
                         commercialAreas[index]?.editable ? (
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              alignItems: "center",
-                            }}
-                          >
+                          <div className="customer-chart__area-input">
                             <Input
                               value={commercialAreas[index]?.name}
                               onChange={(e) => {
@@ -1182,7 +948,7 @@ const UpdateCustomer = () => {
                               }}
                             />
 
-                            <AntButton
+                            <Button
                               danger
                               type="text"
                               onClick={() => {
@@ -1203,7 +969,7 @@ const UpdateCustomer = () => {
                               }}
                             >
                               Delete
-                            </AntButton>
+                            </Button>
                           </div>
                         ) : (
                           <strong>{area}</strong>
@@ -1221,7 +987,7 @@ const UpdateCustomer = () => {
                       {clientType === "commercial" ? (
                         <>
                           {/* Stalls */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               shouldUpdate={(prev, curr) =>
                                 prev.details?.[index]?.stalls !==
@@ -1264,15 +1030,7 @@ const UpdateCustomer = () => {
                                     </Form.Item>
 
                                     {rooms > 0 && stalls > 0 && (
-                                      <div
-                                        style={{
-                                          marginTop: 4,
-                                          fontSize: 12,
-                                          color: "#6b7280",
-                                          textAlign: "center",
-                                          fontWeight: 500,
-                                        }}
-                                      >
+                                      <div className="customer-chart__row-total">
                                         Total: <strong>{rooms * stalls}</strong>
                                       </div>
                                     )}
@@ -1283,7 +1041,7 @@ const UpdateCustomer = () => {
                           </td>
 
                           {/* Sinks */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               shouldUpdate={(prev, curr) =>
                                 prev.details?.[index]?.sinks !==
@@ -1326,15 +1084,7 @@ const UpdateCustomer = () => {
                                     </Form.Item>
 
                                     {rooms > 0 && sinks > 0 && (
-                                      <div
-                                        style={{
-                                          marginTop: 4,
-                                          fontSize: 12,
-                                          color: "#6b7280",
-                                          textAlign: "center",
-                                          fontWeight: 500,
-                                        }}
-                                      >
+                                      <div className="customer-chart__row-total">
                                         Total: <strong>{rooms * sinks}</strong>
                                       </div>
                                     )}
@@ -1345,7 +1095,7 @@ const UpdateCustomer = () => {
                           </td>
 
                           {/* Restrooms */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               name={["details", index, "restrooms"]}
                               initialValue={0}
@@ -1360,7 +1110,7 @@ const UpdateCustomer = () => {
                           </td>
                         </>
                       ) : (
-                        <td style={tdStyle}>
+                        <td>
                           <Form.Item
                             name={["details", index, "num_desks_trash_cans"]}
                             initialValue={0}
@@ -1376,7 +1126,7 @@ const UpdateCustomer = () => {
                       )}
 
                       {/* Flooring */}
-                      <td style={tdStyle}>
+                      <td>
                         <Form.Item
                           name={["details", index, "flooring_type"]}
                           style={{ marginBottom: 0 }}
@@ -1393,7 +1143,7 @@ const UpdateCustomer = () => {
                       </td>
 
                       {/* Special Requests */}
-                      <td style={{ ...tdStyle, borderRight: "none" }}>
+                      <td>
                         <Form.Item
                           name={["details", index, "special_requests"]}
                           style={{ marginBottom: 0 }}
@@ -1410,45 +1160,21 @@ const UpdateCustomer = () => {
               </table>
             </div>
 
-            <div
-              style={{
-                marginTop: 16,
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <div
-                style={{
-                  background: "#f5f7fa",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  padding: "10px 16px",
-                  minWidth: "180px",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
-                  Total Count
-                </div>
-                <div
-                  style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}
-                >
-                  {totalCount}
-                </div>
+            <div className="customer-total">
+              <div className="customer-total__box">
+                <div className="customer-total__label">Total Count</div>
+                <div className="customer-total__value">{totalCount}</div>
               </div>
             </div>
           </Form.Item>
 
-          <Form.Item style={{ marginTop: "24px", marginBottom: 0 }}>
-            <AntButton type="primary" htmlType="submit" loading={loading}>
-              Save
-            </AntButton>
-            <AntButton
-              style={{ marginLeft: 8 }}
-              onClick={() => navigate("/users")}
-            >
-              Cancel
-            </AntButton>
+          <Form.Item className="customer-form__actions">
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Save
+              </Button>
+              <Button onClick={() => navigate("/users")}>Cancel</Button>
+            </Space>
           </Form.Item>
         </Form>
 
@@ -1582,29 +1308,16 @@ const UpdateCustomer = () => {
 
             {/* Map Preview */}
             <Form.Item label="Map Preview">
-              <div
-                style={{
-                  border: "1px solid #eef0f2",
-                  height: 220,
-                  borderRadius: 8,
-                }}
-              >
+              <div className="customer-map-preview">
                 {addressCoordinates.lat && addressCoordinates.lng ? (
                   <iframe
                     width="100%"
                     height="100%"
-                    style={{ border: "none", borderRadius: 8 }}
                     src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
                     allowFullScreen
                   />
                 ) : (
-                  <p
-                    style={{
-                      textAlign: "center",
-                      paddingTop: 80,
-                      color: "#999",
-                    }}
-                  >
+                  <p className="customer-map-preview__empty">
                     Enter address to show map
                   </p>
                 )}
@@ -1612,8 +1325,8 @@ const UpdateCustomer = () => {
             </Form.Item>
           </Form>
         </Modal>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

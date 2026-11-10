@@ -1,15 +1,10 @@
 import { useLayoutEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
-import { Card, Form, Input, Button, message } from "antd";
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
-import { DeleteOutlined } from "@ant-design/icons";
-import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams } from "react-router";
+import { Card, Flex, Form, Input, Button, message } from "antd";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { GetProductById, UpdateProduct } from "../../services/Api/Product";
+import PageHeader from "../../components/PageHeader";
+import RichTextEditor from "../../components/RichTextEditor";
 
 const EditProduct = () => {
 	const { id } = useParams();
@@ -42,11 +37,10 @@ const EditProduct = () => {
 		}
 	}, [id, form]);
 
-	const handleEditorChange = (event, editor) => {
-		const data = editor.getData();
+	const handleEditorChange = (html) => {
 		setProductData((prevData) => ({
 			...prevData,
-			description: data,
+			description: html,
 		}));
 	};
 
@@ -76,65 +70,21 @@ const EditProduct = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* Header Section */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 3,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						gap: 2,
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							PRODUCT MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							Edit product details
-						</Typography>
-					</Box>
-
-					<MuiButton
-						variant="contained"
-						disableElevation
-						startIcon={<ArrowLeft size={18} />}
+			<PageHeader
+				title="PRODUCT MANAGEMENT"
+				subtitle="Edit product details"
+				actions={
+					<Button
+						size="large"
+						icon={<ArrowLeft size={16} />}
 						onClick={() => navigate("/supplies/list")}
-						sx={{
-							height: 46,
-							px: 3,
-							borderRadius: "8px",
-							minWidth: 180,
-							textTransform: "none",
-							fontWeight: 600,
-							backgroundColor: "#2c3345",
-							flexShrink: 0,
-							"&:hover": {
-								backgroundColor: "#1f2433",
-							},
-						}}
 					>
 						Return to Product List
-					</MuiButton>
-				</Box>
-			</Paper>
+					</Button>
+				}
+			/>
 
 			<Card style={{ width: "100%" }}>
 				<Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -173,30 +123,29 @@ const EditProduct = () => {
 						/>
 					</Form.Item>
 
-					{/* Description */}
+					{/* Description (kept in productData state, submitted from state) */}
 					<Form.Item label="Description" name="description">
-						<CKEditor
-							editor={ClassicEditor}
-							data={productData.description}
+						<RichTextEditor
+							value={productData.description}
 							onChange={handleEditorChange}
 						/>
 					</Form.Item>
 
-					<Box sx={{ display: "flex", gap: "10px" }}>
+					<Flex gap={10}>
 						<Button type="primary" htmlType="submit">
 							Save
 						</Button>
 
 						<Button
-							icon={<DeleteOutlined />}
+							icon={<Trash2 size={16} />}
 							onClick={() => navigate("/supplies/list")}
 						>
 							Cancel
 						</Button>
-					</Box>
+					</Flex>
 				</Form>
 			</Card>
-		</Box>
+		</div>
 	);
 };
 

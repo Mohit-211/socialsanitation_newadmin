@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
-import { Table, message, Modal, Input } from "antd";
+import { Table, message, Modal, Input, Button, Space } from "antd";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { Eye, Pencil, Trash2, Plus, Search } from "lucide-react";
 import { DeleteChecklist, GetAllChecklist } from "../../services/Api/checklistApi";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 const ServiceChecklist = () => {
 	const navigate = useNavigate();
@@ -18,18 +13,6 @@ const ServiceChecklist = () => {
 	const [loading, setLoading] = useState(false);
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 	const [searchTerm, setSearchTerm] = useState("");
-
-	const actionIconBtn = (color) => ({
-		width: 34,
-		height: 34,
-		border: "1px solid",
-		borderColor: color,
-		color,
-		"&:hover": {
-			backgroundColor: `${color}14`,
-			borderColor: color,
-		},
-	});
 
 	useEffect(() => {
 		getData();
@@ -79,37 +62,26 @@ const ServiceChecklist = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
-					<Tooltip title="View Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#F59E0B")}
-							onClick={(event) => navigateToView(event, record.id)}
-						>
-							<Eye size={16} />
-						</IconButton>
-					</Tooltip>
+				<Space size={4} wrap>
+					<IconAction
+						icon={Eye}
+						title="View Checklist"
+						onClick={(event) => navigateToView(event, record.id)}
+					/>
 
-					<Tooltip title="Edit Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#6366F1")}
-							onClick={(event) => navigateToEdit(event, record.id)}
-						>
-							<Pencil size={16} />
-						</IconButton>
-					</Tooltip>
+					<IconAction
+						icon={Pencil}
+						title="Edit Checklist"
+						onClick={(event) => navigateToEdit(event, record.id)}
+					/>
 
-					<Tooltip title="Delete Checklist">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#EF4444")}
-							onClick={() => handleDelete([record.id])}
-						>
-							<Trash2 size={16} />
-						</IconButton>
-					</Tooltip>
-				</Stack>
+					<IconAction
+						icon={Trash2}
+						title="Delete Checklist"
+						danger
+						onClick={() => handleDelete([record.id])}
+					/>
+				</Space>
 			),
 		},
 	];
@@ -166,96 +138,46 @@ const ServiceChecklist = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap
-					direction="row"
-					spacing={2}
-					sx={{
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							SERVICE CHECKLIST MANAGEMENT
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							View all checklists
-						</Typography>
-					</Box>
-
-					<Stack useFlexGap
-						direction="row"
-						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-					>
+			<PageHeader
+				title="SERVICE CHECKLIST MANAGEMENT"
+				subtitle="View all checklists"
+				actions={
+					<>
 						<Input
 							allowClear
-							prefix={<Search size={18} color="#9CA3AF" />}
+							size="large"
+							prefix={<Search size={16} color="var(--color-text-subtle)" />}
 							placeholder="Search..."
-							style={{ width: 240, height: 44 }}
+							style={{ width: 240, maxWidth: "100%" }}
 							value={searchTerm}
 							onChange={(e) => onSearch(e.target.value)}
 						/>
 
 						{selectedRowKeys.length > 0 && (
 							<Button
-								variant="contained"
-								disableElevation
-								startIcon={<Trash2 size={16} />}
+								type="primary"
+								danger
+								size="large"
+								icon={<Trash2 size={16} />}
 								onClick={() => handleDelete(selectedRowKeys)}
-								sx={{
-									height: 44,
-									px: 2.5,
-									borderRadius: "8px",
-									textTransform: "none",
-									fontWeight: 600,
-									whiteSpace: "nowrap",
-									backgroundColor: "#ef4444",
-									"&:hover": { backgroundColor: "#dc2626" },
-								}}
 							>
 								Delete Selected ({selectedRowKeys.length})
 							</Button>
 						)}
 
 						<Button
-							variant="contained"
-							disableElevation
-							startIcon={<Plus size={18} />}
+							type="primary"
+							size="large"
+							icon={<Plus size={16} />}
 							onClick={navigateToAddUser}
-							sx={{
-								height: 44,
-								px: 2.5,
-								borderRadius: "8px",
-								textTransform: "none",
-								fontWeight: 600,
-								whiteSpace: "nowrap",
-							}}
 						>
 							Add Checklist
 						</Button>
-					</Stack>
-				</Stack>
-			</Paper>
+					</>
+				}
+			/>
 
 			{/* CHECKLIST TABLE */}
 			<Table
@@ -267,7 +189,7 @@ const ServiceChecklist = () => {
 				bordered
 				size="middle"
 			/>
-		</Box>
+		</div>
 	);
 };
 

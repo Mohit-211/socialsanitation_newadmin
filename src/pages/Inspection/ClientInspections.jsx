@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
-import { Modal, Select, DatePicker, message, Empty, Spin, Alert } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
+import {
+  Alert,
+  Button,
+  DatePicker,
+  Empty,
+  Modal,
+  Select,
+  Spin,
+  Tooltip,
+  message,
+} from "antd";
 import {
   ArrowLeft,
   Plus,
@@ -17,13 +20,15 @@ import {
   ChevronRight,
   ChevronDown,
   Award,
-  CheckCircle2,
+  CircleCheck,
   Clock,
   TrendingUp,
   Trash2,
   RotateCcw,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 import {
   CreateInspection,
   GetMyInspections,
@@ -34,20 +39,6 @@ import "./ClientInspections.scss";
 
 const { Option } = Select;
 
-// Same circular icon-button pattern used across User.jsx / AssignmentPage.jsx
-const actionIconBtn = (color) => ({
-  width: 30,
-  height: 30,
-  border: "1px solid",
-  borderColor: color,
-  color,
-  backgroundColor: "#fff",
-  "&:hover": {
-    backgroundColor: `${color}14`,
-    borderColor: color,
-  },
-});
-
 const ROLE_LABELS = {
   7: "INSPECTOR/SUPERVISOR",
   8: "QUALITY ASSURANCE TECHNICIAN",
@@ -56,42 +47,61 @@ const ROLE_LABELS = {
 
 // Keys match the backend status values exactly.
 const STATUS_CONFIG = {
-  ASSIGNED: { color: "#2563EB", bg: "#EFF6FF", label: "Assigned" },
-  IN_PROGRESS: { color: "#D97706", bg: "#FFFBEB", label: "In Progress" },
-  SUBMITTED: { color: "#7C3AED", bg: "#F5F3FF", label: "Submitted" },
-  UNDER_REVIEW: { color: "#0891B2", bg: "#ECFEFF", label: "Under Review" },
-  REOPENED: { color: "#EA580C", bg: "#FFF7ED", label: "Reopened" },
-  COMPLETED: { color: "#16A34A", bg: "#F0FDF4", label: "Completed" },
-  CANCELLED: { color: "#EF4444", bg: "#FEF2F2", label: "Cancelled" },
+  ASSIGNED: {
+    color: "var(--color-text-secondary)",
+    bg: "var(--color-bg-muted)",
+    label: "Assigned",
+  },
+  IN_PROGRESS: {
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-subtle)",
+    label: "In Progress",
+  },
+  SUBMITTED: {
+    color: "var(--color-primary-strong)",
+    bg: "var(--color-primary-subtle)",
+    label: "Submitted",
+  },
+  UNDER_REVIEW: {
+    color: "var(--color-text-inverse)",
+    bg: "var(--color-ink)",
+    label: "Under Review",
+  },
+  REOPENED: {
+    color: "var(--color-warning-strong)",
+    bg: "var(--color-warning-border)",
+    label: "Reopened",
+  },
+  COMPLETED: {
+    color: "var(--color-success-strong)",
+    bg: "var(--color-success-subtle)",
+    label: "Completed",
+  },
+  CANCELLED: {
+    color: "var(--color-error-strong)",
+    bg: "var(--color-error-subtle)",
+    label: "Cancelled",
+  },
 };
 
 const statusStyle = (status) =>
-  STATUS_CONFIG[status] || { color: "#6B7280", bg: "#F3F4F6", label: status };
+  STATUS_CONFIG[status] || {
+    color: "var(--color-text-muted)",
+    bg: "var(--color-bg-muted)",
+    label: status,
+  };
 
-const StatCard = ({ icon, label, value, color }) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      flex: 1,
-      minWidth: 160,
-      p: 2,
-      borderRadius: "10px",
-      borderColor: "#eef0f2",
-      display: "flex",
-      alignItems: "center",
-      gap: 1.5,
-    }}
-  >
-    <Box sx={{ color, display: "flex" }}>{icon}</Box>
-    <Box>
-      <Typography
-        sx={{ fontSize: 20, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.1 }}
-      >
-        {value}
-      </Typography>
-      <Typography sx={{ fontSize: 12, color: "#9ca3af" }}>{label}</Typography>
-    </Box>
-  </Paper>
+// tone: "primary" | "success" | "warning" (icon color)
+const StatCard = ({ icon, label, value, tone }) => (
+  <div className="surface inspection-stat">
+    <span className={`inspection-stat__icon inspection-stat__icon--${tone}`}>
+      {icon}
+    </span>
+    <div>
+      <div className="inspection-stat__value">{value}</div>
+      <div className="inspection-stat__label">{label}</div>
+    </div>
+  </div>
 );
 
 const ClientInspections = () => {
@@ -238,71 +248,51 @@ const ClientInspections = () => {
   };
 
   return (
-    <Box className="inspection-page">
+    <div className="inspection-page">
       {/* Header — title/subtitle left, Back to Clients on the right */}
-      <Paper
-        variant="outlined"
-        sx={{ p: 2.5, mb: 2.5, borderRadius: "10px", borderColor: "#eef0f2" }}
-      >
-        <div className="inspection-header-row">
-          <Box>
-            <Typography className="page-title">
-              INSPECTIONS {clientName ? `— ${clientName.toUpperCase()}` : ""}
-            </Typography>
-            <Typography className="page-sub-title">
-              Inspection history &amp; scheduling
-            </Typography>
-          </Box>
-
+      <PageHeader
+        title={
+          clientName ? `INSPECTIONS — ${clientName.toUpperCase()}` : "INSPECTIONS"
+        }
+        subtitle="Inspection history & scheduling"
+        actions={
           <Button
-            variant="contained"
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={() => navigate("/users")}
-            sx={{
-              height: 46,
-              borderRadius: "8px",
-              minWidth: 180,
-              backgroundColor: "#2c3345",
-              "&:hover": { backgroundColor: "#232838" },
-            }}
           >
             Back to Clients
           </Button>
-        </div>
-      </Paper>
+        }
+      />
 
       {/* Quick stats */}
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ flexWrap: "wrap", mb: 2.5 }}
-        useFlexGap
-      >
+      <div className="inspection-stats">
         <StatCard
           icon={<ClipboardList size={20} />}
           label="Total Inspections"
           value={stats.total}
-          color="#6366F1"
+          tone="primary"
         />
         <StatCard
-          icon={<CheckCircle2 size={20} />}
+          icon={<CircleCheck size={20} />}
           label="Completed"
           value={stats.completed}
-          color="#16A34A"
+          tone="success"
         />
         <StatCard
           icon={<Clock size={20} />}
           label="In Progress / Pending"
           value={stats.pending}
-          color="#D97706"
+          tone="warning"
         />
         <StatCard
           icon={<TrendingUp size={20} />}
           label="Average Score"
           value={stats.avgScore === "—" ? "—" : `${stats.avgScore}/10`}
-          color="#7C3AED"
+          tone="primary"
         />
-      </Stack>
+      </div>
 
       {/* Toolbar */}
       <div className="inspection-toolbar">
@@ -311,91 +301,59 @@ const ClientInspections = () => {
           on record
         </span>
         <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Plus size={18} />}
+          type="primary"
+          size="large"
+          icon={<Plus size={16} />}
           onClick={openCreateModal}
-          sx={{ height: 42, borderRadius: "8px" }}
         >
           New Inspection
         </Button>
       </div>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+        <div className="inspection-page__loading">
           <Spin size="large" />
-        </Box>
+        </div>
       ) : inspections.length === 0 ? (
-        <Paper
-          variant="outlined"
-          sx={{ borderRadius: "10px", borderColor: "#eef0f2", py: 8 }}
-        >
+        <div className="surface inspection-page__empty">
           <Empty
             image={
               <ClipboardList
                 size={48}
-                color="#d1d5db"
+                color="var(--color-text-subtle)"
                 style={{ margin: "0 auto" }}
               />
             }
             description={
-              <span style={{ color: "#9ca3af" }}>
+              <span className="text-muted">
                 No inspections yet for this client
               </span>
             }
           />
-        </Paper>
+        </div>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              lg: "repeat(3, 1fr)",
-            },
-            gap: "16px",
-          }}
-        >
+        <div className="inspection-grid">
           {inspections.map((item) => {
             const st = statusStyle(item.status);
             const isReopened = item.status === "REOPENED";
             const reopenCount = Number(item.reopen_count || 0);
 
             return (
-              <Paper
+              <div
                 key={item.id}
-                variant="outlined"
-                className="inspection-card"
+                className={`inspection-card${
+                  isReopened ? " inspection-card--reopened" : ""
+                }`}
                 onClick={() => navigate(`/inspection/${item.id}`)}
-                sx={{
-                  p: 2.25,
-                  borderRadius: "10px",
-                  borderColor: isReopened ? "#fed7aa" : "#eef0f2",
-                  cursor: "pointer",
-                  transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-                  "&:hover": {
-                    borderColor: isReopened ? "#fdba74" : "#d6d9de",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  },
-                }}
               >
                 <div className="inspection-card__top-row">
-                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.75}>
-                    <Box
-                      sx={{
-                        px: 1.25,
-                        py: 0.4,
-                        borderRadius: "6px",
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        letterSpacing: "0.02em",
-                        color: st.color,
-                        background: st.bg,
-                      }}
+                  <div className="inspection-card__badges">
+                    <span
+                      className="inspection-card__status"
+                      style={{ color: st.color, background: st.bg }}
                     >
                       {String(st.label).toUpperCase()}
-                    </Box>
+                    </span>
 
                     {/* History marker — stays visible after re-completion */}
                     {reopenCount > 0 && !isReopened && (
@@ -406,149 +364,84 @@ const ClientInspections = () => {
                             : "This inspection was reopened before"
                         }
                       >
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.4,
-                            px: 0.9,
-                            py: 0.3,
-                            borderRadius: "6px",
-                            fontSize: 10.5,
-                            fontWeight: 700,
-                            color: "#c2410c",
-                            background: "#fff7ed",
-                            border: "1px solid #fed7aa",
-                          }}
-                        >
+                        <span className="inspection-card__reopen-chip">
                           <RotateCcw size={11} />
                           Reopened ×{reopenCount}
-                        </Box>
+                        </span>
                       </Tooltip>
                     )}
-                  </Stack>
+                  </div>
 
-                  <Tooltip title="Delete Inspection">
-                    <IconButton
-                      size="small"
-                      className="inspection-card__delete"
-                      sx={actionIconBtn("#EF4444")}
-                      onClick={(event) => handleDeleteInspection(event, item)}
-                    >
-                      <Trash2 size={14} />
-                    </IconButton>
-                  </Tooltip>
+                  <IconAction
+                    icon={Trash2}
+                    title="Delete Inspection"
+                    danger
+                    iconSize={14}
+                    className="inspection-card__delete"
+                    onClick={(event) => handleDeleteInspection(event, item)}
+                  />
                 </div>
 
-                <Typography
-                  sx={{
-                    fontSize: 14.5,
-                    fontWeight: 600,
-                    color: "#1a1a1a",
-                    mt: 1.5,
-                    mb: 1.25,
-                    lineHeight: 1.35,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {item.name}
-                </Typography>
+                <h3 className="inspection-card__title">{item.name}</h3>
 
-                <Stack spacing={0.75}>
-                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.9}>
-                    <Calendar size={14} color="#9ca3af" />
-                    <Typography sx={{ fontSize: 12.5, color: "#6b7280" }}>
+                <div className="inspection-card__meta">
+                  <div className="inspection-card__meta-row">
+                    <Calendar size={14} color="var(--color-text-subtle)" />
+                    <span>
                       {dayjs(item.inspection_date).format("MMM D, YYYY")}
-                    </Typography>
-                  </Stack>
-                  <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.9}>
-                    <UserRound size={14} color="#9ca3af" />
-                    <Typography sx={{ fontSize: 12.5, color: "#6b7280" }}>
-                      {item.employee?.name || "Unassigned"}
-                    </Typography>
-                  </Stack>
+                    </span>
+                  </div>
+                  <div className="inspection-card__meta-row">
+                    <UserRound size={14} color="var(--color-text-subtle)" />
+                    <span>{item.employee?.name || "Unassigned"}</span>
+                  </div>
                   {isReopened && item.reopen_remark && (
-                    <Stack sx={{ alignItems: "flex-start" }} direction="row" spacing={0.9}>
+                    <div className="inspection-card__meta-row inspection-card__meta-row--remark">
                       <RotateCcw
                         size={14}
-                        color="#ea580c"
-                        style={{ marginTop: 2, flexShrink: 0 }}
+                        className="inspection-card__remark-icon"
                       />
-                      <Typography
-                        sx={{
-                          fontSize: 12.5,
-                          color: "#c2410c",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                        }}
-                      >
+                      <span className="inspection-card__remark">
                         {item.reopen_remark}
-                      </Typography>
-                    </Stack>
+                      </span>
+                    </div>
                   )}
-                </Stack>
+                </div>
 
                 <div className="inspection-card__footer">
                   {item.status === "COMPLETED" &&
                   item.score !== null &&
                   item.score !== undefined ? (
-                    <Stack sx={{ alignItems: "center" }} direction="row" spacing={0.6}>
-                      <Award size={14} color="#16A34A" />
-                      <Typography
-                        sx={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}
-                      >
-                        {item.score}/10
-                      </Typography>
-                    </Stack>
+                    <span className="inspection-card__score">
+                      <Award size={14} />
+                      {item.score}/10
+                    </span>
                   ) : (
-                    <Typography sx={{ fontSize: 12.5, color: "#c1c5cb" }}>
+                    <span className="inspection-card__unrated">
                       {isReopened ? "Re-grading pending" : "Not rated"}
-                    </Typography>
+                    </span>
                   )}
 
-                  <Stack
-                    direction="row"
-                    spacing={0.25}
-                    sx={{ alignItems: "center", color: "#6366F1" }}
-                  >
-                    <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>
-                      View
-                    </Typography>
+                  <span className="inspection-card__view">
+                    View
                     <ChevronRight size={15} />
-                  </Stack>
+                  </span>
                 </div>
-              </Paper>
+              </div>
             );
           })}
-        </Box>
+        </div>
       )}
 
       {/* Create Inspection modal */}
       <Modal
         title={
-          <Stack sx={{ alignItems: "center" }} direction="row" spacing={1.25}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#eef2ff",
-                color: "#6366F1",
-                flexShrink: 0,
-              }}
-            >
+          <span className="inspection-create-modal__title">
+            <span className="inspection-create-modal__icon">
               <ClipboardList size={17} />
-            </Box>
-            <span style={{ fontWeight: 600 }}>New Inspection</span>
-          </Stack>
+            </span>
+            New Inspection
+          </span>
         }
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
@@ -561,30 +454,22 @@ const ClientInspections = () => {
           <Alert
             type="error"
             showIcon
-            message={createError}
-            style={{ marginTop: 16, borderRadius: 8 }}
+            title={createError}
+            className="inspection-create-modal__alert"
           />
         )}
 
-        <Typography
-          component="label"
-          sx={{
-            display: "block",
-            fontSize: "13px",
-            fontWeight: 600,
-            color: "#374151",
-            margin: "16px 0 8px",
-          }}
-        >
+        <label className="field-label inspection-create-modal__label">
           Assign Employee
-        </Typography>
+        </label>
         <Select
           showSearch
+          size="large"
           value={selectedEmployeeId}
           placeholder="Select employee"
-          style={{ width: "100%", height: 45 }}
+          style={{ width: "100%" }}
           optionFilterProp="label"
-          suffixIcon={<ChevronDown size={16} color="#2c3345" />}
+          suffix={<ChevronDown size={16} color="var(--color-text)" />}
           onChange={(value) => setSelectedEmployeeId(value)}
         >
           {employees.map((emp) => (
@@ -598,31 +483,23 @@ const ClientInspections = () => {
           ))}
         </Select>
 
-        <Typography
-          component="label"
-          sx={{
-            display: "block",
-            fontSize: "13px",
-            fontWeight: 600,
-            color: "#374151",
-            margin: "18px 0 8px",
-          }}
-        >
+        <label className="field-label inspection-create-modal__label">
           Inspection Date
-        </Typography>
+        </label>
         <DatePicker
+          size="large"
           value={selectedDate}
           onChange={(date) => setSelectedDate(date)}
           disabledDate={disabledDate}
-          style={{ width: "100%", height: 45 }}
+          style={{ width: "100%" }}
           format="MM/DD/YYYY"
         />
-        <Typography sx={{ fontSize: 11.5, color: "#9ca3af", mt: 0.75 }}>
+        <p className="inspection-create-modal__hint">
           Dates already booked for this client are disabled — today and all
           other dates are open.
-        </Typography>
+        </p>
       </Modal>
-    </Box>
+    </div>
   );
 };
 

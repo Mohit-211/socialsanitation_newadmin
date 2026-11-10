@@ -1,0 +1,32 @@
+.edit-service {
+  &__images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__image {
+    position: relative;
+    display: inline-block;
+  }
+
+  &__image-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-strong);
+  }
+
+  // Small round "remove" button pinned to the image's top-right corner.
+  &__image .edit-service__image-remove.ant-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border-strong);
+  }
+}

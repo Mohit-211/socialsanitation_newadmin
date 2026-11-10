@@ -1,5 +1,5 @@
 import { Result, Button } from "antd";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router";
 
 const DocuSignSuccess = () => {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ const DocuSignSuccess = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#f5f5f5",
+        background: "var(--color-bg-layout)",
       }}
     >
       <Result

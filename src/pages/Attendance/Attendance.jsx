@@ -4,6 +4,7 @@ import { useParams } from "react-router";
 import { GetAttendanceByUserId } from "../../services/Api/leaveRequestApi";
 import { Table, Select, DatePicker, Image } from "antd";
 import { BASE_URL_IMAGE } from "../../services/Host";
+import "./Attendance.css";
 
 const { RangePicker } = DatePicker;
 
@@ -90,11 +91,15 @@ const Attendance = () => {
 			render: (status) => {
 				let color =
 					status === "PRESENT"
-						? "green"
+						? "var(--color-success-strong)"
 						: status === "ON LEAVE"
-						? "blue"
-						: "red";
-				return <span style={{ color, fontWeight: "bold" }}>{status}</span>;
+						? "var(--color-info)"
+						: "var(--color-error)";
+				return (
+					<span className="attendance__status" style={{ color }}>
+						{status}
+					</span>
+				);
 			},
 		},
 		{
@@ -123,11 +128,7 @@ const Attendance = () => {
 						crossOrigin="anonymous"
 						width={50}
 						height={50}
-						style={{
-							objectFit: "cover",
-							borderRadius: "8px",
-							boxShadow: "0 0 6px rgba(0,0,0,0.1)",
-						}}
+						className="attendance__thumb"
 					/>
 				) : (
 					<span>---</span>
@@ -146,11 +147,7 @@ const Attendance = () => {
 						crossOrigin="anonymous"
 						width={50}
 						height={50}
-						style={{
-							objectFit: "cover",
-							borderRadius: "8px",
-							boxShadow: "0 0 6px rgba(0,0,0,0.1)",
-						}}
+						className="attendance__thumb"
 					/>
 				) : (
 					<span>---</span>
@@ -183,7 +180,9 @@ const Attendance = () => {
 				}}
 			>
 				<div>
-					<h5 style={{ marginBottom: "20px" }}>User Attendance</h5>
+					<h5 className="section-title" style={{ marginBottom: "20px" }}>
+						User Attendance
+					</h5>
 				</div>
 
 				{/* 🔹 Filter Dropdown */}

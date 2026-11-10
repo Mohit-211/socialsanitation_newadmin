@@ -2,16 +2,14 @@ import { useEffect, useState, useMemo } from "react";
 import { Table, Button, Space, message, Input, Select, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import MuiButton from "@mui/material/Button";
 import { Plus, Search } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
 import {
   DeleteServiceRequest,
   GetAllServiceRequests,
 } from "../../services/Api/ServiceRequestApi";
+import { BASE_URL } from "../../services/Host";
+import "./Servicerequest.scss";
 
 const ServiceRequest = () => {
   const navigate = useNavigate();
@@ -72,7 +70,7 @@ const ServiceRequest = () => {
   /* VIEW PDF */
 
   const handleViewPDF = (record) => {
-    const baseUrl = "https://node.socialsanitation.com/api/v1/docs/";
+    const baseUrl = `${BASE_URL}docs/`;
 
     // ✅ Priority: signed PDF
     if (record.signed_file_name) {
@@ -151,10 +149,9 @@ const ServiceRequest = () => {
 
         return (
           <span
-            style={{
-              color: isSigned ? "#52c41a" : "#faad14",
-              fontWeight: 600,
-            }}
+            className={`service-request-list__status service-request-list__status--${
+              isSigned ? "signed" : "pending"
+            }`}
           >
             {isSigned ? "SIGNED" : "PENDING"}
           </span>
@@ -186,57 +183,24 @@ const ServiceRequest = () => {
 
   return (
     <>
-      {/* HEADER */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              SERVICE REQUEST MANAGEMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              View all generated service requests
-            </Typography>
-          </Box>
-
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-          >
+      <PageHeader
+        title="SERVICE REQUEST MANAGEMENT"
+        subtitle="View all generated service requests"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              prefix={<Search size={16} color="var(--color-text-subtle)" />}
               placeholder="Search by ref, client, amount"
               onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 240, height: 44 }}
+              className="service-request-list__search"
             />
 
             <Select
+              size="large"
               value={selectedMonth}
-              style={{ width: 120, height: 44 }}
+              className="service-request-list__month"
               onChange={(m) => {
                 setSelectedMonth(m);
 
@@ -256,8 +220,9 @@ const ServiceRequest = () => {
             </Select>
 
             <Select
+              size="large"
               value={selectedYear}
-              style={{ width: 100, height: 44 }}
+              className="service-request-list__year"
               onChange={(y) => {
                 setSelectedYear(y);
 
@@ -276,25 +241,17 @@ const ServiceRequest = () => {
               ))}
             </Select>
 
-            <MuiButton
-              variant="contained"
-              disableElevation
-              startIcon={<Plus size={18} />}
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={() => navigate("/generate-service-request")}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               New Service Request
-            </MuiButton>
-          </Stack>
-        </Stack>
-      </Paper>
+            </Button>
+          </>
+        }
+      />
 
       {/* TABLE */}
 

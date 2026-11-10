@@ -16,19 +16,19 @@ import {
   Upload,
 } from "antd";
 import {
-  ArrowLeftOutlined,
-  CloseCircleFilled,
-  FilePdfOutlined,
-  PaperClipOutlined,
-  PlusOutlined,
-  SearchOutlined,
-  SendOutlined,
-  SmileOutlined,
-  TeamOutlined,
-  UserAddOutlined,
-  UserDeleteOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+  ArrowLeft,
+  CircleX,
+  FileText,
+  Paperclip,
+  Plus,
+  Search,
+  Send,
+  Smile,
+  User,
+  UserMinus,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { onValue, ref as dbRef } from "firebase/database";
 import { useNavigate } from "react-router";
 import EmojiPicker from "emoji-picker-react";
@@ -67,8 +67,12 @@ const ROLE_LABELS = {
   11: "Housekeeping",
 };
 
-// Badge colour per participant type returned by the API.
-const TYPE_COLORS = { admin: "blue", client: "green", employee: "orange" };
+// Badge colour (antd Tag preset) per participant type returned by the API.
+const TYPE_COLORS = {
+  admin: "processing",
+  client: "success",
+  employee: "warning",
+};
 
 const formatTime = (timestamp) =>
   new Date(timestamp).toLocaleTimeString([], {
@@ -466,7 +470,7 @@ const Teams = () => {
           rel="noreferrer"
         >
           <span className="group-chat__file-icon">
-            <FilePdfOutlined />
+            <FileText size={18} />
           </span>
           <span className="group-chat__file-info">
             <span className="group-chat__file-name">
@@ -513,7 +517,7 @@ const Teams = () => {
         }`}
         onClick={() => handleTeamClick(team)}
       >
-        <Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+        <Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
         <div className="group-chat__item-body">
           <div className="group-chat__item-top">
             <span className="group-chat__item-name">{team.name}</span>
@@ -539,10 +543,10 @@ const Teams = () => {
         className="chat-layout__back"
         type="text"
         aria-label="Back to teams"
-        icon={<ArrowLeftOutlined />}
+        icon={<ArrowLeft size={16} />}
         onClick={() => setSelectedTeam(null)}
       />
-      <Avatar className="group-chat__item-avatar" icon={<TeamOutlined />} />
+      <Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
       <div className="team-chat__heading">
         <h2 className="group-chat__title">{teamName}</h2>
         <span className="team-chat__subtitle">
@@ -554,7 +558,8 @@ const Teams = () => {
         <Button
           type="text"
           className="group-chat__header-end"
-          icon={<UserOutlined />}
+          aria-label="Team members"
+          icon={<User size={16} />}
           onClick={() => setMembersOpen(true)}
         />
       </Tooltip>
@@ -628,13 +633,14 @@ const Teams = () => {
               )}
               {preview.kind === "pdf" && (
                 <div className="group-chat__preview-file">
-                  <FilePdfOutlined />
+                  <FileText size={20} />
                   <span className="group-chat__preview-name">
                     {preview.name}
                   </span>
                 </div>
               )}
-              <CloseCircleFilled
+              <CircleX
+                size={16}
                 className="group-chat__preview-remove"
                 onClick={() => removeFile(index)}
               />
@@ -664,14 +670,20 @@ const Teams = () => {
           beforeUpload={handleBeforeUpload}
         >
           <Tooltip title="Attach Images, Videos or PDFs">
-            <Button shape="circle" type="text" icon={<PaperClipOutlined />} />
+            <Button
+              shape="circle"
+              type="text"
+              aria-label="Attach files"
+              icon={<Paperclip size={18} />}
+            />
           </Tooltip>
         </Upload>
         <Tooltip title="Add Emoji">
           <Button
             shape="circle"
             type="text"
-            icon={<SmileOutlined />}
+            aria-label="Add emoji"
+            icon={<Smile size={18} />}
             onClick={() => setShowEmojiPicker((open) => !open)}
           />
         </Tooltip>
@@ -694,7 +706,7 @@ const Teams = () => {
         <Button
           type="primary"
           shape="circle"
-          icon={<SendOutlined />}
+          icon={<Send size={16} />}
           aria-label="Send"
           onClick={handleSend}
           loading={sending}
@@ -764,7 +776,7 @@ const Teams = () => {
       <aside className="group-chat__panel group-chat__list chat-layout__list">
         <div className="group-chat__list-header">
           <h2 className="group-chat__title">Teams</h2>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
+          <Button icon={<ArrowLeft size={16} />} onClick={() => navigate("/")}>
             Dashboard
           </Button>
         </div>
@@ -772,8 +784,9 @@ const Teams = () => {
           <div className="team-chat__toolbar">
             <Button
               type="primary"
-              icon={<PlusOutlined />}
-              className="team-chat__new-btn"
+              size="large"
+              block
+              icon={<Plus size={16} />}
               onClick={openCreateTeam}
             >
               New Team
@@ -854,7 +867,7 @@ const Teams = () => {
           <Input
             className="team-chat__search"
             allowClear
-            prefix={<SearchOutlined />}
+            prefix={<Search size={16} className="text-subtle" />}
             placeholder="Search members"
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
@@ -862,7 +875,7 @@ const Teams = () => {
           {isCreator && (
             <Button
               type="primary"
-              icon={<UserAddOutlined />}
+              icon={<UserPlus size={16} />}
               onClick={() => {
                 setAddOpen(true);
                 loadCandidates();
@@ -892,7 +905,7 @@ const Teams = () => {
                   <div className="team-chat__member-info">
                     <div className="team-chat__member-name">
                       <span>{member.name || "Unknown"}</span>
-                      {isTeamCreator && <Tag color="blue">Creator</Tag>}
+                      {isTeamCreator && <Tag color="processing">Creator</Tag>}
                     </div>
                     <div className="group-chat__participant-role">
                       {getRoleLabel(member.role_id)}
@@ -909,7 +922,8 @@ const Teams = () => {
                         <Button
                           danger
                           type="text"
-                          icon={<UserDeleteOutlined />}
+                          aria-label="Remove from team"
+                          icon={<UserMinus size={16} />}
                         />
                       </Tooltip>
                     </Popconfirm>

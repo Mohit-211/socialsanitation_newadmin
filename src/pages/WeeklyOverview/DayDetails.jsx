@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-	Table,
-	Card,
-	Typography,
-	Button,
-	Descriptions,
-	Space,
-	Modal,
-} from "antd";
+import { useParams, useNavigate } from "react-router";
+import { Table, Button, Descriptions, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { GetBookingOverviewById } from "../../services/Api/BookingApi";
-import { EnvironmentOutlined } from "@ant-design/icons";
-const { Title } = Typography;
+import PageHeader from "../../components/PageHeader";
+import "./DayDetails.scss";
 
 const DayDetail = () => {
 	const { booking_id } = useParams();
@@ -174,7 +166,7 @@ const DayDetail = () => {
 							rel="noopener noreferrer"
 							title="View on Map"
 						>
-							<EnvironmentOutlined style={{ color: "#1890ff" }} />
+							<MapPin size={14} className="day-details__map-icon" />
 						</a>
 					</>
 				) : (
@@ -204,7 +196,7 @@ const DayDetail = () => {
 							rel="noopener noreferrer"
 							title="View on Map"
 						>
-							<EnvironmentOutlined style={{ color: "#1890ff" }} />
+							<MapPin size={14} className="day-details__map-icon" />
 						</a>
 					</>
 				) : (
@@ -217,68 +209,63 @@ const DayDetail = () => {
 	if (!data) return null;
 
 	return (
-		<Card style={{ margin: 20 }}>
-			<Space
-				style={{
-					marginBottom: 20,
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-				}}
-			>
-				<Title level={4} style={{ margin: 0 }}>
-					Booking Overview – {data.booking_unique_id}
-				</Title>
-				<Button
-					type="default"
-					icon={<ArrowLeftOutlined />}
-					onClick={() => navigate(-1)}
-				>
-					Back
-				</Button>
-			</Space>
-
-			<Descriptions
-				bordered
-				column={1}
-				size="small"
-				style={{ marginBottom: 30 }}
-			>
-				<Descriptions.Item label="Booking Date">
-					{dayjs(data.date).format("DD MMMM, YYYY")}
-				</Descriptions.Item>
-				<Descriptions.Item label="Booking Time">
-					{dayjs(data.time, "HH:mm:ss").format("hh:mm A")}
-				</Descriptions.Item>
-
-				<Descriptions.Item label="Booking Name">
-					{data.booking_name}
-				</Descriptions.Item>
-				<Descriptions.Item label="Client Name">
-					{data.client_name}
-				</Descriptions.Item>
-				<Descriptions.Item label="Address">
-					{data.address?.address_line_1
-						? [
-								data.address.address_line_1,
-								data.address.city,
-								data.address.state,
-								data.address.country,
-						  ]
-								.filter(Boolean)
-								.join(", ")
-						: "N/A"}
-				</Descriptions.Item>
-			</Descriptions>
-
-			<Table
-				columns={columns}
-				dataSource={data.employees}
-				rowKey="id"
-				loading={loading}
-				pagination={false}
-				bordered
+		<>
+			<PageHeader
+				title={`Booking Overview – ${data.booking_unique_id}`}
+				actions={
+					<Button
+						type="default"
+						icon={<ArrowLeft size={16} />}
+						onClick={() => navigate(-1)}
+					>
+						Back
+					</Button>
+				}
 			/>
+
+			<div className="surface surface--padded">
+				<Descriptions
+					bordered
+					column={1}
+					size="small"
+					className="day-details__descriptions"
+				>
+					<Descriptions.Item label="Booking Date">
+						{dayjs(data.date).format("DD MMMM, YYYY")}
+					</Descriptions.Item>
+					<Descriptions.Item label="Booking Time">
+						{dayjs(data.time, "HH:mm:ss").format("hh:mm A")}
+					</Descriptions.Item>
+
+					<Descriptions.Item label="Booking Name">
+						{data.booking_name}
+					</Descriptions.Item>
+					<Descriptions.Item label="Client Name">
+						{data.client_name}
+					</Descriptions.Item>
+					<Descriptions.Item label="Address">
+						{data.address?.address_line_1
+							? [
+									data.address.address_line_1,
+									data.address.city,
+									data.address.state,
+									data.address.country,
+							  ]
+									.filter(Boolean)
+									.join(", ")
+							: "N/A"}
+					</Descriptions.Item>
+				</Descriptions>
+
+				<Table
+					columns={columns}
+					dataSource={data.employees}
+					rowKey="id"
+					loading={loading}
+					pagination={false}
+					bordered
+				/>
+			</div>
 
 			<Modal
 				width={800}
@@ -360,7 +347,7 @@ const DayDetail = () => {
 					<p>No break data available.</p>
 				)}
 			</Modal>
-		</Card>
+		</>
 	);
 };
 

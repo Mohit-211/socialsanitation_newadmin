@@ -1,77 +1,675 @@
-.p-card{
-  box-shadow: none !important;
+/* Dashboard (home page). Every color, font, radius and shadow comes from
+   the design tokens in src/index.css. */
+
+.ss-dashboard {
+  min-height: 100vh;
+  padding: var(--space-6);
+  background: var(--color-bg-layout);
 }
 
-.percentage {
-  font-size: 0.9em;
-  margin-top: 10px;
+/* Text colors. Scoped to .ss-dashboard and marked !important so dashboard
+   text keeps its color even if a stylesheet loaded by another page styles
+   bare tags (h4, p...). */
+.ss-dashboard .ss-text-dark {
+  color: var(--color-text) !important;
 }
 
-/* DEFENSIVE TEXT-COLOR OVERRIDES
-   Some global stylesheet (outside this file) appears to
-   force text color via an !important rule on bare tag
-   selectors (h4, p, etc), which wins over inline styles
-   and makes dashboard card text invisible. These class
-   + tag selectors have higher specificity than a bare
-   tag selector, so they win back the intended colors
-   regardless of where the conflicting rule lives. */
-.ss-dashboard h1.ss-text-dark,
-.ss-dashboard h2.ss-text-dark,
-.ss-dashboard h3.ss-text-dark,
-.ss-dashboard h4.ss-text-dark,
-.ss-dashboard h5.ss-text-dark,
-.ss-dashboard p.ss-text-dark,
-.ss-dashboard span.ss-text-dark,
-.ss-dashboard div.ss-text-dark,
-.ss-dashboard strong.ss-text-dark,
-.ss-dashboard button.ss-text-dark {
-  color: #1a1a2e !important;
+.ss-dashboard .ss-text-muted {
+  color: var(--color-text-secondary) !important;
 }
 
-.ss-dashboard h1.ss-text-muted,
-.ss-dashboard h2.ss-text-muted,
-.ss-dashboard h3.ss-text-muted,
-.ss-dashboard h4.ss-text-muted,
-.ss-dashboard p.ss-text-muted,
-.ss-dashboard span.ss-text-muted,
-.ss-dashboard div.ss-text-muted {
-  color: #666 !important;
+.ss-dashboard .ss-text-faint,
+.ss-dashboard .ss-text-label {
+  color: var(--color-text-muted) !important;
 }
 
-.ss-dashboard h1.ss-text-gray,
-.ss-dashboard h2.ss-text-gray,
-.ss-dashboard h3.ss-text-gray,
-.ss-dashboard h4.ss-text-gray,
-.ss-dashboard p.ss-text-gray,
-.ss-dashboard span.ss-text-gray,
-.ss-dashboard div.ss-text-gray {
-  color: #999 !important;
+/* ---- Welcome banner ---- */
+.ss-dashboard__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding: 28px var(--space-8);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    120deg,
+    var(--color-ink-deep) 0%,
+    var(--color-ink) 60%,
+    var(--color-ink-soft) 100%
+  );
+  color: var(--color-text-inverse);
 }
 
-.ss-dashboard h1.ss-text-label,
-.ss-dashboard h2.ss-text-label,
-.ss-dashboard h3.ss-text-label,
-.ss-dashboard h4.ss-text-label,
-.ss-dashboard p.ss-text-label,
-.ss-dashboard span.ss-text-label,
-.ss-dashboard div.ss-text-label {
-  color: #999 !important;
+.ss-dashboard__banner-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-inverse);
+}
+
+.ss-dashboard__banner-text,
+.ss-dashboard__banner-meta {
+  color: color-mix(in srgb, var(--color-text-inverse) 72%, transparent);
+}
+
+.ss-dashboard__banner-text {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.ss-dashboard__banner-meta {
+  text-align: right;
+  font-size: var(--text-sm);
+}
+
+.ss-dashboard__banner-live {
+  margin-bottom: var(--space-1);
+}
+
+.ss-dashboard__banner-updated {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+/* ---- Cards ---- */
+.ss-dashboard__card {
+  padding: 22px var(--space-6);
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.ss-dashboard__card--success {
+  border-top: 4px solid var(--color-success);
+}
+
+.ss-dashboard__card--error {
+  border-top: 4px solid var(--color-error);
+}
+
+.ss-dashboard__card--primary {
+  border-top: 4px solid var(--color-primary-border);
+}
+
+.ss-dashboard__section,
+.ss-dashboard__live-grid {
+  margin-bottom: var(--space-6);
+}
+
+.ss-dashboard__live-grid {
+  gap: var(--space-5);
+}
+
+/* ---- Section header ---- */
+.ss-dashboard__section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: 14px;
+}
+
+.ss-dashboard__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.ss-dashboard__section-note {
+  margin-left: 10px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-regular);
+  white-space: nowrap;
+}
+
+/* Status dot: "live" pulses a ring, "soft" fades in and out. */
+.ss-dashboard__dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--dot-color);
+}
+
+.ss-dashboard__dot--success {
+  --dot-color: var(--color-success);
+}
+
+.ss-dashboard__dot--error {
+  --dot-color: var(--color-error);
+}
+
+.ss-dashboard__dot--primary {
+  --dot-color: var(--color-primary-border);
+}
+
+.ss-dashboard__dot--live {
+  animation: ss-dashboard-live-pulse 1.6s infinite;
+}
+
+.ss-dashboard__dot--soft {
+  animation: ss-dashboard-soft-pulse 1.8s infinite;
+}
+
+@keyframes ss-dashboard-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot-color) 70%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes ss-dashboard-soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---- Live / late employee rows ---- */
+.ss-dashboard__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ss-dashboard__row {
+  margin-bottom: var(--space-2);
+  padding: var(--space-3) 14px;
+  border-radius: var(--radius-lg);
+  transition: background 0.15s;
+}
+
+/* --row-indent lines the detail rows up with the name (avatar + gap). */
+.ss-dashboard__row--live {
+  --row-indent: 42px;
+  background: var(--color-bg-subtle);
+}
+
+.ss-dashboard__row--live:hover {
+  background: var(--color-bg-muted);
+}
+
+.ss-dashboard__row--late {
+  --row-indent: 40px;
+  background: var(--color-error-subtle);
+}
+
+.ss-dashboard__row--late:hover {
+  background: var(--color-warning-subtle);
+}
+
+.ss-dashboard__row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 6px;
+}
+
+.ss-dashboard__person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ss-dashboard__avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-md);
+}
+
+.ss-dashboard__avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: var(--text-base);
+}
+
+.ss-dashboard__avatar--success {
+  background: var(--color-success-subtle);
+}
+
+.ss-dashboard__avatar--warning {
+  background: var(--color-warning-border);
+}
+
+.ss-dashboard__avatar--error {
+  background: var(--color-error-border);
+}
+
+.ss-dashboard__name {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.ss-dashboard__row-line {
+  margin-bottom: var(--space-1);
+  padding-left: var(--row-indent);
+  font-size: var(--text-sm);
+}
+
+.ss-dashboard__location {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--row-indent);
+}
+
+.ss-dashboard__location--empty {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.ss-dashboard__coords {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.ss-dashboard__map-link {
+  padding: 2px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-strong);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.ss-dashboard__map-link:hover {
+  background: var(--color-primary-soft);
+}
+
+.ss-dashboard__timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-left: var(--row-indent);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.ss-dashboard__delay {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-error-strong);
+}
+
+/* ---- Pills and badges ---- */
+.ss-dashboard__pill {
+  display: inline-block;
+  padding: 5px var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.ss-dashboard__pill--compact {
+  padding: 2px 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.ss-dashboard__pill--success {
+  background: var(--color-success-subtle);
+  border-color: var(--color-success-border);
+  color: var(--color-success-strong);
+}
+
+.ss-dashboard__pill--warning {
+  background: var(--color-warning-subtle);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-strong);
+}
+
+.ss-dashboard__pill--error {
+  background: var(--color-error-subtle);
+  border-color: var(--color-error-border);
+  color: var(--color-error-strong);
+}
+
+.ss-dashboard__pill--primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.ss-dashboard__pill--chip {
+  padding: 5px 11px;
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ---- Notification strip and empty states ---- */
+.ss-dashboard__notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--space-4);
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.ss-dashboard__notice--success {
+  background: var(--color-success-subtle);
+  border-color: var(--color-success-border);
+  color: var(--color-success-strong);
+}
+
+.ss-dashboard__notice--primary {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.ss-dashboard__notice-icon {
+  font-size: var(--text-lg);
+}
+
+.ss-dashboard__empty {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  font-size: var(--text-base);
+}
+
+.ss-dashboard__empty-icon {
+  margin-bottom: var(--space-2);
+  font-size: 32px;
+}
+
+.ss-dashboard__empty-text {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+/* ---- Invoice and booking cards ---- */
+.ss-dashboard__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ss-dashboard__item {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.ss-dashboard__item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.ss-dashboard__item-bar {
+  width: 100%;
+  height: 4px;
+}
+
+.ss-dashboard__item-bar--success {
+  background: var(--color-success);
+}
+
+.ss-dashboard__item-bar--warning {
+  background: var(--color-warning);
+}
+
+.ss-dashboard__item-bar--error {
+  background: var(--color-error);
+}
+
+.ss-dashboard__item-body {
+  padding: var(--space-4) 18px;
+}
+
+.ss-dashboard__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.ss-dashboard__item-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-bold);
+}
+
+.ss-dashboard__item-sub {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.ss-dashboard__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ss-dashboard__info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.ss-dashboard__info-grid--spaced {
+  margin-bottom: 14px;
+}
+
+.ss-dashboard__tile {
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-muted);
+}
+
+.ss-dashboard__tile-label {
+  margin-bottom: var(--space-1);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.ss-dashboard__tile-value {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.ss-dashboard__tile-value--address {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-base);
+}
+
+.ss-dashboard__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: var(--space-3);
+}
+
+/* Success fills take the dark "on" text (brand rule). */
+.ss-dashboard__pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-success);
+  color: var(--color-on-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
 }
 
 /* load more / show less button */
+.ss-dashboard__loadmore {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-1);
+}
+
 .ss-dashboard .ss-loadmore-btn {
-  padding: 8px 20px;
-  background: #f5f6fa;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a2e !important;
-  transition: background .15s, border-color .15s;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text) !important;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .ss-dashboard .ss-loadmore-btn:hover {
-  background: #eef0f5;
-  border-color: #d7dbe3;
+  background: var(--color-bg-muted);
+  border-color: var(--color-border-strong);
+}
+
+/* ---- Platform overview stats ---- */
+.ss-dashboard__overline {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Row 1: four stat cards (2 per row on tablets, stacked on phones).
+   Row 2: employees card and services card at 2:1. */
+.ss-dashboard__stats,
+.ss-dashboard__split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.ss-dashboard__stats {
+  margin-bottom: var(--space-4);
+}
+
+.ss-dashboard__split {
+  margin-bottom: var(--space-6);
+}
+
+.ss-dashboard__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  transition: box-shadow 0.2s;
+}
+
+.ss-dashboard__stat:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.ss-dashboard__stat-label {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.ss-dashboard__stat-value {
+  margin: 0 0 10px;
+  font-size: 32px;
+  font-weight: var(--font-weight-bold);
+}
+
+.ss-dashboard__stat-action {
+  align-self: flex-start;
+  margin-top: 14px;
+}
+
+.ss-dashboard__employees .ss-dashboard__stat-label {
+  margin-bottom: var(--space-1);
+}
+
+.ss-dashboard__employees .ss-dashboard__stat-value {
+  margin-bottom: 14px;
+}
+
+.ss-dashboard__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ss-dashboard__role {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-muted);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 600px) {
+  .ss-dashboard__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ss-dashboard__split {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .ss-dashboard__stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Phones: the app shell already pads the content area. */
+@media (max-width: 767.98px) {
+  .ss-dashboard {
+    padding: 0;
+  }
+
+  .ss-dashboard__banner {
+    padding: var(--space-5);
+  }
+
+  .ss-dashboard__banner-meta {
+    text-align: left;
+  }
+
+  .ss-dashboard__card {
+    padding: var(--space-4);
+  }
 }

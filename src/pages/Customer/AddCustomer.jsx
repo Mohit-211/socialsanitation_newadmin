@@ -1,10 +1,6 @@
-import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import { AddUser, CityAPI, StateAPI } from "../../services/Api/Api";
-import { useNavigate } from "react-router-dom";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
+import { useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
 import {
@@ -16,35 +12,11 @@ import {
   Form,
   Radio,
   InputNumber,
-  Button as AntButton,
+  Button,
+  Space,
 } from "antd";
-
-// ---- table style tokens (kept local so this file is self-contained) ----
-const tableWrapStyle = {
-  border: "1px solid #e5e7eb",
-  borderRadius: "10px",
-  overflow: "hidden",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "14px 16px",
-  background: "#fafafa",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  fontSize: "13px",
-  fontWeight: 600,
-  color: "#374151",
-  verticalAlign: "top",
-};
-
-const tdStyle = {
-  padding: "14px 16px",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  verticalAlign: "middle",
-  background: "#fff",
-};
+import PageHeader from "../../components/PageHeader";
+import "./Customers.css";
 
 // Static — never changes, so this doesn't need to be component state.
 const COUNTRIES = [
@@ -294,64 +266,22 @@ const AddCustomer = () => {
   };
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">CLIENT MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              Create New Client
-            </Typography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="CLIENT MANAGEMENT"
+        subtitle="Create New Client"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToUser}
-            sx={{
-              ml: "auto",
-              height: 47,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 185,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Clients
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 4,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
+      <div className="surface customer-form">
         <Form
           form={form}
           layout="vertical"
@@ -548,51 +478,23 @@ const AddCustomer = () => {
             </Col>
           </Row>
 
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "8px",
-              padding: "20px",
-              marginBottom: "24px",
-              background: "#fff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
+          <div className="customer-floor">
+            <div className="customer-floor__head">
               <div>
-                <div style={{ fontSize: "16px", fontWeight: 600 }}>
+                <div className="customer-floor__title">
                   Overall Building Floor Composition
                 </div>
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "#6b7280",
-                    marginTop: "4px",
-                  }}
-                >
+                <div className="customer-floor__hint">
                   Enter the percentage of each flooring type for the entire
                   building. Total must equal 100%.
                 </div>
               </div>
               <div
-                style={{
-                  background:
-                    totalFloorPercentage === 100 ? "#ecfdf5" : "#fef2f2",
-                  color: totalFloorPercentage === 100 ? "#15803d" : "#dc2626",
-                  border:
-                    totalFloorPercentage === 100
-                      ? "1px solid #bbf7d0"
-                      : "1px solid #fecaca",
-                  borderRadius: "20px",
-                  padding: "6px 14px",
-                  fontWeight: 600,
-                }}
+                className={`customer-pill ${
+                  totalFloorPercentage === 100
+                    ? "customer-pill--success"
+                    : "customer-pill--error"
+                }`}
               >
                 Total: {totalFloorPercentage}% / 100%
               </div>
@@ -642,15 +544,8 @@ const AddCustomer = () => {
           </div>
 
           <Form.Item key={userType}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
-              <label style={{ fontSize: "16px", fontWeight: 600 }}>
+            <div className="customer-form__chart-head">
+              <label className="customer-form__chart-title">
                 Initial Client Chart
               </label>
 
@@ -676,40 +571,36 @@ const AddCustomer = () => {
               )}
             </div>
 
-            <div style={tableWrapStyle}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="customer-chart">
+              <table>
                 <thead>
                   <tr>
-                    <th style={{ ...thStyle, width: "20%" }}>Service Area</th>
+                    <th style={{ width: "20%" }}>Service Area</th>
 
                     {userType === "commercial" ? (
                       <>
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Trash Cans
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                            or Stalls
-                          </small>
+                          <small className="customer-chart__sub">or Stalls</small>
                         </th>
 
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Desks
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
-                            or Sinks
-                          </small>
+                          <small className="customer-chart__sub">or Sinks</small>
                         </th>
 
-                        <th style={{ ...thStyle, width: "18%" }}>
+                        <th style={{ width: "18%" }}>
                           # of Rooms
                           <br />
-                          <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                          <small className="customer-chart__sub">
                             or Restrooms
                           </small>
                         </th>
                       </>
                     ) : (
-                      <th style={{ ...thStyle, width: "22%" }}>
+                      <th style={{ width: "22%" }}>
                         # of Desks / Trash Cans (Big Buildings)
                         <br />
                         <strong>OR</strong>
@@ -717,32 +608,24 @@ const AddCustomer = () => {
                       </th>
                     )}
 
-                    <th style={{ ...thStyle, width: "26%" }}>
+                    <th style={{ width: "26%" }}>
                       Type of Flooring
                       <br />
-                      <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                      <small className="customer-chart__sub">
                         (Carpet, Hard Floor, VCT)
                       </small>
                     </th>
 
-                    <th style={{ ...thStyle, borderRight: "none" }}>
-                      Special Requests / Hot Spots
-                    </th>
+                    <th>Special Requests / Hot Spots</th>
                   </tr>
                 </thead>
                 <tbody>
                   {serviceAreas.map((area, index) => (
                     <tr key={index}>
-                      <td style={tdStyle}>
+                      <td>
                         {userType === "commercial" &&
                         commercialAreas[index]?.editable ? (
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              alignItems: "center",
-                            }}
-                          >
+                          <div className="customer-chart__area-input">
                             <Input
                               value={commercialAreas[index]?.name}
                               onChange={(e) => {
@@ -781,7 +664,7 @@ const AddCustomer = () => {
                       {userType === "commercial" ? (
                         <>
                           {/* Stalls */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               name={["details", index, "stalls"]}
                               initialValue={0}
@@ -796,7 +679,7 @@ const AddCustomer = () => {
                           </td>
 
                           {/* Sinks */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               name={["details", index, "sinks"]}
                               initialValue={0}
@@ -811,7 +694,7 @@ const AddCustomer = () => {
                           </td>
 
                           {/* Restrooms */}
-                          <td style={tdStyle}>
+                          <td>
                             <Form.Item
                               name={["details", index, "restrooms"]}
                               initialValue={0}
@@ -826,7 +709,7 @@ const AddCustomer = () => {
                           </td>
                         </>
                       ) : (
-                        <td style={tdStyle}>
+                        <td>
                           <Form.Item
                             name={["details", index, "num_desks_trash_cans"]}
                             initialValue={0}
@@ -842,7 +725,7 @@ const AddCustomer = () => {
                       )}
 
                       {/* Flooring */}
-                      <td style={tdStyle}>
+                      <td>
                         <Form.Item
                           name={["details", index, "flooring_type"]}
                           style={{ marginBottom: 0 }}
@@ -859,7 +742,7 @@ const AddCustomer = () => {
                       </td>
 
                       {/* Special Requests */}
-                      <td style={{ ...tdStyle, borderRight: "none" }}>
+                      <td>
                         <Form.Item
                           name={["details", index, "special_requests"]}
                           style={{ marginBottom: 0 }}
@@ -876,46 +759,25 @@ const AddCustomer = () => {
               </table>
             </div>
 
-            <div
-              style={{
-                marginTop: 16,
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <div
-                style={{
-                  background: "#f5f7fa",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  padding: "10px 16px",
-                  minWidth: "180px",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 12, color: "#6b7280" }}>
-                  Total Count
-                </div>
-                <div
-                  style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}
-                >
-                  {totalCount}
-                </div>
+            <div className="customer-total">
+              <div className="customer-total__box">
+                <div className="customer-total__label">Total Count</div>
+                <div className="customer-total__value">{totalCount}</div>
               </div>
             </div>
           </Form.Item>
 
-          <Form.Item style={{ marginTop: "24px", marginBottom: 0 }}>
-            <AntButton type="primary" htmlType="submit" loading={disable}>
-              Save
-            </AntButton>
-            <AntButton style={{ marginLeft: 8 }} onClick={navigateToUser}>
-              Cancel
-            </AntButton>
+          <Form.Item className="customer-form__actions">
+            <Space>
+              <Button type="primary" htmlType="submit" loading={disable}>
+                Save
+              </Button>
+              <Button onClick={navigateToUser}>Cancel</Button>
+            </Space>
           </Form.Item>
         </Form>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

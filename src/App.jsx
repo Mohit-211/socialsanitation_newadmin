@@ -1,11 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import ChangePassword from "./pages/Sidebar/Settings/ChangePassword/ChangePassword";
 import MainLayout from "./components/MainLayout";
-import RoleList from "./pages/Roles/RoleList";
-import AddRole from "./pages/Roles/AddRole";
-import EditRole from "./pages/Roles/EditRole";
 import AddCustomer from "./pages/Customer/AddCustomer";
 import ViewCustomer from "./pages/Customer/ViewCustomer";
 import AdminUser from "./pages/AdminManagement/AdminUser";
@@ -13,7 +10,6 @@ import ViewAdmin from "./pages/AdminManagement/ViewAdmin";
 import AddAdmin from "./pages/AdminManagement/AddAdmin";
 import EditAdmin from "./pages/AdminManagement/EditAdmin";
 import LoginLogs from "./pages/Sidebar/LoginActivity/LoginLogs";
-import Settings from "./pages/Sidebar/Settings/Settings";
 import Service from "./pages/Services/Service";
 import AddService from "./pages/Services/AddService";
 import EditService from "./pages/Services/EditService";
@@ -30,10 +26,7 @@ import ViewServiceProvider from "./pages/ServiceProvider/ViewServiceProvider";
 import AuthorizationSuccess from "./pages/Login/AuthorizationSuccess";
 import AuthrizationFailure from "./pages/Login/AuthrizationFailure";
 import ChatUI from "./pages/Chat/ChatUI";
-import SyncCalendar from "./pages/Sidebar/Settings/SyncCalendar/SyncCalendar";
-import ContactUs from "./pages/ContactUs/ContactUs";
 import HiringForm from "./pages/HiringForm/HiringForm";
-import JobApplication from "./pages/JobApplication/JobApplication";
 import LeaveRequest from "./pages/LeaveRequest/LeaveRequest";
 import Servicecheckllist from "./pages/ServiceChecklist/Servicecheckllist";
 import BDM from "./pages/Bdm/BDM.jsx";
@@ -43,7 +36,6 @@ import Report from "./pages/Report/Report.jsx";
 import DailyChecklist from "./pages/DailyChecklist/DailyChecklist.jsx";
 import AddDailyChecklist from "./pages/DailyChecklist/AddDailyChecklist.jsx";
 import EditDailyChecklist from "./pages/DailyChecklist/EditDailyChecklist.jsx";
-import Payment from "./pages/Payment/Payment.jsx";
 import AddServiceChecklist from "./pages/ServiceChecklist/AddServiceChecklist.jsx";
 import EditServiceChecklist from "./pages/ServiceChecklist/EditServiceChecklist.jsx";
 import ViewForm from "./pages/HiringForm/ViewForm.jsx";
@@ -99,9 +91,6 @@ import EmployeeEquipmentRecordsPage from "./pages/Equipment/EmployeeRecords/Empl
 import ClientInspections from "./pages/Inspection/ClientInspections.jsx";
 import InspectionDetail from "./pages/Inspection/InspectionDetail.jsx";
 import ClientScopeOfWork from "./pages/PdfGeneration/UserScopeBuilder/ClientScopeOfWork.jsx";
-import PayPalTest from "./pages/PayPalTest.jsx";
-import CashAppTest from "./pages/cashApp.jsx";
-import GooglePayTest from "./pages/GooglePayTest.jsx";
 import Teams from "./pages/Teams/Teams.jsx";
 
 function App() {
@@ -133,15 +122,11 @@ function App() {
           <Route path="/addUser" element={<AddCustomer />} />
           <Route path="/editUser/:id" element={<UpdateCustomer />} />
           <Route path="/viewUser/:id" element={<ViewCustomer />} />
-          <Route path="/role-list" element={<RoleList />} />
-          <Route path="/addRole" element={<AddRole />} />
-          <Route path="/editRole/:id" element={<EditRole />} />
           <Route path="/adminList" element={<AdminUser />} />
           <Route path="/viewAdmin" element={<ViewAdmin />} />
           <Route path="/addAdmin" element={<AddAdmin />} />
           <Route path="/editAdmin/:id" element={<EditAdmin />} />
           <Route path="/loginLogs" element={<LoginLogs />} />
-          <Route path="/settings" element={<Settings />} />
           <Route path="/services" element={<Service />} />
           <Route path="/addService" element={<AddService />} />
           <Route path="/editService/:id" element={<EditService />} />
@@ -152,10 +137,7 @@ function App() {
 
           <Route path="/users" element={<User />} />
 
-          <Route path="/SyncCalendar" element={<SyncCalendar />} />
-          <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/hiring-form" element={<HiringForm />} />
-          <Route path="/hiring-form-view/:id" element={<JobApplication />} />
           <Route path="/leave-request" element={<LeaveRequest />} />
           <Route path="/checklist" element={<Servicecheckllist />} />
           <Route path="/add-checklist" element={<AddServiceChecklist />} />
@@ -177,7 +159,6 @@ function App() {
             path="/view-daily-checklist/:id"
             element={<ViewServiceChecklist />}
           />
-          <Route path="/payment-history" element={<Payment />} />
           <Route path="/view-form/:id" element={<ViewForm />} />
           <Route path="/service-quote/:id" element={<ServiceQuote />} />
           <Route path="/attendance" element={<AllAttendance />} />
@@ -234,12 +215,10 @@ function App() {
             path="/edit-service-quote/:id"
             element={<UpdateServiceQuote />}
           />
-
           <Route
             path="/edit-service-request/:id"
             element={<EditServiceRequest />}
           />
-
           <Route
             path="/edit-contract-agreement/:id"
             element={<EditContractAgreement />}
@@ -258,15 +237,8 @@ function App() {
             path="/clientInspections/:id"
             element={<ClientInspections />}
           />
-
-           <Route
-            path="/client-scope/:id"
-            element={<ClientScopeOfWork />}
-          />
+          <Route path="/client-scope/:id" element={<ClientScopeOfWork />} />
           <Route path="/inspection/:id" element={<InspectionDetail />} />
-          <Route path="/paypal" element={<PayPalTest />} />
-          <Route path="/cashapp" element={<CashAppTest />} />
-          <Route path="/googlepay" element={<GooglePayTest />} />
         </Route>
       </Routes>
     </Router>

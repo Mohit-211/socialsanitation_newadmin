@@ -1,16 +1,21 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { message, Select } from "antd";
 import {
-  CalculatorOutlined,
-  DollarOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-  DownOutlined,
-  UpOutlined,
-} from "@ant-design/icons";
+  Calculator,
+  ChartColumn,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  DollarSign,
+  Info,
+  Plus,
+  Trash2,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 
+import PageHeader from "../../components/PageHeader";
 import {
   CreateBidMaximizer,
   CreateCostCalculator,
@@ -31,16 +36,19 @@ const useToast = () => {
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
   }, []);
 
-  const icons = { success: "✓", error: "✕", warning: "⚠" };
+  const icons = { success: Check, error: X, warning: TriangleAlert };
 
   const ToastContainer = (
     <div className="cc-toast-wrap">
-      {toasts.map((t) => (
-        <div key={t.id} className={`cc-toast ${t.type}`}>
-          <span className="icon">{icons[t.type]}</span>
-          {t.msg}
-        </div>
-      ))}
+      {toasts.map((t) => {
+        const Icon = icons[t.type];
+        return (
+          <div key={t.id} className={`cc-toast ${t.type}`}>
+            <span className="icon">{Icon && <Icon size={16} />}</span>
+            {t.msg}
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -143,8 +151,8 @@ const InstructionsModal = ({ onClose }) => (
     >
       <div className="cc-modal-header">
         <h3>How This Calculator Works</h3>
-        <button className="cc-modal-close" onClick={onClose}>
-          ✕
+        <button className="cc-modal-close" onClick={onClose} aria-label="Close">
+          <X size={16} />
         </button>
       </div>
       <div className="cc-modal-body">
@@ -588,7 +596,7 @@ const CostCalculator = () => {
         {
           label: "Labor Cost",
           value: `$${Number(result.labor_cost).toFixed(2)}`,
-          cls: "blue",
+          cls: "primary",
         },
         {
           label: "Equipment",
@@ -603,7 +611,7 @@ const CostCalculator = () => {
         {
           label: "Operational Cost",
           value: `$${Number(result.total_operational_cost).toFixed(2)}`,
-          cls: "green",
+          cls: "success",
         },
       ]
     : [];
@@ -652,21 +660,21 @@ const CostCalculator = () => {
         {/* LEFT COLUMN */}
         <div>
           {/* Header */}
-          <div className="cc-page-header">
-            <div>
-              <h1 className="cc-page-title">Cost Calculator</h1>
-              <p className="cc-page-sub">
-                Estimate operational costs, labor hours &amp; staffing
-              </p>
-            </div>
-            <button
-              className="cc-info-btn"
-              onClick={() => setShowInstructions(true)}
-            >
-              <InfoCircleOutlined />
-              How It Works
-            </button>
-          </div>
+          <PageHeader
+            card={false}
+            className="cc-page-header"
+            title="Cost Calculator"
+            subtitle="Estimate operational costs, labor hours & staffing"
+            actions={
+              <button
+                className="cc-info-btn"
+                onClick={() => setShowInstructions(true)}
+              >
+                <Info size={16} />
+                How It Works
+              </button>
+            }
+          />
 
           {/* ── Client selector ── */}
           <div className="cc-card" style={{ marginBottom: 16 }}>
@@ -720,14 +728,19 @@ const CostCalculator = () => {
                 onClick={() => setChartCollapsed((v) => !v)}
               >
                 <span className="usb-chart-card__toggle-title">
-                  📊 Initial Client Chart
+                  <ChartColumn size={16} className="cc-chart-title-icon" />
+                  Initial Client Chart
                 </span>
                 <span className="usb-chart-card__toggle-meta">
                   {chartCollapsed
                     ? `${clientChecklist.length} row${clientChecklist.length !== 1 ? "s" : ""} · click to expand`
                     : "click to collapse"}
                 </span>
-                {chartCollapsed ? <DownOutlined /> : <UpOutlined />}
+                {chartCollapsed ? (
+                  <ChevronDown size={16} className="cc-chart-chevron" />
+                ) : (
+                  <ChevronUp size={16} className="cc-chart-chevron" />
+                )}
               </button>
 
               {!chartCollapsed && (
@@ -842,7 +855,7 @@ const CostCalculator = () => {
             >
               <div className="cc-field">
                 <label className="cc-label">
-                  Property Name <span style={{ color: "#ef4444" }}>*</span>
+                  Property Name <span className="required-mark">*</span>
                 </label>
                 <input
                   className="cc-task-input"
@@ -855,7 +868,7 @@ const CostCalculator = () => {
               </div>
               <div className="cc-field">
                 <label className="cc-label">
-                  Square Footage <span style={{ color: "#ef4444" }}>*</span>
+                  Square Footage <span className="required-mark">*</span>
                 </label>
                 <input
                   type="number"
@@ -963,7 +976,7 @@ const CostCalculator = () => {
                 </p>
               </div>
               <button className="cc-add-btn" onClick={addTask}>
-                <PlusOutlined />
+                <Plus size={16} />
                 Add Task
               </button>
             </div>
@@ -1024,8 +1037,9 @@ const CostCalculator = () => {
                         <button
                           className="cc-task-del"
                           onClick={() => removeTask(i)}
+                          aria-label="Remove task"
                         >
-                          <DeleteOutlined />
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -1045,7 +1059,7 @@ const CostCalculator = () => {
               {loading ? (
                 <span className="cc-spinner" />
               ) : (
-                <CalculatorOutlined />
+                <Calculator size={16} />
               )}
               {loading ? "Generating…" : "Generate Cost Calculation"}
             </button>
@@ -1055,7 +1069,7 @@ const CostCalculator = () => {
           {result && (
             <div className="cc-result-banner" style={{ marginTop: 16 }}>
               <p className="title">
-                <CheckCircleOutlined /> Calculation Saved
+                <CircleCheck size={16} /> Calculation Saved
               </p>
               <div className="cc-result-grid">
                 {resultRows.map((r) => (
@@ -1121,7 +1135,7 @@ const CostCalculator = () => {
               {bidLoading ? (
                 <span className="cc-spinner" />
               ) : (
-                <DollarOutlined />
+                <DollarSign size={16} />
               )}
               {bidLoading ? "Generating Bid…" : "Generate Bid"}
             </button>

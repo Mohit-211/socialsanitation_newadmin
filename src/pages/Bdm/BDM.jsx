@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Input } from "antd";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import { Button, Table, Space, message, Modal, Input } from "antd";
 import { useNavigate } from "react-router";
 import { GetAllBDMS, DeleteBDM, GetUserByBDMId } from "../../services/Api/bdm";
 import {
@@ -16,6 +11,8 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 import "./BDM.scss";
 
 const BDM = () => {
@@ -31,14 +28,6 @@ const BDM = () => {
     pagination: { current: 1, pageSize: 10 },
   });
 
-  const actionButtonBase = {
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: 600,
-    textTransform: "none",
-    boxShadow: "none",
-  };
-
   const columns = [
     {
       title: "S.No.",
@@ -50,12 +39,14 @@ const BDM = () => {
       title: "Name",
       dataIndex: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (name) => <span style={{ fontWeight: 600 }}>{name}</span>,
+      render: (name) => (
+        <span style={{ fontWeight: "var(--font-weight-semibold)" }}>{name}</span>
+      ),
     },
     {
       title: "Email Address",
       dataIndex: "email",
-      render: (email) => <span style={{ color: "#6b7280" }}>{email}</span>,
+      render: (email) => <span className="text-muted">{email}</span>,
     },
     {
       title: "Action",
@@ -64,15 +55,9 @@ const BDM = () => {
       render: (_, record) => (
         <Space size="small" wrap>
           <Button
-            variant="outlined"
             size="small"
-            startIcon={<Eye size={14} />}
-            sx={{
-              ...actionButtonBase,
-              color: "#1677ff",
-              borderColor: "#1677ff",
-              "&:hover": { borderColor: "#1677ff", background: "#f0f7ff" },
-            }}
+            className="bdm-action bdm-action--view"
+            icon={<Eye size={14} />}
             onClick={() => {
               getUserData(record.id);
               setIsModalVisible(true);
@@ -81,42 +66,27 @@ const BDM = () => {
             View
           </Button>
           <Button
-            variant="outlined"
             size="small"
-            startIcon={<UserPlus size={14} />}
-            sx={{
-              ...actionButtonBase,
-              color: "#16a34a",
-              borderColor: "#16a34a",
-              "&:hover": { borderColor: "#16a34a", background: "#f0fdf4" },
-            }}
+            className="bdm-action bdm-action--assign"
+            icon={<UserPlus size={14} />}
             onClick={(event) => navigateToViewUser(event, record.id)}
           >
             Assign
           </Button>
           <Button
-            variant="outlined"
             size="small"
-            startIcon={<Pencil size={14} />}
-            sx={{
-              ...actionButtonBase,
-              color: "#f59e0b",
-              borderColor: "#f59e0b",
-              "&:hover": { borderColor: "#f59e0b", background: "#fffbeb" },
-            }}
+            className="bdm-action bdm-action--edit"
+            icon={<Pencil size={14} />}
             onClick={() => navigate(`/edit-bdm/${record.id}`)}
           >
             Edit
           </Button>
           <Button
-            variant="contained"
+            type="primary"
+            danger
             size="small"
-            startIcon={<Trash2 size={14} />}
-            sx={{
-              ...actionButtonBase,
-              background: "#ef4444",
-              "&:hover": { background: "#dc2626" },
-            }}
+            className="bdm-action"
+            icon={<Trash2 size={14} />}
             onClick={() => handleDelete([record.id])}
           >
             Delete
@@ -198,59 +168,29 @@ const BDM = () => {
   };
 
   return (
-    <Box className="bdm-page">
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BDM MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              View, delete, and add Business Development Managers
-            </Typography>
-          </Box>
-
-          <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{ ml: "auto", alignItems: "center", flexWrap: "wrap" }}
-          >
+    <div className="bdm-page">
+      <PageHeader
+        className="bdm-page__header"
+        title="BDM MANAGEMENT"
+        subtitle="View, delete, and add Business Development Managers"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              className="bdm-page__search"
+              prefix={<Search size={16} className="text-subtle" />}
               placeholder="Search name or email..."
-              style={{ width: 260, height: 44 }}
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)}
             />
 
             {selectedRowKeys.length > 0 && (
               <Button
-                variant="contained"
-                startIcon={<Trash2 size={16} />}
-                sx={{
-                  borderRadius: "8px",
-                  height: 44,
-                  textTransform: "none",
-                  fontWeight: 600,
-                  background: "#ef4444",
-                  "&:hover": { background: "#dc2626" },
-                }}
+                type="primary"
+                danger
+                size="large"
+                icon={<Trash2 size={16} />}
                 onClick={() => handleDelete(selectedRowKeys)}
               >
                 Delete Selected ({selectedRowKeys.length})
@@ -258,22 +198,16 @@ const BDM = () => {
             )}
 
             <Button
-              variant="contained"
-              startIcon={<Plus size={18} />}
-              sx={{
-                borderRadius: "8px",
-                height: 44,
-                whiteSpace: "nowrap",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={() => navigate("/add-bdm")}
             >
               Add New BDM
             </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <div style={{ overflowX: "auto" }}>
         <Table
@@ -314,9 +248,9 @@ const BDM = () => {
               key: "redirect",
               align: "center",
               render: (text, record) => (
-                <ArrowUpRight
-                  size={20}
-                  style={{ cursor: "pointer", color: "#2196F3" }}
+                <IconAction
+                  icon={ArrowUpRight}
+                  title="View User"
                   onClick={() => navigate(`/viewUser/${record.user_id}`)}
                 />
               ),
@@ -328,7 +262,7 @@ const BDM = () => {
           scroll={{ x: "max-content" }}
         />
       </Modal>
-    </Box>
+    </div>
   );
 };
 

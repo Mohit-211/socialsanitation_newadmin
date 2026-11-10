@@ -4,7 +4,6 @@ import {
 	Calendar,
 	Badge,
 	Modal,
-	List,
 	Typography,
 	Spin,
 	Row,
@@ -13,8 +12,11 @@ import {
 	Tag,
 	Space,
 } from "antd";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router";
 import { GetMonthlyBookingCalendar } from "../../services/Api/BookingApi";
+import PageHeader from "../../components/PageHeader";
+import "./Bookings.css";
 
 const { Text } = Typography;
 
@@ -72,14 +74,14 @@ const MonthlyBooking = () => {
 				{bookings.slice(0, 3).map((booking) => (
 					<div
 						key={booking.id}
-						style={{ cursor: "pointer" }}
+						className="booking-calendar__entry"
 						onClick={() => {
 							setSelectedBookings(bookings);
 							setModalVisible(true);
 						}}
 					>
 						<Badge
-							color="blue"
+							color="var(--color-primary-border)"
 							text={
 								booking.booking_name
 									? booking.booking_name
@@ -91,7 +93,7 @@ const MonthlyBooking = () => {
 				{bookings.length > 3 && (
 					<Text
 						type="secondary"
-						style={{ fontSize: 12, cursor: "pointer" }}
+						className="booking-calendar__more"
 						onClick={() => {
 							setSelectedBookings(bookings);
 							setModalVisible(true);
@@ -105,27 +107,31 @@ const MonthlyBooking = () => {
 	};
 
 	return (
-		<Spin spinning={loading} tip="Loading bookings...">
-			<Row justify="space-between" style={{ marginBottom: 16 }}>
-				<Col>
-					<h3 style={{ marginBottom: 0 }}>Calendar View</h3>
-					<p>View bookings by day, just like Google Calendar.</p>
-				</Col>
-				<Button
-					icon={<i className="pi pi-arrow-left" />}
-					onClick={() => navigate("/bookings")}
-					style={{ borderRadius: "5px", height: "47px" }}
-				>
-					Return to Bookings
-				</Button>
-			</Row>
-			<Calendar
-				value={currentDate}
-				onPanelChange={onPanelChange}
-				onSelect={onSelect}
-				dateCellRender={dateCellRender}
-				fullscreen
+		<Spin spinning={loading} description="Loading bookings...">
+			<PageHeader
+				title="Calendar View"
+				subtitle="View bookings by day, just like Google Calendar."
+				actions={
+					<Button
+						size="large"
+						icon={<ArrowLeft size={16} />}
+						onClick={() => navigate("/bookings")}
+					>
+						Return to Bookings
+					</Button>
+				}
 			/>
+			<div className="surface surface--padded">
+				<Calendar
+					value={currentDate}
+					onPanelChange={onPanelChange}
+					onSelect={onSelect}
+					cellRender={(current, info) =>
+						info.type === "date" ? dateCellRender(current) : null
+					}
+					fullscreen
+				/>
+			</div>
 
 			<Modal
 				title="Bookings on July 22"
@@ -133,50 +139,37 @@ const MonthlyBooking = () => {
 				onCancel={() => setModalVisible(false)}
 				footer={null}
 				width={700}
-				bodyStyle={{ padding: "24px", background: "#fafafa" }}
+				styles={{
+					body: {
+						padding: "var(--space-6)",
+						background: "var(--color-bg-subtle)",
+					},
+				}}
 			>
-				<List
-					itemLayout="vertical"
-					dataSource={selectedBookings}
-					renderItem={(item) => {
+				<ul className="booking-calendar__list">
+					{selectedBookings.map((item) => {
 						const clientName =
 							item.client_name ||
 							item.booking_user?.user_profile?.name ||
 							"Unnamed";
 						const isClient = !!item.user_id;
-						const color = isClient ? "green" : "blue";
+						const color = isClient ? "success" : "processing";
 						const label = isClient ? "Client Booking" : "Non-client Booking";
 
 						return (
-							<List.Item
-								style={{
-									background: "#fff",
-									border: "1px solid #f0f0f0",
-									borderRadius: "12px",
-									boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-									padding: "16px 20px",
-									marginBottom: "16px",
-									transition: "all 0.3s ease-in-out",
-									cursor: "pointer",
-								}}
+							<li
+								key={item.id}
+								className="booking-calendar__item"
 								onClick={() => navigate(`/viewBooking/${item.id}`)}
 							>
 								<Row justify="space-between" align="middle" gutter={[16, 16]}>
 									<Col xs={24} sm={18}>
-										<Space direction="vertical" size={4}>
+										<Space orientation="vertical" size={4}>
 											<Space size="small">
-												<Text strong style={{ fontSize: 16 }}>
+												<Text strong className="booking-calendar__client">
 													{clientName}
 												</Text>
-												<Tag
-													color={color}
-													style={{
-														borderRadius: "8px",
-														fontSize: 12,
-														padding: "2px 8px",
-														fontWeight: 500,
-													}}
-												>
+												<Tag color={color} className="booking-calendar__tag">
 													{label}
 												</Tag>
 											</Space>
@@ -203,19 +196,15 @@ const MonthlyBooking = () => {
 												e.stopPropagation();
 												navigate(`/viewBooking/${item.id}`);
 											}}
-											style={{
-												borderRadius: "6px",
-												fontWeight: 500,
-											}}
 										>
 											View
 										</Button>
 									</Col>
 								</Row>
-							</List.Item>
+							</li>
 						);
-					}}
-				/>
+					})}
+				</ul>
 			</Modal>
 		</Spin>
 	);

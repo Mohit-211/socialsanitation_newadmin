@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalculatorOutlined, HistoryOutlined } from "@ant-design/icons";
+import { Calculator as CalculatorIcon, History } from "lucide-react";
 import CostCalculator from "./CostCalculator";
 import CalculationHistory from "./CalculationHistory";
 import "./Calculator.scss";
@@ -15,14 +15,14 @@ const Calculator = () => {
           className={`calc-tab-btn ${activeTab === "calculator" ? "active" : ""}`}
           onClick={() => setActiveTab("calculator")}
         >
-          <CalculatorOutlined />
+          <CalculatorIcon size={16} />
           <span>Cost Calculator</span>
         </button>
         <button
           className={`calc-tab-btn ${activeTab === "history" ? "active" : ""}`}
           onClick={() => setActiveTab("history")}
         >
-          <HistoryOutlined />
+          <History size={16} />
           <span>History</span>
         </button>
         <div className={`calc-tab-indicator ${activeTab === "history" ? "right" : "left"}`} />

@@ -1,10 +1,28 @@
-import './index.css'
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
+import "@fontsource-variable/roboto";
+import "./index.css";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { App as AntApp, ConfigProvider } from "antd";
+import { buildAntdTheme } from "./theme/antdTheme";
+import App from "./App.jsx";
 
-createRoot(document.getElementById('root')).render(
+// index.css is loaded above, so its design tokens can be read here.
+const theme = buildAntdTheme();
+
+// Static helpers such as message.success() and Modal.confirm() render outside
+// the React tree; this gives them the same theme as everything else.
+ConfigProvider.config({
+  holderRender: (children) => (
+    <ConfigProvider theme={theme}>{children}</ConfigProvider>
+  ),
+});
+
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    <ConfigProvider theme={theme}>
+      <AntApp>
+        <App />
+      </AntApp>
+    </ConfigProvider>
   </StrictMode>,
-)
+);

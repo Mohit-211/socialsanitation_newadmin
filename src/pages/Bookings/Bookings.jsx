@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 import {
   Tag,
   Table,
   Space,
-  Tooltip,
   message,
   Dropdown,
   Spin,
@@ -19,6 +12,7 @@ import {
   Modal,
   Tabs,
   Input,
+  Button,
 } from "antd";
 import { BASE_URL_IMAGE } from "../../services/Host";
 import { GetUserBooking, DeleteBooking, GetBookingById } from "../../services/Api/BookingApi";
@@ -31,25 +25,12 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 import "./Bookings.css";
 import dayjs from "@/lib/dayjs";
-import utc from "dayjs/plugin/utc";
-
-dayjs.extend(utc);
 
 const PAGE_SIZE = 100;
-
-const actionIconBtn = (color) => ({
-  width: 32,
-  height: 32,
-  border: "1px solid",
-  borderColor: color,
-  color,
-  "&:hover": {
-    backgroundColor: `${color}14`,
-    borderColor: color,
-  },
-});
 
 const Bookings = () => {
   const navigate = useNavigate();
@@ -217,7 +198,7 @@ const Bookings = () => {
       width: 110,
       render: (_, record) => {
         const isClient = !!record.user_id;
-        const color = isClient ? "green" : "blue";
+        const color = isClient ? "success" : "processing";
         const label = isClient ? "Client Booking" : "Non Client Booking";
         return <Tag color={color}>{label}</Tag>;
       },
@@ -253,11 +234,7 @@ const Bookings = () => {
       width: 170,
       render: (employees) => {
         if (!employees || employees.length === 0) {
-          return (
-            <span style={{ color: "#ef4444", fontWeight: 500 }}>
-              Not Assigned
-            </span>
-          );
+          return <span className="bookings-list__unassigned">Not Assigned</span>;
         }
         const employeeNames = employees.map(
           (employee) => employee.employee_profile?.user_profile?.name,
@@ -281,26 +258,26 @@ const Bookings = () => {
         let displayStatus = status;
         switch (status) {
           case "PENDING":
-            color = "gold";
+            color = "warning";
             break;
           case "SUCCESS":
-            color = "green";
+            color = "success";
             displayStatus = "COMPLETED";
             break;
           case "ACCEPTED":
-            color = "blue";
+            color = "processing";
             break;
           case "REJECTED":
-            color = "red";
+            color = "error";
             break;
           case "CANCELLED":
-            color = "red";
+            color = "error";
             break;
           case "DELETED":
-            color = "volcano";
+            color = "error";
             break;
           case "ONGOING":
-            color = "purple";
+            color = "processing";
             break;
           default:
             color = "default";
@@ -319,36 +296,24 @@ const Bookings = () => {
       render: (text, record) => {
         return (
           <Space size={6}>
-            <Tooltip title="View Image Gallery">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#8F00FF")}
-                onClick={() => handleOpenGallery(record.id)}
-              >
-                <Images size={15} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Images}
+              title="View Image Gallery"
+              onClick={() => handleOpenGallery(record.id)}
+            />
 
-            <Tooltip title="View Details">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#FF9800")}
-                onClick={() => navigateToViewBooking(record.id)}
-              >
-                <Eye size={15} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Eye}
+              title="View Details"
+              onClick={() => navigateToViewBooking(record.id)}
+            />
 
             {(activeTab === "PENDING" || activeTab === "UPCOMING") && (
-              <Tooltip title="Update Details">
-                <IconButton
-                  size="small"
-                  sx={actionIconBtn("#2196F3")}
-                  onClick={() => navigateToEditBooking(record.id)}
-                >
-                  <Pencil size={15} />
-                </IconButton>
-              </Tooltip>
+              <IconAction
+                icon={Pencil}
+                title="Update Details"
+                onClick={() => navigateToEditBooking(record.id)}
+              />
             )}
 
             {record.type === "Recurring Booking" ? (
@@ -375,22 +340,15 @@ const Bookings = () => {
                 trigger={["click"]}
                 placement="bottomRight"
               >
-                <Tooltip title="Delete Options">
-                  <IconButton size="small" sx={actionIconBtn("#EF4444")}>
-                    <Trash2 size={15} />
-                  </IconButton>
-                </Tooltip>
+                <IconAction icon={Trash2} title="Delete Options" danger />
               </Dropdown>
             ) : (
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  sx={actionIconBtn("#EF4444")}
-                  onClick={() => handleDelete(record.id, "this")}
-                >
-                  <Trash2 size={15} />
-                </IconButton>
-              </Tooltip>
+              <IconAction
+                icon={Trash2}
+                title="Delete"
+                danger
+                onClick={() => handleDelete(record.id, "this")}
+              />
             )}
           </Space>
         );
@@ -446,98 +404,44 @@ const Bookings = () => {
   };
 
   return (
-    <Box>
-      {/* Header */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BOOKING MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              View and manage user bookings
-            </Typography>
-          </Box>
-
-          <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{ ml: "auto", alignItems: "center", flexWrap: "wrap" }}
-          >
+    <div>
+      <PageHeader
+        title="BOOKING MANAGEMENT"
+        subtitle="View and manage user bookings"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              className="bookings-list__search"
+              prefix={<Search size={16} color="var(--color-text-subtle)" />}
               placeholder="Search bookings..."
-              style={{ width: 240, height: 44 }}
               value={searchText}
               onChange={(e) => onSearch(e.target.value)}
             />
 
             <Button
-              variant="contained"
-              disableElevation
-              startIcon={<CalendarDays size={17} />}
+              size="large"
+              icon={<CalendarDays size={16} />}
               onClick={navigateToMonthlyCalendar}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                backgroundColor: "#6b7280",
-                "&:hover": { backgroundColor: "#4b5563" },
-              }}
             >
               Monthly Calendar
             </Button>
 
             <Button
-              variant="contained"
-              disableElevation
-              startIcon={<Plus size={18} />}
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={navigateToCreateAppointment}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               Create Appointment
             </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       {/* Main Tabs */}
-      <Paper
-        variant="outlined"
-        sx={{
-          px: 1,
-          pt: 0.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
+      <div className="surface bookings-tabs">
         <Tabs
           activeKey={activeTab}
           onChange={(key) => {
@@ -549,21 +453,12 @@ const Bookings = () => {
             label: tab.label,
           }))}
         />
-      </Paper>
+      </div>
 
       {/* Nested Tabs */}
       {nestedTabsContent[activeTab] &&
         nestedTabsContent[activeTab].length > 0 && (
-          <Paper
-            variant="outlined"
-            sx={{
-              px: 1,
-              pt: 0.5,
-              mb: 2.5,
-              borderRadius: "10px",
-              borderColor: "#eef0f2",
-            }}
-          >
+          <div className="surface bookings-tabs">
             <Tabs
               activeKey={nestedTab}
               onChange={(key) => setNestedTab(key)}
@@ -573,12 +468,12 @@ const Bookings = () => {
                 label: tab.label,
               }))}
             />
-          </Paper>
+          </div>
         )}
 
       {/* Table with loading overlay so tab switches don't feel glitchy */}
-      <Spin spinning={loading} tip="Loading bookings...">
-        <div className="table-scroll-wrapper">
+      <Spin spinning={loading} description="Loading bookings...">
+        <div className="bookings-list__table">
           <Table
             columns={columns}
             rowKey={(record) => record.id}
@@ -600,21 +495,16 @@ const Bookings = () => {
         width={800}
       >
         {galleryLoading ? (
-          <div style={{ textAlign: "center", padding: "50px 0" }}>
+          <div className="bookings-gallery__loading">
             <Spin size="large" />
           </div>
         ) : (
           <div>
-            <h4 style={{ marginTop: 10 }}>Before Service</h4>
+            <h4 className="section-title bookings-gallery__heading">
+              Before Service
+            </h4>
             {beforeServiceImages?.length > 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                  marginTop: "10px",
-                }}
-              >
+              <div className="bookings-gallery__grid">
                 <Image.PreviewGroup>
                   {beforeServiceImages.map((img) => (
                     <Image
@@ -622,30 +512,21 @@ const Bookings = () => {
                       src={`${BASE_URL_IMAGE}${img.file_name}`}
                       alt="Before Service"
                       width={120}
-                      style={{
-                        borderRadius: "10px",
-                        objectFit: "cover",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      }}
+                      className="bookings-gallery__image"
                       crossOrigin="anonymous"
                     />
                   ))}
                 </Image.PreviewGroup>
               </div>
             ) : (
-              <p style={{ color: "#9ca3af" }}>No images uploaded</p>
+              <p className="text-muted">No images uploaded</p>
             )}
 
-            <h4 style={{ marginTop: 20 }}>After Service</h4>
+            <h4 className="section-title bookings-gallery__heading bookings-gallery__heading--spaced">
+              After Service
+            </h4>
             {afterServiceImages?.length > 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                  marginTop: "10px",
-                }}
-              >
+              <div className="bookings-gallery__grid">
                 <Image.PreviewGroup>
                   {afterServiceImages.map((img) => (
                     <Image
@@ -653,23 +534,19 @@ const Bookings = () => {
                       src={`${BASE_URL_IMAGE}${img.file_name}`}
                       alt="After Service"
                       width={120}
-                      style={{
-                        borderRadius: "10px",
-                        objectFit: "cover",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                      }}
+                      className="bookings-gallery__image"
                       crossOrigin="anonymous"
                     />
                   ))}
                 </Image.PreviewGroup>
               </div>
             ) : (
-              <p style={{ color: "#9ca3af" }}>No images uploaded</p>
+              <p className="text-muted">No images uploaded</p>
             )}
           </div>
         )}
       </Modal>
-    </Box>
+    </div>
   );
 };
 

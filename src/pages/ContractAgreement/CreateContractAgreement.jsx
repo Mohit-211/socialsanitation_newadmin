@@ -12,12 +12,9 @@ import {
   DatePicker,
   Select,
 } from "antd";
-import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
+import { useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
 import { GenerateContractAgreement } from "../../services/Api/Api";
 import { GetAllUserName } from "../../services/Api/InvoiceApi";
 import SignatureField from "../Customer/SignatureField";
@@ -104,64 +101,19 @@ const CreateContractAgreement = () => {
 
   return (
     <>
-      {/* HEADER */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              CONTRACT AGREEMENT MANAGEMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Generate a new contract agreement
-            </Typography>
-          </Box>
-
-          <MuiButton
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+      <PageHeader
+        title="CONTRACT AGREEMENT MANAGEMENT"
+        subtitle="Generate a new contract agreement"
+        actions={
+          <Button
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={() => navigate("/contract-agreement")}
-            sx={{
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              flexShrink: 0,
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Contracts
-          </MuiButton>
-        </Box>
-      </Paper>
+          </Button>
+        }
+      />
 
       <Form form={form} layout="vertical" onFinish={onFinish}>
         {/* CLIENT */}

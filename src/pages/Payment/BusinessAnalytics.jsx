@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import { Select as AntSelect, message } from "antd";
+import { Button, Select, message } from "antd";
 import { RefreshCw } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { GetInvoiceAnalytics } from "../../services/Api/Api";
+import PageHeader from "../../components/PageHeader";
+import "./BusinessAnalytics.scss";
 
 /* tiny helpers */
 const fmt = (n) =>
@@ -27,151 +24,57 @@ const pct = (part, total) => {
   return Math.round((p / t) * 100);
 };
 
+// Payment status pill: label + color tone (see .invoice-analytics__badge--*)
 const STATUS_BADGE = {
-  PAID: { label: "Paid", bg: "#E1F5EE", color: "#0F6E56" },
-  CHECK_PAID: {
-    label: "Check Paid",
-    bg: "#EEF2FF",
-    color: "#4338CA",
-  },
-  NOT_PAID: { label: "Not paid", bg: "#FAECE7", color: "#993C1D" },
+  PAID: { label: "Paid", tone: "success" },
+  CHECK_PAID: { label: "Check Paid", tone: "info" },
+  NOT_PAID: { label: "Not paid", tone: "warning" },
 };
 
-/* design tokens (kept local so the rest of the file's inline
-      styles stay easy to scan/diff against the original) */
-const cardStyle = {
-  background: "#fff",
-  border: "1px solid #eef0f2",
-  borderRadius: 12,
-  padding: "18px 20px",
-  marginBottom: 16,
-  boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
-};
-
-const sectionTitleStyle = {
-  fontSize: 14,
-  fontWeight: 700,
-  color: "#111827",
-  margin: "0 0 14px",
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "8px 10px",
-  fontWeight: 600,
-  fontSize: 11.5,
-  color: "#6b7280",
-  letterSpacing: "0.02em",
-  textTransform: "uppercase",
-  borderBottom: "1px solid #eef0f2",
-};
-
-const tdStyle = {
-  padding: "11px 10px",
-  borderBottom: "1px solid #f5f5f5",
-  fontSize: 13,
-  color: "#374151",
+// Text color of a metric value
+const ACCENT_COLORS = {
+  success: "var(--color-success-strong)",
+  error: "var(--color-error-strong)",
+  warning: "var(--color-warning-strong)",
+  default: "var(--color-text)",
 };
 
 /* sub-components */
-const MetricCard = ({ label, value, sub, accent }) => {
-  const accentColors = {
-    green: "#0F6E56",
-    red: "#A32D2D",
-    amber: "#854F0B",
-    default: "#111827",
-  };
-  return (
-    <div
-      style={{
-        background: "#f9fafb",
-        border: "1px solid #eef0f2",
-        borderRadius: 10,
-        padding: "16px 18px",
-      }}
+const MetricCard = ({ label, value, sub, accent }) => (
+  <div className="invoice-analytics__metric">
+    <p className="invoice-analytics__metric-label">{label}</p>
+    <p
+      className="invoice-analytics__metric-value"
+      style={{ color: ACCENT_COLORS[accent] || ACCENT_COLORS.default }}
     >
-      <p
-        style={{
-          fontSize: 11.5,
-          fontWeight: 700,
-          color: "#6b7280",
-          letterSpacing: "0.03em",
-          textTransform: "uppercase",
-          margin: "0 0 8px",
-        }}
-      >
-        {label}
-      </p>
-      <p
-        style={{
-          fontSize: 23,
-          fontWeight: 700,
-          margin: 0,
-          lineHeight: 1,
-          color: accentColors[accent] || accentColors.default,
-        }}
-      >
-        {value}
-      </p>
-      {sub && (
-        <p style={{ fontSize: 11.5, color: "#9ca3af", margin: "6px 0 0" }}>
-          {sub}
-        </p>
-      )}
-    </div>
-  );
-};
+      {value}
+    </p>
+    {sub && <p className="invoice-analytics__metric-sub">{sub}</p>}
+  </div>
+);
 
 const Badge = ({ status }) => {
-  const cfg = STATUS_BADGE[status] || {
-    label: status,
-    bg: "#f0f0f0",
-    color: "#555",
-  };
+  const cfg = STATUS_BADGE[status] || { label: status, tone: "neutral" };
   return (
     <span
-      style={{
-        background: cfg.bg,
-        color: cfg.color,
-        padding: "3px 10px",
-        borderRadius: 20,
-        fontSize: 11,
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-      }}
+      className={`invoice-analytics__badge invoice-analytics__badge--${cfg.tone}`}
     >
       {cfg.label}
     </span>
   );
 };
 
-const MiniBar = ({ value, max, color = "#185FA5" }) => {
+const MiniBar = ({ value, max, color = "var(--color-primary-border)" }) => {
   const w = max ? Math.round((value / max) * 100) : 0;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <div
-        style={{
-          flex: 1,
-          height: 6,
-          borderRadius: 3,
-          background: "#e8e8e8",
-        }}
-      >
+    <div className="invoice-analytics__bar-row">
+      <div className="invoice-analytics__track">
         <div
-          style={{
-            width: `${w}%`,
-            height: 6,
-            borderRadius: 3,
-            background: color,
-          }}
+          className="invoice-analytics__fill"
+          style={{ width: `${w}%`, background: color }}
         />
       </div>
-      <span style={{ fontSize: 11, color: "#9ca3af", minWidth: 28 }}>
-        {w}%
-      </span>
+      <span className="invoice-analytics__bar-pct">{w}%</span>
     </div>
   );
 };
@@ -222,90 +125,43 @@ const InvoiceAnalytics = () => {
   const yearOptions = [2025, 2026, 2027, 2028];
 
   return (
-    <Box>
+    <div className="invoice-analytics">
       {/* HEADER */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              INVOICE ANALYTICS
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Business overview — invoices, quotes &amp; revenue
-            </Typography>
-          </Box>
-
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-          >
-            <AntSelect
+      <PageHeader
+        title="INVOICE ANALYTICS"
+        subtitle="Business overview — invoices, quotes & revenue"
+        actions={
+          <>
+            <Select
+              size="large"
+              className="invoice-analytics__month"
               value={selectedMonth}
               onChange={(v) => setSelectedMonth(v)}
-              style={{ width: 130, height: 44 }}
               options={monthOptions}
             />
 
-            <AntSelect
+            <Select
+              size="large"
+              className="invoice-analytics__year"
               value={selectedYear}
               onChange={(v) => setSelectedYear(v)}
-              style={{ width: 100, height: 44 }}
               options={yearOptions.map((y) => ({ value: y, label: y }))}
             />
 
             <Button
-              variant="outlined"
-              startIcon={<RefreshCw size={16} />}
+              size="large"
+              icon={<RefreshCw size={16} />}
               onClick={() => fetchData(selectedMonth, selectedYear)}
               disabled={loading}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
             >
               {loading ? "Loading…" : "Refresh"}
             </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       {/* ── overview metrics ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))",
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
+      <div className="invoice-analytics__metrics">
         <MetricCard
           label="Total Revenue"
           value={`$${fmt(ov.total_revenue)}`}
@@ -328,14 +184,14 @@ const InvoiceAnalytics = () => {
           label="Paid Revenue"
           value={`$${fmt(ov.paid_revenue)}`}
           sub={`${ov.paid_count || 0} paid`}
-          accent="green"
+          accent="success"
         />
 
         <MetricCard
           label="Not Paid Revenue"
           value={`$${fmt(ov.unpaid_revenue)}`}
           sub={`${ov.unpaid_count || 0} unpaid`}
-          accent="red"
+          accent="error"
         />
 
         <MetricCard
@@ -343,163 +199,92 @@ const InvoiceAnalytics = () => {
           value={`${pct(ov.paid_revenue, ov.total_revenue)}%`}
           sub="paid vs total"
           accent={
-            pct(ov.paid_revenue, ov.total_revenue) >= 50 ? "green" : "amber"
+            pct(ov.paid_revenue, ov.total_revenue) >= 50 ? "success" : "warning"
           }
         />
       </div>
 
       {/* ── payment breakdown + status ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
+      <div className="invoice-analytics__grid">
         {/* payment breakdown */}
-        <div style={cardStyle}>
-          <p style={sectionTitleStyle}>💳 Payment breakdown</p>
-          <div
-            style={{
-              display: "flex",
-              borderRadius: 6,
-              overflow: "hidden",
-              height: 28,
-              marginBottom: 10,
-            }}
-          >
+        <div className="surface invoice-analytics__card">
+          <h2 className="section-title invoice-analytics__section-title">
+            💳 Payment breakdown
+          </h2>
+          <div className="invoice-analytics__pay-bar">
             {totalPay > 0 ? (
               <>
                 {payBreak.online > 0 && (
                   <div
-                    style={{
-                      width: `${pct(payBreak.online, totalPay)}%`,
-                      background: "#185FA5",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#fff",
-                    }}
+                    className="invoice-analytics__pay-segment invoice-analytics__pay-segment--online"
+                    style={{ width: `${pct(payBreak.online, totalPay)}%` }}
                   >
                     Online
                   </div>
                 )}
                 {payBreak.check > 0 && (
                   <div
-                    style={{
-                      width: `${pct(payBreak.check, totalPay)}%`,
-                      background: "#0F6E56",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#fff",
-                    }}
+                    className="invoice-analytics__pay-segment invoice-analytics__pay-segment--check"
+                    style={{ width: `${pct(payBreak.check, totalPay)}%` }}
                   >
                     Check
                   </div>
                 )}
               </>
             ) : (
-              <div
-                style={{
-                  width: "100%",
-                  background: "#f3f4f6",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                  color: "#9ca3af",
-                }}
-              >
+              <div className="invoice-analytics__pay-segment invoice-analytics__pay-segment--empty">
                 No payments
               </div>
             )}
           </div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 12.5,
-                color: "#6b7280",
-              }}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: "#185FA5",
-                  display: "inline-block",
-                }}
-              />
+          <div className="invoice-analytics__legend">
+            <span className="invoice-analytics__legend-item">
+              <span className="invoice-analytics__legend-dot invoice-analytics__legend-dot--online" />
               Online — ${fmt(payBreak.online)}
             </span>
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 12.5,
-                color: "#6b7280",
-              }}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: "#0F6E56",
-                  display: "inline-block",
-                }}
-              />
+            <span className="invoice-analytics__legend-item">
+              <span className="invoice-analytics__legend-dot invoice-analytics__legend-dot--check" />
               Check — ${fmt(payBreak.check)}
             </span>
           </div>
         </div>
 
         {/* invoice status counts */}
-        <div style={cardStyle}>
-          <p style={sectionTitleStyle}>📋 Payment status</p>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-around",
-              padding: "4px 0 14px",
-            }}
-          >
+        <div className="surface invoice-analytics__card">
+          <h2 className="section-title invoice-analytics__section-title">
+            📋 Payment status
+          </h2>
+          <div className="invoice-analytics__counts">
             {[
-              { label: "Paid", val: ov.paid_count, color: "#0F6E56" },
-              { label: "Not Paid", val: ov.unpaid_count, color: "#A32D2D" },
+              {
+                label: "Paid",
+                val: ov.paid_count,
+                color: "var(--color-success-strong)",
+              },
+              {
+                label: "Not Paid",
+                val: ov.unpaid_count,
+                color: "var(--color-error)",
+              },
               {
                 label: "Invoice Records",
                 val: ov.total_invoices,
-                color: "#185FA5",
+                color: "var(--color-primary-strong)",
               },
               {
                 label: "Quote Records",
                 val: ov.total_quotes,
-                color: "#7C3AED",
+                color: "var(--color-primary-strong)",
               },
             ].map((item) => (
-              <div key={item.label} style={{ textAlign: "center" }}>
+              <div key={item.label} className="invoice-analytics__count">
                 <div
-                  style={{
-                    fontSize: 26,
-                    fontWeight: 700,
-                    color: item.color,
-                    lineHeight: 1,
-                  }}
+                  className="invoice-analytics__count-value"
+                  style={{ color: item.color }}
                 >
                   {item.val || 0}
                 </div>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
+                <div className="invoice-analytics__count-label">
                   {item.label}
                 </div>
               </div>
@@ -507,45 +292,33 @@ const InvoiceAnalytics = () => {
           </div>
           {/* simple progress bars */}
           {[
-            { label: "Paid", val: ov.paid_count, color: "#0F6E56" },
-            { label: "Unpaid", val: ov.unpaid_count, color: "#A32D2D" },
+            {
+              label: "Paid",
+              val: ov.paid_count,
+              color: "var(--color-success-strong)",
+            },
+            { label: "Unpaid", val: ov.unpaid_count, color: "var(--color-error)" },
           ].map((item) => (
-            <div
-              key={item.label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 8,
-              }}
-            >
-              <span style={{ fontSize: 12, color: "#6b7280", minWidth: 50 }}>
+            <div key={item.label} className="invoice-analytics__progress">
+              <span className="invoice-analytics__progress-label">
                 {item.label}
               </span>
-              <div
-                style={{
-                  flex: 1,
-                  height: 6,
-                  borderRadius: 3,
-                  background: "#e8e8e8",
-                }}
-              >
+              <div className="invoice-analytics__track">
                 <div
+                  className="invoice-analytics__fill"
                   style={{
                     width: `${pct(
                       item.val,
-                      (ov.total_invoices || 0) + (ov.total_quotes || 0)
+                      (ov.total_invoices || 0) + (ov.total_quotes || 0),
                     )}%`,
-                    height: 6,
-                    borderRadius: 3,
                     background: item.color,
                   }}
                 />
               </div>
-              <span style={{ fontSize: 11, color: "#9ca3af", minWidth: 28 }}>
+              <span className="invoice-analytics__bar-pct">
                 {pct(
                   item.val,
-                  (ov.total_invoices || 0) + (ov.total_quotes || 0)
+                  (ov.total_invoices || 0) + (ov.total_quotes || 0),
                 )}
                 %
               </span>
@@ -555,53 +328,33 @@ const InvoiceAnalytics = () => {
       </div>
 
       {/* ── top clients + daily breakdown ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
+      <div className="invoice-analytics__grid">
         {/* top clients */}
-        <div style={cardStyle}>
-          <p style={sectionTitleStyle}>👥 Top clients</p>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="surface invoice-analytics__card">
+          <h2 className="section-title invoice-analytics__section-title">
+            👥 Top clients
+          </h2>
+          <table className="invoice-analytics__table">
             <thead>
               <tr>
-                <th style={thStyle}>Client</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Spent</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Share</th>
+                <th>Client</th>
+                <th className="is-right">Spent</th>
+                <th className="is-right">Share</th>
               </tr>
             </thead>
             <tbody>
               {topClients.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    style={{
-                      ...tdStyle,
-                      textAlign: "center",
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <td colSpan={3} className="is-center is-subtle">
                     No data
                   </td>
                 </tr>
               )}
               {topClients.map((c) => (
                 <tr key={c.user_id}>
-                  <td style={tdStyle}>{c.name}</td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ${fmt(c.total_spent)}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "right", minWidth: 90 }}>
+                  <td>{c.name}</td>
+                  <td className="is-right is-strong">${fmt(c.total_spent)}</td>
+                  <td className="is-right invoice-analytics__share">
                     <MiniBar value={c.total_spent} max={maxClient} />
                   </td>
                 </tr>
@@ -611,137 +364,52 @@ const InvoiceAnalytics = () => {
         </div>
 
         {/* daily breakdown */}
-        <div style={{ ...cardStyle, overflowX: "auto" }}>
-          <p style={sectionTitleStyle}>📈 Daily activity</p>
+        <div className="surface invoice-analytics__card invoice-analytics__card--scroll">
+          <h2 className="section-title invoice-analytics__section-title">
+            📈 Daily activity
+          </h2>
           {/* header row */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "4px 0 8px",
-              borderBottom: "1px solid #eef0f2",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                color: "#9ca3af",
-                minWidth: 80,
-                fontWeight: 600,
-                textTransform: "uppercase",
-              }}
-            >
-              Date
-            </span>
-            <div style={{ flex: 1 }} />
-            <span
-              style={{
-                fontSize: 11,
-                color: "#0F6E56",
-                minWidth: 60,
-                textAlign: "right",
-                fontWeight: 600,
-              }}
-            >
+          <div className="invoice-analytics__daily-head">
+            <span className="invoice-analytics__daily-date">Date</span>
+            <div className="invoice-analytics__daily-spacer" />
+            <span className="invoice-analytics__daily-num invoice-analytics__daily-num--paid">
               Paid
             </span>
-            <span
-              style={{
-                fontSize: 11,
-                color: "#A32D2D",
-                minWidth: 60,
-                textAlign: "right",
-                fontWeight: 600,
-              }}
-            >
+            <span className="invoice-analytics__daily-num invoice-analytics__daily-num--unpaid">
               Unpaid
             </span>
-            <span
-              style={{
-                fontSize: 11,
-                color: "#9ca3af",
-                minWidth: 72,
-                textAlign: "right",
-                fontWeight: 600,
-              }}
-            >
-              Total
-            </span>
+            <span className="invoice-analytics__daily-total">Total</span>
           </div>
           {daily.length === 0 && (
-            <p
-              style={{
-                textAlign: "center",
-                color: "#9ca3af",
-                fontSize: 12,
-                margin: "16px 0",
-              }}
-            >
-              No daily data
-            </p>
+            <p className="invoice-analytics__empty">No daily data</p>
           )}
           {daily.map((d) => (
-            <div
-              key={d.date}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "9px 0",
-                borderBottom: "1px solid #f5f5f5",
-              }}
-            >
-              <span style={{ fontSize: 12, color: "#6b7280", minWidth: 80 }}>
+            <div key={d.date} className="invoice-analytics__daily-row">
+              <span className="invoice-analytics__daily-date">
                 {dayjs(d.date).format("MMM D")}
               </span>
-              <div
-                style={{
-                  flex: 1,
-                  height: 6,
-                  borderRadius: 3,
-                  background: "#e8e8e8",
-                }}
-              >
+              <div className="invoice-analytics__track">
                 <div
+                  className="invoice-analytics__fill"
                   style={{
                     width: `${pct(d.revenue, maxDaily)}%`,
-                    height: 6,
-                    borderRadius: 3,
-                    background: d.paid > 0 ? "#1D9E75" : "#378ADD",
+                    background:
+                      d.paid > 0
+                        ? "var(--color-success)"
+                        : "var(--color-primary-border)",
                   }}
                 />
               </div>
               <span
-                style={{
-                  fontSize: 11,
-                  color: "#0F6E56",
-                  minWidth: 60,
-                  textAlign: "right",
-                  fontWeight: d.paid > 0 ? 600 : 400,
-                }}
+                className="invoice-analytics__daily-num invoice-analytics__daily-num--paid"
+                style={{ fontWeight: d.paid > 0 ? 600 : 400 }}
               >
                 ${fmt(d.paid)}
               </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#A32D2D",
-                  minWidth: 60,
-                  textAlign: "right",
-                }}
-              >
+              <span className="invoice-analytics__daily-num invoice-analytics__daily-num--unpaid">
                 ${fmt(d.unpaid)}
               </span>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  minWidth: 72,
-                  textAlign: "right",
-                  color: "#111827",
-                }}
-              >
+              <span className="invoice-analytics__daily-total">
                 ${fmt(d.revenue)}
               </span>
             </div>
@@ -751,68 +419,39 @@ const InvoiceAnalytics = () => {
 
       {/* ── employees ── */}
       {employees.length > 0 && (
-        <div style={{ ...cardStyle, marginBottom: 16 }}>
-          <p style={sectionTitleStyle}>🧑‍💼 Employee performance</p>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="surface invoice-analytics__card">
+          <h2 className="section-title invoice-analytics__section-title">
+            🧑‍💼 Employee performance
+          </h2>
+          <table className="invoice-analytics__table">
             <thead>
               <tr>
-                <th style={thStyle}>Employee</th>
-                <th style={{ ...thStyle, textAlign: "center" }}>Records</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Paid</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Unpaid</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Rate</th>
+                <th>Employee</th>
+                <th className="is-center">Records</th>
+                <th className="is-right">Total</th>
+                <th className="is-right">Paid</th>
+                <th className="is-right">Unpaid</th>
+                <th className="is-right">Rate</th>
               </tr>
             </thead>
             <tbody>
               {employees.map((e) => (
                 <tr key={e.user_id}>
-                  <td style={tdStyle}>{e.name}</td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "center",
-                      color: "#6b7280",
-                    }}
-                  >
+                  <td>{e.name}</td>
+                  <td className="is-center is-muted">
                     {e.record_count || e.invoice_count}
                   </td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ${fmt(e.total_amount)}
-                  </td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "right",
-                      color: "#0F6E56",
-                    }}
-                  >
-                    ${fmt(e.paid_amount)}
-                  </td>
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "right",
-                      color: "#A32D2D",
-                    }}
-                  >
-                    ${fmt(e.unpaid_amount)}
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>
+                  <td className="is-right is-strong">${fmt(e.total_amount)}</td>
+                  <td className="is-right is-success">${fmt(e.paid_amount)}</td>
+                  <td className="is-right is-error">${fmt(e.unpaid_amount)}</td>
+                  <td className="is-right">
                     <span
+                      className="invoice-analytics__rate"
                       style={{
-                        fontSize: 12,
-                        fontWeight: 600,
                         color:
                           pct(e.paid_amount, e.total_amount) >= 50
-                            ? "#0F6E56"
-                            : "#A32D2D",
+                            ? "var(--color-success-strong)"
+                            : "var(--color-error-strong)",
                       }}
                     >
                       {pct(e.paid_amount, e.total_amount)}%
@@ -826,40 +465,29 @@ const InvoiceAnalytics = () => {
       )}
 
       {/* ── recent invoices ── */}
-      <div style={cardStyle}>
-        <p style={sectionTitleStyle}>🧾 Monthly Activity</p>
+      <div className="surface invoice-analytics__card">
+        <h2 className="section-title invoice-analytics__section-title">
+          🧾 Monthly Activity
+        </h2>
 
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              minWidth: 900,
-            }}
-          >
+        <div className="invoice-analytics__table-scroll">
+          <table className="invoice-analytics__table invoice-analytics__table--wide">
             <thead>
               <tr>
-                <th style={thStyle}>Type</th>
-                <th style={thStyle}>Ref</th>
-                <th style={thStyle}>Client</th>
-                <th style={thStyle}>Date</th>
-                <th style={thStyle}>Due date</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Amount</th>
-                <th style={thStyle}>Status</th>
+                <th>Type</th>
+                <th>Ref</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Due date</th>
+                <th className="is-right">Amount</th>
+                <th>Status</th>
               </tr>
             </thead>
 
             <tbody>
               {monthlyActivity.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      ...tdStyle,
-                      textAlign: "center",
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <td colSpan={7} className="is-center is-subtle">
                     No activity
                   </td>
                 </tr>
@@ -867,68 +495,33 @@ const InvoiceAnalytics = () => {
 
               {monthlyActivity.map((item) => (
                 <tr key={`${item.type}-${item.id}`}>
-                  <td style={tdStyle}>
+                  <td>
                     <span
-                      style={{
-                        background:
-                          item.type === "INVOICE" ? "#EEF4FF" : "#F5F3FF",
-                        color: item.type === "INVOICE" ? "#1D4ED8" : "#7C3AED",
-                        padding: "3px 10px",
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}
+                      className={`invoice-analytics__type invoice-analytics__type--${
+                        item.type === "INVOICE" ? "invoice" : "quote"
+                      }`}
                     >
                       {item.type}
                     </span>
                   </td>
 
-                  <td
-                    style={{
-                      ...tdStyle,
-                      fontFamily: "monospace",
-                      fontSize: 12,
-                      color: "#9ca3af",
-                    }}
-                  >
-                    {item.ref_no}
-                  </td>
+                  <td className="invoice-analytics__ref">{item.ref_no}</td>
 
-                  <td style={tdStyle}>{item.client_name}</td>
+                  <td>{item.client_name}</td>
 
-                  <td
-                    style={{
-                      ...tdStyle,
-                      fontSize: 12,
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <td className="invoice-analytics__date">
                     {dayjs(item.billing_date).format("MMM D, YYYY")}
                   </td>
 
-                  <td
-                    style={{
-                      ...tdStyle,
-                      fontSize: 12,
-                      color: "#9ca3af",
-                    }}
-                  >
+                  <td className="invoice-analytics__date">
                     {item.due_date
                       ? dayjs(item.due_date).format("MMM D, YYYY")
                       : "—"}
                   </td>
 
-                  <td
-                    style={{
-                      ...tdStyle,
-                      textAlign: "right",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ${fmt(item.amount)}
-                  </td>
+                  <td className="is-right is-strong">${fmt(item.amount)}</td>
 
-                  <td style={tdStyle}>
+                  <td>
                     <Badge status={item.payment_status} />
                   </td>
                 </tr>
@@ -937,7 +530,7 @@ const InvoiceAnalytics = () => {
           </table>
         </div>
       </div>
-    </Box>
+    </div>
   );
 };
 

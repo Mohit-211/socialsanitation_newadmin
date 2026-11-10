@@ -200,38 +200,6 @@ export const DeleteUser = async (user_id) => {
   );
 };
 
-//get all roles
-export const GetAllRoles = async () => {
-  const res = await axios.get(BASE_URL + "role");
-
-  return res;
-};
-
-//get role byid
-export const GetRoleById = async (id) => {
-  return await axios.get(BASE_URL + "role/getRolebyId?id=" + id);
-};
-
-//create role
-export const CreateRole = async (formData) => {
-  return await axios.post(BASE_URL + "role/create", formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
-
-//update role
-export const UpdateRoles = async (formData) => {
-  return await axios.put(BASE_URL + "role/editRole", formData, {
-    headers: {
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
-
 // ********************************ADMIN API***********************************************************
 export const ChangeAdminPassword = async (data) => {
   return axios.post(BASE_URL + "admin/auth/change-password", data, {
@@ -373,32 +341,6 @@ export const GetAllCleanerByAdmin = async (id) => {
     BASE_URL + `admin/user/getAllCleanerByAdmin/${id}`,
   );
   return res;
-};
-
-export const ChangeSyncWithCalandar = async (data) => {
-  return axios.post(BASE_URL + "booking/syncWithCalendarForAdmin", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "x-access-token": `${localStorage.getItem("adminToken")}`,
-    },
-  });
-};
-
-export const GetPayment = async (adminToken) => {
-  try {
-    const res = await axios.get(BASE_URL + "admin/user/getAllTransactions", {
-      headers: {
-        "x-access-token": `${adminToken}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return res;
-  } catch (error) {
-    // Handle error if needed
-    console.error("Error fetching users:", error);
-    throw error;
-  }
 };
 
 export const StateAPI = (id) => {

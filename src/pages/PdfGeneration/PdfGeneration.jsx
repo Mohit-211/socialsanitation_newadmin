@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button, message, Modal, Space, Table } from "antd";
 import { useNavigate } from "react-router";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 
 import dayjs from "@/lib/dayjs";
+import PageHeader from "../../components/PageHeader";
 import { DeleteServiceEstimate, GetAllServiceEstimate } from "../../services/Api/Api";
+import { BASE_URL } from "../../services/Host";
 
 const PdfGeneration = () => {
   const navigate = useNavigate();
@@ -55,7 +53,7 @@ const PdfGeneration = () => {
         let url = "";
 
         if (record.status === "signed" && record.signed_file_name) {
-          url = `https://node.socialsanitation.com/api/v1/docs/${record.signed_file_name}`;
+          url = `${BASE_URL}docs/${record.signed_file_name}`;
         } else if (record.file_url) {
           url = record.file_url;
         }
@@ -104,7 +102,7 @@ const PdfGeneration = () => {
               </>
             )}
 
-            <Button danger outlined onClick={() => handleDelete(record.id)}>
+            <Button danger onClick={() => handleDelete(record.id)}>
               Delete
             </Button>
           </Space>
@@ -156,59 +154,29 @@ const PdfGeneration = () => {
   };
 
   return (
-    <Box>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack
-          direction="row"
-          spacing={2}
-          useFlexGap
-          sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", width: "100%" }}
-        >
-          {/* Left */}
-          <Box>
-            <Typography className="page-title">
-              Service Estimate Management
-            </Typography>
-            <Typography className="page-sub-title">
-              View & Generate PDFs
-            </Typography>
-          </Box>
-
-          {/* Right */}
-          <Stack
-            direction="row"
-            spacing={1.5}
-            useFlexGap
-            sx={{ flexWrap: "wrap", ml: "auto", alignItems: "center" }}
-          >
+    <div>
+      <PageHeader
+        title="Service Estimate Management"
+        subtitle="View & Generate PDFs"
+        actions={
+          <>
             <Button
+              size="large"
               onClick={() => navigate("/universal-scope-of-work")}
-              style={{
-                borderRadius: "6px",
-                height: 44,
-              }}
             >
               Universal Scope Of Work
             </Button>
 
             <Button
               type="primary"
+              size="large"
               onClick={() => navigate("/generate-estimate")}
-              style={{ height: 44 }}
             >
               Generate PDF
             </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <Table
         columns={columns}
@@ -218,7 +186,7 @@ const PdfGeneration = () => {
         loading={loading}
         onChange={handleTableChange}
       />
-    </Box>
+    </div>
   );
 };
 

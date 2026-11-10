@@ -1,0 +1,33 @@
+.signature-field__preview {
+  display: block;
+  width: 300px;
+  max-width: 100%;
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.signature-field__open {
+  margin-top: var(--space-3);
+}
+
+.signature-field__canvas {
+  display: block;
+  width: 100%;
+  height: 200px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  touch-action: none;
+}
+
+/* Signature area on document pages (also used directly by the contract,
+   estimate, invoice and service-request layouts). */
+.signature-block {
+  text-align: right;
+}
+
+.signature-field__label {
+  margin-top: var(--space-4);
+}

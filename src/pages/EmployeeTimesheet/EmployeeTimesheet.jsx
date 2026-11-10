@@ -1,32 +1,17 @@
 import dayjs from "@/lib/dayjs";
 import { useEffect, useState } from "react";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import { Divider, Select } from "antd";
 import { UpdateEmployeeType } from "../../services/Api/Api";
-import {
-  DatePicker,
-  Input,
-  Button,
-  Spin,
-  message,
-  Badge,
-  Typography,
-} from "antd";
-import { ClockCircleOutlined, SaveOutlined } from "@ant-design/icons";
-import { DownloadOutlined } from "@ant-design/icons";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { DatePicker, Input, Button, Spin, message, Badge } from "antd";
+import { Clock, Download, Save } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import { excelStyles, saveXlsx } from "../../utils/excel";
 import {
   getEmployeeDayOverview,
   getEmployeeRangeOverview,
   updateEmployeeTimesheet,
 } from "../../services/Api/TimesheetApi";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-const { Title, Text } = Typography;
+import "./EmployeeTimesheet.scss";
 
 const EmployeeTimesheet = () => {
   const [selectedDate, setSelectedDate] = useState(
@@ -141,99 +126,57 @@ const EmployeeTimesheet = () => {
     }
 
     const formattedDate = getESTDateString(selectedDate);
+    const styles = excelStyles();
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Timesheet");
+    // Every data cell: thin border, centered.
+    const cell = { ...styles.border, align: "center", alignVertical: "center" };
 
-    // Columns
-    worksheet.columns = [
-      { header: "Employee Name", key: "name", width: 25 },
-      { header: "Employee Type", key: "employee_type", width: 25 },
-      { header: "Booking Status", key: "booking", width: 18 },
-      { header: "Clock In", key: "clock_in", width: 15 },
-      { header: "Clock Out", key: "clock_out", width: 15 },
-      { header: "Total Hours", key: "hours", width: 18 },
-      { header: "Pay / Day ($)", key: "pay", width: 15 },
-      { header: "Bonus ($)", key: "bonus", width: 15 },
-      { header: "Total ($)", key: "total", width: 15 },
-    ];
+    // Header row
+    const headerRow = [
+      "Employee Name",
+      "Employee Type",
+      "Booking Status",
+      "Clock In",
+      "Clock Out",
+      "Total Hours",
+      "Pay / Day ($)",
+      "Bonus ($)",
+      "Total ($)",
+    ].map((value) => ({ value, ...styles.header }));
 
-    // Add rows
-    employees.forEach((emp) => {
-      worksheet.addRow({
-        name: emp.name,
-        employee_type: emp.employee_type,
-        booking: emp.booking_id ? "Assigned" : "Not Assigned",
-        clock_in: formatTime(emp.clock_in),
-        clock_out: formatTime(emp.clock_out),
-        hours: emp.total_hours || "",
-        pay: emp.pay_per_day || 0,
-        bonus: emp.bonus || 0,
-        total: emp.total_amount || 0,
-      });
+    const dataRows = employees.map((emp, index) => {
+      // Alternate row background (sheet rows 2, 4, 6...)
+      const rowStyle = index % 2 === 0 ? { ...cell, ...styles.muted } : cell;
+
+      return [
+        { value: emp.name, ...rowStyle },
+        { value: emp.employee_type, ...rowStyle },
+        { value: emp.booking_id ? "Assigned" : "Not Assigned", ...rowStyle },
+        { value: formatTime(emp.clock_in), ...rowStyle },
+        { value: formatTime(emp.clock_out), ...rowStyle },
+        { value: emp.total_hours || "", ...rowStyle },
+        { value: emp.pay_per_day || 0, ...rowStyle },
+        { value: emp.bonus || 0, ...rowStyle },
+        // Highlight Total column
+        {
+          value: emp.total_amount || 0,
+          ...cell,
+          ...styles.success,
+          fontWeight: "bold",
+        },
+      ];
     });
 
-    // HEADER STYLE
-    worksheet.getRow(1).eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF667EEA" }, // Purple/Blue
-      };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-      };
-    });
-
-    // ROW STYLING
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return;
-
-      row.eachCell((cell) => {
-        cell.border = {
-          top: { style: "thin" },
-          left: { style: "thin" },
-          bottom: { style: "thin" },
-          right: { style: "thin" },
-        };
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-      });
-
-      // Alternate row background
-      if (rowNumber % 2 === 0) {
-        row.eachCell((cell) => {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF3F4F6" }, // light grey
-          };
-        });
-      }
-    });
-
-    // Highlight Total column
-    worksheet.getColumn("total").eachCell((cell, rowNumber) => {
-      if (rowNumber === 1) return;
-      cell.font = { bold: true };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFDCFCE7" }, // light green
-      };
-    });
-
-    // Generate file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    saveAs(blob, `Employee_Timesheet_${formattedDate}.xlsx`);
+    await saveXlsx(
+      [headerRow, ...dataRows],
+      {
+        sheet: "Timesheet",
+        columns: [25, 25, 18, 15, 15, 18, 15, 15, 15].map((width) => ({
+          width,
+        })),
+      },
+      `Employee_Timesheet_${formattedDate}.xlsx`,
+    );
   };
 
   const handleRangeDownload = async () => {
@@ -258,8 +201,9 @@ const EmployeeTimesheet = () => {
         return;
       }
 
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Timesheet");
+      const styles = excelStyles();
+      const cell = { ...styles.border, align: "center" };
+      const sheetRows = [];
 
       // ✅ GROUP BY EMPLOYEE
       const grouped = {};
@@ -277,116 +221,67 @@ const EmployeeTimesheet = () => {
       // ✅ LOOP EMPLOYEE WISE
       Object.values(grouped).forEach((emp) => {
         // spacing
-        worksheet.addRow([]);
+        sheetRows.push([]);
 
         // 👤 Employee Header
-        const empHeader = worksheet.addRow([`${emp.name} (${emp.type})`]);
-        empHeader.font = { bold: true, size: 14 };
-
-        // Column Headers
-        const headerRow = worksheet.addRow([
-          "Date",
-          "Booking",
-          "Clock In",
-          "Clock Out",
-          "Hours",
-          "Pay ($)",
-          "Bonus ($)",
-          "Total ($)",
+        sheetRows.push([
+          { value: `${emp.name} (${emp.type})`, fontWeight: "bold", fontSize: 14 },
         ]);
 
-        // 🎨 Header Style
-        headerRow.eachCell((cell) => {
-          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FF667EEA" },
-          };
-          cell.alignment = { horizontal: "center" };
-          cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" },
-          };
-        });
+        // Column Headers
+        sheetRows.push(
+          [
+            "Date",
+            "Booking",
+            "Clock In",
+            "Clock Out",
+            "Hours",
+            "Pay ($)",
+            "Bonus ($)",
+            "Total ($)",
+          ].map((value) => ({ value, ...styles.header })),
+        );
 
         let totalSum = 0;
 
-        // 📅 Employee Records
+        // 📅 Employee Records (borders, centered, alternate row color)
         emp.records.forEach((r, index) => {
           totalSum += Number(r.total_amount || 0);
 
-          const row = worksheet.addRow([
-            r.date,
-            r.booking_id ? "Assigned" : "Not Assigned",
-           formatTime(r.clock_in),
-formatTime(r.clock_out),
-            r.total_hours || "",
-            r.pay_per_day || 0,
-            r.bonus || 0,
-            r.total_amount || 0,
-          ]);
+          const rowStyle =
+            index % 2 === 0 ? { ...cell, ...styles.muted } : cell;
 
-          // borders + alignment
-          row.eachCell((cell) => {
-            cell.border = {
-              top: { style: "thin" },
-              left: { style: "thin" },
-              bottom: { style: "thin" },
-              right: { style: "thin" },
-            };
-            cell.alignment = { horizontal: "center" };
-          });
-
-          // alternate row color
-          if (index % 2 === 0) {
-            row.eachCell((cell) => {
-              cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FFF9FAFB" },
-              };
-            });
-          }
+          sheetRows.push(
+            [
+              r.date,
+              r.booking_id ? "Assigned" : "Not Assigned",
+              formatTime(r.clock_in),
+              formatTime(r.clock_out),
+              r.total_hours || "",
+              r.pay_per_day || 0,
+              r.bonus || 0,
+              r.total_amount || 0,
+            ].map((value) => ({ value, ...rowStyle })),
+          );
         });
 
         // 💰 Total Row
-        const totalRow = worksheet.addRow([
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "Total:",
-          totalSum,
-        ]);
-
-        totalRow.font = { bold: true };
-
-        totalRow.eachCell((cell) => {
-          cell.border = {
-            top: { style: "thin" },
-            left: { style: "thin" },
-            bottom: { style: "thin" },
-            right: { style: "thin" },
-          };
-          cell.alignment = { horizontal: "center" };
-        });
+        sheetRows.push(
+          ["", "", "", "", "", "", "Total:", totalSum].map((value) => ({
+            value,
+            ...styles.total,
+            align: "center",
+          })),
+        );
       });
 
-      // ✅ AUTO WIDTH (important for readability)
-      worksheet.columns.forEach((col) => {
-        col.width = 18;
-      });
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer]);
-
-      saveAs(
-        blob,
+      await saveXlsx(
+        sheetRows,
+        {
+          sheet: "Timesheet",
+          // ✅ Same width (18) for every column, for readability
+          columns: Array.from({ length: 8 }, () => ({ width: 18 })),
+        },
         `Timesheet_${dayjs(rangeStart).format("YYYY-MM-DD")}_to_${dayjs(rangeEnd).format("YYYY-MM-DD")}.xlsx`,
       );
     } catch (err) {
@@ -398,65 +293,18 @@ formatTime(r.clock_out),
   };
 
   return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-        minHeight: "100vh",
-      }}
-    >
-      <div style={{ maxWidth: "1600px", margin: "0 auto" }}>
-        {/* Header Section */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "12px",
-            marginBottom: "24px",
-            border: "0.5px solid #e5e7eb",
-            overflow: "hidden",
-          }}
-        >
-          {/* Top row: title + single-date download */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "18px 24px",
-              borderBottom: "0.5px solid #e5e7eb",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 8,
-                  background: "#ede9fe",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ClockCircleOutlined
-                  style={{ color: "#4f46e5", fontSize: 18 }}
-                />
-              </div>
-              <div>
-                <Title level={4} style={{ margin: 0, fontWeight: 500 }}>
-                  Employee Timesheet
-                </Title>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  Manage daily attendance and compensation
-                </Text>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                Single date:
-              </Text>
+    <div className="employee-timesheet">
+      {/* Header Section */}
+      <div className="surface employee-timesheet__header">
+        {/* Top row: title + single-date download */}
+        <PageHeader
+          card={false}
+          className="employee-timesheet__header-main"
+          title="Employee Timesheet"
+          subtitle="Manage daily attendance and compensation"
+          actions={
+            <>
+              <span className="employee-timesheet__label">Single date:</span>
               <DatePicker
                 value={selectedDate}
                 onChange={(d) => {
@@ -464,441 +312,274 @@ formatTime(r.clock_out),
                   fetchData(d);
                 }}
                 size="middle"
-                style={{ borderRadius: 6 }}
               />
               <Button
-                icon={<DownloadOutlined />}
+                type="primary"
+                icon={<Download size={16} />}
                 onClick={handleDownload}
-                style={{
-                  background: "#16a34a",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  fontWeight: 500,
-                }}
               >
                 Download Excel
               </Button>
-            </div>
-          </div>
+            </>
+          }
+        />
 
-          {/* Bottom row: range export */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "12px 24px",
-              background: "#f9fafb",
-              flexWrap: "wrap",
+        {/* Bottom row: range export */}
+        <div className="employee-timesheet__range">
+          <span className="employee-timesheet__range-label">Range export</span>
+          <Divider orientation="vertical" style={{ height: 22 }} />
+          <Select
+            placeholder="Employee Type"
+            style={{ width: 160 }}
+            onChange={(val) => {
+              setEmployeeTypeFilter(val);
+              if (rangeStart) {
+                setRangeEnd(
+                  val === "W2_BI_WEEKLY"
+                    ? dayjs(rangeStart).add(13, "day")
+                    : dayjs(rangeStart).add(14, "day"),
+                );
+              }
             }}
+            options={[
+              { value: "W2_BI_WEEKLY", label: "W2 Bi-Weekly" },
+              { value: "1099", label: "1099 Contractor" },
+            ]}
+          />
+          <DatePicker
+            placeholder="Start date"
+            value={rangeStart}
+            onChange={(d) => setRangeStart(d)}
+          />
+          <span className="text-subtle">→</span>
+          <DatePicker
+            placeholder="End date"
+            value={rangeEnd}
+            onChange={(d) => setRangeEnd(d)}
+          />
+          <Button
+            type="primary"
+            icon={<Download size={16} />}
+            loading={downloading}
+            disabled={!rangeStart || !rangeEnd}
+            onClick={handleRangeDownload}
           >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: "#6b7280",
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Range export
-            </Text>
-            <Divider type="vertical" style={{ height: 22 }} />
-            <Select
-              placeholder="Employee Type"
-              style={{ width: 160 }}
-              onChange={(val) => {
-                setEmployeeTypeFilter(val);
-                if (rangeStart) {
-                  setRangeEnd(
-                    val === "W2_BI_WEEKLY"
-                      ? dayjs(rangeStart).add(13, "day")
-                      : dayjs(rangeStart).add(14, "day"),
-                  );
-                }
-              }}
-              options={[
-                { value: "W2_BI_WEEKLY", label: "W2 Bi-Weekly" },
-                { value: "1099", label: "1099 Contractor" },
-              ]}
-            />
-            <DatePicker
-              placeholder="Start date"
-              value={rangeStart}
-              onChange={(d) => setRangeStart(d)}
-              style={{ borderRadius: 6 }}
-            />
-            <span style={{ color: "#9ca3af" }}>→</span>
-            <DatePicker
-              placeholder="End date"
-              value={rangeEnd}
-              onChange={(d) => setRangeEnd(d)}
-              style={{ borderRadius: 6 }}
-            />
-            <Button
-              icon={<DownloadOutlined />}
-              loading={downloading}
-              disabled={!rangeStart || !rangeEnd}
-              onClick={handleRangeDownload}
-              style={{
-                background: "#0ea5e9",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 500,
-              }}
-            >
-              Download Range Excel
-            </Button>
+            Download Range Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Table Section */}
+      {loading ? (
+        <div className="surface employee-timesheet__loading">
+          <Spin size="large" />
+          <div className="employee-timesheet__loading-text">
+            Loading timesheet data...
           </div>
         </div>
+      ) : (
+        <div className="surface employee-timesheet__table-card">
+          <div className="employee-timesheet__table-scroll">
+            <table className="employee-timesheet__table">
+              <thead>
+                <tr>
+                  <th>Employee Name</th>
+                  <th>Employee Type</th>
+                  <th>Booking Status</th>
+                  <th>
+                    <div className="employee-timesheet__th-icon">
+                      <Clock size={14} />
+                      Clock In
+                    </div>
+                  </th>
+                  <th>
+                    <div className="employee-timesheet__th-icon">
+                      <Clock size={14} />
+                      Clock Out
+                    </div>
+                  </th>
+                  <th>Total Hours</th>
+                  <th>Pay / Day ($)</th>
+                  <th>Bonus ($)</th>
+                  <th>Total ($)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
 
-        {/* Table Section */}
-        {loading ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "80px 20px",
-              background: "#fff",
-              borderRadius: "16px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-            }}
-          >
-            <Spin size="large" />
-            <div style={{ marginTop: 16, color: "#666" }}>
-              Loading timesheet data...
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "16px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ overflowX: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  fontSize: "14px",
-                }}
-              >
-                <thead>
-                  <tr
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    }}
-                  >
-                    <th style={tableHeaderStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        Employee Name
-                      </div>
-                    </th>
-                    <th style={tableHeaderStyle}>Employee Type</th>
-                    <th style={tableHeaderStyle}>Booking Status</th>
-                    <th style={tableHeaderStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <ClockCircleOutlined />
-                        Clock In
-                      </div>
-                    </th>
-                    <th style={tableHeaderStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <ClockCircleOutlined />
-                        Clock Out
-                      </div>
-                    </th>
-                    <th style={tableHeaderStyle}>Total Hours</th>
-                    <th style={tableHeaderStyle}>Pay / Day ($)</th>
-                    <th style={tableHeaderStyle}>Bonus ($)</th>
-                    <th style={tableHeaderStyle}>Total ($)</th>
-                    <th style={tableHeaderStyle}>Action</th>
+              <tbody>
+                {employees.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="employee-timesheet__empty">
+                      No employees found for this date
+                    </td>
                   </tr>
-                </thead>
+                ) : (
+                  employees.map((emp) => (
+                    <tr key={emp.employee_id} className="employee-timesheet__row">
+                      <td>
+                        <div className="employee-timesheet__employee">
+                          <div className="employee-timesheet__avatar">
+                            {emp.name?.charAt(0)?.toUpperCase() || "E"}
+                          </div>
+                          <span className="employee-timesheet__name">
+                            {emp.name}
+                          </span>
+                        </div>
+                      </td>
 
-                <tbody>
-                  {employees.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="9"
-                        style={{
-                          textAlign: "center",
-                          padding: "60px 20px",
-                          color: "#999",
-                        }}
-                      >
-                        No employees found for this date
+                      <td>
+                        <Select
+                          value={emp.employee_type}
+                          style={{ width: 150 }}
+                          onChange={(value) =>
+                            updateEmployeeType(emp.employee_id, value)
+                          }
+                          options={[
+                            { value: "W2_BI_WEEKLY", label: "W2 Bi-Weekly" },
+                            { value: "1099", label: "1099 Contractor" },
+                          ]}
+                        />
+                      </td>
+
+                      <td>
+                        {emp.booking_id ? (
+                          <Badge
+                            status="success"
+                            text="Assigned"
+                            style={{ fontWeight: 500 }}
+                          />
+                        ) : (
+                          <Badge status="default" text="Not Assigned" />
+                        )}
+                      </td>
+
+                      <td>
+                        <div>
+                          <Input
+                            value={emp.clock_in || ""}
+                            placeholder="16:00"
+                            onChange={(e) =>
+                              updateLocalValue(
+                                emp.employee_id,
+                                "clock_in",
+                                e.target.value,
+                              )
+                            }
+                            className="employee-timesheet__input"
+                          />
+
+                          <div className="employee-timesheet__time-hint">
+                            {emp.clock_in ? formatTime(emp.clock_in) : ""}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div>
+                          <Input
+                            value={emp.clock_out || ""}
+                            placeholder="16:00"
+                            onChange={(e) =>
+                              updateLocalValue(
+                                emp.employee_id,
+                                "clock_out",
+                                e.target.value,
+                              )
+                            }
+                            className="employee-timesheet__input"
+                          />
+
+                          <div className="employee-timesheet__time-hint">
+                            {emp.clock_out ? formatTime(emp.clock_out) : ""}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span
+                          className={`employee-timesheet__hours${
+                            emp.total_hours
+                              ? ""
+                              : " employee-timesheet__hours--empty"
+                          }`}
+                        >
+                          {emp.total_hours || "-"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <Input
+                          type="number"
+                          prefix="$"
+                          value={emp.pay_per_day || ""}
+                          onChange={(e) =>
+                            updateLocalValue(
+                              emp.employee_id,
+                              "pay_per_day",
+                              e.target.value,
+                            )
+                          }
+                          className="employee-timesheet__input"
+                        />
+                      </td>
+
+                      <td>
+                        <Input
+                          type="number"
+                          prefix="$"
+                          value={emp.bonus || ""}
+                          onChange={(e) =>
+                            updateLocalValue(
+                              emp.employee_id,
+                              "bonus",
+                              e.target.value,
+                            )
+                          }
+                          className="employee-timesheet__input"
+                        />
+                      </td>
+
+                      <td>
+                        <Input
+                          type="number"
+                          prefix="$"
+                          disabled
+                          value={emp.total_amount || ""}
+                          onChange={(e) =>
+                            updateLocalValue(
+                              emp.employee_id,
+                              "total_amount",
+                              e.target.value,
+                            )
+                          }
+                          className="employee-timesheet__input"
+                          style={{
+                            fontWeight: 600,
+                            background: "var(--color-success-subtle)",
+                          }}
+                        />
+                      </td>
+
+                      <td>
+                        <Button
+                          type="primary"
+                          icon={<Save size={16} />}
+                          loading={savingId === emp.employee_id}
+                          onClick={() => onSave(emp)}
+                        >
+                          Save
+                        </Button>
                       </td>
                     </tr>
-                  ) : (
-                    employees.map((emp, index) => (
-                      <tr
-                        key={emp.employee_id}
-                        style={{
-                          background: index % 2 === 0 ? "#fafbfc" : "#fff",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#f0f4ff";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background =
-                            index % 2 === 0 ? "#fafbfc" : "#fff";
-                        }}
-                      >
-                        <td style={tableCellStyle}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "50%",
-                                background:
-                                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#fff",
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                flexShrink: 0,
-                              }}
-                            >
-                              {emp.name?.charAt(0)?.toUpperCase() || "E"}
-                            </div>
-                            <span style={{ fontWeight: 600, color: "#1a1a1a" }}>
-                              {emp.name}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <Select
-                            value={emp.employee_type}
-                            style={{ width: 150 }}
-                            onChange={(value) =>
-                              updateEmployeeType(emp.employee_id, value)
-                            }
-                            options={[
-                              { value: "W2_BI_WEEKLY", label: "W2 Bi-Weekly" },
-                              { value: "1099", label: "1099 Contractor" },
-                            ]}
-                          />
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          {emp.booking_id ? (
-                            <Badge
-                              status="success"
-                              text="Assigned"
-                              style={{ fontWeight: 500 }}
-                            />
-                          ) : (
-                            <Badge status="default" text="Not Assigned" />
-                          )}
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <div>
-                            <Input
-                              value={emp.clock_in || ""}
-                              placeholder="16:00"
-                              onChange={(e) =>
-                                updateLocalValue(
-                                  emp.employee_id,
-                                  "clock_in",
-                                  e.target.value,
-                                )
-                              }
-                              style={inputStyle}
-                            />
-
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: "#666",
-                                marginTop: 4,
-                              }}
-                            >
-                              {emp.clock_in ? formatTime(emp.clock_in) : ""}
-                            </div>
-                          </div>
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <div>
-                            <Input
-                              value={emp.clock_out || ""}
-                              placeholder="16:00"
-                              onChange={(e) =>
-                                updateLocalValue(
-                                  emp.employee_id,
-                                  "clock_out",
-                                  e.target.value,
-                                )
-                              }
-                              style={inputStyle}
-                            />
-
-                            <div
-                              style={{
-                                fontSize: 12,
-                                color: "#666",
-                                marginTop: 4,
-                              }}
-                            >
-                              {emp.clock_out ? formatTime(emp.clock_out) : ""}
-                            </div>
-                          </div>
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color: emp.total_hours ? "#4f46e5" : "#999",
-                            }}
-                          >
-                            {emp.total_hours || "-"}
-                          </span>
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <Input
-                            type="number"
-                            prefix="$"
-                            value={emp.pay_per_day || ""}
-                            onChange={(e) =>
-                              updateLocalValue(
-                                emp.employee_id,
-                                "pay_per_day",
-                                e.target.value,
-                              )
-                            }
-                            style={inputStyle}
-                          />
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <Input
-                            type="number"
-                            prefix="$"
-                            value={emp.bonus || ""}
-                            onChange={(e) =>
-                              updateLocalValue(
-                                emp.employee_id,
-                                "bonus",
-                                e.target.value,
-                              )
-                            }
-                            style={inputStyle}
-                          />
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <Input
-                            type="number"
-                            prefix="$"
-                            disabled
-                            value={emp.total_amount || ""}
-                            onChange={(e) =>
-                              updateLocalValue(
-                                emp.employee_id,
-                                "total_amount",
-                                e.target.value,
-                              )
-                            }
-                            style={{
-                              ...inputStyle,
-                              fontWeight: 600,
-                              background: "#f0fdf4",
-                            }}
-                          />
-                        </td>
-
-                        <td style={tableCellStyle}>
-                          <Button
-                            type="primary"
-                            icon={<SaveOutlined />}
-                            loading={savingId === emp.employee_id}
-                            onClick={() => onSave(emp)}
-                            style={{
-                              borderRadius: "8px",
-                              fontWeight: 600,
-                              background:
-                                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                              border: "none",
-                              boxShadow: "0 2px 6px rgba(102, 126, 234, 0.3)",
-                            }}
-                          >
-                            Save
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
-};
-
-// Styles
-const tableHeaderStyle = {
-  padding: "16px 20px",
-  textAlign: "left",
-  fontWeight: 700,
-  fontSize: "13px",
-  color: "#fff",
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-  borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
-};
-
-const tableCellStyle = {
-  padding: "16px 20px",
-  borderBottom: "1px solid #e5e7eb",
-  verticalAlign: "middle",
-};
-
-const inputStyle = {
-  borderRadius: "6px",
-  border: "1px solid #e5e7eb",
-  minWidth: "100px",
 };
 
 export default EmployeeTimesheet;

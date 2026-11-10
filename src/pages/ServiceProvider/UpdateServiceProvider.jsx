@@ -9,29 +9,16 @@ import {
   message,
   Modal,
   Radio,
+  Divider,
+  Spin,
+  Tag,
+  Tooltip,
 } from "antd";
 
-import {
-  Box,
-  Paper,
-  Stack,
-  IconButton,
-  Tooltip,
-  Divider,
-  Button as MuiButton,
-  Typography as MuiTypography,
-  CircularProgress,
-  RadioGroup,
-  FormControlLabel,
-  Chip,
-  Collapse,
-} from "@mui/material";
-
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 
 import {
+  ArrowLeft,
   Plus,
   Pencil,
   Trash2,
@@ -41,7 +28,7 @@ import {
   User,
   Briefcase,
   ClipboardList,
-  CheckCircle2,
+  CircleCheck,
   Info,
   ChevronDown,
   Phone,
@@ -49,7 +36,10 @@ import {
   Search,
 } from "lucide-react";
 
-import { IoLocationOutline } from "react-icons/io5";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { geocodeAddress } from "../../utils/geocode";
+import "./ServiceProviderForm.scss";
 
 import {
   GetUserById,
@@ -166,32 +156,10 @@ const resolveCountryId = (countryName) => {
   return COUNTRY_IDS.USA;
 };
 
-// SHARED STYLE TOKENS (kept consistent with the rest of the
-// admin panel — navy / green, outlined 10px paper, #eef0f2)
-
-const NAVY = "#16324f";
-const NAVY_DARK = "#2c3345";
-const GREEN = "#1b7a43";
-const GREEN_LIGHT = "#3ea56f";
-const BORDER = "#eef0f2";
-
-const sectionPaper = {
-  p: 2.5,
-  mb: 3,
-  borderRadius: "10px",
-  borderColor: BORDER,
-};
-
-const eyebrow = {
-  display: "flex",
-  alignItems: "center",
-  gap: 0.75,
-  fontSize: "0.8rem",
-  fontWeight: 700,
-  color: "#6c757d",
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-};
+// Chevron used by every Select on this page.
+const selectChevron = (
+  <ChevronDown size={16} color="var(--color-text-secondary)" />
+);
 
 // 🔹 Combines role_id + sub_role_id into the single value the Role
 // <Select> uses — "7", "8", "9-10" (Cleaner), "9-11" (HouseKeeping).
@@ -398,13 +366,7 @@ const UpdateServiceProvider = () => {
     if (!address) return;
 
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          address,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-
-      const data = await res.json();
+      const data = await geocodeAddress(address);
 
       if (data.status === "OK") {
         const location =
@@ -538,13 +500,7 @@ const UpdateServiceProvider = () => {
 
       // GOOGLE GEOCODING
 
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          fullAddress,
-        )}&key=AIzaSyB45G8TScEmJSSG_PIzLJV2I6Ej1qgc_4o`,
-      );
-
-      const data = await response.json();
+      const data = await geocodeAddress(fullAddress);
 
       if (data.status !== "OK") {
         throw new Error(
@@ -1347,131 +1303,50 @@ const UpdateServiceProvider = () => {
   // RENDER
 
   return (
-    <Box>
+    <div>
       {/* HEADER */}
 
-      <Paper variant="outlined" sx={{ ...sectionPaper, mb: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            width: "100%",
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.75 }}>
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: "10px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: `linear-gradient(135deg, ${NAVY} 0%, ${GREEN} 100%)`,
-                flexShrink: 0,
-              }}
-            >
-              <User size={22} color="#fff" />
-            </Box>
-
-            <Box>
-              <MuiTypography className="page-title">
-                EMPLOYEE MANAGEMENT
-              </MuiTypography>
-
-              <MuiTypography className="page-sub-title">
-                Update Employee Details
-              </MuiTypography>
-            </Box>
-          </Box>
-
-          <MuiButton
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowBackIcon />}
+      <PageHeader
+        title="EMPLOYEE MANAGEMENT"
+        subtitle="Update Employee Details"
+        actions={
+          <Button
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToEmployees}
-            sx={{
-              height: 47,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: NAVY_DARK,
-              flexShrink: 0,
-              ml: "auto",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Employees
-          </MuiButton>
-        </Box>
-      </Paper>
+          </Button>
+        }
+      />
 
       {/* HOW THIS WORKS */}
 
-      <Paper
-        variant="outlined"
-        sx={{
-          borderRadius: "10px",
-          borderColor: "#d7ecdf",
-          backgroundColor: "#f5faf7",
-          mb: 3,
-          overflow: "hidden",
-        }}
-      >
-        <Box
+      <section className="employee-help">
+        <button
+          type="button"
+          className="employee-help__toggle"
+          aria-expanded={showHelp}
           onClick={() => setShowHelp((v) => !v)}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            px: 2.5,
-            py: 1.5,
-            cursor: "pointer",
-            userSelect: "none",
-          }}
         >
-          <Info size={18} color={GREEN} />
+          <Info size={18} className="employee-help__icon" />
 
-          <MuiTypography
-            sx={{
-              fontWeight: 700,
-              fontSize: "0.9rem",
-              color: NAVY,
-              flexGrow: 1,
-            }}
-          >
+          <span className="employee-help__title">
             How the hiring form auto-fill & role change work
-          </MuiTypography>
+          </span>
 
           <ChevronDown
             size={18}
-            color="#6b7280"
-            style={{
-              transform: showHelp ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 150ms ease",
-            }}
+            className={
+              showHelp
+                ? "employee-help__chevron employee-help__chevron--open"
+                : "employee-help__chevron"
+            }
           />
-        </Box>
+        </button>
 
-        <Collapse in={showHelp}>
-          <Divider sx={{ borderColor: "#d7ecdf" }} />
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
-              gap: 2,
-              px: 2.5,
-              py: 2,
-            }}
-          >
+        {showHelp && (
+          <div className="employee-help__steps">
             {[
               {
                 icon: <Search size={16} />,
@@ -1494,41 +1369,23 @@ const UpdateServiceProvider = () => {
                 text: "The Role field below saves immediately — no need to press Save for a role change.",
               },
             ].map((step) => (
-              <Box key={step.title} sx={{ display: "flex", gap: 1.25, alignItems: "flex-start" }}>
-                <Box
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: "8px",
-                    backgroundColor: "#e7f5ec",
-                    color: GREEN,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {step.icon}
-                </Box>
+              <div key={step.title} className="employee-help__step">
+                <span className="employee-help__step-icon">{step.icon}</span>
 
-                <Box>
-                  <MuiTypography sx={{ fontWeight: 700, fontSize: "0.82rem", color: NAVY, mb: 0.25 }}>
-                    {step.title}
-                  </MuiTypography>
+                <div>
+                  <p className="employee-help__step-title">{step.title}</p>
 
-                  <MuiTypography sx={{ fontSize: "0.8rem", color: "#6b7280", lineHeight: 1.5 }}>
-                    {step.text}
-                  </MuiTypography>
-                </Box>
-              </Box>
+                  <p className="employee-help__step-text">{step.text}</p>
+                </div>
+              </div>
             ))}
-          </Box>
-        </Collapse>
-      </Paper>
+          </div>
+        )}
+      </section>
 
       {/* MAIN FORM */}
 
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: "10px", borderColor: BORDER }}>
+      <div className="surface employee-form__card">
         <Form layout="vertical" form={form} onFinish={handleSave}>
           {/* BASIC INFORMATION */}
 
@@ -1548,10 +1405,10 @@ const UpdateServiceProvider = () => {
                 <Input
                   onChange={handleNameChange}
                   placeholder="Enter name"
-                  prefix={<User size={14} color="#9ca3af" style={{ marginRight: 4 }} />}
+                  prefix={<User size={14} color="var(--color-text-subtle)" style={{ marginRight: 4 }} />}
                   suffix={
                     loadingHiringForms && nameQuery.trim() ? (
-                      <CircularProgress size={14} sx={{ color: GREEN }} />
+                      <Spin size="small" />
                     ) : null
                   }
                 />
@@ -1577,10 +1434,10 @@ const UpdateServiceProvider = () => {
                 <Input
                   onChange={handleEmailChange}
                   placeholder="Enter email"
-                  prefix={<Mail size={14} color="#9ca3af" style={{ marginRight: 4 }} />}
+                  prefix={<Mail size={14} color="var(--color-text-subtle)" style={{ marginRight: 4 }} />}
                   suffix={
                     loadingHiringForms && emailQuery.trim() ? (
-                      <CircularProgress size={14} sx={{ color: GREEN }} />
+                      <Spin size="small" />
                     ) : null
                   }
                 />
@@ -1602,7 +1459,7 @@ const UpdateServiceProvider = () => {
               >
                 <Select
                   placeholder="Select Employee Type"
-                  suffixIcon={<ChevronDown size={16} color={NAVY_DARK} />}
+                  suffix={selectChevron}
                 >
                   <Select.Option value="W2_BI_WEEKLY">
                     W2 Bi-Weekly
@@ -1620,33 +1477,21 @@ const UpdateServiceProvider = () => {
                 ChangeEmployeeRole (handleRoleChange), the same
                 interaction as Employee Type on the employee list
                 page. It doesn't touch form values or the Save
-                button below. */}
+                button below. The Form.Item has no `name`, so it
+                only provides the label and help text. */}
 
             <Col xs={24} md={12}>
-              <Box sx={{ mb: "24px" }}>
-                <MuiTypography
-                  component="label"
-                  sx={{
-                    display: "block",
-                    fontSize: "14px",
-                    color: "rgba(0, 0, 0, 0.88)",
-                    mb: "8px",
-                  }}
-                >
-                  Role
-                </MuiTypography>
-
+              <Form.Item
+                label="Role"
+                extra="Promotes or reassigns immediately — no need to press Save."
+              >
                 <Select
                   value={roleValue || undefined}
                   placeholder="Select Role"
                   style={{ width: "100%" }}
                   disabled={updatingRole}
-                  suffixIcon={
-                    updatingRole ? (
-                      <CircularProgress size={14} sx={{ color: GREEN }} />
-                    ) : (
-                      <ChevronDown size={16} color={NAVY_DARK} />
-                    )
+                  suffix={
+                    updatingRole ? <Spin size="small" /> : selectChevron
                   }
                   onChange={handleRoleChange}
                 >
@@ -1666,107 +1511,56 @@ const UpdateServiceProvider = () => {
                     HouseKeeping
                   </Select.Option>
                 </Select>
-
-                <MuiTypography
-                  sx={{
-                    fontSize: "0.75rem",
-                    color: "#9ca3af",
-                    mt: "4px",
-                  }}
-                >
-                  Promotes or reassigns immediately — no need to press Save.
-                </MuiTypography>
-              </Box>
+              </Form.Item>
             </Col>
           </Row>
 
           {/* HIRING FORMS */}
 
-          <Paper variant="outlined" sx={sectionPaper}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-                flexWrap: "wrap",
-                gap: 1,
-              }}
-            >
-              <Box>
-                <MuiTypography sx={eyebrow}>
+          <section className="surface surface--padded surface--flat employee-section">
+            <div className="employee-section__header">
+              <div>
+                <h3 className="employee-eyebrow">
                   <ClipboardList size={14} />
                   Hiring Forms
-                </MuiTypography>
+                </h3>
 
-                <MuiTypography sx={{ fontSize: "0.85rem", color: "#9ca3af", mt: 0.5 }}>
+                <p className="employee-section__description">
                   Select the hiring form associated with this employee — search by
                   either the name or the email above.
-                </MuiTypography>
-              </Box>
+                </p>
+              </div>
 
               {hiringForms.length > 0 && (
-                <Chip
-                  size="small"
-                  label={`${hiringForms.length} found`}
-                  sx={{
-                    height: 22,
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    backgroundColor: "#e7f5ec",
-                    color: GREEN,
-                  }}
-                />
+                <Tag color="success" variant="filled" className="hiring-forms__count">
+                  {`${hiringForms.length} found`}
+                </Tag>
               )}
 
-              {loadingHiringForms && <CircularProgress size={20} sx={{ color: GREEN }} />}
-            </Box>
+              {loadingHiringForms && <Spin size="small" />}
+            </div>
 
             {!hasSearchInput ? (
-              <Box
-                sx={{
-                  border: "1px dashed #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "20px",
-                  textAlign: "center",
-                  background: "#fafbfc",
-                }}
-              >
-                <MuiTypography sx={{ color: "#9ca3af", fontSize: "0.9rem" }}>
-                  Enter a name or email above to search hiring forms.
-                </MuiTypography>
-              </Box>
+              <div className="hiring-forms__empty">
+                Enter a name or email above to search hiring forms.
+              </div>
             ) : loadingHiringForms && hiringForms.length === 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.25,
-                  color: "#6b7280",
-                  fontSize: "0.85rem",
-                  py: 2,
-                }}
-              >
-                <CircularProgress size={16} sx={{ color: GREEN }} />
+              <div className="hiring-forms__status">
+                <Spin size="small" />
                 Searching hiring forms…
-              </Box>
+              </div>
             ) : hasSearched && hiringForms.length === 0 ? (
-              <Box
-                sx={{
-                  border: "1px dashed #e5e7eb",
-                  borderRadius: "10px",
-                  padding: "20px",
-                  textAlign: "center",
-                  background: "#fafbfc",
-                }}
-              >
-                <MuiTypography sx={{ color: "#9ca3af", fontSize: "0.9rem" }}>
-                  No hiring forms found for that search.
-                </MuiTypography>
-              </Box>
+              <div className="hiring-forms__empty">
+                No hiring forms found for that search.
+              </div>
             ) : (
-              <RadioGroup
+              // The group compares String(submission_id) on both sides —
+              // the same comparison as `isSelected` below, which drives the
+              // card's highlighted border — so the visual "which one is
+              // picked" and the radio dot can never disagree.
+              <Radio.Group
                 name="hiring-form-selection"
+                className="hiring-forms__group"
                 value={String(selectedHiringForm?.submission_id ?? "")}
                 onChange={(event) => {
                   const selected = hiringForms.find(
@@ -1778,7 +1572,7 @@ const UpdateServiceProvider = () => {
                   }
                 }}
               >
-                <Box sx={{ display: "grid", gap: 1.25 }}>
+                <div className="hiring-forms__list">
                   {hiringForms.map((hiringForm) => {
                     const isSelected =
                       String(selectedHiringForm?.submission_id) ===
@@ -1796,284 +1590,166 @@ const UpdateServiceProvider = () => {
                           currentAccountEmail,
                     );
 
+                    const cardClassName = [
+                      "hiring-forms__card",
+                      isSelected ? "hiring-forms__card--selected" : "",
+                      emailMismatch ? "hiring-forms__card--blocked" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
                     return (
-                      <Paper
+                      <div
                         key={hiringForm.submission_id}
-                        variant="outlined"
+                        className={cardClassName}
                         onClick={() => handleHiringFormSelect(hiringForm)}
-                        sx={{
-                          p: 1.75,
-                          borderRadius: "10px",
-                          borderColor: isSelected ? GREEN_LIGHT : "#e5e7eb",
-                          borderWidth: isSelected ? "1.5px" : "1px",
-                          backgroundColor: isSelected ? "#f4fbf7" : "#fff",
-                          opacity: emailMismatch ? 0.65 : 1,
-                          cursor: emailMismatch ? "not-allowed" : "pointer",
-                          transition: "border-color 120ms ease, background-color 120ms ease",
-                          "&:hover": {
-                            borderColor: isSelected ? GREEN_LIGHT : "#c7cdd6",
-                          },
-                        }}
                       >
-                        <FormControlLabel
+                        <Radio
+                          className="hiring-forms__radio"
                           value={String(hiringForm.submission_id)}
-                          control={
-                            <Radio
-                              // Explicit, rather than left to the RadioGroup's
-                              // own value-comparison — this is the exact same
-                              // boolean driving the card's highlighted border,
-                              // so the visual "which one is picked" and the
-                              // radio dot can never disagree or both light up.
-                              checked={isSelected}
-                              disabled={emailMismatch}
-                              style={{ marginTop: 2 }}
-                            />
-                          }
-                          sx={{
-                            width: "100%",
-                            alignItems: "flex-start",
-                            m: 0,
-                          }}
-                          label={
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                justifyContent: "space-between",
-                                flexWrap: { xs: "wrap", md: "nowrap" },
-                                gap: 1,
-                                width: "100%",
-                                pl: 0.5,
-                              }}
-                            >
-                              <Box>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    flexWrap: "wrap",
-                                    gap: 0.75,
-                                  }}
-                                >
-                                  <MuiTypography sx={{ fontWeight: 700, color: "#1f2937", fontSize: "0.92rem" }}>
-                                    {hiringForm.name}
-                                  </MuiTypography>
+                          disabled={emailMismatch}
+                        >
+                          <span className="hiring-forms__content">
+                            <span className="hiring-forms__details">
+                              <span className="hiring-forms__title-row">
+                                <span className="hiring-forms__name">
+                                  {hiringForm.name}
+                                </span>
 
-                                  {isAssigned && (
-                                    <Chip
-                                      size="small"
-                                      label="Currently assigned"
-                                      sx={{
-                                        height: 20,
-                                        fontSize: "0.68rem",
-                                        fontWeight: 600,
-                                        backgroundColor: "#dbeafe",
-                                        color: "#1d4ed8",
-                                      }}
-                                    />
-                                  )}
-
-                                  {emailMismatch && (
-                                    <Chip
-                                      size="small"
-                                      label="Different email — can't assign"
-                                      sx={{
-                                        height: 20,
-                                        fontSize: "0.68rem",
-                                        fontWeight: 600,
-                                        backgroundColor: "#fef3c7",
-                                        color: "#92400e",
-                                      }}
-                                    />
-                                  )}
-                                </Box>
-
-                                {hiringForm.email && (
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 0.75,
-                                      mt: 0.5,
-                                      color: "#6b7280",
-                                      fontSize: "0.82rem",
-                                    }}
-                                  >
-                                    <Mail size={13} />
-                                    {hiringForm.email}
-                                  </Box>
+                                {isAssigned && (
+                                  <Tag color="processing" variant="filled">
+                                    Currently assigned
+                                  </Tag>
                                 )}
 
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.75,
-                                    mt: 0.5,
-                                    color: "#6b7280",
-                                    fontSize: "0.82rem",
-                                  }}
-                                >
-                                  <MapPin size={13} />
-                                  {hiringForm.full_address}
-                                </Box>
+                                {emailMismatch && (
+                                  <Tag color="warning" variant="filled">
+                                    Different email — can't assign
+                                  </Tag>
+                                )}
+                              </span>
 
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.75,
-                                    mt: 0.35,
-                                    color: "#6b7280",
-                                    fontSize: "0.82rem",
-                                  }}
-                                >
-                                  <Phone size={13} />
-                                  {hiringForm.phone || "-"}
-                                </Box>
-                              </Box>
+                              {hiringForm.email && (
+                                <span className="hiring-forms__meta">
+                                  <Mail size={13} />
+                                  {hiringForm.email}
+                                </span>
+                              )}
 
-                              <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "flex-end",
-                                    gap: 0.5,
-                                    color: "#9ca3af",
-                                    fontSize: "0.72rem",
-                                  }}
-                                >
-                                  <Clock size={11} />
-                                  {formatSubmittedDate(hiringForm.submitted_at)}
-                                </Box>
-                              </Box>
-                            </Box>
-                          }
-                        />
-                      </Paper>
+                              <span className="hiring-forms__meta">
+                                <MapPin size={13} />
+                                {hiringForm.full_address}
+                              </span>
+
+                              <span className="hiring-forms__meta">
+                                <Phone size={13} />
+                                {hiringForm.phone || "-"}
+                              </span>
+                            </span>
+
+                            <span className="hiring-forms__date">
+                              <Clock size={11} />
+                              {formatSubmittedDate(hiringForm.submitted_at)}
+                            </span>
+                          </span>
+                        </Radio>
+                      </div>
                     );
                   })}
-                </Box>
-              </RadioGroup>
+                </div>
+              </Radio.Group>
             )}
 
             {/* SELECTED HIRING FORM LOCATION */}
 
             {selectedHiringForm && (
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 2,
-                  border: "1px solid #dbeafe",
-                  borderRadius: "10px",
-                  backgroundColor: "#f8fafc",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 1.25 }}>
-                  <CheckCircle2 size={16} color={GREEN} />
+              <div className="hiring-forms__selected hiring-forms__selected--inset">
+                <div className="hiring-forms__selected-title">
+                  <CircleCheck size={16} className="hiring-forms__selected-icon" />
+                  Selected Hiring Form
+                </div>
 
-                  <MuiTypography sx={{ fontWeight: 700, color: "#1f2937" }}>
-                    Selected Hiring Form
-                  </MuiTypography>
-                </Box>
-
-                <Row gutter={16}>
+                <Row gutter={[16, 12]}>
                   <Col xs={24} sm={12} md={6}>
-                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
-                      Country
-                    </MuiTypography>
+                    <div className="hiring-forms__field-label">Country</div>
 
-                    <MuiTypography sx={{ fontWeight: 600 }}>
+                    <div className="hiring-forms__field-value">
                       {loadingLocation
                         ? "Loading..."
                         : COUNTRY_NAMES_BY_ID[
                             hiringFormLocation.country_id
                           ] || "-"}
-                    </MuiTypography>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} md={6}>
-                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
-                      State
-                    </MuiTypography>
+                    <div className="hiring-forms__field-label">State</div>
 
-                    <MuiTypography sx={{ fontWeight: 600 }}>
+                    <div className="hiring-forms__field-value">
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.state_id
                         ? "Matched"
                         : "-"}
-                    </MuiTypography>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} md={6}>
-                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
-                      City
-                    </MuiTypography>
+                    <div className="hiring-forms__field-label">City</div>
 
-                    <MuiTypography sx={{ fontWeight: 600 }}>
+                    <div className="hiring-forms__field-value">
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.city_id
                         ? "Matched"
                         : "-"}
-                    </MuiTypography>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} md={6}>
-                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
-                      Status
-                    </MuiTypography>
+                    <div className="hiring-forms__field-label">Status</div>
 
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <div
+                      className={
+                        locationReady
+                          ? "hiring-forms__field-value hiring-forms__field-value--ready"
+                          : "hiring-forms__field-value hiring-forms__field-value--muted"
+                      }
+                    >
                       {locationReady ? (
-                        <CheckCircle2 size={14} color={GREEN} />
+                        <CircleCheck size={14} />
                       ) : (
-                        <CircularProgress size={12} />
+                        <Spin size="small" />
                       )}
 
-                      <MuiTypography sx={{ fontWeight: 600, color: locationReady ? GREEN : "#9ca3af" }}>
-                        {locationReady ? "Ready" : "Resolving…"}
-                      </MuiTypography>
-                    </Box>
+                      {locationReady ? "Ready" : "Resolving…"}
+                    </div>
                   </Col>
 
                   <Col span={24}>
-                    <MuiTypography sx={{ color: "text.secondary" }} variant="caption">
-                      Coordinates
-                    </MuiTypography>
+                    <div className="hiring-forms__field-label">Coordinates</div>
 
-                    <MuiTypography sx={{ fontWeight: 600 }}>
+                    <div className="hiring-forms__field-value">
                       {loadingLocation
                         ? "Loading..."
                         : hiringFormLocation.lat !== null && hiringFormLocation.lng !== null
                         ? `${hiringFormLocation.lat}, ${hiringFormLocation.lng}`
                         : "-"}
-                    </MuiTypography>
+                    </div>
                   </Col>
                 </Row>
-              </Box>
+              </div>
             )}
-          </Paper>
+          </section>
 
           {/* EMPLOYEE ADDRESS */}
 
-          <Paper variant="outlined" sx={sectionPaper}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2.5,
-                flexWrap: "wrap",
-                gap: 1.5,
-              }}
-            >
-              <MuiTypography sx={eyebrow}>
-                <IoLocationOutline size={16} color="#667eea" />
+          <section className="surface surface--padded surface--flat employee-section">
+            <div className="employee-section__header employee-address__header">
+              <h3 className="employee-eyebrow">
+                <MapPin size={16} className="employee-address__icon" />
                 Employee Address
-              </MuiTypography>
+              </h3>
 
               <Tooltip
                 title={
@@ -2082,174 +1758,104 @@ const UpdateServiceProvider = () => {
                     : ""
                 }
               >
-                <span>
-                  <MuiButton
-                    variant="contained"
-                    disableElevation
-                    size="small"
+                <span className="employee-address__tooltip-target">
+                  <Button
+                    type="primary"
                     disabled={hasAddress}
-                    startIcon={<Plus size={16} />}
+                    icon={<Plus size={16} />}
                     onClick={openAddAddress}
-                    sx={{
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      height: 36,
-                      backgroundColor: GREEN,
-                      "&:hover": { backgroundColor: "#156437" },
-                    }}
                   >
                     Add Address
-                  </MuiButton>
+                  </Button>
                 </span>
               </Tooltip>
-            </Box>
+            </div>
 
             {hasAddress ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
-                  gap: "16px",
-                }}
-              >
+              <div className="employee-address__grid">
                 {userAddresses.map((addr) => (
-                  <Box
-                    key={addr.id}
-                    sx={{
-                      border: "1px solid #eef0f2",
-                      borderRadius: "12px",
-                      padding: "16px",
-                      background: "#fafbfc",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1.25,
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                      <MapPin size={16} color="#667eea" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div key={addr.id} className="employee-address__card">
+                    <div className="employee-address__line">
+                      <MapPin size={16} className="employee-address__pin" />
 
-                      <MuiTypography
-                        sx={{ fontSize: "13.5px", color: "#2c3e50", fontWeight: 500, lineHeight: 1.5 }}
-                      >
+                      <p className="employee-address__text">
                         {addr.address}, {addr.user_city?.name}, {addr.user_state?.name}, {addr.user_country?.name}
-                      </MuiTypography>
-                    </Box>
+                      </p>
+                    </div>
 
-                    <Divider sx={{ my: 0.5 }} />
+                    <Divider className="employee-address__divider" />
 
-                    <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={1}>
-                      <Tooltip title="Edit Address">
-                        <IconButton
-                          size="small"
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            border: "1px solid #6366F1",
-                            color: "#6366F1",
-                            "&:hover": { backgroundColor: "#6366F114" },
-                          }}
-                          onClick={() => openEditAddress(addr)}
-                        >
-                          <Pencil size={14} />
-                        </IconButton>
-                      </Tooltip>
+                    <div className="employee-address__actions">
+                      <IconAction
+                        icon={Pencil}
+                        iconSize={14}
+                        title="Edit Address"
+                        onClick={() => openEditAddress(addr)}
+                      />
 
-                      <Tooltip title="Delete Address">
-                        <IconButton
-                          size="small"
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            border: "1px solid #EF4444",
-                            color: "#EF4444",
-                            "&:hover": { backgroundColor: "#EF444414" },
-                          }}
-                          onClick={() => handleDeleteAddress(addr.id)}
-                        >
-                          <Trash2 size={14} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Box>
+                      <IconAction
+                        icon={Trash2}
+                        iconSize={14}
+                        title="Delete Address"
+                        danger
+                        onClick={() => handleDeleteAddress(addr.id)}
+                      />
+                    </div>
+                  </div>
                 ))}
-              </Box>
+              </div>
             ) : (
-              <Box
-                sx={{
-                  border: "1px dashed #e5e7eb",
-                  borderRadius: "12px",
-                  padding: "24px",
-                  textAlign: "center",
-                  background: "#fafbfc",
-                }}
-              >
-                <MapPin size={20} color="#c4c9d4" style={{ marginBottom: 8 }} />
+              <div className="employee-address__empty">
+                <MapPin size={20} className="employee-address__empty-icon" />
 
-                <MuiTypography sx={{ color: "#9ca3af", fontSize: "0.9rem" }}>
+                <p className="employee-address__empty-text">
                   No address added yet. This employee can have one address.
-                </MuiTypography>
-              </Box>
+                </p>
+              </div>
             )}
-          </Paper>
+          </section>
 
           {/* ACTIONS */}
 
-          <Form.Item style={{ marginTop: "8px" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Form.Item style={{ marginTop: 8 }}>
+            <div className="employee-form__actions">
               <Button
                 type="primary"
                 htmlType="submit"
+                size="large"
                 loading={loading}
                 disabled={loadingLocation || loadingHiringForms}
-                icon={!loading ? <Check size={16} /> : null}
-                style={{
-                  backgroundColor: GREEN,
-                  borderColor: GREEN,
-                  height: 40,
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                icon={<Check size={16} />}
               >
                 Save
               </Button>
 
-              <Button
-                onClick={() => navigate("/employees")}
-                style={{ height: 40, borderRadius: 8, fontWeight: 600 }}
-              >
+              <Button size="large" onClick={() => navigate("/employees")}>
                 Cancel
               </Button>
 
               {selectedHiringForm && (
-                <Box
-                  sx={{
-                    ml: "auto",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    color: locationReady ? GREEN : "#9ca3af",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                  }}
+                <div
+                  className={
+                    locationReady
+                      ? "employee-form__location employee-form__location--ready"
+                      : "employee-form__location"
+                  }
                 >
                   {locationReady ? (
                     <>
-                      <CheckCircle2 size={16} />
+                      <CircleCheck size={16} />
                       Location ready
                     </>
                   ) : (
                     <>
-                      <CircularProgress size={14} />
+                      <Spin size="small" />
                       Resolving location…
                     </>
                   )}
-                </Box>
+                </div>
               )}
-            </Box>
+            </div>
           </Form.Item>
         </Form>
 
@@ -2267,7 +1873,6 @@ const UpdateServiceProvider = () => {
           }}
           onOk={handleSaveAddress}
           okText={editingAddress ? "Save Changes" : "Add Address"}
-          okButtonProps={{ style: { backgroundColor: GREEN, borderColor: GREEN } }}
           forceRender
         >
           <Form
@@ -2321,7 +1926,7 @@ const UpdateServiceProvider = () => {
             >
               <Select
                 placeholder="Select Country"
-                suffixIcon={<ChevronDown size={16} color={NAVY_DARK} />}
+                suffix={selectChevron}
               >
                 <Select.Option value={COUNTRY_IDS.USA}>USA</Select.Option>
                 <Select.Option value={COUNTRY_IDS.CANADA}>
@@ -2341,7 +1946,7 @@ const UpdateServiceProvider = () => {
                 showSearch
                 placeholder="Select State"
                 optionFilterProp="children"
-                suffixIcon={<ChevronDown size={16} color={NAVY_DARK} />}
+                suffix={selectChevron}
                 filterOption={(input, option) =>
                   option.children.toLowerCase().includes(input.toLowerCase())
                 }
@@ -2369,7 +1974,7 @@ const UpdateServiceProvider = () => {
                 placeholder="Select City"
                 disabled={!addressForm.getFieldValue("state_id")}
                 optionFilterProp="children"
-                suffixIcon={<ChevronDown size={16} color={NAVY_DARK} />}
+                suffix={selectChevron}
                 filterOption={(input, option) =>
                   option.children.toLowerCase().includes(input.toLowerCase())
                 }
@@ -2388,17 +1993,15 @@ const UpdateServiceProvider = () => {
             {/* Map */}
 
             <Form.Item label="Map Preview">
-              <div style={{ border: "1px solid #eef0f2", height: 220, borderRadius: 8, overflow: "hidden" }}>
+              <div className="employee-address__map">
                 {addressCoordinates.lat && addressCoordinates.lng ? (
                   <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: "none" }}
+                    title="Map Preview"
                     src={`https://maps.google.com/maps?q=${addressCoordinates.lat},${addressCoordinates.lng}&z=16&output=embed`}
                     allowFullScreen
                   />
                 ) : (
-                  <p style={{ textAlign: "center", paddingTop: 80, color: "#999" }}>
+                  <p className="employee-address__map-placeholder">
                     Enter address to show map
                   </p>
                 )}
@@ -2406,8 +2009,8 @@ const UpdateServiceProvider = () => {
             </Form.Item>
           </Form>
         </Modal>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

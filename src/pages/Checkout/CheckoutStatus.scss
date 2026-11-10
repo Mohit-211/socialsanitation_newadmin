@@ -1,0 +1,26 @@
+// Public page shown after a Square checkout.
+
+.checkout-status {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--space-6);
+  box-sizing: border-box;
+  background: var(--color-bg-subtle);
+}
+
+.checkout-status__card.ant-card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+@media (max-width: 599.98px) {
+  .checkout-status__card.ant-card {
+    padding: var(--space-4) 0;
+  }
+}

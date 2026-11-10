@@ -1,0 +1,69 @@
+// Weekly booking overview ("Schedule"). Colors come from the design tokens
+// in src/index.css.
+
+.weekly-overview {
+  // Week navigation: previous / 7 day buttons / next
+  &__week {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 var(--space-4);
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+
+  &__nav.ant-btn {
+    align-self: center;
+  }
+
+  &__days {
+    display: flex;
+    flex: 1;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &__day.ant-btn {
+    flex: 0 1 100px;
+    min-width: 80px;
+    height: 60px;
+    text-align: center;
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+  }
+
+  &__summary {
+    margin-bottom: var(--space-5);
+  }
+
+  &__stats {
+    margin-bottom: 30px;
+  }
+
+  &__stat.ant-card {
+    &.weekly-overview__stat--bookings {
+      background: var(--color-primary-soft);
+    }
+
+    &.weekly-overview__stat--employees {
+      background: var(--color-secondary-subtle);
+    }
+
+    .ant-statistic-content-prefix svg {
+      vertical-align: -0.125em;
+    }
+  }
+
+  // Lets the long label wrap on narrow screens.
+  &__download.ant-btn {
+    height: auto;
+    min-height: 32px;
+    white-space: normal;
+  }
+}

@@ -12,7 +12,8 @@ import {
   Tabs,
   Modal,
 } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
+import { ArrowLeft, ClipboardList, FileText, PenLine } from "lucide-react";
 import { GenerateServiceEstimate } from "../../services/Api/Api";
 import { GetAllUserName } from "../../services/Api/InvoiceApi";
 
@@ -239,7 +240,9 @@ const GenerateEstimate = () => {
       key: "1",
       label: (
         <span className="ge-tab-label">
-          <span className="ge-tab-label__icon">📄</span>
+          <span className="ge-tab-label__icon">
+            <FileText size={16} />
+          </span>
           Estimate Details
         </span>
       ),
@@ -388,7 +391,7 @@ const GenerateEstimate = () => {
               {/* 🚫 No user selected */}
               {!form.getFieldValue("user_id") && (
                 <div className="bdm-empty">
-                  <p style={{ marginBottom: 10, color: "#999" }}>
+                  <p className="text-muted" style={{ marginBottom: 10 }}>
                     Please select a client first to view or assign a BDM
                   </p>
 
@@ -473,8 +476,9 @@ const GenerateEstimate = () => {
               block
               size="large"
               className="ge-submit-btn"
+              icon={<PenLine size={16} />}
             >
-              🖊️ &nbsp; Generate &amp; Sign Document
+              Generate &amp; Sign Document
             </Button>
           </Form.Item>
         </Form>
@@ -484,7 +488,9 @@ const GenerateEstimate = () => {
       key: "2",
       label: (
         <span className="ge-tab-label">
-          <span className="ge-tab-label__icon">📋</span>
+          <span className="ge-tab-label__icon">
+            <ClipboardList size={16} />
+          </span>
           Scope of Work
           <span className="ge-section__page">Page 4-5</span>
         </span>
@@ -533,7 +539,8 @@ const GenerateEstimate = () => {
           className="ge-back-btn"
           onClick={() => navigate("/pdf-generation")}
         >
-          ← Back to All PDFs
+          <ArrowLeft size={16} />
+          Back to All PDFs
         </button>
       </div>
 

@@ -1,11 +1,9 @@
 import dayjs from "@/lib/dayjs";
 import { useEffect, useState } from "react";
 import { Table, Button, Tag, message } from "antd";
-import { EyeOutlined } from "@ant-design/icons";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
+import { Eye } from "lucide-react";
 import QuoteDetailsModal from "./QuoteDetailsModal";
+import PageHeader from "../../components/PageHeader";
 import {
 	getQuoteRequests,
 	updateQuoteStatus,
@@ -67,10 +65,10 @@ const QuoteRequests = () => {
 			title: "Status",
 			dataIndex: "status",
 			render: (status) => {
-				let color = "blue";
+				let color = "processing";
 
-				if (status === "accepted") color = "green";
-				if (status === "rejected") color = "red";
+				if (status === "accepted") color = "success";
+				if (status === "rejected") color = "error";
 
 				return <Tag color={color}>{status.toUpperCase()}</Tag>;
 			},
@@ -90,7 +88,7 @@ const QuoteRequests = () => {
 		{
 			title: "Actions",
 			render: (_, record) => (
-				<Button icon={<EyeOutlined />} onClick={() => handleView(record)}>
+				<Button icon={<Eye size={16} />} onClick={() => handleView(record)}>
 					View
 				</Button>
 			),
@@ -98,24 +96,12 @@ const QuoteRequests = () => {
 	];
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box>
-					<Typography className="page-title">QUOTE REQUESTS</Typography>
-					<Typography className="page-sub-title">
-						View and manage submitted quotes
-					</Typography>
-				</Box>
-			</Paper>
+			<PageHeader
+				title="QUOTE REQUESTS"
+				subtitle="View and manage submitted quotes"
+			/>
 
 			<Table
 				rowKey="id"
@@ -132,7 +118,7 @@ const QuoteRequests = () => {
 				quote={selectedQuote}
 				onUpdateStatus={handleUpdateStatus}
 			/>
-		</Box>
+		</div>
 	);
 };
 

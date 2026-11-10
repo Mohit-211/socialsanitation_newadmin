@@ -6,23 +6,18 @@ import {
   Select,
   Modal,
   Tag,
-  Tooltip,
   Button,
   Alert,
+  Space,
+  Upload as AntUpload,
 } from "antd";
-import IconButton from "@mui/material/IconButton";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
 import {
   Search as SearchIcon,
   Download,
   Plus,
   Pencil,
   Trash2,
-  CheckCircle2,
+  CircleCheck,
   Eye,
   Upload,
   Send,
@@ -39,8 +34,11 @@ import {
   UploadHistoricalInvoicePDF,
   SendInvoiceBalance,
 } from "../../services/Api/InvoiceApi";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
+import { saveXlsx, excelStyles } from "../../utils/excel";
+import { downloadBlob } from "../../utils/download";
+import { cssVar } from "../../theme/antdTheme";
 import "./invoice.css";
 
 /* CONSTANTS */
@@ -286,18 +284,6 @@ const AllInvoices = () => {
     });
   };
 
-  const actionIconBtn = (color) => ({
-    width: 38,
-    height: 38,
-    border: "1px solid",
-    borderColor: color,
-    color,
-    "&:hover": {
-      backgroundColor: `${color}14`,
-      borderColor: color,
-    },
-  });
-
   /* TABLE COLUMNS */
 
   const columns = [
@@ -310,31 +296,31 @@ const AllInvoices = () => {
 
           {record.is_historical && (
             <div className="csv-badge-row">
-              <Tag color="purple">Imported via CSV</Tag>
+              <Tag>Imported via CSV</Tag>
 
-              <MuiButton
-                component="label"
-                size="small"
-                className="csv-pdf-btn"
+              <AntUpload
+                accept="application/pdf"
+                showUploadList={false}
                 disabled={pdfUploadLoading === record.id}
+                beforeUpload={(file) => {
+                  handleUploadHistoricalPDF(record, file);
+                  // Handled manually above; keep it out of antd's upload list.
+                  return AntUpload.LIST_IGNORE;
+                }}
               >
-                {pdfUploadLoading === record.id
-                  ? "Uploading..."
-                  : record.pdf_url
-                    ? "Replace PDF"
-                    : "Upload PDF"}
-
-                <input
-                  type="file"
-                  hidden
-                  accept="application/pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleUploadHistoricalPDF(record, file);
-                    e.target.value = ""; // allow picking the same file again
-                  }}
-                />
-              </MuiButton>
+                <Button
+                  type="link"
+                  size="small"
+                  className="csv-pdf-btn"
+                  disabled={pdfUploadLoading === record.id}
+                >
+                  {pdfUploadLoading === record.id
+                    ? "Uploading..."
+                    : record.pdf_url
+                      ? "Replace PDF"
+                      : "Upload PDF"}
+                </Button>
+              </AntUpload>
             </div>
           )}
         </div>
@@ -366,7 +352,7 @@ const AllInvoices = () => {
           !!record.recurring && record.recurring.status !== "CANCELLED";
 
         return isRecurring ? (
-          <Tag color="blue">Recurring</Tag>
+          <Tag color="processing">Recurring</Tag>
         ) : (
           <Tag color="default">One-Time</Tag>
         );
@@ -406,10 +392,10 @@ const AllInvoices = () => {
 
           return (
             <div>
-              <span style={{ color: "#2e7d32", fontWeight: 600 }}>
+              <span className="all-invoices__status all-invoices__status--paid">
                 Deposit Paid
               </span>
-              <div style={{ fontSize: 11, color: "#888" }}>{balanceText}</div>
+              <div className="all-invoices__status-note">{balanceText}</div>
             </div>
           );
         }
@@ -423,10 +409,9 @@ const AllInvoices = () => {
 
         return (
           <span
-            style={{
-              color: isPaid ? "#2e7d32" : "#ef6c00",
-              fontWeight: 600,
-            }}
+            className={`all-invoices__status ${
+              isPaid ? "all-invoices__status--paid" : "all-invoices__status--unpaid"
+            }`}
           >
             {labels[status] || "Not Paid"}
           </span>
@@ -436,17 +421,13 @@ const AllInvoices = () => {
     {
       title: "Action",
       render: (_, record) => (
-        <Stack direction="row" spacing={1}>
+        <Space>
           {record.pdf_url && (
-            <Tooltip title="View PDF">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#6B7280")}
-                onClick={() => handleViewPDF(record)}
-              >
-                <Eye size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Eye}
+              title="View PDF"
+              onClick={() => handleViewPDF(record)}
+            />
           )}
 
           {!(
@@ -454,52 +435,37 @@ const AllInvoices = () => {
             record.is_historical === 1 ||
             record.is_historical === "true"
           ) && (
-            <Tooltip title="Edit Invoice">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#6366F1")}
-                onClick={() => navigate(`/edit-invoice/${record.id}`)}
-              >
-                <Pencil size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Pencil}
+              title="Edit Invoice"
+              onClick={() => navigate(`/edit-invoice/${record.id}`)}
+            />
           )}
 
-          <Tooltip title="Delete Invoice">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#EF4444")}
-              onClick={() => handleDelete(record.id)}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Tooltip>
+          <IconAction
+            icon={Trash2}
+            title="Delete Invoice"
+            danger
+            onClick={() => handleDelete(record.id)}
+          />
 
           {record.payment_status === "NOT_PAID" && (
-            <Tooltip title="Mark ACH/Check Paid">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#16A34A")}
-                onClick={() => openPayModal(record.id)}
-              >
-                <CheckCircle2 size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={CircleCheck}
+              title="Mark ACH/Check Paid"
+              onClick={() => openPayModal(record.id)}
+            />
           )}
 
           {canSendBalanceNow(record) && (
-            <Tooltip title="Send balance invoice now">
-              <IconButton
-                size="small"
-                sx={actionIconBtn("#2563EB")}
-                disabled={balanceLoadingId === record.id}
-                onClick={() => handleSendBalanceNow(record)}
-              >
-                <Send size={16} />
-              </IconButton>
-            </Tooltip>
+            <IconAction
+              icon={Send}
+              title="Send balance invoice now"
+              disabled={balanceLoadingId === record.id}
+              onClick={() => handleSendBalanceNow(record)}
+            />
           )}
-        </Stack>
+        </Space>
       ),
     },
   ];
@@ -528,25 +494,8 @@ const AllInvoices = () => {
 
       const formatDayHeader = (d) => `${d}${ordinalSuffix(d)} ${monthShort}`;
 
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet(`Monthly Invoices ${monthName}`, {
-        properties: { defaultRowHeight: 32 },
-      });
-
-      // Margins intentionally not set. Google Sheets shows "Custom numbers"
-      // for explicit margins; leaving them unset uses its "Normal" preset.
-      sheet.pageSetup = {
-        orientation: "landscape",
-        fitToPage: true,
-        fitToWidth: 1,
-        horizontalCentered: true,
-        verticalCentered: true,
-      };
-
-      const colors = {
-        PAID: "FFE8F5E9",
-        NOT_PAID: "FFFFF4E5",
-      };
+      // Themed cell styles (header, status fills, currency format...).
+      const styles = excelStyles();
 
       const getFinalStatus = (inv) =>
         PAID_STATUSES.includes(inv.payment_status) ? "PAID" : "NOT_PAID";
@@ -577,117 +526,111 @@ const AllInvoices = () => {
 
       const mergeSpan = Math.max(6, dayNumbers.length + 1);
 
+      // Every row of the report is 32pt high (the sheet's row height).
+      const ROW_HEIGHT = 32;
+
+      // One cell merged across the full report width.
+      const mergedRow = (cell) => [
+        { ...cell, columnSpan: mergeSpan, height: ROW_HEIGHT },
+        ...Array(mergeSpan - 1).fill(null),
+      ];
+
+      const rows = [];
+
       /* TITLE */
-      const titleRow = sheet.addRow([`Monthly Invoice Report - ${monthName}`]);
-      titleRow.getCell(1).font = { bold: true, size: 16 };
-      titleRow.getCell(1).alignment = { horizontal: "center" };
-      sheet.mergeCells(1, 1, 1, mergeSpan);
+      rows.push(
+        mergedRow({
+          value: `Monthly Invoice Report - ${monthName}`,
+          ...styles.title,
+        }),
+      );
 
       /* SUMMARY */
-      const summaryHeader = sheet.addRow([
-        "Total Invoices",
-        "Total Amount",
-        "Paid",
-        "Paid Amount",
-        "Not Paid",
-        "Not Paid Amount",
-      ]);
+      rows.push(
+        [
+          "Total Invoices",
+          "Total Amount",
+          "Paid",
+          "Paid Amount",
+          "Not Paid",
+          "Not Paid Amount",
+        ].map((value) => ({ value, ...styles.header, height: ROW_HEIGHT })),
+      );
 
-      summaryHeader.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF1F4E79" },
-        };
-        cell.alignment = { horizontal: "center", vertical: "middle" };
-      });
-
-      const summaryRow = sheet.addRow([
-        totalCount,
-        totalAmount,
-        paidCount,
-        paidAmount,
-        notPaidCount,
-        notPaidAmount,
-      ]);
-
-      summaryRow.eachCell((cell, col) => {
-        cell.font = { bold: true };
-        cell.alignment = { horizontal: "center" };
-        if (col % 2 === 0) cell.numFmt = "$#,##0.00";
-      });
+      rows.push(
+        [
+          totalCount,
+          totalAmount,
+          paidCount,
+          paidAmount,
+          notPaidCount,
+          notPaidAmount,
+        ].map((value, i) => ({
+          value,
+          fontWeight: "bold",
+          align: "center",
+          height: ROW_HEIGHT,
+          // 2nd, 4th and 6th columns are amounts
+          ...(i % 2 === 1 ? { format: styles.currency } : {}),
+        })),
+      );
 
       /* LEGEND */
-      const legendRow = sheet.addRow([
-        "🟢 Paid (Cash / Check / ACH / Card)    🟠 Not Paid (including Overdue)",
-      ]);
-      legendRow.getCell(1).font = { italic: true, size: 11 };
-      sheet.mergeCells(legendRow.number, 1, legendRow.number, mergeSpan);
+      rows.push(
+        mergedRow({
+          value:
+            "🟢 Paid (Cash / Check / ACH / Card)    🟠 Not Paid (including Overdue)",
+          ...styles.note,
+          fontSize: 11,
+        }),
+      );
 
       /* MAIN HEADER */
-      const headerRow = sheet.addRow([
-        "Client's Name",
-        ...dayNumbers.map(formatDayHeader),
-      ]);
-
-      headerRow.eachCell((cell) => {
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF1F4E79" },
-        };
-        cell.alignment = { horizontal: "center" };
-      });
+      rows.push(
+        ["Client's Name", ...dayNumbers.map(formatDayHeader)].map((value) => ({
+          value,
+          ...styles.header,
+          height: ROW_HEIGHT,
+        })),
+      );
 
       /* DATA ROWS */
-      users.forEach((user) => {
-        const rowValues = [user.name || "Unknown"];
+      // Sheet row number of the first client row (rows are striped by it).
+      const firstDataRow = rows.length + 1;
+
+      users.forEach((user, userIndex) => {
+        const hasUnpaid = (user.invoices || []).some(
+          (inv) => getFinalStatus(inv) === "NOT_PAID",
+        );
+
+        // Fill for the whole row; day cells with invoices use a status fill.
+        const rowFill = hasUnpaid
+          ? styles.error
+          : (firstDataRow + userIndex) % 2 === 0
+            ? styles.muted
+            : { backgroundColor: cssVar("--color-bg") };
+
+        const row = [
+          {
+            value: user.name || "Unknown",
+            ...rowFill,
+            fontWeight: "bold",
+            textColor: cssVar(
+              hasUnpaid ? "--color-error-strong" : "--color-text",
+            ),
+            alignVertical: "center",
+            height: ROW_HEIGHT,
+          },
+        ];
 
         dayNumbers.forEach((d) => {
-          const dayInvoices = (user.invoices || []).filter((inv) => {
+          const invoices = (user.invoices || []).filter((inv) => {
             if (!inv.billing_date) return false;
             return dayjs(inv.billing_date, "YYYY-MM-DD").date() === d;
           });
-          rowValues.push(dayInvoices);
-        });
 
-        const row = sheet.addRow(rowValues);
-
-        row.eachCell((cell, colIndex) => {
-          if (colIndex === 1) {
-            const hasUnpaid = (user.invoices || []).some(
-              (inv) => getFinalStatus(inv) === "NOT_PAID",
-            );
-
-            row.eachCell((entireRowCell) => {
-              entireRowCell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: {
-                  argb: hasUnpaid
-                    ? "FFFFCCCC"
-                    : row.number % 2 === 0
-                      ? "FFF9F9F9"
-                      : "FFFFFFFF",
-                },
-              };
-            });
-
-            cell.font = {
-              bold: true,
-              color: { argb: hasUnpaid ? "FF9C0006" : "FF000000" },
-            };
-            cell.alignment = { vertical: "middle" };
-            return;
-          }
-
-          const invoices = cell.value;
-
-          if (!invoices || invoices.length === 0) {
-            cell.value = "—";
-            cell.alignment = { horizontal: "center" };
+          if (invoices.length === 0) {
+            row.push({ value: "—", ...rowFill, align: "center" });
             return;
           }
 
@@ -704,26 +647,31 @@ const AllInvoices = () => {
             if (status === "NOT_PAID") cellStatus = "NOT_PAID";
           });
 
-          cell.value = text.trim();
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: colors[cellStatus] },
-          };
-          cell.alignment = { wrapText: true, vertical: "top" };
+          row.push({
+            value: text.trim(),
+            ...(cellStatus === "PAID" ? styles.success : styles.warning),
+            wrap: true,
+            alignVertical: "top",
+          });
         });
+
+        rows.push(row);
       });
 
-      /* FORMATTING */
-      sheet.columns.forEach((col, i) => {
-        col.width = i === 0 ? 34 : 19;
-      });
-
-      sheet.views = [{ state: "frozen", xSplit: 1, ySplit: 5 }];
-
-      /* DOWNLOAD */
-      const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buffer]), `Invoice Report - ${monthName}.xlsx`);
+      /* FORMATTING + DOWNLOAD */
+      await saveXlsx(
+        rows,
+        {
+          sheet: `Monthly Invoices ${monthName}`,
+          columns: Array.from({ length: mergeSpan }, (_, i) => ({
+            width: i === 0 ? 34 : 19,
+          })),
+          stickyRowsCount: 5,
+          stickyColumnsCount: 1,
+          orientation: "landscape",
+        },
+        `Invoice Report - ${monthName}.xlsx`,
+      );
 
       message.success(`Invoice Report - ${monthName} downloaded successfully!`);
     } catch (err) {
@@ -738,7 +686,7 @@ const AllInvoices = () => {
     const blob = new Blob([HISTORICAL_CSV_SAMPLE], {
       type: "text/csv;charset=utf-8;",
     });
-    saveAs(blob, "historical-invoices-sample-2026-09.csv");
+    downloadBlob(blob, "historical-invoices-sample-2026-09.csv");
   };
 
   /* CSV IMPORT */
@@ -844,7 +792,7 @@ const AllInvoices = () => {
       );
     });
 
-    saveAs(
+    downloadBlob(
       new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" }),
       "csv-import-not-imported.csv",
     );
@@ -855,158 +803,79 @@ const AllInvoices = () => {
   return (
     <>
       {/* HEADER */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack spacing={2}>
-          <Stack
-            useFlexGap
-            direction="row"
-            spacing={2}
-            sx={{
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-            }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography className="page-title" noWrap>
-                INVOICES
-              </Typography>
-              <Typography
-                className="page-sub-title"
-                sx={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                View and manage all generated invoices
-              </Typography>
-            </Box>
-
-            <Stack
-              useFlexGap
-              direction="row"
-              spacing={1.5}
-              sx={{
-                alignItems: "center",
-                flexShrink: { xs: 1, md: 0 },
-                flexWrap: "wrap",
-              }}
-            >
-              <MuiButton
-                variant="outlined"
-                startIcon={<Download size={17} />}
+      <div className="surface surface--padded all-invoices__header">
+        <PageHeader
+          card={false}
+          title="INVOICES"
+          subtitle="View and manage all generated invoices"
+          actions={
+            <>
+              <Button
+                size="large"
+                icon={<Download size={16} />}
                 onClick={handleDownloadExcel}
-                sx={{
-                  height: 44,
-                  px: 2.5,
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
               >
                 Download ({dayjs().month(selectedMonth).format("MMM")}{" "}
                 {selectedYear})
-              </MuiButton>
+              </Button>
 
-              <MuiButton
-                variant="contained"
-                disableElevation
-                startIcon={<Plus size={18} />}
+              <Button
+                type="primary"
+                size="large"
+                icon={<Plus size={16} />}
                 onClick={() => navigate("/generate-invoice")}
-                sx={{
-                  height: 44,
-                  px: 2.5,
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
               >
                 New Invoice
-              </MuiButton>
-            </Stack>
-          </Stack>
+              </Button>
+            </>
+          }
+        />
 
-          <Stack
-            useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{
-              justifyContent: "flex-end",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
+        <div className="all-invoices__toolbar">
+          <Button
+            size="large"
+            icon={<Upload size={16} />}
+            onClick={() => setCsvModalOpen(true)}
           >
-            <MuiButton
-              variant="outlined"
-              startIcon={<Upload size={17} />}
-              onClick={() => setCsvModalOpen(true)}
-              sx={{
-                height: 44,
-                px: 2.5,
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Import CSV
-            </MuiButton>
+            Import CSV
+          </Button>
 
-            <Input
-              allowClear
-              prefix={<SearchIcon size={18} color="#9CA3AF" />}
-              placeholder="Search by ref, client, amount"
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 260, height: 44 }}
-            />
+          <Input
+            allowClear
+            size="large"
+            className="all-invoices__search"
+            prefix={<SearchIcon size={16} className="text-subtle" />}
+            placeholder="Search by ref, client, amount"
+            onChange={(e) => setSearchText(e.target.value)}
+          />
 
-            <Select
-              value={selectedMonth}
-              style={{ width: 130, height: 44 }}
-              onChange={(m) => {
-                setSelectedMonth(m);
-                fetchInvoices(
-                  dayjs().year(selectedYear).month(m).startOf("month"),
-                );
-              }}
-            >
-              {months.map((m, i) => (
-                <Select.Option key={i} value={i}>
-                  {m}
-                </Select.Option>
-              ))}
-            </Select>
+          <Select
+            size="large"
+            className="all-invoices__month"
+            value={selectedMonth}
+            onChange={(m) => {
+              setSelectedMonth(m);
+              fetchInvoices(
+                dayjs().year(selectedYear).month(m).startOf("month"),
+              );
+            }}
+            options={months.map((m, i) => ({ value: i, label: m }))}
+          />
 
-            <Select
-              value={selectedYear}
-              style={{ width: 110, height: 44 }}
-              onChange={(y) => {
-                setSelectedYear(y);
-                fetchInvoices(
-                  dayjs().year(y).month(selectedMonth).startOf("month"),
-                );
-              }}
-            >
-              {years.map((y) => (
-                <Select.Option key={y} value={y}>
-                  {y}
-                </Select.Option>
-              ))}
-            </Select>
-          </Stack>
-        </Stack>
-      </Paper>
+          <Select
+            size="large"
+            className="all-invoices__year"
+            value={selectedYear}
+            onChange={(y) => {
+              setSelectedYear(y);
+              fetchInvoices(
+                dayjs().year(y).month(selectedMonth).startOf("month"),
+              );
+            }}
+            options={years.map((y) => ({ value: y, label: y }))}
+          />
+        </div>
+      </div>
 
       {/* PENDING CLIENTS BANNER (persists until the names are imported or dismissed) */}
       {pendingClients.length > 0 && (
@@ -1014,10 +883,10 @@ const AllInvoices = () => {
           className="csv-pending-banner"
           type="warning"
           showIcon
-          message={`${pendingClients.length} client(s) from your CSV import don't exist yet`}
+          title={`${pendingClients.length} client(s) from your CSV import don't exist yet`}
           description={
             <div>
-              <p style={{ margin: "4px 0 8px" }}>
+              <p className="csv-pending-banner__text">
                 Create each client under Clients using the exact name below,
                 then import the same CSV again. Invoices already imported are
                 skipped.
@@ -1071,7 +940,7 @@ const AllInvoices = () => {
         title="CSV import finished"
         open={!!importResult}
         closable={false}
-        maskClosable={false}
+        mask={{ closable: false }}
         keyboard={false}
         width={680}
         footer={[
@@ -1128,7 +997,7 @@ const AllInvoices = () => {
         {notFoundRows.length > 0 && (
           <div className="csv-result-section">
             <h4>These clients don't exist yet</h4>
-            <p style={{ margin: "0 0 8px" }}>
+            <p className="csv-result-section__text">
               Create each client under Clients using the exact name below, then
               import the same CSV again. Invoices already imported will be
               skipped, so only the missing rows get added.
@@ -1146,7 +1015,7 @@ const AllInvoices = () => {
         {inactiveRows.length > 0 && (
           <div className="csv-result-section">
             <h4>These client accounts are inactive</h4>
-            <p style={{ margin: "0 0 8px" }}>
+            <p className="csv-result-section__text">
               The name exists, but the account is deactivated, so these rows
               were not imported. Reactivate the account under Users, then import
               the same CSV again.
@@ -1164,7 +1033,7 @@ const AllInvoices = () => {
         {ambiguousRows.length > 0 && (
           <div className="csv-result-section">
             <h4>More than one active account has this name</h4>
-            <p style={{ margin: "0 0 8px" }}>
+            <p className="csv-result-section__text">
               These rows were not imported because the name matches more than
               one active client. Rename or deactivate the duplicate account
               under Users, then import again.
@@ -1195,7 +1064,7 @@ const AllInvoices = () => {
         {skippedRows.length > 0 && (
           <div className="csv-result-section">
             <h4>Already imported (skipped)</h4>
-            <p style={{ margin: 0, color: "#6b7280" }}>
+            <p className="csv-result-section__muted">
               {skippedRows.map((r) => r.invoice_number).join(", ")}
             </p>
           </div>
@@ -1276,11 +1145,12 @@ const AllInvoices = () => {
           </Button>,
         ]}
       >
-        <div style={{ marginBottom: 20 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+        <div className="csv-file-field">
+          <label className="csv-file-field__label" htmlFor="csv-import-file">
             CSV File
-          </Typography>
+          </label>
           <input
+            id="csv-import-file"
             type="file"
             accept=".csv,text/csv"
             onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
@@ -1288,19 +1158,15 @@ const AllInvoices = () => {
         </div>
 
         <div className="csv-format-box">
-          <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
-            CSV Format
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 1 }}>
+          <p className="csv-box-title">CSV Format</p>
+          <p className="csv-box-text">
             Your CSV must contain these columns in this format:
-          </Typography>
+          </p>
           <pre className="csv-format-sample">{HISTORICAL_CSV_SAMPLE}</pre>
         </div>
 
         <div className="csv-instructions-box">
-          <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>
-            Important Instructions
-          </Typography>
+          <p className="csv-box-title">Important Instructions</p>
           <ul>
             <li>Use CSV format only.</li>
             <li>Keep the column names exactly as shown above.</li>
@@ -1325,9 +1191,7 @@ const AllInvoices = () => {
         </div>
 
         {csvFile && (
-          <Typography variant="body2" sx={{ mt: 2, fontWeight: 600 }}>
-            Selected file: {csvFile.name}
-          </Typography>
+          <p className="csv-selected-file">Selected file: {csvFile.name}</p>
         )}
       </Modal>
     </>

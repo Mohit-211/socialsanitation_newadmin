@@ -10,32 +10,127 @@
 	flex-direction: column;
 	min-width: 0;
 	height: 100%;
+}
 
-	.ant-layout-header {
+// ---------------------------------------------------------------- Header
+
+.app-header.ant-layout-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	height: var(--header-height);
+	padding: 0 var(--space-6);
+	line-height: normal;
+	background: var(--header-bg);
+	border-bottom: 1px solid var(--color-border-subtle);
+
+	@media (max-width: 991.98px) {
+		padding: 0 var(--space-3);
+	}
+}
+
+.app-header__toggle.ant-btn {
+	color: var(--color-text-muted);
+}
+
+.app-header__actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-5);
+
+	@media (max-width: 599.98px) {
+		gap: var(--space-2);
+	}
+}
+
+.app-header__divider {
+	width: 1px;
+	height: 32px;
+	background: var(--color-border-subtle);
+
+	@media (max-width: 599.98px) {
+		display: none;
+	}
+}
+
+.profile-trigger {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: 6px 10px;
+	border: none;
+	border-radius: var(--radius-md);
+	background: transparent;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: background-color 0.15s;
+
+	&:hover {
+		background: var(--color-bg-subtle);
+	}
+
+	&__avatar.ant-avatar {
+		flex-shrink: 0;
+		font-size: var(--text-md);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-on-primary);
+		background: var(--color-primary);
+	}
+
+	&__text {
 		display: flex;
-		align-items: center;
-		width: 100%;
-		line-height: 64px;
+		flex-direction: column;
+		line-height: var(--line-height-tight);
 
-		// reset line-height for nested text so it doesn't inherit 64px
-		p,
-		span,
-		div {
-			line-height: normal;
+		@media (max-width: 599.98px) {
+			display: none;
+		}
+	}
+
+	&__name {
+		font-size: var(--text-sm);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text);
+	}
+
+	&__role {
+		font-size: var(--text-xs);
+		color: var(--color-text-subtle);
+	}
+
+	&__chevron {
+		color: var(--color-text-subtle);
+		transition: transform 0.15s;
+
+		&.is-open {
+			transform: rotate(180deg);
 		}
 	}
 }
+
+// --------------------------------------------------------------- Content
 
 .app-content {
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
+	margin: var(--space-6) var(--space-4);
+	padding: var(--space-6);
 	scrollbar-width: none;
 
 	&::-webkit-scrollbar {
 		width: 0;
 	}
+
+	@media (max-width: 991.98px) {
+		margin: var(--space-3) var(--space-2);
+		padding: var(--space-3);
+	}
 }
+
+// --------------------------------------------------------------- Sidebar
 
 .sidebar {
 	height: 100vh;
@@ -49,18 +144,19 @@
 	}
 
 	.ant-menu {
+		padding-bottom: var(--space-4);
+
 		.ant-menu-item-group {
-			margin-bottom: 4px;
+			margin-bottom: var(--space-1);
 		}
 
 		// Group labels (CORE, PEOPLE MANAGEMENT, etc.)
 		.ant-menu-item-group-title {
 			font-size: 11px;
-			font-weight: 700;
+			font-weight: var(--font-weight-bold);
 			letter-spacing: 0.06em;
-			color: rgba(255, 255, 255, 0.35);
 			text-transform: uppercase;
-			padding: 14px 16px 6px;
+			padding: 14px var(--space-4) 6px;
 		}
 
 		// Subtle divider line between groups (skip the very first one)
@@ -72,21 +168,21 @@
 				content: "";
 				display: block;
 				height: 1px;
-				margin: 0 16px 6px;
-				background: rgba(255, 255, 255, 0.06);
+				margin: 0 var(--space-4) 6px;
+				background: rgba(255, 255, 255, 0.08);
 			}
 		}
 
 		.ant-menu-item,
 		.ant-menu-submenu-title {
 			margin-block: 1px !important;
-			border-radius: 8px;
-			margin-inline: 8px !important;
+			border-radius: var(--radius-md);
+			margin-inline: var(--space-2) !important;
 			width: calc(100% - 16px) !important;
 		}
 
 		.ant-menu-item-selected {
-			font-weight: 600;
+			font-weight: var(--font-weight-semibold);
 		}
 	}
 }
@@ -98,7 +194,7 @@
 	left: 0;
 	bottom: 0;
 	z-index: 1001;
-	box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+	box-shadow: var(--shadow-lg);
 
 	&.ant-layout-sider-collapsed {
 		box-shadow: none;
@@ -109,87 +205,66 @@
 	position: fixed;
 	inset: 0;
 	z-index: 1000;
-	background: rgba(0, 0, 0, 0.45);
+	background: var(--color-overlay);
 }
 
+// The logo artwork has a white background, so it sits on a light panel.
 .logo {
+	position: sticky;
+	top: 0;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
-	height: 64px;
-	padding: 8px 0;
-	background-color: whitesmoke;
-	position: sticky;
-	top: 0;
-	z-index: 1;
+	height: var(--header-height);
+	padding: var(--space-2) 0;
+	background: var(--color-bg);
+	border-bottom: 3px solid var(--color-secondary);
 }
 
 .logo-image {
+	width: 180px;
 	max-width: 100%;
 	height: auto;
-}
 
-.menu-icon-lg {
-	font-size: 1.5rem;
-}
-
-#dropdownMenuLink {
-	cursor: pointer;
-}
-
-// Profile dropdown — hidden until .show is added
-.dropdown-menu {
-	display: none;
-	position: absolute;
-	top: calc(100% + 8px);
-	right: 0;
-	min-width: 220px;
-	max-width: calc(100vw - 24px);
-	background: #fff;
-	border: 1px solid #eef0f2;
-	border-radius: 10px;
-	box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
-	z-index: 1050;
-	list-style: none;
-	margin: 0;
-	padding: 8px;
-
-	&.show {
-		display: block;
-	}
-
-	&.admin {
-		border-top: 4px solid purple;
+	&--small {
+		width: 50px;
 	}
 }
 
-.dropdown-item {
-	display: flex;
+// ------------------------------------------------------ Review links modal
+
+.review-modal__title {
+	display: inline-flex;
 	align-items: center;
-	gap: 10px;
-	padding: 0.25rem 16px;
-	margin-bottom: 0.25rem;
-	border-radius: 8px;
-	font-size: 13.5px;
-	line-height: 34px;
-	color: rgba(0, 0, 0, 0.85);
-	text-decoration: none;
-	white-space: nowrap;
-	cursor: pointer;
-
-	&:hover {
-		background: #f5f5f5;
-		color: #1677ff;
-	}
-
-	&--danger {
-		color: #ef4444;
-	}
+	gap: var(--space-3);
+	font-weight: var(--font-weight-semibold);
 }
 
-.dropdown-divider {
-	height: 0;
-	margin: 6px 4px;
-	border-top: 1px solid #e8e8e8;
+.review-modal__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	flex-shrink: 0;
+	border-radius: var(--radius-md);
+	color: var(--color-on-primary);
+	background: var(--color-primary-soft);
+}
+
+.review-modal__intro {
+	margin: var(--space-2) 0 var(--space-5);
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--color-border);
+	font-size: var(--text-sm);
+	line-height: var(--line-height-base);
+	color: var(--color-text-muted);
+}
+
+.review-modal__fields {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
 }

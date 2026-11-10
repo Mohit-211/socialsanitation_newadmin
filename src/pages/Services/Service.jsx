@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
-import { Table, message, Input, Modal } from "antd";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import { Table, message, Input, Modal, Button, Space } from "antd";
 import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { GetServices, DeleteService } from "../../services/Api/ServiceApi";
 import { useNavigate } from "react-router";
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 import "./Service.scss";
 
 const Service = () => {
@@ -25,18 +20,6 @@ const Service = () => {
     },
     sortField: null,
     sortOrder: null,
-  });
-
-  const actionIconBtn = (color) => ({
-    width: 34,
-    height: 34,
-    border: "1px solid",
-    borderColor: color,
-    color,
-    "&:hover": {
-      backgroundColor: `${color}14`,
-      borderColor: color,
-    },
   });
 
   const columns = [
@@ -79,37 +62,26 @@ const Service = () => {
       dataIndex: "action",
       width: 150,
       render: (_, record) => (
-        <Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
-          <Tooltip title="View Service">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#F59E0B")}
-              onClick={(event) => navigateToViewService(event, record.id)}
-            >
-              <Eye size={16} />
-            </IconButton>
-          </Tooltip>
+        <Space size={4} wrap>
+          <IconAction
+            icon={Eye}
+            title="View Service"
+            onClick={(event) => navigateToViewService(event, record.id)}
+          />
 
-          <Tooltip title="Edit Service">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#6366F1")}
-              onClick={(event) => navigateToEditService(event, record.id)}
-            >
-              <Pencil size={16} />
-            </IconButton>
-          </Tooltip>
+          <IconAction
+            icon={Pencil}
+            title="Edit Service"
+            onClick={(event) => navigateToEditService(event, record.id)}
+          />
 
-          <Tooltip title="Delete Service">
-            <IconButton
-              size="small"
-              sx={actionIconBtn("#EF4444")}
-              onClick={() => handleDelete(record.id)}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+          <IconAction
+            icon={Trash2}
+            title="Delete Service"
+            danger
+            onClick={() => handleDelete(record.id)}
+          />
+        </Space>
       ),
     },
   ];
@@ -201,71 +173,32 @@ const Service = () => {
   };
 
   return (
-    <Box className="service-page">
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 2.5,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Stack useFlexGap
-          direction="row"
-          spacing={2}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-          }}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography className="page-title" noWrap>
-              SERVICE MANAGEMENT
-            </Typography>
-            <Typography
-              className="page-sub-title"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              View, delete, edit and add Service
-            </Typography>
-          </Box>
-
-          <Stack useFlexGap
-            direction="row"
-            spacing={1.5}
-            sx={{ alignItems: "center", flexShrink: { xs: 1, md: 0 }, flexWrap: { xs: "wrap", md: "nowrap" } }}
-          >
+    <div className="service-page">
+      <PageHeader
+        title="SERVICE MANAGEMENT"
+        subtitle="View, delete, edit and add Service"
+        actions={
+          <>
             <Input
               allowClear
-              prefix={<Search size={18} color="#9CA3AF" />}
+              size="large"
+              prefix={<Search size={16} color="var(--color-text-subtle)" />}
               placeholder="Search..."
-              style={{ width: 240, height: 44 }}
+              className="service-page__search"
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)}
             />
             <Button
-              variant="contained"
-              startIcon={<Plus size={18} />}
-              sx={{
-                borderRadius: "8px",
-                height: 44,
-                whiteSpace: "nowrap",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
               onClick={navigateToAddService}
             >
               Add Service
             </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+          </>
+        }
+      />
 
       <Table
         className="service-table"
@@ -279,7 +212,7 @@ const Service = () => {
         size="middle"
         scroll={{ x: 860 }}
       />
-    </Box>
+    </div>
   );
 };
 

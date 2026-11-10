@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import Button from "@mui/material/Button";
-import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "antd";
+import { useNavigate, useParams } from "react-router";
 import { GetValidateToken } from '../../services/Api/Api';
 import AccessImage from "../../assets/7641727.png";
+import "../ErrorPages/Error401.css";
 
 const AuthorizationSuccess = () => {
   const navigate = useNavigate();
@@ -34,22 +35,20 @@ const AuthorizationSuccess = () => {
 	}, []);
 
   return (
-    <div className="main_container">
-    <img src={AccessImage} alt="Access Denied" className="error_image" style={{height:"20%"}} />
-    <div className="main_box">
-      <p className="text-muted my-4">
-      Congratulations 😉 Your account has been activated. Please wait until we redirect....
-      </p>
-    </div>
-    <div className="back_button">
-      <Button
-        label="Back To Login"
-        severity="info"
-        style={{ borderRadius: "5px", height: "45px" }}
-        onClick={navigateToDashboard}
+    <main className="status-page">
+      <img
+        src={AccessImage}
+        alt="Access Denied"
+        className="status-page__image"
+        style={{ height: "20vh" }}
       />
-    </div>
-  </div>
+      <p className="status-page__text">
+        Congratulations 😉 Your account has been activated. Please wait until we redirect....
+      </p>
+      <Button type="primary" size="large" onClick={navigateToDashboard}>
+        Back To Login
+      </Button>
+    </main>
   )
 }
 

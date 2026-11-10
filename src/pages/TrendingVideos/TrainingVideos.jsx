@@ -1,28 +1,11 @@
 import { useEffect, useState } from "react";
-import { Table, Modal, message } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
+import { Button, Table, Modal, Space, message } from "antd";
 import { useNavigate } from "react-router";
 import { DeleteVideos, GetVideos } from "../../services/Api/Api";
 import dayjs from "@/lib/dayjs";
 import { Pencil, Trash2, Plus } from "lucide-react";
-
-const actionIconBtn = (color) => ({
-	width: 34,
-	height: 34,
-	border: "1px solid",
-	borderColor: color,
-	color,
-	"&:hover": {
-		backgroundColor: `${color}14`,
-		borderColor: color,
-	},
-});
+import PageHeader from "../../components/PageHeader";
+import IconAction from "../../components/IconAction";
 
 const TrainingVideos = () => {
 	const navigate = useNavigate();
@@ -76,27 +59,19 @@ const TrainingVideos = () => {
 			title: "Action",
 			dataIndex: "action",
 			render: (_, record) => (
-				<Stack useFlexGap sx={{ flexWrap: { xs: "wrap", md: "nowrap" } }} direction="row" spacing={0.5}>
-					<Tooltip title="Edit Video">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#6366F1")}
-							onClick={(event) => navigateToEdit(event, record.id)}
-						>
-							<Pencil size={16} />
-						</IconButton>
-					</Tooltip>
-
-					<Tooltip title="Delete Video">
-						<IconButton
-							size="small"
-							sx={actionIconBtn("#EF4444")}
-							onClick={() => handleDelete([record.id])}
-						>
-							<Trash2 size={16} />
-						</IconButton>
-					</Tooltip>
-				</Stack>
+				<Space>
+					<IconAction
+						icon={Pencil}
+						title="Edit Video"
+						onClick={(event) => navigateToEdit(event, record.id)}
+					/>
+					<IconAction
+						icon={Trash2}
+						title="Delete Video"
+						danger
+						onClick={() => handleDelete([record.id])}
+					/>
+				</Space>
 			),
 		},
 	];
@@ -164,87 +139,36 @@ const TrainingVideos = () => {
 	};
 
 	return (
-		<Box>
+		<div>
 			{/* HEADER */}
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 2.5,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Stack useFlexGap
-					direction="row"
-					spacing={2}
-					sx={{
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-					}}
-				>
-					<Box sx={{ minWidth: 0 }}>
-						<Typography className="page-title" noWrap>
-							TRAINING VIDEOS
-						</Typography>
-						<Typography
-							className="page-sub-title"
-							sx={{
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-								whiteSpace: "nowrap",
-							}}
-						>
-							View and manage training videos
-						</Typography>
-					</Box>
-
-					<Stack
-						direction="row"
-						spacing={1.5}
-						sx={{ alignItems: "center", flexShrink: 0 }}
-					>
+			<PageHeader
+				title="TRAINING VIDEOS"
+				subtitle="View and manage training videos"
+				actions={
+					<>
 						{selectedRowKeys.length > 0 && (
 							<Button
-								variant="contained"
-								disableElevation
-								startIcon={<Trash2 size={16} />}
+								type="primary"
+								danger
+								size="large"
+								icon={<Trash2 size={16} />}
 								onClick={() => handleDelete(selectedRowKeys)}
-								sx={{
-									height: 44,
-									px: 2.5,
-									borderRadius: "8px",
-									textTransform: "none",
-									fontWeight: 600,
-									whiteSpace: "nowrap",
-									backgroundColor: "#ef4444",
-									"&:hover": { backgroundColor: "#dc2626" },
-								}}
 							>
 								Delete Selected ({selectedRowKeys.length})
 							</Button>
 						)}
 
 						<Button
-							variant="contained"
-							disableElevation
-							startIcon={<Plus size={18} />}
+							type="primary"
+							size="large"
+							icon={<Plus size={16} />}
 							onClick={navigateToAddUser}
-							sx={{
-								height: 44,
-								px: 2.5,
-								borderRadius: "8px",
-								textTransform: "none",
-								fontWeight: 600,
-								whiteSpace: "nowrap",
-							}}
 						>
 							Add Video
 						</Button>
-					</Stack>
-				</Stack>
-			</Paper>
+					</>
+				}
+			/>
 
 			<Table
 				columns={columns}
@@ -257,7 +181,7 @@ const TrainingVideos = () => {
 				bordered
 				size="middle"
 			/>
-		</Box>
+		</div>
 	);
 };
 

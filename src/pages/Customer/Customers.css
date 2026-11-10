@@ -1,20 +1,452 @@
-.custom-header {
-  font-size: 16px; /* Set the desired font size for header names */
+/* ==========================================================================
+   Customer (client) pages: shared blocks used by the client list, the
+   add / update / view client pages and their modals.
+   ========================================================================== */
+
+/* Small uppercase label used for card headings and info labels */
+.customer-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-base);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.custom-cell {
-  font-size: 14px; /* Set the desired font size for cell content (emails) */
+/* Card heading row: icon + label on the left, actions on the right */
+.customer-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
-.css-1raz6df {
-  background-color: white;
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgba(224, 224, 224, 1);
-  border-radius: 5px;
+.customer-card-head__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-primary-strong);
 }
 
-.redirect_button:hover{
-color: #73abce;
-cursor: pointer;
+/* Status pill (floor composition total, counts) */
+.customer-pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.customer-pill--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.customer-pill--neutral {
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
+  border-color: var(--color-border);
+}
+
+.customer-pill--success {
+  color: var(--color-success-strong);
+  background: var(--color-success-subtle);
+  border-color: var(--color-success-border);
+}
+
+.customer-pill--error {
+  color: var(--color-error-strong);
+  background: var(--color-error-subtle);
+  border-color: var(--color-error-border);
+}
+
+/* ---- Client addresses ---- */
+
+.customer-address-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.customer-address-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+
+.customer-address-card__text {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-base);
+  color: var(--color-text-secondary);
+}
+
+.customer-address-card__text svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-primary-strong);
+}
+
+.customer-address-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.customer-address-empty {
+  padding: var(--space-6);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.customer-address-empty svg {
+  margin-bottom: var(--space-2);
+}
+
+.customer-address-empty p {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+/* Map preview inside the add / edit address modal */
+.customer-map-preview {
+  height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.customer-map-preview iframe {
+  display: block;
+  border: none;
+}
+
+.customer-map-preview__empty {
+  margin: 0;
+  padding-top: 80px;
+  text-align: center;
+  color: var(--color-text-subtle);
+}
+
+/* ---- Modal title with an icon badge ---- */
+
+.customer-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customer-modal-title__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+}
+
+.customer-modal-title__icon--primary {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary-strong);
+}
+
+.customer-modal-title__icon--warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning-strong);
+}
+
+.customer-modal-title__icon--neutral {
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+}
+
+.customer-modal-title__text {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.customer-modal-title__sub {
+  font-size: 12.5px;
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-subtle);
+}
+
+.ant-divider.customer-modal-divider {
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+/* ---- Nearby / nearest employees modal (map + list) ---- */
+
+.customer-nearby__bar,
+.customer-nearby__panels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+.customer-nearby__bar {
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.customer-nearby__panels {
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .customer-nearby__bar,
+  .customer-nearby__panels {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.customer-nearby__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: var(--space-3);
+}
+
+@media (min-width: 900px) {
+  .customer-nearby__controls {
+    flex-wrap: nowrap;
+  }
+}
+
+.customer-nearby__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.ant-btn.customer-nearby__reset {
+  padding-inline: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.customer-nearby__panel {
+  height: 380px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.customer-nearby__panel--list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.customer-nearby__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-subtle);
+}
+
+.customer-nearby__index {
+  color: var(--color-text-subtle);
+}
+
+.customer-nearby__medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.customer-nearby__role {
+  font-size: 12.5px;
+}
+
+/* ---- Initial client chart table ---- */
+
+.customer-chart {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.customer-chart table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.customer-chart th,
+.customer-chart td {
+  padding: 14px var(--space-4);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.customer-chart th {
+  text-align: left;
+  vertical-align: top;
+  background: var(--color-bg-subtle);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.customer-chart td {
+  vertical-align: middle;
+  background: var(--color-bg);
+}
+
+.customer-chart th:last-child,
+.customer-chart td:last-child {
+  border-right: none;
+}
+
+.customer-chart__sub {
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-subtle);
+}
+
+/* Read-only variant (view client) */
+.customer-chart--compact th,
+.customer-chart--compact td {
+  padding: var(--space-3) 14px;
+}
+
+.customer-chart--compact td {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+.customer-chart__area-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.customer-chart__row-total {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Floor composition box (add / update client) */
+.customer-floor {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.customer-floor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.customer-floor__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.customer-floor__hint {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Total count box under the chart */
+.customer-total {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+.customer-total__box {
+  min-width: 180px;
+  padding: 10px var(--space-4);
+  text-align: center;
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.customer-total__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.customer-total__value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+/* Add / update client form */
+.customer-form {
+  padding: var(--space-8);
+}
+
+@media (max-width: 599.98px) {
+  .customer-form {
+    padding: var(--space-4);
+  }
+}
+
+.customer-form__addresses {
+  margin-bottom: var(--space-6);
+}
+
+.customer-form__chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.customer-form__chart-head--start {
+  align-items: flex-start;
+}
+
+.customer-form__chart-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.customer-form__chart-note {
+  max-width: 520px;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.ant-form-item.customer-form__actions {
+  margin-top: var(--space-6);
+  margin-bottom: 0;
 }

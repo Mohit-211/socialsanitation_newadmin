@@ -1,14 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { CreateAdmin } from "../../services/Api/Api";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import InputAdornment from "@mui/material/InputAdornment";
-import { message } from "antd";
+import { Button, Divider, Input, message } from "antd";
 import {
   ArrowLeft,
   UserPlus,
@@ -18,6 +11,8 @@ import {
   Phone,
   Briefcase,
 } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
+import "./BDM.scss";
 
 const AddBDM = () => {
   const [name, setName] = useState("");
@@ -69,253 +64,113 @@ const AddBDM = () => {
     navigate("/bdm-list");
   };
 
-  const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-      height: "45px",
-      borderRadius: "6px",
-    },
-  };
-
-  const labelSx = {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    mb: 1,
-  };
-
   return (
-    <Box>
-      {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BDM MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              Onboard a new Business Development Manager
-            </Typography>
-          </Box>
-
+    <div>
+      <PageHeader
+        title="BDM MANAGEMENT"
+        subtitle="Onboard a new Business Development Manager"
+        actions={
           <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={navigateToAdmin}
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to BDM List
           </Button>
-        </Box>
-      </Paper>
+        }
+      />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-          p: 3,
-        }}
-      >
+      <div className="surface bdm-form">
         {/* Section intro with icon badge — mirrors the "Client" summary
             treatment used in the reset-password modal elsewhere */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            background: "#eef2ff",
-            border: "1px solid #e0e7ff",
-            borderRadius: "10px",
-            padding: "14px 18px",
-            marginBottom: "28px",
-          }}
-        >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#4f46e5",
-              color: "#fff",
-              flexShrink: 0,
-            }}
-          >
+        <div className="bdm-banner bdm-banner--lg">
+          <span className="bdm-banner__icon">
             <Briefcase size={20} />
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontSize: "14.5px",
-                fontWeight: 700,
-                color: "#1e1b4b",
-                lineHeight: 1.3,
-              }}
-            >
+          </span>
+          <div className="bdm-banner__body">
+            <p className="bdm-banner__title">
               Business Development Manager Details
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "12.5px",
-                color: "#4338ca",
-                lineHeight: 1.5,
-                mt: 0.25,
-              }}
-            >
+            </p>
+            <p className="bdm-banner__text">
               This will create a new BDM account with access to assigned
               clients.
-            </Typography>
-          </Box>
-        </Box>
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box>
-              <Typography sx={labelSx}>Full Name</Typography>
-              <TextField
+          <div className="bdm-form__fields">
+            <div>
+              <label className="field-label" htmlFor="add-bdm-name">
+                Full Name
+              </label>
+              <Input
+                id="add-bdm-name"
+                size="large"
                 placeholder="e.g. John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                fullWidth
-                size="small"
-                sx={fieldSx}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <UserIcon size={16} color="#9ca3af" />
-                    </InputAdornment>
-                  ),
-                }}
+                prefix={<UserIcon size={16} className="text-subtle" />}
               />
-            </Box>
+            </div>
 
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                gap: 2.5,
-              }}
-            >
-              <Box>
-                <Typography sx={labelSx}>Email Address</Typography>
-                <TextField
+            <div className="bdm-form__grid">
+              <div>
+                <label className="field-label" htmlFor="add-bdm-email">
+                  Email Address
+                </label>
+                <Input
+                  id="add-bdm-email"
+                  size="large"
                   type="email"
                   placeholder="john@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={fieldSx}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Mail size={16} color="#9ca3af" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<Mail size={16} className="text-subtle" />}
                 />
-              </Box>
+              </div>
 
-              <Box>
-                <Typography sx={labelSx}>Mobile Number</Typography>
-                <TextField
+              <div>
+                <label className="field-label" htmlFor="add-bdm-mobile">
+                  Mobile Number
+                </label>
+                <Input
+                  id="add-bdm-mobile"
+                  size="large"
                   placeholder="+1 (555) 000-0000"
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={fieldSx}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Phone size={16} color="#9ca3af" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  prefix={<Phone size={16} className="text-subtle" />}
                 />
-              </Box>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </div>
 
-          <Divider sx={{ mt: 3.5, mb: 2.5 }} />
+          <Divider style={{ margin: "28px 0 var(--space-5)" }} />
 
           {/* Action Buttons */}
-          <Box sx={{ display: "flex", gap: 1.5 }}>
+          <div className="bdm-form__actions">
             <Button
-              variant="contained"
-              disableElevation
-              type="submit"
+              type="primary"
+              htmlType="submit"
+              size="large"
               disabled={loading}
-              startIcon={!loading ? <UserPlus size={18} /> : null}
-              sx={{
-                height: 42,
-                px: 3,
-                borderRadius: "6px",
-                textTransform: "none",
-                fontWeight: 600,
-                backgroundColor: "#3b82f6",
-                "&:hover": {
-                  backgroundColor: "#2563eb",
-                },
-              }}
+              icon={!loading ? <UserPlus size={16} /> : null}
             >
               {loading ? "Creating..." : "Create Account"}
             </Button>
 
             <Button
-              variant="contained"
-              disableElevation
-              type="button"
-              startIcon={<X size={18} />}
+              size="large"
+              icon={<X size={16} />}
               onClick={navigateToAdmin}
-              sx={{
-                height: 42,
-                px: 3,
-                borderRadius: "6px",
-                textTransform: "none",
-                fontWeight: 600,
-                backgroundColor: "#6b7280",
-                color: "#ffffff",
-                "&:hover": {
-                  backgroundColor: "#4b5563",
-                },
-              }}
             >
               Discard
             </Button>
-          </Box>
+          </div>
         </form>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 };
 

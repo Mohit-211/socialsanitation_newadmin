@@ -20,10 +20,6 @@ import {
   Tooltip,
   Space,
 } from "antd";
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import MuiButton from "@mui/material/Button";
 import { ArrowLeft, Info } from "lucide-react";
 import { useNavigate } from "react-router";
 import {
@@ -33,6 +29,8 @@ import {
   CreateBookingByAdmin,
   GetClientChecklistByUserId,
 } from "../../services/Api/BookingApi";
+import PageHeader from "../../components/PageHeader";
+import "./Bookings.css";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -49,39 +47,12 @@ const WEEKDAY_LABELS = [
 
 const DATE_DISPLAY_FORMAT = "MM-DD-YYYY";
 
-// ---- table style tokens (matched to AddCustomer's Initial Client Chart table) ----
-const tableWrapStyle = {
-  border: "1px solid #e5e7eb",
-  borderRadius: "10px",
-  overflow: "hidden",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "14px 16px",
-  background: "#fafafa",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  fontSize: "13px",
-  fontWeight: 600,
-  color: "#374151",
-  verticalAlign: "top",
-};
-
-const tdStyle = {
-  padding: "14px 16px",
-  borderBottom: "1px solid #e5e7eb",
-  borderRight: "1px solid #e5e7eb",
-  verticalAlign: "middle",
-  background: "#fff",
-};
-
 /* label + info tooltip helper */
 const LabelWithTip = ({ label, tip }) => (
   <Space size={6} align="center">
     <span>{label}</span>
     <Tooltip title={tip}>
-      <Info size={14} color="#94a3b8" style={{ cursor: "pointer", display: "block" }} />
+      <Info size={14} className="booking-form__tip-icon" />
     </Tooltip>
   </Space>
 );
@@ -274,67 +245,22 @@ const CreateBooking = () => {
   }, [bookingType]);
 
   return (
-    <Box>
-      {/* Header Section */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography className="page-title">BOOKING MANAGEMENT</Typography>
-            <Typography className="page-sub-title">
-              Create a new client booking
-            </Typography>
-          </Box>
-
-          <MuiButton
-            variant="contained"
-            disableElevation
-            startIcon={<ArrowLeft size={18} />}
+    <div>
+      <PageHeader
+        title="BOOKING MANAGEMENT"
+        subtitle="Create a new client booking"
+        actions={
+          <Button
+            size="large"
+            icon={<ArrowLeft size={16} />}
             onClick={() => navigate("/bookings")}
-            sx={{
-              ml: "auto",
-              height: 46,
-              px: 3,
-              borderRadius: "8px",
-              minWidth: 180,
-              textTransform: "none",
-              fontWeight: 600,
-              backgroundColor: "#2c3345",
-              "&:hover": {
-                backgroundColor: "#1f2433",
-              },
-            }}
           >
             Return to Bookings
-          </MuiButton>
-        </Box>
-      </Paper>
+          </Button>
+        }
+      />
 
-      <Paper
-        variant="outlined"
-        sx={{
-          px: 1,
-          pt: 0.5,
-          mb: 3,
-          borderRadius: "10px",
-          borderColor: "#eef0f2",
-        }}
-      >
+      <div className="surface bookings-tabs">
         <Tabs
           defaultActiveKey="client"
           onChange={(key) => {
@@ -355,7 +281,7 @@ const CreateBooking = () => {
             },
           ]}
         />
-      </Paper>
+      </div>
 
       <Card title="Create New Booking">
         <Form
@@ -417,42 +343,42 @@ const CreateBooking = () => {
 
           <Form.Item label="Initial Client Chart" style={{ marginBottom: 24 }}>
             {loadingChecklist ? (
-              <p style={{ color: "#6b7280" }}>Loading checklist...</p>
+              <p className="text-muted">Loading checklist...</p>
             ) : clientChecklist.length > 0 ? (
-              <div style={tableWrapStyle}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <div className="booking-form__chart">
+                <table>
                   <thead>
                     <tr>
-                      <th style={{ ...thStyle, width: "20%" }}>Service Area</th>
+                      <th style={{ width: "20%" }}>Service Area</th>
 
                       {clientType === "commercial" ? (
                         <>
-                          <th style={{ ...thStyle, width: "18%" }}>
+                          <th style={{ width: "18%" }}>
                             # of Trash Cans
                             <br />
-                            <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            <small className="booking-form__chart-hint">
                               or Stalls
                             </small>
                           </th>
 
-                          <th style={{ ...thStyle, width: "18%" }}>
+                          <th style={{ width: "18%" }}>
                             # of Desks
                             <br />
-                            <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            <small className="booking-form__chart-hint">
                               or Sinks
                             </small>
                           </th>
 
-                          <th style={{ ...thStyle, width: "18%" }}>
+                          <th style={{ width: "18%" }}>
                             # of Rooms
                             <br />
-                            <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                            <small className="booking-form__chart-hint">
                               or Restrooms
                             </small>
                           </th>
                         </>
                       ) : (
-                        <th style={{ ...thStyle, width: "22%" }}>
+                        <th style={{ width: "22%" }}>
                           # of Desks / Trash Cans (Big Buildings)
                           <br />
                           <strong>OR</strong>
@@ -460,56 +386,45 @@ const CreateBooking = () => {
                         </th>
                       )}
 
-                      <th style={{ ...thStyle, width: "26%" }}>
+                      <th style={{ width: "26%" }}>
                         Type of Flooring
                         <br />
-                        <small style={{ fontWeight: 400, color: "#9ca3af" }}>
+                        <small className="booking-form__chart-hint">
                           (Carpet, Hard Floor, VCT)
                         </small>
                       </th>
 
-                      <th style={{ ...thStyle, borderRight: "none" }}>
-                        Special Requests / Hot Spots
-                      </th>
+                      <th>Special Requests / Hot Spots</th>
                     </tr>
                   </thead>
 
                   <tbody>
                     {clientChecklist.map((item) => (
                       <tr key={item.id}>
-                        <td style={tdStyle}>
+                        <td>
                           <strong>{item.service_area}</strong>
                         </td>
 
                         {clientType === "commercial" ? (
                           <>
-                            <td style={tdStyle}>{item.stalls || 0}</td>
-                            <td style={tdStyle}>{item.sinks || 0}</td>
-                            <td style={tdStyle}>{item.restrooms || 0}</td>
+                            <td>{item.stalls || 0}</td>
+                            <td>{item.sinks || 0}</td>
+                            <td>{item.restrooms || 0}</td>
                           </>
                         ) : (
-                          <td style={tdStyle}>
-                            {item.num_desks_trash_cans || 0}
-                          </td>
+                          <td>{item.num_desks_trash_cans || 0}</td>
                         )}
 
-                        <td style={tdStyle}>{item.flooring_type || "-"}</td>
+                        <td>{item.flooring_type || "-"}</td>
 
-                        <td style={{ ...tdStyle, borderRight: "none" }}>
-                          {item.special_requests || "-"}
-                        </td>
+                        <td>{item.special_requests || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p
-                style={{
-                  color: "gray",
-                  fontStyle: "italic",
-                }}
-              >
+              <p className="text-muted booking-form__empty">
                 No checklist available
               </p>
             )}
@@ -614,16 +529,7 @@ const CreateBooking = () => {
           )}
 
           {bookingType === "Recurring Booking" && (
-            <Card
-              title="Custom Recurrence"
-              style={{
-                background: "#f9f9f9",
-                borderRadius: "10px",
-                padding: "24px",
-                marginTop: 24,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-              }}
-            >
+            <Card title="Custom Recurrence" className="booking-form__recurrence">
               <Row gutter={16}>
                 <Col xs={24} sm={12} md={8}>
                   <Form.Item
@@ -902,7 +808,7 @@ const CreateBooking = () => {
           pagination={{ pageSize: 100 }}
         />
       </Modal>
-    </Box>
+    </div>
   );
 };
 

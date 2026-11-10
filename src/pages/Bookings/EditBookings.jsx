@@ -1,9 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Box, Typography } from "@mui/material";
-import Card from "@mui/material/Card";
-import Paper from "@mui/material/Paper";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useNavigate, useParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
 import "./Bookings.css";
 import {
 	message,
@@ -19,8 +17,9 @@ import {
 	Col,
 	Row,
 	Modal,
+	Button,
+	Space,
 } from "antd";
-import Button from "@mui/material/Button";
 import {
 	GetAllSupervisorByAdmin,
 	GetAllCleanerByAdmin,
@@ -420,191 +419,59 @@ const EditBookings = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	return (
-		<Box>
-			<Paper
-				variant="outlined"
-				sx={{
-					p: 2.5,
-					mb: 3,
-					borderRadius: "10px",
-					borderColor: "#eef0f2",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						flexWrap: { xs: "wrap", md: "nowrap" },
-						alignItems: "center",
-						width: "100%",
-						gap: 2,
-					}}
-				>
-					<Box>
-						<Typography className="page-title">
-							BOOKING MANAGEMENT
-						</Typography>
-						<Typography className="page-sub-title">
-							Edit user's booking details by assigning employees or updating the
-							status.
-						</Typography>
-					</Box>
-
+		<div>
+			<PageHeader
+				title="BOOKING MANAGEMENT"
+				subtitle="Edit user's booking details by assigning employees or updating the status."
+				actions={
 					<Button
-						variant="contained"
-						disableElevation
-						startIcon={<ArrowBackIcon />}
+						size="large"
+						icon={<ArrowLeft size={16} />}
 						onClick={navigateToBooking}
-						sx={{
-							height: 47,
-							px: 3,
-							borderRadius: "8px",
-							minWidth: 180,
-							textTransform: "none",
-							fontWeight: 600,
-							backgroundColor: "#2c3345",
-							flexShrink: 0,
-							ml: "auto",
-							"&:hover": {
-								backgroundColor: "#1f2433",
-							},
-						}}
 					>
 						Return to Bookings
 					</Button>
-				</Box>
-			</Paper>
-			<Spin spinning={isSubmitting} tip="Updating..." size="large">
+				}
+			/>
+			<Spin spinning={isSubmitting} description="Updating..." size="large">
 				<Form form={form} layout="vertical">
 					<div className="booking-edit">
-						<Card
-							className="booking-edit__side"
-							style={{
-								width: "30%",
-								marginRight: "20px",
-								padding: "24px",
-								borderRadius: "10px",
-							}}
-						>
-							<div
-								style={{
-									margin: "0 0 7px 0px",
-								}}
-							>
-								<h4
-									style={{
-										fontSize: "1.2rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "600",
-										marginBottom: "20px",
-										color: "#1677FF",
-									}}
-								>
-									General Information :
-								</h4>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Booking Id:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+						<div className="surface booking-edit__side">
+							<div className="booking-edit__info">
+								<h4 className="booking-edit__title">General Information :</h4>
+								<h5 className="booking-edit__label">Booking Id:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.booking_unique_id}
 								</p>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									User Name:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">User Name:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.booking_user?.user_profile?.name ||
 										bookingData?.client_name ||
 										"--"}
 								</p>
 
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Booking Name:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">Booking Name:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.booking_name || "--"}
 								</p>
 
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Service Name:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">Service Name:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.service_booking?.name}
 								</p>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Booking Type:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>{bookingData?.type}</p>
+								<h5 className="booking-edit__label">Booking Type:</h5>
+								<p className="booking-edit__value">{bookingData?.type}</p>
 
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Date:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">Date:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.date &&
 										(() => {
 											const [y, m, d] = bookingData.date.split("T")[0].split("-");
 											return `${m}/${d}/${y}`;
 										})()}
 								</p>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Time:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">Time:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.time &&
 										(() => {
 											let [h, min] = bookingData.time.split(":");
@@ -614,17 +481,7 @@ const EditBookings = () => {
 											return `${h}:${min} ${ampm}`;
 										})()}
 								</p>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Address:
-								</h5>
+								<h5 className="booking-edit__label">Address:</h5>
 
 								{(() => {
 									const address =
@@ -650,7 +507,7 @@ const EditBookings = () => {
 									const fullAddress = `${address}, ${city}, ${state}, ${country}`;
 
 									return (
-										<p style={{ marginBottom: "20px" }}>
+										<p className="booking-edit__value">
 											{fullAddress !== "--, , , " ? fullAddress : "--"}
 											{fullAddress !== "--, , , " && (
 												<a
@@ -659,7 +516,7 @@ const EditBookings = () => {
 													)}`}
 													target="_blank"
 													rel="noopener noreferrer"
-													style={{ marginLeft: "8px", fontSize: "0.85rem" }}
+													className="booking-edit__map-link"
 												>
 													(Search it on map)
 												</a>
@@ -668,58 +525,28 @@ const EditBookings = () => {
 									);
 								})()}
 
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Booking Status:
-								</h5>
-								<p style={{ marginBottom: "20px" }}>
+								<h5 className="booking-edit__label">Booking Status:</h5>
+								<p className="booking-edit__value">
 									{bookingData?.booking_status}
 								</p>
-								<h5
-									style={{
-										fontSize: "0.9rem",
-										fontFamily: "Cerebri Sans,sans-serif",
-										fontWeight: "700",
-										marginTop: "14px",
-										color: "darkgray",
-									}}
-								>
-									Notes:
-								</h5>
+								<h5 className="booking-edit__label">Notes:</h5>
 								{bookingData?.notes ? (
-									<p style={{ marginBottom: "20px" }}>{bookingData.notes}</p>
+									<p className="booking-edit__value">{bookingData.notes}</p>
 								) : (
-									<p style={{ marginBottom: "20px", color: "gray" }}>--</p>
+									<p className="booking-edit__value text-muted">--</p>
 								)}
 
 								<Button
-									label="View Detailed Information"
-									text
-									sx={{ marginTop: "25px" }}
+									type="link"
+									className="booking-edit__details-link"
 									onClick={() => navigate(`/viewBooking/${id}`)}
-								></Button>
+								>
+									View Detailed Information
+								</Button>
 							</div>
-						</Card>
-						<Card
-							className="booking-edit__main"
-							style={{ width: "70%", padding: "24px", borderRadius: "10px" }}
-						>
-							<h4
-								style={{
-									fontSize: "1.2rem",
-									fontFamily: "Cerebri Sans,sans-serif",
-									fontWeight: "600",
-									marginBottom: "20px",
-									color: "#1677FF",
-								}}
-							>
+						</div>
+						<div className="surface booking-edit__main">
+							<h4 className="booking-edit__title">
 								Update Booking Status and Assign Employees:
 							</h4>
 							{loading ? (
@@ -864,11 +691,7 @@ const EditBookings = () => {
 										<Select
 											mode="multiple"
 											allowClear
-											style={{
-												width: "100%",
-												maxHeight: 100,
-												overflowY: "auto",
-											}}
+											className="booking-edit__employee-select"
 											placeholder="Select Inspector/ Supervisor"
 											maxTagCount="responsive"
 											onChange={(values) => handleEmployeeChange(values, 7)}
@@ -890,22 +713,11 @@ const EditBookings = () => {
 													onClose();
 												};
 												return (
-													<span
-														style={{
-															padding: "5px",
-															backgroundColor: "#e6f7ff",
-															borderRadius: "4px",
-															marginRight: "8px",
-														}}
-													>
+													<span className="booking-edit__tag">
 														{label}
 														<span
 															onClick={handleRemove}
-															style={{
-																marginLeft: 5,
-																cursor: "pointer",
-																color: "#1890ff",
-															}}
+															className="booking-edit__tag-close"
 														>
 															&times;
 														</span>
@@ -933,11 +745,7 @@ const EditBookings = () => {
 										<Select
 											mode="multiple"
 											maxTagCount="responsive"
-											style={{
-												width: "100%",
-												maxHeight: 100,
-												overflowY: "auto",
-											}}
+											className="booking-edit__employee-select"
 											placeholder="Select Quality Assurance Technician"
 											onChange={(values) => handleEmployeeChange(values, 8)}
 											defaultValue={bookingEmployeeDetails
@@ -958,22 +766,11 @@ const EditBookings = () => {
 													onClose();
 												};
 												return (
-													<span
-														style={{
-															padding: "5px",
-															backgroundColor: "#e6f7ff",
-															borderRadius: "4px",
-															marginRight: "8px",
-														}}
-													>
+													<span className="booking-edit__tag">
 														{label}
 														<span
 															onClick={handleRemove}
-															style={{
-																marginLeft: 5,
-																cursor: "pointer",
-																color: "#1890ff",
-															}}
+															className="booking-edit__tag-close"
 														>
 															&times;
 														</span>
@@ -998,11 +795,7 @@ const EditBookings = () => {
 										<Select
 											maxTagCount="responsive"
 											mode="multiple"
-											style={{
-												width: "100%",
-												maxHeight: 100,
-												overflowY: "auto",
-											}}
+											className="booking-edit__employee-select"
 											placeholder="Select Cleaners"
 											onChange={(values) => handleEmployeeChange(values, 9)}
 											defaultValue={bookingEmployeeDetails
@@ -1023,22 +816,11 @@ const EditBookings = () => {
 													onClose();
 												};
 												return (
-													<span
-														style={{
-															padding: "5px",
-															backgroundColor: "#e6f7ff",
-															borderRadius: "4px",
-															marginRight: "8px",
-														}}
-													>
+													<span className="booking-edit__tag">
 														{label}
 														<span
 															onClick={handleRemove}
-															style={{
-																marginLeft: 5,
-																cursor: "pointer",
-																color: "#1890ff",
-															}}
+															className="booking-edit__tag-close"
 														>
 															&times;
 														</span>
@@ -1059,16 +841,8 @@ const EditBookings = () => {
 									</Form.Item>
 
 									{bookingData?.type === "Recurring Booking" && (
-										<Card
-											style={{
-												marginTop: 20,
-												border: "1px solid #e6f4ff",
-												background: "#f9fbff",
-												padding: "20px",
-												borderRadius: "10px",
-											}}
-										>
-											<h4 style={{ color: "#1677ff", marginBottom: "16px" }}>
+										<div className="booking-edit__recurrence">
+											<h4 className="section-title booking-edit__recurrence-title">
 												Custom Recurrence
 											</h4>
 
@@ -1150,7 +924,7 @@ const EditBookings = () => {
 
 											{/* Repeat Every */}
 											<Form.Item label="Repeat every:">
-												<Input.Group compact>
+												<Space.Compact block>
 													<InputNumber
 														min={1}
 														max={365}
@@ -1189,7 +963,7 @@ const EditBookings = () => {
 														<Select.Option value="month">Month</Select.Option>
 														<Select.Option value="year">Year</Select.Option>
 													</Select>
-												</Input.Group>
+												</Space.Compact>
 											</Form.Item>
 
 											{/* Repeat on Days (for Weekly only) */}
@@ -1281,7 +1055,7 @@ const EditBookings = () => {
 													</Radio>
 												</Radio.Group>
 											</Form.Item>
-										</Card>
+										</div>
 									)}
 
 									<Form.Item
@@ -1292,36 +1066,24 @@ const EditBookings = () => {
 										<Input
 											placeholder="Enter Google Map Link"
 											value={mapLink}
-											autoSize={{ minRows: 1, maxRows: 3 }}
 											onChange={(e) => setMapLink(e.target.value)}
 										/>
 									</Form.Item>
 
 									<Form.Item>
 										<Button
-											variant="contained"
-											disableElevation
+											type="primary"
+											size="large"
+											block
+											className="booking-edit__save"
 											onClick={handleSave}
-											sx={{
-												width: "100%",
-												height: 47,
-												marginTop: "32px",
-												justifyContent: "center",
-												borderRadius: "8px",
-												textTransform: "none",
-												fontWeight: 600,
-												backgroundColor: "#1677ff",
-												"&:hover": {
-													backgroundColor: "#0f5fd6",
-												},
-											}}
 										>
 											Save Changes
 										</Button>
 									</Form.Item>
 								</>
 							)}
-						</Card>
+						</div>
 					</div>
 				</Form>
 			</Spin>
@@ -1333,14 +1095,7 @@ const EditBookings = () => {
 				footer={null}
 			>
 				<p>Do you want to update:</p>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "10px",
-						marginTop: "1rem",
-					}}
-				>
+				<div className="booking-edit__modes">
 					<Button
 						type="default"
 						onClick={() => {
@@ -1379,7 +1134,7 @@ const EditBookings = () => {
 					</Button>
 				</div>
 			</Modal>
-		</Box>
+		</div>
 	);
 };
 
