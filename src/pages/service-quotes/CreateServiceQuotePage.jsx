@@ -888,8 +888,8 @@ const CreateServiceQuotePage = () => {
                     }));
 
                     setIsRefManuallyEdited(false); // system-generated
-                  } catch {
-                    message.error("Failed to generate reference number");
+                  } catch (error) {
+                    message.error(errorMessage(error, "Couldn't get the next reference number"));
                   }
                 }
               }}
