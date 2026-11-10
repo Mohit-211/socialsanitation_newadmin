@@ -1,5 +1,5 @@
 import writeExcelFile from "write-excel-file/browser";
-import { cssVar } from "../theme/antdTheme";
+import { cssVar } from "@/theme/antdTheme";
 
 /**
  * Builds and downloads an .xlsx file with write-excel-file

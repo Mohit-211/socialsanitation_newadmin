@@ -1,0 +1,153 @@
+// Service request list page (ServiceRequestsPage.jsx) and the service request
+// document editors (CreateServiceRequestPage.jsx / EditServiceRequestPage.jsx).
+
+// ===== List page =====
+.service-request-list {
+  &__search {
+    width: 240px;
+  }
+
+  &__month {
+    width: 120px;
+  }
+
+  &__year {
+    width: 100px;
+  }
+
+  &__status {
+    font-weight: var(--font-weight-semibold);
+
+    &--signed {
+      color: var(--color-success-strong);
+    }
+
+    &--pending {
+      color: var(--color-warning-strong);
+    }
+  }
+}
+
+// ===== Document editor =====
+.service-request-doc {
+  background: var(--color-bg);
+  padding: 30px;
+  border-radius: var(--radius-sm);
+
+  &__brand {
+    font-size: var(--text-xs);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--color-border-strong);
+    padding-bottom: 10px;
+  }
+
+  &__logo {
+    width: 150px;
+  }
+
+  // Same dark title bar as the invoice / service quote documents
+  &__title {
+    font-size: var(--text-3xl);
+    background: var(--color-ink);
+    color: var(--color-text-inverse);
+    padding: 10px;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-5);
+    margin-top: var(--space-5);
+    margin-bottom: 28px;
+
+    // Equal-width columns (direct children only, so the rule does not leak
+    // into the internal divs of antd Select / DatePicker).
+    > div {
+      flex: 1;
+    }
+  }
+
+  &__address {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-6);
+  }
+
+  // Paper-form look: fields in the meta and address rows are underlined
+  &__meta input,
+  &__address input {
+    border: none;
+    border-bottom: 1px solid var(--color-border-strong);
+    padding: 2px;
+    width: 150px;
+  }
+
+  &__total {
+    text-align: right;
+    font-weight: var(--font-weight-bold);
+  }
+
+  &__item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-10);
+    margin-bottom: var(--space-6);
+  }
+
+  &__date {
+    margin-top: var(--space-10);
+  }
+
+  &__signature {
+    text-align: right;
+    margin-top: var(--space-4);
+  }
+
+  &__disclaimer {
+    margin-top: 60px;
+    padding: var(--space-5);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    color: var(--color-text);
+    text-align: justify;
+  }
+
+  &__submit {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 767.98px) {
+    padding: var(--space-4);
+
+    &__header {
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    &__meta,
+    &__address,
+    &__footer {
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    &__meta input,
+    &__address input {
+      width: 100%;
+    }
+  }
+}

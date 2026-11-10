@@ -1,0 +1,36 @@
+/* Full-page status screens: access denied (UnauthorizedPage) and the
+   calendar authorization result pages (auth/AuthorizationSuccessPage and
+   auth/AuthorizationFailurePage import this file too). */
+
+.status-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-height: 100vh;
+  padding: var(--space-6);
+  box-sizing: border-box;
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.status-page__image {
+  max-width: 100%;
+  height: auto;
+}
+
+.status-page__title {
+  margin: 0 0 10px;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.status-page__text {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+

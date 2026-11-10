@@ -1,4 +1,4 @@
-import { cssVar } from "../theme/antdTheme";
+import { cssVar } from "@/theme/antdTheme";
 
 const toBlob = (canvas, type, quality) =>
   new Promise((resolve, reject) => {

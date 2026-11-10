@@ -4,7 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App as AntApp, ConfigProvider } from "antd";
 import { buildAntdTheme } from "./theme/antdTheme";
-import App from "./App.jsx";
+import App from "./app";
 
 // index.css is loaded above, so its design tokens can be read here.
 const theme = buildAntdTheme();

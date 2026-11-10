@@ -300,6 +300,18 @@ samp {
   background: var(--color-error-subtle);
 }
 
+/* Placeholder while a page's code loads (src/components/PageLoader.jsx) */
+.page-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+}
+
+.page-loader--full {
+  min-height: 100vh;
+}
+
 /* Spinning icon, e.g. <LoaderCircle className="icon-spin" /> */
 .icon-spin {
   animation: icon-spin 1s linear infinite;

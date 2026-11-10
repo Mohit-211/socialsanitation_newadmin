@@ -1,0 +1,265 @@
+// "Initial Client Chart" card and table, shared by the cost calculator and
+// both scope-of-work builders. The calculator rules come first and the scope
+// builder rules after: that is the cascade these pages have always rendered,
+// back when every page's CSS shipped in one bundle.
+
+// ─── TABLE UTILITY ───────────────────────────────────────────────────────────
+.usb-chart-card__body {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: auto; // Added horizontal rule safety
+}
+
+.usb-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; // Smooth scrolling for webkit
+}
+
+.usb-table {
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.usb-table td:last-child,
+.usb-table th:last-child {
+  max-width: 180px;
+  width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ─── INITIAL CLIENT CHART CARD ───────────────────────────────────────────────
+.usb-chart-card {
+  margin-bottom: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.2s;
+  width: 100%; // Restricts the component container from blowing out wide
+
+  &:hover { border-color: var(--color-primary-active); }
+}
+
+.usb-chart-card__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--color-bg-subtle);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.15s;
+
+  &:hover { background: var(--color-bg-muted); }
+}
+
+.usb-chart-card__toggle-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.usb-chart-card__toggle-meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+.usb-chart-card__body {
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: auto; // Strict boundary constraint
+  border-top: 1px solid var(--color-border);
+  width: 100%;
+}
+
+.usb-chart-card__loading,
+.usb-chart-card__empty {
+  padding: var(--space-6) 18px;
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+// Chart table
+.usb-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.usb-table {
+  width: 100%;
+  min-width: 600px; // Scaled down minimum limits slightly to let flex rows work correctly
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  table-layout: auto;
+
+  thead {
+    background: var(--color-bg-subtle);
+    tr { border-bottom: 1px solid var(--color-border); }
+    th {
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      font-size: 11px;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--color-border);
+      transition: background 0.12s;
+      &:last-child { border-bottom: none; }
+      &:hover { background: var(--color-bg-subtle); }
+    }
+    td {
+      padding: var(--space-3) var(--space-4);
+      color: var(--color-text-secondary);
+      vertical-align: middle;
+    }
+  }
+
+  td:last-child,
+  th:last-child {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.usb-th-note {
+  display: block;
+  font-size: 10px;
+  font-weight: var(--font-weight-regular);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+// ─── Initial Client Chart card ──────────────────────────────────────────
+.usb-chart-card {
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+
+  &__toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: var(--space-4) 22px;
+    background: var(--color-bg-subtle);
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+
+    &:hover {
+      background: var(--color-bg-muted);
+    }
+  }
+
+  &__toggle-icon {
+    flex-shrink: 0;
+    color: var(--color-primary-strong);
+  }
+
+  &__toggle-title {
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  &__toggle-meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-right: var(--space-1);
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+  }
+
+  &__body {
+    padding: 18px 22px;
+    border-top: 1.5px solid var(--color-border);
+  }
+
+  &__loading {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: var(--text-sm);
+  }
+
+  &__empty {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: var(--text-sm);
+  }
+}
+
+// ─── Table ─────────────────────────────────────────────────────────────
+.usb-table-wrap {
+  overflow-x: auto;
+}
+
+.usb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+
+  th, td {
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--color-bg-subtle);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(odd) td {
+    background: var(--color-bg);
+  }
+
+  tbody tr:nth-child(even) td {
+    background: var(--color-bg-subtle);
+  }
+
+  tbody tr:hover td {
+    background: var(--color-primary-soft);
+  }
+}
+
+.usb-th-note {
+  display: block;
+  font-weight: var(--font-weight-regular);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 2px;
+}

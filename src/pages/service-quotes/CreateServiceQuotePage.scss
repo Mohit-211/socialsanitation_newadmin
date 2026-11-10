@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Service quote document editor (CreateServiceQuotePage.jsx): document-style
+   header, meta / address rows with underlined inputs, items table, signature
+   and disclaimer.
+   ========================================================================== */
+
+.quote-form {
+  padding: var(--space-5);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  background: var(--color-bg);
+}
+
+.quote-form__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--color-border-strong);
+}
+
+.quote-form__logo {
+  width: 150px;
+}
+
+/* Document title bar: dark brand surface with light text */
+.quote-form__title {
+  padding: 10px;
+  font-size: var(--text-3xl);
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+}
+
+/* Toolbar */
+.quote-form__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.quote-form__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.quote-form__draft-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Meta (ref / dates) and address rows: document-style underlined inputs */
+.quote-form__meta,
+.quote-form__address {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-5);
+}
+
+.quote-form__meta input,
+.quote-form__address input {
+  width: 150px;
+  padding: 2px;
+  border: none;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.quote-form__hint {
+  margin-top: var(--space-1);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.quote-form__footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-10);
+}
+
+.quote-form__signature {
+  text-align: right;
+}
+
+.quote-form__disclaimer {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.quote-form__submit {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-5);
+}
+
+@media (max-width: 767.98px) {
+  .quote-form__header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .quote-form__meta,
+  .quote-form__address,
+  .quote-form__footer {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .quote-form__meta input,
+  .quote-form__address input {
+    width: 100%;
+  }
+
+  .quote-form__toolbar {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .quote-form__toolbar-right {
+    flex-wrap: wrap;
+  }
+}

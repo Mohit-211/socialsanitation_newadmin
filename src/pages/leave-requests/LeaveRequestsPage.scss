@@ -1,0 +1,19 @@
+// Leave requests page (LeaveRequestsPage.jsx)
+
+.leave-requests-header {
+  align-items: flex-start;
+
+  @media (max-width: 599.98px) {
+    .page-header__actions {
+      width: 100%;
+    }
+  }
+}
+
+.leave-requests__search {
+  width: 100%;
+
+  @media (min-width: 600px) {
+    width: 320px;
+  }
+}

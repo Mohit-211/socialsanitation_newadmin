@@ -1,0 +1,189 @@
+import { useEffect, useState } from "react";
+import { Button, message, Modal, Space, Table } from "antd";
+import { useNavigate } from "react-router";
+import { Plus } from "lucide-react";
+import dayjs from "@/lib/dayjs";
+import PageHeader from "@/components/PageHeader";
+import { DeleteContractAgreement, GetAllContractAgreements } from "@/services/api/contractApi";
+import { API_BASE_URL } from "@/config/env";
+
+const ContractsPage = () => {
+  const navigate = useNavigate();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 100,
+    },
+    sortField: null,
+    sortOrder: null,
+  });
+
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: "Delete Contract",
+      content: "Are you sure you want to delete this Contract Agreement?",
+      onOk: async () => {
+        await DeleteContractAgreement(id);
+        message.success("Contract Agreement deleted");
+        getData();
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: "S.No.",
+      dataIndex: "index",
+      sorter: (a, b) => a.index - b.index,
+      width: "10%",
+    },
+    {
+      title: "Client Name",
+      width: "20%",
+      render: (_, record) =>
+        record.client_name || record.client_company_name || "-",
+    },
+
+    {
+      title: "File",
+      width: "20%",
+      render: (_, record) => {
+        let url = "";
+
+        if (record.status === "signed" && record.signed_file_name) {
+          url = `${API_BASE_URL}docs/${record.signed_file_name}`;
+        } else if (record.file_url) {
+          url = record.file_url;
+        }
+
+        if (!url) return "-";
+
+        return (
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            View PDF
+          </a>
+        );
+      },
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      width: "20%",
+      render: (status) => {
+        if (status === "signed") return "Signed";
+        if (status === "pending_signature") return "Pending Signature";
+        return status;
+      },
+    },
+
+    {
+      title: "Created Date",
+      dataIndex: "created_at",
+      width: "20%",
+      render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
+    },
+    {
+      title: "Action",
+      width: "20%",
+      render: (_, record) => {
+        return (
+          <Space size="middle">
+            {record.status !== "signed" && (
+              <>
+                <Button
+                  onClick={() =>
+                    navigate(`/edit-contract-agreement/${record.id}`)
+                  }
+                >
+                  Edit
+                </Button>
+
+              </>
+            )}
+
+            <Button danger onClick={() => handleDelete(record.id)}>
+              Delete
+            </Button>
+          </Space>
+        );
+      },
+    },
+  ];
+
+  // Get all users
+  const getData = async () => {
+    try {
+      setLoading(true);
+      let result = await GetAllContractAgreements();
+      // Adding index for serial number
+      const newData = result.data.data.map((item, index) => ({
+        ...item,
+        index: index + 1,
+      }));
+      setData(newData);
+    } catch (e) {
+      console.error(e);
+      if (e.response && e.response.status === 403) {
+        navigate("/error401");
+        console.error("Access denied. You do not have the required permissions.");
+      } else {
+        console.error("Error loading data. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getData({
+      page: tableParams.pagination.current,
+      pageSize: tableParams.pagination.pageSize,
+      sortField: tableParams.sortField,
+      sortOrder: tableParams.sortOrder,
+    });
+  }, [tableParams]);
+
+  const handleTableChange = (pagination, filters, sorter) => {
+    setTableParams({
+      pagination,
+      filters,
+      sortField: sorter.field,
+      sortOrder: sorter.order,
+    });
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title="CONTRACT AGREEMENT MANAGEMENT"
+        subtitle="View & manage contract agreements"
+        actions={
+          <Button
+            type="primary"
+            size="large"
+            icon={<Plus size={16} />}
+            onClick={() => navigate("/create-contract-agreement")}
+          >
+            Generate Contract
+          </Button>
+        }
+      />
+
+      <Table
+        columns={columns}
+        rowKey={(record) => record.id}
+        dataSource={data}
+        pagination={tableParams.pagination}
+        loading={loading}
+        onChange={handleTableChange}
+        bordered
+        size="middle"
+      />
+    </div>
+  );
+};
+
+export default ContractsPage;

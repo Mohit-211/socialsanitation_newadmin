@@ -1,0 +1,147 @@
+/* ==========================================================================
+   Attendance pages: daily list and monthly summary (AttendancePage.jsx),
+   the per-employee table (employees/components/EmployeeAttendance.jsx)
+   and the monthly calendar (AttendanceCalendarPage.jsx).
+   ========================================================================== */
+
+/* Page header with a stacked block of filters on the right. */
+.attendance-header {
+  align-items: flex-start;
+}
+
+.attendance__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.attendance__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+@media (max-width: 599.98px) {
+  .attendance-header .page-header__actions {
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) {
+  .attendance__controls {
+    width: 470px;
+  }
+}
+
+@media (min-width: 900px) {
+  .attendance__toolbar {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Daily summary strip */
+.attendance__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.attendance__stat {
+  flex: 1 1 160px;
+  min-width: 140px;
+  padding: var(--space-3);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.attendance__stat-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.attendance__stat-value {
+  display: block;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.attendance__status {
+  font-weight: var(--font-weight-bold);
+}
+
+.attendance__thumb {
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Monthly summary legend (scrolls with the table) */
+.attendance__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  min-width: 1000px;
+  margin-bottom: var(--space-2);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.attendance__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attendance__monthly {
+  overflow-x: auto;
+}
+
+.attendance__details {
+  font-size: var(--text-md);
+  line-height: 2;
+}
+
+/* ---- Monthly calendar (AttendanceCalendarPage.jsx) ------------------- */
+
+.attendance-calendar__cell {
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.attendance-calendar__name {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.attendance-calendar__more {
+  color: var(--color-text-muted);
+}
+
+.attendance-calendar__table-wrap {
+  overflow-x: auto;
+}
+
+.attendance-calendar__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+
+.attendance-calendar__table th,
+.attendance-calendar__table td {
+  padding: 10px;
+}
+
+.attendance-calendar__table thead tr {
+  background: var(--color-bg-muted);
+}
