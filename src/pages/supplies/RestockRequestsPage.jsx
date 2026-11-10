@@ -7,6 +7,7 @@ import IconAction from "@/components/IconAction";
 import "./RestockRequestsPage.scss";
 
 import { answerRestockRequest, listRestockRequests } from "@/services/api/productApi";
+import { formatDate, formatDateTime } from "@/utils/datetime";
 
 
 const RestockRequestsPage = () => {
@@ -95,7 +96,7 @@ const RestockRequestsPage = () => {
             title: "Requested At",
             dataIndex: "created_at",
             width: "15%",
-            render: (date) => dayjs(date).format("MMM D, YYYY"),
+            render: (date) => formatDate(date),
             sorter: (a, b) => dayjs(a.created_at).unix() - dayjs(b.created_at).unix(),
             responsive: ['lg'],
         },
@@ -239,7 +240,7 @@ const RestockRequestsPage = () => {
                             </h2>
                             <div className="inventory-request__summary-date">
                                 <Clock size={14} />
-                                Requested on:{dayjs(selectedRequest.created_at).format("MMMM D, YYYY [at] h:mm A")}
+                                Requested on: {formatDateTime(selectedRequest.created_at)}
                             </div>
                         </div>
 

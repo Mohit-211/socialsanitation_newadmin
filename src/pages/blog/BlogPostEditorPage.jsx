@@ -19,6 +19,7 @@ import {
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { formatDateTime } from "@/utils/datetime";
 import { postStatus } from "./blogFields";
+import { acceptOf } from "@/utils/uploads";
 import "./blog.scss";
 
 const uploadOne = async (file) => itemsOf(await uploadBlogImages([file]))[0]?.url;
@@ -216,7 +217,7 @@ const BlogPostEditorPage = () => {
               </div>
             ) : (
               <Upload
-                accept="image/*"
+                accept={acceptOf("image")}
                 showUploadList={false}
                 beforeUpload={(file) => {
                   uploadOne(file)

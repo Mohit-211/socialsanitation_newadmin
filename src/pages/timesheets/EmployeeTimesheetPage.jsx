@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import { excelStyles, saveXlsx } from "@/utils/excel";
 import { correctTimesheet, getTimesheetDay, getTimesheetRange } from "@/services/api/timesheetApi";
 import { dataOf, errorMessage } from "@/services/apiResult";
+import { formatWallTime } from "@/utils/datetime";
 import "./EmployeeTimesheetPage.scss";
 
 const EmployeeTimesheetPage = () => {
@@ -26,11 +27,7 @@ const EmployeeTimesheetPage = () => {
   const getESTDateString = (d) =>
     dayjs(d).tz("America/New_York").format("YYYY-MM-DD");
 
-  const formatTime = (time) => {
-    if (!time) return "";
-
-    return dayjs(time, "HH:mm").format("h:mm A");
-  };
+  const formatTime = (time) => formatWallTime(time, "");
 
   /* FETCH */
   // The day's rows; they are edited here before each is saved.

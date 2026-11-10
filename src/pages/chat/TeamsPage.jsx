@@ -45,6 +45,8 @@ import { sendGroupMessage } from "@/services/api/groupChatApi";
 import { itemsOf } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
 import db from "@/lib/firebase";
+import { formatTime } from "@/utils/datetime";
+import { MAX_UPLOAD_MB, acceptOf, uploadKindOf } from "@/utils/uploads";
 import "./GroupChatPage.scss";
 import "./TeamsPage.scss";
 
@@ -52,8 +54,8 @@ const { Text } = Typography;
 const { TextArea } = Input;
 
 const TEXTAREA_ID = "team-message-textarea";
-const ACCEPTED_TYPES = "image/*,video/*,application/pdf";
-const MAX_FILE_SIZE_MB = { image: 10, video: 50, pdf: 20 };
+const ACCEPTED_TYPES = acceptOf("image", "video", "pdf");
+const MAX_FILE_SIZE_MB = { image: 10, video: MAX_UPLOAD_MB, pdf: 20 };
 
 // Mirrors the backend role names, used for members in the team list.
 const ROLE_LABELS = {
@@ -75,23 +77,13 @@ const TYPE_COLORS = {
   employee: "warning",
 };
 
-const formatTime = (timestamp) =>
-  new Date(timestamp).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
 const initial = (name) => (name || "U")[0].toUpperCase();
 
 const focusTextArea = () =>
   setTimeout(() => document.getElementById(TEXTAREA_ID)?.focus(), 0);
 
-const getFileKind = (file) => {
-  if (file.type.startsWith("image/")) return "image";
-  if (file.type.startsWith("video/")) return "video";
-  if (file.type === "application/pdf") return "pdf";
-  return null;
-};
+// Only what the API takes, by extension: .mp4 and .mov videos, not any video.
+const getFileKind = uploadKindOf;
 
 const isAllowedFile = (file) => {
   const kind = getFileKind(file);
@@ -402,7 +394,7 @@ const TeamsPage = () => {
       message.error(
         kind
           ? `${file.name} is larger than ${MAX_FILE_SIZE_MB[kind]} MB.`
-          : `${file.name} is not a supported file type.`,
+          : `${file.name} can't be sent: only JPG, PNG, GIF or WEBP images, MP4 or MOV videos, and PDFs.`,
       );
     }
     return false; // Prevent auto upload

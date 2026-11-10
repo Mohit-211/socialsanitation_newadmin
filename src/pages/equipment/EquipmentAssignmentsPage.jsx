@@ -47,6 +47,7 @@ import AssignmentHistoryModal from "./components/AssignmentHistoryModal";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 import { saveXlsx, excelStyles } from "@/utils/excel";
+import { formatDate } from "@/utils/datetime";
 
 const { Text } = AntTypography;
 const { Option } = Select;
@@ -284,13 +285,9 @@ const EquipmentAssignmentsPage = () => {
       item.assigned_quantity,
       item.returned_quantity,
       item.pending_quantity,
-      item.assigned_date ? dayjs(item.assigned_date).format("MM-DD-YYYY") : "",
-      item.expected_return_date
-        ? dayjs(item.expected_return_date).format("MM-DD-YYYY")
-        : "",
-      item.actual_return_date
-        ? dayjs(item.actual_return_date).format("MM-DD-YYYY")
-        : "",
+      formatDate(item.assigned_date, ""),
+      formatDate(item.expected_return_date, ""),
+      formatDate(item.actual_return_date, ""),
       item.status,
       item.remarks || "",
     ]);
@@ -381,19 +378,15 @@ const EquipmentAssignmentsPage = () => {
         <div className="date-cell">
           <span>
             Out:{" "}
-            {record.assigned_date
-              ? dayjs(record.assigned_date).format("DD MMM YY")
-              : "-"}
+            {formatDate(record.assigned_date, "-")}
           </span>
           <span>
             Due:{" "}
-            {record.expected_return_date
-              ? dayjs(record.expected_return_date).format("DD MMM YY")
-              : "-"}
+            {formatDate(record.expected_return_date, "-")}
           </span>
           {record.actual_return_date && (
             <span>
-              Returned: {dayjs(record.actual_return_date).format("DD MMM YY")}
+              Returned: {formatDate(record.actual_return_date)}
             </span>
           )}
         </div>

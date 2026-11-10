@@ -7,6 +7,7 @@ import "./BreaksPage.scss";
 import { Search } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
+import { DATE_FORMAT, formatWallDate, formatWallTime } from "@/utils/datetime";
 
 const BreaksPage = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -50,13 +51,10 @@ const BreaksPage = () => {
       key: "date",
       width: 110,
       render: (_, record) => {
-        const breakDate = record.breaks?.[0]?.break_start_est
-          ? dayjs
-              .utc(record.breaks[0].break_start_est)
-              .local()
-              .format("MM-DD-YYYY")
-          : dayjs(selectedDate).format("MM-DD-YYYY");
-        return breakDate;
+        // The New York day of the first break, as kept; else the day picked.
+        return record.breaks?.[0]?.break_start_est
+          ? formatWallDate(record.breaks[0].break_start_est)
+          : selectedDate.format(DATE_FORMAT);
       },
     },
     {
@@ -71,18 +69,14 @@ const BreaksPage = () => {
       key: "clock_in",
       width: 110,
       render: (_, record) =>
-        record.breaks?.[0]?.attendance?.clock_in
-          ? dayjs.utc(record.breaks[0].attendance.clock_in).format("hh:mm A")
-          : "---",
+        formatWallTime(record.breaks?.[0]?.attendance?.clock_in, "---"),
     },
     {
       title: "Clock Out",
       key: "clock_out",
       width: 110,
       render: (_, record) =>
-        record.breaks?.[0]?.attendance?.clock_out
-          ? dayjs.utc(record.breaks[0].attendance.clock_out).format("hh:mm A")
-          : "---",
+        formatWallTime(record.breaks?.[0]?.attendance?.clock_out, "---"),
     },
   ];
 
@@ -97,9 +91,7 @@ const BreaksPage = () => {
             dataIndex: "break_start_est",
             key: "start",
             render: (break_start_est) =>
-              break_start_est
-                ? dayjs.utc(break_start_est).format("hh:mm A")
-                : "---",
+              formatWallTime(break_start_est, "---"),
           },
           {
             title: "Break End",
@@ -107,7 +99,7 @@ const BreaksPage = () => {
             key: "end",
             render: (break_end_est) =>
               break_end_est ? (
-                dayjs.utc(break_end_est).format("hh:mm A")
+                formatWallTime(break_end_est)
               ) : (
                 <Tag color="warning">Ongoing</Tag>
               ),

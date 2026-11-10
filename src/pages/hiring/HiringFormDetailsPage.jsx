@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import dayjs from "@/lib/dayjs";
 import { Button, Space, Spin } from "antd";
 import {
   ArrowLeft,
@@ -20,6 +19,7 @@ import {
 import { getHiringApplication } from "@/services/api/hiringFormApi";
 import { dataOf } from "@/services/apiResult";
 import PageHeader from "@/components/PageHeader";
+import { formatDate } from "@/utils/datetime";
 import "./HiringFormDetailsPage.scss";
 
 // Config: section metadata (icon + friendly title) — falls back gracefully
@@ -100,10 +100,7 @@ const looksLikeDateValue = (value) =>
   (ISO_DATETIME_PATTERN.test(value) || MDY_PATTERN.test(value));
 
 const formatValue = (key, value) => {
-  if (DATE_KEY_PATTERN.test(key) && looksLikeDateValue(value)) {
-    const parsed = dayjs(value);
-    if (parsed.isValid()) return parsed.format("MM-DD-YYYY");
-  }
+  if (DATE_KEY_PATTERN.test(key) && looksLikeDateValue(value)) return formatDate(value, value);
   return value;
 };
 

@@ -8,6 +8,7 @@ import { dataOf, errorMessage } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import PageHeader from "@/components/PageHeader";
 import { excelStyles, saveXlsx } from "@/utils/excel";
+import { DATE_FORMAT, formatDate, formatWallTime, formatWeekdayDate } from "@/utils/datetime";
 import "./SchedulePage.scss";
 
 // Excel export columns (title + width in characters)
@@ -37,7 +38,7 @@ const SchedulePage = () => {
 			return {
 				label: dateObj.format("ddd"),
 				date: dateObj.format("YYYY-MM-DD"),
-				display: dateObj.format("MM/DD/YYYY"),
+				display: dateObj.format(DATE_FORMAT),
 			};
 		});
 	}, [offset]);
@@ -56,7 +57,7 @@ const SchedulePage = () => {
 		},
 		{
 			title: "Date",
-			render: () => dayjs(selectedDate).format("MM/DD/YYYY"),
+			render: () => formatDate(selectedDate),
 			width: 120,
 		},
 		{
@@ -175,13 +176,8 @@ const downloadExcel = async () => {
                     // Break timings logic
                     const breakTimes = (emp.breaks || [])
                         .map((br) => {
-                            const formatTime = (timeStr) =>
-                                timeStr && dayjs(timeStr, "HH:mm:ss").isValid()
-                                    ? dayjs(timeStr, "HH:mm:ss").format("hh:mm A")
-                                    : "--";
-
-                            const start = formatTime(br?.break_start_est);
-                            const end = formatTime(br?.break_end_est);
+                            const start = formatWallTime(br?.break_start_est, "--");
+                            const end = formatWallTime(br?.break_end_est, "--");
                             return `${start}-${end}`;
                         })
                         .join(", ");
@@ -190,8 +186,8 @@ const downloadExcel = async () => {
                         [
                             "", "", "", "",
                             emp.name || "",
-                            emp.clock_in ? dayjs(emp.clock_in).format("hh:mm A") : "--",
-                            emp.clock_out ? dayjs(emp.clock_out).format("hh:mm A") : "--",
+                            formatWallTime(emp.clock_in, "--"),
+                            formatWallTime(emp.clock_out, "--"),
                             emp.breaks ? emp.breaks.length : "",
                             breakTimes,
                         ].map((value, index) => ({
@@ -272,7 +268,7 @@ const downloadExcel = async () => {
 				</div>
 
 				<h2 className="section-title weekly-overview__summary">
-					Summary – {dayjs(selectedDate).format("dddd, MMMM Do YYYY")}
+					Summary – {formatWeekdayDate(selectedDate)}
 				</h2>
 
 				{/* Statistics */}

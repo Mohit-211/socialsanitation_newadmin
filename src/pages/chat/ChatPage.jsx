@@ -9,6 +9,8 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 import { useSession } from "@/lib/session";
 import { listChats, markChatRead, sendChatMessage } from "@/services/api/chatApi";
 import { errorMessage, itemsOf } from "@/services/apiResult";
+import { formatTime } from "@/utils/datetime";
+import { MAX_UPLOAD_MB, acceptOf, uploadKindOf } from "@/utils/uploads";
 import "./ChatPage.scss";
 
 const { TextArea } = Input;
@@ -18,9 +20,6 @@ const THREADS = {
   employee: { path: "EMPLOYEE_ADMIN_CHAT", label: "Employees" },
   user: { path: "USER_ADMIN_CHAT", label: "Clients (read-only)" },
 };
-
-const formatTime = (timestamp) =>
-  timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
 
 // One-to-one chats with employees. Clients no longer chat: their old threads
 // still read here, without a reply box.
@@ -171,10 +170,16 @@ const ChatPage = () => {
               <div className="chat-ui__composer">
                 <Upload
                   multiple
-                  accept="image/*"
+                  accept={acceptOf("image")}
                   showUploadList={false}
                   beforeUpload={(file) => {
-                    setSelectedImages((prev) => [...prev, file]);
+                    if (uploadKindOf(file) !== "image") {
+                      message.error(`${file.name} can't be sent: only JPG, PNG, GIF or WEBP images.`);
+                    } else if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+                      message.error(`${file.name} is larger than ${MAX_UPLOAD_MB} MB.`);
+                    } else {
+                      setSelectedImages((prev) => [...prev, file]);
+                    }
                     return false;
                   }}
                 >

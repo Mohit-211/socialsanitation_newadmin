@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
+import { formatDate, formatWallTime, formatWeekdayDate } from "@/utils/datetime";
 
 // 🔹 Small responsive stat card used in the daily-view summary strip
 const StatCard = ({ label, value }) => (
@@ -75,10 +76,7 @@ const AttendancePage = () => {
     setIsDetailModalOpen(true);
   };
 
-  const formatTimeOnly = (datetimeStr) => {
-    if (!datetimeStr) return "---";
-    return dayjs.utc(datetimeStr).format("hh:mm A");
-  };
+  const formatTimeOnly = (datetimeStr) => formatWallTime(datetimeStr, "---");
 
   const handleMonthChange = (date) => {
     setSelectedMonth(date);
@@ -172,7 +170,7 @@ const AttendancePage = () => {
       dataIndex: "date",
       key: "date",
       width: "10%",
-      render: (date) => dayjs(date).format("MM/DD/YYYY"),
+      render: (date) => formatDate(date),
     },
     {
       title: "Clock-In Location",
@@ -252,7 +250,7 @@ const AttendancePage = () => {
       width: 80,
       key: "clock_in",
       render: (clock_in) =>
-        clock_in ? dayjs.utc(clock_in).format("hh:mm A") : "---",
+        formatWallTime(clock_in, "---"),
     },
     {
       title: "Clock Out",
@@ -260,7 +258,7 @@ const AttendancePage = () => {
       width: 80,
       key: "clock_out",
       render: (clock_out) =>
-        clock_out ? dayjs.utc(clock_out).format("hh:mm A") : "---",
+        formatWallTime(clock_out, "---"),
     },
     {
       title: "Clock-In Image",
@@ -513,7 +511,7 @@ const AttendancePage = () => {
           <div className="attendance__details">
             <p>
               <strong>Date:</strong>{" "}
-              {dayjs(selectedEntry.date).format("dddd, DD MMMM, YYYY")}
+              {formatWeekdayDate(selectedEntry.date)}
             </p>
             <p>
               <strong>Clock In:</strong>{" "}

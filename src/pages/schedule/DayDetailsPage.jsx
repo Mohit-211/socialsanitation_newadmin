@@ -7,6 +7,7 @@ import { getVisitOverview } from "@/services/api/dashboardApi";
 import { dataOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import PageHeader from "@/components/PageHeader";
+import { formatDate, formatWallTime } from "@/utils/datetime";
 import "./DayDetailsPage.scss";
 
 const DayDetailsPage = () => {
@@ -219,10 +220,10 @@ const DayDetailsPage = () => {
 					className="day-details__descriptions"
 				>
 					<Descriptions.Item label="Booking Date">
-						{dayjs(data.date).format("DD MMMM, YYYY")}
+						{formatDate(data.date)}
 					</Descriptions.Item>
 					<Descriptions.Item label="Booking Time">
-						{dayjs(data.time, "HH:mm:ss").format("hh:mm A")}
+						{formatWallTime(data.time)}
 					</Descriptions.Item>
 
 					<Descriptions.Item label="Booking Name">

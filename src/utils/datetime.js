@@ -11,8 +11,9 @@ export const API_DATE_FORMAT = "YYYY-MM-DD";
 export const API_TIME_FORMAT = "HH:mm";
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
-// Some older records keep a date as US text, such as a contract's date.
-const US_DATE = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+// Some records keep a date as US text: a contract's date (11/05/2026), or a
+// date on the hiring form (11-05-2026).
+const US_DATE = /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/;
 // A date-only field stored as a timestamp: midnight UTC, which means that calendar day.
 const MIDNIGHT_UTC = /^\d{4}-\d{2}-\d{2}T00:00:00(\.0+)?Z$/;
 const TIME_ONLY = /^\d{1,2}:\d{2}(:\d{2})?$/;
@@ -27,7 +28,7 @@ export function formatDate(value, fallback = "—") {
     return dayjs(value, API_DATE_FORMAT).format(DATE_FORMAT);
   }
   if (typeof value === "string" && US_DATE.test(value)) {
-    return dayjs(value, "M/D/YYYY").format(DATE_FORMAT);
+    return dayjs(value.replace(/-/g, "/"), "M/D/YYYY").format(DATE_FORMAT);
   }
   if (typeof value === "string" && MIDNIGHT_UTC.test(value)) {
     return dayjs(value.slice(0, 10), API_DATE_FORMAT).format(DATE_FORMAT);
@@ -56,6 +57,32 @@ export function formatDateTime(value, fallback = "—") {
     : fallback;
 }
 
+/**
+ * A New York wall time the API keeps in a timestamp's UTC fields, as it does
+ * for clock-ins, clock-outs and breaks: "2026-11-10T09:05:00.000Z" means
+ * 9:05 AM in New York. Shown as kept, never shifted: "9:05 AM". Also takes
+ * "09:05:00" and "2026-11-10 09:05:00".
+ */
+export function formatWallTime(value, fallback = "—") {
+  if (!value) return fallback;
+  if (typeof value === "string" && TIME_ONLY.test(value)) return formatTime(value, fallback);
+  const parsed = dayjs.utc(value);
+  return parsed.isValid() ? parsed.format(TIME_FORMAT) : fallback;
+}
+
+/** The day of such a wall time (see formatWallTime): "11/10/2026". */
+export function formatWallDate(value, fallback = "—") {
+  if (!value) return fallback;
+  const parsed = dayjs.utc(value);
+  return parsed.isValid() ? parsed.format(DATE_FORMAT) : fallback;
+}
+
+/** A date with its weekday, for headings: "Tuesday, 11/10/2026". */
+export function formatWeekdayDate(value, fallback = "—") {
+  const day = fromApiDate(value);
+  return day ? `${day.format("dddd")}, ${day.format(DATE_FORMAT)}` : fallback;
+}
+
 /** A date for the API (YYYY-MM-DD) from a dayjs value, Date or string; null when empty. */
 export function toApiDate(value) {
   if (!value) return null;
@@ -81,7 +108,7 @@ export function fromApiDate(value) {
   if (!value) return null;
   const text = String(value);
   let parsed;
-  if (US_DATE.test(text)) parsed = dayjs(text, "M/D/YYYY");
+  if (US_DATE.test(text)) parsed = dayjs(text.replace(/-/g, "/"), "M/D/YYYY");
   else if (DATE_ONLY.test(text.slice(0, 10)) && (text.length === 10 || MIDNIGHT_UTC.test(text))) {
     parsed = dayjs(text.slice(0, 10), API_DATE_FORMAT);
   } else {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Table, Space, message, Modal, Tooltip, Input, Button } from "antd";
 import { useNavigate } from "react-router";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
-import dayjs from "@/lib/dayjs";
+import { formatDate } from "@/utils/datetime";
 import { deleteProduct, listProducts } from "@/services/api/productApi";
 import { errorMessage } from "@/services/apiResult";
 import PageHeader from "@/components/PageHeader";
@@ -71,7 +71,7 @@ const ProductsPage = () => {
 			title: "Created On",
 			dataIndex: "created_at",
 			width: "20%",
-			render: (date) => dayjs(date).format("MM/DD/YYYY"),
+			render: (date) => formatDate(date),
 		},
 		{
 			title: "Action",

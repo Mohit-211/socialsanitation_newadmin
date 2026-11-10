@@ -27,6 +27,7 @@ import {
 } from "@/services/api/equipmentApi";
 import PageHeader from "@/components/PageHeader";
 import { saveXlsx, excelStyles } from "@/utils/excel";
+import { formatDate } from "@/utils/datetime";
 
 const STATUS_META = {
   ASSIGNED: {
@@ -62,9 +63,6 @@ const getStatusMeta = (status) =>
     icon: PackageCheck,
     label: status || "—",
   };
-
-const formatDate = (dateStr) =>
-  dateStr ? dayjs(dateStr).format("DD MMM YYYY") : "—";
 
 const EmployeeEquipmentRecordsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(dayjs().format("YYYY-MM"));

@@ -8,7 +8,7 @@ import {
 import { listUpcomingInvoices } from "@/services/api/invoiceApi";
 import { dataOf, itemsOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { todayInBusinessTz } from "@/utils/datetime";
+import { formatDate, formatTime, formatWallTime, fromApiDate, todayInBusinessTz } from "@/utils/datetime";
 import { Button } from "antd";
 import { ArrowRight } from "lucide-react";
 import "./DashboardPage.scss";
@@ -16,24 +16,8 @@ import { useNavigate } from "react-router";
 import dayjs from "@/lib/dayjs";
 
 /* helpers */
-const toAMPM = (value) => {
-  if (!value) return "—";
-
-  // Full datetime string
-  if (String(value).includes("T") || String(value).includes(" ")) {
-    return dayjs(value).format("hh:mm A");
-  }
-
-  // Time only
-  return dayjs(value, "HH:mm:ss").format("hh:mm A");
-};
-
-// MM-DD-YYYY formatter for plain dates
-const fmtDate = (value) => {
-  if (!value) return "—";
-  const d = dayjs(value);
-  return d.isValid() ? d.format("MM-DD-YYYY") : String(value);
-};
+// A date to show; text that isn't one is shown as it came.
+const fmtDate = (value) => formatDate(value, value ? String(value) : "—");
 
 const fmtDateRange = (rangeStr) => {
   if (!rangeStr) return "—";
@@ -47,13 +31,10 @@ const fmtDateRange = (rangeStr) => {
 const formatDelay = (mins) =>
   mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m late` : `${mins}m late`;
 
+// Days from today in New York to a date the API sent, in any of its shapes.
 const getDaysUntil = (dateStr) => {
-  if (!dateStr) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target - today) / 86400000);
+  const target = fromApiDate(dateStr);
+  return target ? target.diff(dayjs(todayInBusinessTz()), "day") : null;
 };
 
 // `tone` picks the colour bar and badge styles in DashboardPage.scss.
@@ -195,7 +176,7 @@ const DashboardPage = () => {
             Live data · refreshes every 30s
           </div>
           <div className="ss-dashboard__banner-updated">
-            Last updated: {toAMPM(lastRefresh)}
+            Last updated: {formatTime(lastRefresh)}
           </div>
         </div>
       </div>
@@ -229,7 +210,7 @@ const DashboardPage = () => {
                       </span>
                     </div>
                     <span className="ss-dashboard__pill ss-dashboard__pill--compact ss-dashboard__pill--success">
-                      🕒 Clocked in {toAMPM(emp.clock_in)}
+                      🕒 Clocked in {formatWallTime(emp.clock_in)}
                     </span>
                   </div>
                   <div className="ss-dashboard__row-line ss-text-muted">
@@ -302,13 +283,13 @@ const DashboardPage = () => {
                     </div>
                     <div className="ss-dashboard__timing">
                       <span>
-                        🕒 Start: <strong>{toAMPM(emp.booking_time)}</strong>
+                        🕒 Start: <strong>{formatWallTime(emp.booking_time)}</strong>
                       </span>
                       <span>
                         🕓 Clock-in:{" "}
                         <strong>
                           {emp.clock_in_time
-                            ? toAMPM(emp.clock_in_time)
+                            ? formatWallTime(emp.clock_in_time)
                             : "Not yet"}
                         </strong>
                       </span>
@@ -509,7 +490,7 @@ const DashboardPage = () => {
                               Booking Time
                             </div>
                             <div className="ss-dashboard__tile-value ss-text-dark">
-                              🕒 {toAMPM(booking.time)}
+                              🕒 {formatWallTime(booking.time)}
                             </div>
                           </div>
 

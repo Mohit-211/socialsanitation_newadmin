@@ -3,7 +3,7 @@ import { Button, Table, Modal, Space, message } from "antd";
 import { useNavigate } from "react-router";
 import { deleteVideo, listVideos } from "@/services/api/trainingVideoApi";
 import { errorMessage } from "@/services/apiResult";
-import dayjs from "@/lib/dayjs";
+import { formatDateTime } from "@/utils/datetime";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
@@ -53,7 +53,7 @@ const TrainingVideosPage = () => {
 			title: "Date Uploaded",
 			dataIndex: "created_at",
 			width: "20%",
-			render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
+			render: (date) => formatDateTime(date),
 		},
 
 		{

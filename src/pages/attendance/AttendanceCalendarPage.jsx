@@ -7,6 +7,7 @@ import { errorMessage, itemsOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { useNavigate } from "react-router";
 import PageHeader from "@/components/PageHeader";
+import { formatDate, formatWallTime } from "@/utils/datetime";
 import "./attendance.scss";
 
 const AttendanceCalendarPage = () => {
@@ -170,7 +171,7 @@ const AttendanceCalendarPage = () => {
 				</div>
 			</Modal>
 			<Modal
-				title={`Attendance on ${dayjs(selectedDay).format("DD MMM YYYY")}`}
+				title={`Attendance on ${formatDate(selectedDay)}`}
 				open={isDayModalOpen}
 				onCancel={() => setIsDayModalOpen(false)}
 				footer={null}
@@ -194,14 +195,10 @@ const AttendanceCalendarPage = () => {
 									<tr key={idx}>
 										<td>{u.name}</td>
 										<td>
-											{u.clock_in
-												? dayjs.utc(u.clock_in).format("hh:mm A")
-												: "---"}
+											{formatWallTime(u.clock_in, "---")}
 										</td>
 										<td>
-											{u.clock_out
-												? dayjs.utc(u.clock_out).format("hh:mm A")
-												: "---"}
+											{formatWallTime(u.clock_out, "---")}
 										</td>
 										<td>{u.total_hours || "--"}</td>
 										<td>

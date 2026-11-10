@@ -14,6 +14,7 @@ import "./AssignmentHistoryModal.scss";
 import { getAssignmentHistory } from "@/services/api/equipmentApi";
 import { dataOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
+import { formatDateTime } from "@/utils/datetime";
 
 const STATUS_META = {
   ASSIGNED: { color: "var(--color-primary-strong)", bg: "var(--color-primary-soft)", label: "Assigned" },
@@ -76,17 +77,6 @@ const getActionMeta = (action) =>
     label: action || "Update",
     describe: () => "Assignment updated.",
   };
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 const AssignmentHistoryModal = ({ open, onClose, assignmentId, equipmentName }) => {
   const [previewImg, setPreviewImg] = useState(null);

@@ -11,7 +11,7 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
-import dayjs from "@/lib/dayjs";
+import { formatDate } from "@/utils/datetime";
 import PageHeader from "@/components/PageHeader";
 import {
   deleteCostCalculation,
@@ -140,7 +140,7 @@ const ViewModal = ({ record, onClose }) => {
             <div className="ch-detail-item">
               <div className="d-label">CREATED</div>
               <div className="d-value">
-                {dayjs(record.created_at).format("MMM DD, YYYY")}
+                {formatDate(record.created_at)}
               </div>
             </div>
           </div>
@@ -389,7 +389,7 @@ const CalculationHistory = () => {
                     </td>
                     <td>
                       <span className="ch-date">
-                        {dayjs(item.created_at).format("MMM DD, YYYY")}
+                        {formatDate(item.created_at)}
                       </span>
                     </td>
                     <td>

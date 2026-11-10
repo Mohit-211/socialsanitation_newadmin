@@ -43,11 +43,11 @@ import {
 import { imageUrl } from "@/utils/files";
 import { cssVar } from "@/theme/antdTheme";
 import PageHeader from "@/components/PageHeader";
+import { formatDate, formatDateTime } from "@/utils/datetime";
 import "./InspectionDetailsPage.scss";
 
 const { TextArea } = AntInput;
 
-const DATE_FORMAT = "MM/DD/YYYY hh:mm A";
 
 const STATUS_CONFIG = {
   ASSIGNED: {
@@ -496,7 +496,7 @@ const InspectionDetailsPage = () => {
 
   const headerSubtitle = `${
     inspection?.inspection_date
-      ? dayjs(inspection.inspection_date).format("MM/DD/YYYY")
+      ? formatDate(inspection.inspection_date)
       : ""
   }${inspection?.employee?.name ? ` · ${inspection.employee.name}` : ""}`;
 
@@ -514,7 +514,7 @@ const InspectionDetailsPage = () => {
         </span>
         <span className="timeline-entry__time">
           <Clock size={10} />
-          {dayjs(images[images.length - 1].created_at).format(DATE_FORMAT)}
+          {formatDateTime(images[images.length - 1].created_at)}
         </span>
       </button>
 
@@ -534,7 +534,7 @@ const InspectionDetailsPage = () => {
                   crossOrigin="anonymous"
                 />
                 <span className="timeline-entry__image-time">
-                  {dayjs(img.created_at).format(DATE_FORMAT)}
+                  {formatDateTime(img.created_at)}
                 </span>
               </div>
             ))}
@@ -647,7 +647,7 @@ const InspectionDetailsPage = () => {
             <RotateCcw size={15} className="reopen-banner__icon" />
             <div className="reopen-banner__body">
               <div className="reopen-banner__title">
-                Reopened {dayjs(inspection.reopened_at).format(DATE_FORMAT)}
+                Reopened {formatDateTime(inspection.reopened_at)}
                 {inspection.reopen_count > 1 &&
                   ` · reopen #${inspection.reopen_count}`}
               </div>
@@ -658,9 +658,7 @@ const InspectionDetailsPage = () => {
               )}
               <div className="reopen-banner__hint">
                 {employeeResubmitted
-                  ? `Employee resubmitted ${dayjs(
-                      inspection.employee_submitted_at,
-                    ).format(DATE_FORMAT)}. `
+                  ? `Employee resubmitted ${formatDateTime(inspection.employee_submitted_at)}. `
                   : isReopened
                     ? "The employee can update items and resubmit. "
                     : ""}
@@ -728,7 +726,7 @@ const InspectionDetailsPage = () => {
                 }`}
               >
                 {inspection?.client_email_sent
-                  ? `Sent ${dayjs(inspection.client_email_sent_at).format(DATE_FORMAT)}`
+                  ? `Sent ${formatDateTime(inspection.client_email_sent_at)}`
                   : "Not sent yet"}
               </div>
             </div>
@@ -866,7 +864,7 @@ const InspectionDetailsPage = () => {
                   {review.reviewed_at && (
                     <span className="timeline-entry__time">
                       <Clock size={10} />
-                      {dayjs(review.reviewed_at).format(DATE_FORMAT)}
+                      {formatDateTime(review.reviewed_at)}
                     </span>
                   )}
                 </div>
@@ -988,7 +986,7 @@ const InspectionDetailsPage = () => {
                                 </span>
                                 <span className="timeline-entry__time">
                                   <Clock size={10} />
-                                  {dayjs(item.updated_at).format(DATE_FORMAT)}
+                                  {formatDateTime(item.updated_at)}
                                 </span>
                               </div>
                               <p className="timeline-entry__text">
@@ -1020,9 +1018,7 @@ const InspectionDetailsPage = () => {
                                 <span className="timeline-entry__time">
                                   <Clock size={10} />
                                   {item.bdm_reviewed_at
-                                    ? dayjs(item.bdm_reviewed_at).format(
-                                        DATE_FORMAT,
-                                      )
+                                    ? formatDateTime(item.bdm_reviewed_at)
                                     : ""}
                                 </span>
                               </div>

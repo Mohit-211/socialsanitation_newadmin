@@ -26,11 +26,11 @@ import {
   Trash2,
   RotateCcw,
 } from "lucide-react";
-import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
 import IconAction from "@/components/IconAction";
 import { createInspection, deleteInspection, listClientInspections } from "@/services/api/inspectionApi";
 import { listEmployeeNames } from "@/services/api/employeeApi";
+import { formatDate, fromApiDate, toApiDate } from "@/utils/datetime";
 import "./ClientInspectionsPage.scss";
 
 const { Option } = Select;
@@ -147,7 +147,7 @@ const ClientInspectionsPage = () => {
   const takenDates = useMemo(
     () =>
       new Set(
-        inspections.map((i) => dayjs(i.inspection_date).format("YYYY-MM-DD")),
+        inspections.map((i) => toApiDate(fromApiDate(i.inspection_date))),
       ),
     [inspections],
   );
@@ -375,7 +375,7 @@ const ClientInspectionsPage = () => {
                   <div className="inspection-card__meta-row">
                     <Calendar size={14} color="var(--color-text-subtle)" />
                     <span>
-                      {dayjs(item.inspection_date).format("MMM D, YYYY")}
+                      {formatDate(item.inspection_date)}
                     </span>
                   </div>
                   <div className="inspection-card__meta-row">
