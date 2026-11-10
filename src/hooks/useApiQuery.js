@@ -11,13 +11,16 @@ import { errorMessage } from "@/services/apiResult";
  *     useApiQuery(() => listAdmins().then(itemsOf), [], { initial: [] });
  *
  * A late answer for old inputs is ignored, and a failure shows the backend's
- * message. `setData` changes the kept value in place, after a local edit.
+ * message (unless `silent`: the screen shows `error` itself). `setData` changes
+ * the kept value in place, after a local edit.
  */
-export function useApiQuery(load, inputs = [], { initial = null, errorText, skip = false } = {}) {
+export function useApiQuery(load, inputs = [], { initial = null, errorText, skip = false, silent = false } = {}) {
   const [state, setState] = useState({ data: initial, loading: !skip, error: null });
   const [version, setVersion] = useState(0);
   const run = useEffectEvent(() => load());
-  const notify = useEffectEvent((error) => message.error(errorMessage(error, errorText)));
+  const notify = useEffectEvent((error) => {
+    if (!silent) message.error(errorMessage(error, errorText));
+  });
   const key = JSON.stringify(inputs);
 
   useEffect(() => {

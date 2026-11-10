@@ -46,7 +46,9 @@ const HiringFormDetailsPage = lazy(() => import("@/pages/hiring/HiringFormDetail
 const EditClientPage = lazy(() => import("@/pages/clients/EditClientPage"));
 const CreateServiceQuotePage = lazy(() => import("@/pages/service-quotes/CreateServiceQuotePage"));
 const AttendancePage = lazy(() => import("@/pages/attendance/AttendancePage"));
-const CreateClientBookingPage = lazy(() => import("@/pages/bookings/CreateClientBookingPage"));
+const CreateBookingPage = lazy(() => import("@/pages/bookings/CreateBookingPage"));
+const BookingSeriesPage = lazy(() => import("@/pages/bookings/BookingSeriesPage"));
+const RepeatingBookingsPage = lazy(() => import("@/pages/bookings/RepeatingBookingsPage"));
 const BookingCalendarPage = lazy(() => import("@/pages/bookings/BookingCalendarPage"));
 const AttendanceCalendarPage = lazy(() => import("@/pages/attendance/AttendanceCalendarPage"));
 const ServiceChecklistDetailsPage = lazy(() => import("@/pages/service-checklists/ServiceChecklistDetailsPage"));
@@ -54,7 +56,6 @@ const WeeklyChecklistPage = lazy(() => import("@/pages/daily-checklists/WeeklyCh
 const GroupChatPage = lazy(() => import("@/pages/chat/GroupChatPage"));
 const SchedulePage = lazy(() => import("@/pages/schedule/SchedulePage"));
 const DayDetailsPage = lazy(() => import("@/pages/schedule/DayDetailsPage"));
-const CreateGuestBookingPage = lazy(() => import("@/pages/bookings/CreateGuestBookingPage"));
 const BreaksPage = lazy(() => import("@/pages/breaks/BreaksPage"));
 const TrainingVideosPage = lazy(() => import("@/pages/training-videos/TrainingVideosPage"));
 const AddTrainingVideoPage = lazy(() => import("@/pages/training-videos/AddTrainingVideoPage"));
@@ -168,7 +169,9 @@ const AppRoutes = () => (
         <Route path="/view-form/:id" element={<HiringFormDetailsPage />} />
         <Route path="/service-quote/:id" element={<CreateServiceQuotePage />} />
         <Route path="/attendance" element={<AttendancePage />} />
-        <Route path="/create-client-booking" element={<CreateClientBookingPage />} />
+        <Route path="/create-client-booking" element={<CreateBookingPage />} />
+        <Route path="/booking-series/:id" element={<BookingSeriesPage />} />
+        <Route path="/repeating-bookings" element={<RepeatingBookingsPage />} />
         <Route path="/monthlyCalendar" element={<BookingCalendarPage />} />
         <Route path="/attendanceCalendar" element={<AttendanceCalendarPage />} />
         <Route
@@ -177,7 +180,7 @@ const AppRoutes = () => (
         />
         <Route path="/weeklyOverview" element={<SchedulePage />} />
         <Route path="/day-overview/:booking_id" element={<DayDetailsPage />} />
-        <Route path="/create-non-client-booking" element={<CreateGuestBookingPage />} />
+        <Route path="/create-non-client-booking" element={<CreateBookingPage forGuest />} />
         <Route path="/breaks" element={<BreaksPage />} />
         <Route path="/training-videos" element={<TrainingVideosPage />} />
         <Route path="/add-training-videos" element={<AddTrainingVideoPage />} />

@@ -1,213 +1,97 @@
-import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import {
-	Calendar,
-	Badge,
-	Modal,
-	Typography,
-	Spin,
-	Row,
-	Col,
-	Button,
-	Tag,
-	Space,
-} from "antd";
-import { ArrowLeft } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { GetMonthlyBookingCalendar } from "@/services/api/bookingApi";
+import { Badge, Button, Calendar, Modal, Spin } from "antd";
+import { ArrowLeft } from "lucide-react";
+import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
+import StatusTag from "@/components/StatusTag";
+import { getBookingCalendar } from "@/services/api/bookingApi";
+import { itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { formatDate, formatTime } from "@/utils/datetime";
 import "./bookings.scss";
 
-const { Text } = Typography;
+const whoOf = (visit) => visit.client?.name || visit.guest?.name || visit.title || "Visit";
 
+// The month at a glance: each day's visits; a day opens its list.
 const BookingCalendarPage = () => {
-	const [currentDate, setCurrentDate] = useState(dayjs());
-	const [bookingData, setBookingData] = useState({});
-	const [loading, setLoading] = useState(false);
-	const [modalVisible, setModalVisible] = useState(false);
-	const [selectedBookings, setSelectedBookings] = useState([]);
-	const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [month, setMonth] = useState(dayjs());
+  const [openDay, setOpenDay] = useState(null);
 
-	const fetchBookingData = async (month, year) => {
-		setLoading(true);
-		try {
-			const formData = new FormData();
-			formData.append("month", month);
-			formData.append("year", year);
-			const res = await GetMonthlyBookingCalendar(formData);
-			const map = {};
-			res.data.data.forEach((entry) => {
-				map[entry.date] = entry.bookings;
-			});
-			setBookingData(map);
-		} catch (error) {
-			console.error("Failed to fetch bookings", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+  const { data: days, loading } = useApiQuery(
+    () => getBookingCalendar({ month: month.month() + 1, year: month.year() }).then(itemsOf),
+    [month.year(), month.month()],
+    { initial: [], errorText: "Couldn't load the calendar" },
+  );
+  const byDate = useMemo(() => new Map((days || []).map((day) => [day.date, day.bookings || []])), [days]);
+  const visitsOn = (date) => byDate.get(date.format("YYYY-MM-DD")) || [];
 
-	useEffect(() => {
-		fetchBookingData(currentDate.month() + 1, currentDate.year());
-	}, [currentDate]);
-
-	const onPanelChange = (value) => {
-		setCurrentDate(value);
-	};
-
-	const onSelect = (value) => {
-		const dateStr = value.format("YYYY-MM-DD");
-		const bookings = bookingData[dateStr] || [];
-		if (bookings.length > 0) {
-			setSelectedBookings(bookings);
-			setModalVisible(true);
-		}
-	};
-
-	const dateCellRender = (value) => {
-		const dateStr = value.format("YYYY-MM-DD");
-		const bookings = bookingData[dateStr];
-		if (!bookings || bookings.length === 0) return null;
-
-		return (
-			<div>
-				{bookings.slice(0, 3).map((booking) => (
-					<div
-						key={booking.id}
-						className="booking-calendar__entry"
-						onClick={() => {
-							setSelectedBookings(bookings);
-							setModalVisible(true);
-						}}
-					>
-						<Badge
-							color="var(--color-primary-border)"
-							text={
-								booking.booking_name
-									? booking.booking_name
-									: booking.booking_user?.user_profile?.name || "No Name"
-							}
-						/>
-					</div>
-				))}
-				{bookings.length > 3 && (
-					<Text
-						type="secondary"
-						className="booking-calendar__more"
-						onClick={() => {
-							setSelectedBookings(bookings);
-							setModalVisible(true);
-						}}
-					>
-						+{bookings.length - 3} more
-					</Text>
-				)}
-			</div>
-		);
-	};
-
-	return (
-		<Spin spinning={loading} description="Loading bookings...">
-			<PageHeader
-				title="Calendar View"
-				subtitle="View bookings by day, just like Google Calendar."
-				actions={
-					<Button
-						size="large"
-						icon={<ArrowLeft size={16} />}
-						onClick={() => navigate("/bookings")}
-					>
-						Return to Bookings
-					</Button>
-				}
-			/>
-			<div className="surface surface--padded">
-				<Calendar
-					value={currentDate}
-					onPanelChange={onPanelChange}
-					onSelect={onSelect}
-					cellRender={(current, info) =>
-						info.type === "date" ? dateCellRender(current) : null
-					}
-					fullscreen
-				/>
-			</div>
-
-			<Modal
-				title="Bookings on July 22"
-				open={modalVisible}
-				onCancel={() => setModalVisible(false)}
-				footer={null}
-				width={700}
-				styles={{
-					body: {
-						padding: "var(--space-6)",
-						background: "var(--color-bg-subtle)",
-					},
-				}}
-			>
-				<ul className="booking-calendar__list">
-					{selectedBookings.map((item) => {
-						const clientName =
-							item.client_name ||
-							item.booking_user?.user_profile?.name ||
-							"Unnamed";
-						const isClient = !!item.user_id;
-						const color = isClient ? "success" : "processing";
-						const label = isClient ? "Client Booking" : "Non-client Booking";
-
-						return (
-							<li
-								key={item.id}
-								className="booking-calendar__item"
-								onClick={() => navigate(`/viewBooking/${item.id}`)}
-							>
-								<Row justify="space-between" align="middle" gutter={[16, 16]}>
-									<Col xs={24} sm={18}>
-										<Space orientation="vertical" size={4}>
-											<Space size="small">
-												<Text strong className="booking-calendar__client">
-													{clientName}
-												</Text>
-												<Tag color={color} className="booking-calendar__tag">
-													{label}
-												</Tag>
-											</Space>
-
-											<Text type="secondary">
-												📋 Service:{" "}
-												<strong>
-													{item.service_booking?.name || "Not Assigned"}
-												</strong>
-											</Text>
-											<Text type="secondary">
-												🕒 Time:{" "}
-												<strong>
-													{dayjs(item.time, "HH:mm:ss").format("hh:mm A")}
-												</strong>
-											</Text>
-										</Space>
-									</Col>
-
-									<Col xs={24} sm={6} style={{ textAlign: "right" }}>
-										<Button
-											type="primary"
-											onClick={(e) => {
-												e.stopPropagation();
-												navigate(`/viewBooking/${item.id}`);
-											}}
-										>
-											View
-										</Button>
-									</Col>
-								</Row>
-							</li>
-						);
-					})}
-				</ul>
-			</Modal>
-		</Spin>
-	);
+  return (
+    <div>
+      <PageHeader
+        title="BOOKING CALENDAR"
+        subtitle="Every visit of the month"
+        actions={
+          <Button size="large" icon={<ArrowLeft size={16} />} onClick={() => navigate("/bookings")}>
+            All Bookings
+          </Button>
+        }
+      />
+      <Spin spinning={loading}>
+        <div className="surface booking-calendar">
+          <Calendar
+            value={month}
+            onPanelChange={(value) => setMonth(value)}
+            onSelect={(value, info) => {
+              if (info?.source === "date" && visitsOn(value).length) setOpenDay(value);
+              else setMonth(value);
+            }}
+            cellRender={(current, info) => {
+              if (info.type !== "date") return info.originNode;
+              const visits = visitsOn(current);
+              if (!visits.length) return null;
+              return (
+                <ul className="booking-calendar__day">
+                  {visits.slice(0, 3).map((visit) => (
+                    <li key={visit.id}>
+                      <Badge status={visit.status === "SUCCESS" ? "success" : visit.status === "CANCELLED" ? "default" : "processing"} />
+                      <span>
+                        {formatTime(visit.start_time)} {whoOf(visit)}
+                      </span>
+                    </li>
+                  ))}
+                  {visits.length > 3 && <li className="text-subtle">+{visits.length - 3} more</li>}
+                </ul>
+              );
+            }}
+          />
+        </div>
+      </Spin>
+      <Modal
+        open={Boolean(openDay)}
+        title={openDay ? `Visits on ${formatDate(openDay.format("YYYY-MM-DD"))}` : ""}
+        footer={null}
+        onCancel={() => setOpenDay(null)}
+      >
+        <ul className="booking-calendar__list">
+          {(openDay ? visitsOn(openDay) : []).map((visit) => (
+            <li key={visit.id}>
+              <button type="button" className="booking-calendar__item" onClick={() => navigate(`/viewBooking/${visit.id}`)}>
+                <span>
+                  <strong>
+                    {formatTime(visit.start_time)} · {whoOf(visit)}
+                  </strong>
+                  <span className="text-subtle">{(visit.services || []).map((service) => service.name).join(", ")}</span>
+                </span>
+                <StatusTag code={visit.status} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Modal>
+    </div>
+  );
 };
 
 export default BookingCalendarPage;

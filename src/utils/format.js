@@ -30,7 +30,10 @@ const STATUS_TAGS = {
   new: { label: "New", color: "blue" },
   contacted: { label: "Contacted", color: "gold" },
   closed: { label: "Closed", color: "default" },
-  // bookings
+  // bookings (visit statuses: ACCEPTED is booked, SUCCESS is done)
+  ACCEPTED: { label: "Booked", color: "blue" },
+  SUCCESS: { label: "Completed", color: "green" },
+  REJECTED: { label: "Declined", color: "default" },
   UPCOMING: { label: "Upcoming", color: "blue" },
   ONGOING: { label: "In progress", color: "cyan" },
   COMPLETED: { label: "Completed", color: "green" },
