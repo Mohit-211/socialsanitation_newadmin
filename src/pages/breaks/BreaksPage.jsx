@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import { GetAllBreaks } from "@/services/api/attendanceApi";
+import { useState } from "react";
+import { listBreaks } from "@/services/api/attendanceApi";
+import { itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import { Table, DatePicker, Tag, Input } from "antd";
 import "./BreaksPage.scss";
 import { Search } from "lucide-react";
@@ -7,34 +9,19 @@ import dayjs from "@/lib/dayjs";
 import PageHeader from "@/components/PageHeader";
 
 const BreaksPage = () => {
-  const [breakData, setBreakData] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [searchTerm, setSearchTerm] = useState("");
+  const day = selectedDate.format("YYYY-MM-DD");
 
-  const getData = async () => {
-    try {
-      setLoading(true);
-      const formData = {
-        date: selectedDate.format("YYYY-MM-DD"),
-      };
-      const result = await GetAllBreaks(formData);
-      const dataWithIndex = result.data.data.map((item, index) => ({
-        ...item,
-        autoIncrementId: index + 1,
-      }));
-      setBreakData(dataWithIndex);
-    } catch (e) {
-      console.error("Failed to fetch breaks:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
+  // A row per employee for the day, numbered.
+  const { data: breakData, loading } = useApiQuery(
+    () =>
+      listBreaks(day)
+        .then(itemsOf)
+        .then((rows) => rows.map((item, index) => ({ ...item, autoIncrementId: index + 1 }))),
+    [day],
+    { initial: [], errorText: "Couldn't load the breaks" },
+  );
 
   const columns = [
     {
@@ -53,17 +40,10 @@ const BreaksPage = () => {
     },
     {
       title: "Role",
-      dataIndex: "role_id",
+      dataIndex: "job_title",
       key: "role",
-      width: 140,
-      render: (role_id) => {
-        const roleMap = {
-          7: "Inspector / Supervisor",
-          8: "QA Technician",
-          9: "Cleaner",
-        };
-        return roleMap[role_id] || "Unknown";
-      },
+      width: 160,
+      render: (title, record) => title || (record.roles || []).map((role) => role.name).join(", ") || "—",
     },
     {
       title: "Date",

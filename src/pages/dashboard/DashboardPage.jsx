@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { GetUserCount, GetServiceCount, GetDriverCount, GetAdminCount, GetLateAbsentEmployees, GetLiveWorkingEmployees, GetUpcomingScheduledBookings, GetUpcomingInvoices } from "@/services/api/dashboardApi";
+import {
+  getDashboardCounts,
+  listLateEmployees,
+  listLiveEmployees,
+  listUpcomingVisits,
+} from "@/services/api/dashboardApi";
+import { listUpcomingInvoices } from "@/services/api/invoiceApi";
+import { dataOf, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { todayInBusinessTz } from "@/utils/datetime";
 import { Button } from "antd";
 import { ArrowRight } from "lucide-react";
 import "./DashboardPage.scss";
@@ -140,121 +149,36 @@ const SectionHeader = ({ dot, tone, pulse, title, note, btnLabel, onClick }) => 
 /* MAIN COMPONENT */
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [driverData, setDriverData] = useState([]);
-  const [customerData, setCustomerData] = useState([]);
-  const [adminData, setAdminData] = useState([]);
-  const [serviceData, setServiceData] = useState([]);
-  const [liveEmployees, setLiveEmployees] = useState([]);
-  const [lateEmployees, setLateEmployees] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [upcomingBookings, setUpcomingBookings] = useState([]);
-  const [upcomingInvoices, setUpcomingInvoices] = useState([]);
 
   // pagination state
   const [visibleBookings, setVisibleBookings] = useState(PAGE_SIZE);
   const [visibleInvoices, setVisibleInvoices] = useState(PAGE_SIZE);
 
-  const getUpcomingInvoices = async () => {
-    try {
-      const result = await GetUpcomingInvoices();
-      setUpcomingInvoices(result.data.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  // Each card loads on its own, so one slow list doesn't hold up the rest.
+  const quiet = { initial: [], silent: true };
+  const { data: counts } = useApiQuery(() => getDashboardCounts().then(dataOf), [], { silent: true });
+  const { data: liveEmployees, reload: reloadLive } = useApiQuery(
+    () =>
+      listLiveEmployees(todayInBusinessTz())
+        .then(itemsOf)
+        .finally(() => setLastRefresh(new Date())),
+    [],
+    quiet,
+  );
+  const { data: lateEmployees } = useApiQuery(() => listLateEmployees().then(itemsOf), [], quiet);
+  const { data: upcomingBookings } = useApiQuery(() => listUpcomingVisits().then(itemsOf), [], quiet);
+  const { data: upcomingInvoices } = useApiQuery(() => listUpcomingInvoices().then(itemsOf), [], quiet);
+  const customerData = counts?.clients;
+  const driverData = counts?.employees;
+  const adminData = counts?.admins;
+  const serviceData = counts?.services;
 
-  const getUpcomingBookings = async () => {
-    try {
-      const result = await GetUpcomingScheduledBookings({});
-      setUpcomingBookings(result.data.data.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getLiveEmployees = async () => {
-    try {
-      const result = await GetLiveWorkingEmployees({
-        date: new Date().toISOString().split("T")[0],
-      });
-      setLiveEmployees(result.data.data.data || []);
-      setLastRefresh(new Date());
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getLateAbsent = async () => {
-    try {
-      const result = await GetLateAbsentEmployees({});
-      setLateEmployees(result.data.data.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getCustomerData = async () => {
-    try {
-      const result = await GetUserCount(localStorage.getItem("adminToken"));
-      setCustomerData(result.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getDriverData = async () => {
-    try {
-      const result = await GetDriverCount(localStorage.getItem("adminToken"));
-      setDriverData(result.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getAdminData = async () => {
-    try {
-      const result = await GetAdminCount(localStorage.getItem("adminToken"));
-      setAdminData(result.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const getServiceCount = async () => {
-    try {
-      const result = await GetServiceCount(localStorage.getItem("adminToken"));
-      setServiceData(result.data.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
+  // Who is working right now refreshes every minute.
   useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        await Promise.all([
-          getServiceCount(),
-          getDriverData(),
-          getCustomerData(),
-          getAdminData(),
-          getLiveEmployees(),
-          getLateAbsent(),
-          getUpcomingBookings(),
-          getUpcomingInvoices(),
-        ]);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
-    loadDashboard();
-
-    const interval = setInterval(() => {
-      getLiveEmployees();
-    }, 60000);
-
+    const interval = setInterval(reloadLive, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [reloadLive]);
 
   return (
     <div className="ss-dashboard">
@@ -441,8 +365,7 @@ const DashboardPage = () => {
                     <div className="ss-dashboard__item-head">
                       <div>
                         <h4 className="ss-dashboard__item-title ss-text-dark">
-                          {inv.to_company_name ||
-                            inv.invoices_user?.user_profile?.name}
+                          {inv.to_company_name || inv.client_name}
                         </h4>
                         <p className="ss-dashboard__item-sub ss-text-muted">
                           🧾 {inv.custom_ref_no || inv.ref_no}
@@ -646,28 +569,28 @@ const DashboardPage = () => {
       {/* Row 1 */}
       <div className="ss-dashboard__stats">
         <StatCard
-          label="Total Users Registered"
+          label="Clients"
           value={customerData}
-          btnLabel="View Users"
+          btnLabel="View Clients"
           onClick={() => navigate("/users")}
         />
         <StatCard
-          label="Total BDM Registered"
-          value={adminData?.bdm}
-          btnLabel="View BDM"
+          label="BDMs"
+          value={driverData?.bdm}
+          btnLabel="View BDMs"
+          onClick={() => navigate("/bdm-list")}
+        />
+        <StatCard
+          label="Admins"
+          value={adminData?.total}
+          btnLabel="View Admins"
           onClick={() => navigate("/adminList")}
         />
         <StatCard
-          label="Total Admin"
-          value={adminData?.super_admin}
-          btnLabel="View Admin"
-          onClick={() => navigate("/adminList")}
-        />
-        <StatCard
-          label="Sales Executive Registered"
-          value={adminData?.sales_executive}
-          btnLabel="View Sales Exec"
-          onClick={() => navigate("/clips-list")}
+          label="Salespeople"
+          value={driverData?.salesperson}
+          btnLabel="View Employees"
+          onClick={() => navigate("/employees")}
         />
       </div>
 
@@ -689,11 +612,11 @@ const DashboardPage = () => {
                 label: "QA Tech",
                 val: driverData?.quality_assurance,
               },
-              { emoji: "🧹", label: "Cleaner", val: driverData?.janitor },
+              { emoji: "🧹", label: "Cleaner", val: driverData?.cleaner },
               {
                 emoji: "🏠",
-                label: "Housekeeping",
-                val: driverData?.housekeeping,
+                label: "Housekeeper",
+                val: driverData?.housekeeper,
               },
             ].map(({ emoji, label, val }) => (
               <div key={label} className="ss-dashboard__role">

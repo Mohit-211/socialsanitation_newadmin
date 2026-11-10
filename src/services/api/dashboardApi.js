@@ -1,53 +1,31 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetUserCount = async () => {
-  const res = await httpClient.get(API_BASE_URL + "/admin/user/getUserCount");
-  return res;
-};
+// The dashboard, the day overview and the schedule (Gantt).
 
-export const GetDriverCount = async () => {
-  const res = await httpClient.get(API_BASE_URL + "/admin/user/getDriverCount");
-  return res;
-};
+/**
+ * clients, employees (supervisor, quality_assurance, cleaner, housekeeper,
+ * bdm, salesperson, total), admins (super_admin, admin, total) and services.
+ * Someone with two roles counts under both; total counts each person once.
+ */
+export const getDashboardCounts = () => httpClient.get("/dashboard");
 
-export const GetAdminCount = async () => {
-  const res = await httpClient.get(API_BASE_URL + "/admin/user/getAdminCount");
-  return res;
-};
+/** Employees clocked in on a visit on the date: employee_name, booking_name, clock_in and its place. */
+export const listLiveEmployees = (date) => httpClient.get("/dashboard/live-employees", { params: { date } });
 
-export const GetServiceCount = async () => {
-  const res = await httpClient.get(API_BASE_URL + "admin/user/getServiceCount");
-  return res;
-};
+/** Employees late for, or absent from, today's visits. */
+export const listLateEmployees = () => httpClient.get("/dashboard/late-employees");
 
-export const GetLiveWorkingEmployees = async (body) => {
-  const res = await httpClient.post(
-    API_BASE_URL + "/admin/user/live-working-employees",
-    body,
-  );
-  return res;
-};
+/** The visits coming up; date stays MM-DD-YYYY. */
+export const listUpcomingVisits = () => httpClient.get("/dashboard/upcoming-bookings");
 
-export const GetLateAbsentEmployees = async (body) => {
-  const res = await httpClient.post(
-    API_BASE_URL + "/admin/user/late-absent-employees",
-    body,
-  );
-  return res;
-};
+/** Card payments, newest first. */
+export const listTransactions = () => httpClient.get("/transactions");
 
-export const GetUpcomingScheduledBookings = async (body) => {
-  const res = await httpClient.post(
-    API_BASE_URL + "/admin/user/upcoming-scheduled-bookings",
-    body,
-  );
+/** { date, total_bookings, bookings }: the day's visits, each with its crew and address. */
+export const getDayOverview = (date) => httpClient.get("/day-overview", { params: { date } });
 
-  return res;
-};
+/** One visit's day: its crew, each with clock in and out, places and breaks. */
+export const getVisitOverview = (id) => httpClient.get(`/bookings/${id}/overview`);
 
-export const GetUpcomingInvoices = async () => {
-  const res = await httpClient.get(API_BASE_URL + "invoice/upcoming");
-  return res;
-};
-
+/** { date, employees: [{ id, name, booking_start, booking_end }] } for the schedule's Gantt chart. */
+export const getGantt = (date) => httpClient.get("/gantt", { params: { date } });

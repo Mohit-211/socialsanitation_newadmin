@@ -1,36 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Table, Button, Descriptions, Modal } from "antd";
 import dayjs from "@/lib/dayjs";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { GetBookingOverviewById } from "@/services/api/bookingApi";
+import { getVisitOverview } from "@/services/api/dashboardApi";
+import { dataOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import PageHeader from "@/components/PageHeader";
 import "./DayDetailsPage.scss";
 
 const DayDetailsPage = () => {
 	const { booking_id } = useParams();
 	const navigate = useNavigate();
-	const [data, setData] = useState(null);
-	const [loading, setLoading] = useState(false);
+	const { data, loading } = useApiQuery(() => getVisitOverview(booking_id).then(dataOf), [booking_id], {
+		skip: !booking_id,
+		errorText: "Couldn't load the visit's day",
+	});
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedBreaks, setSelectedBreaks] = useState([]);
 	const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
-
-	useEffect(() => {
-		if (booking_id) fetchData(booking_id);
-	}, [booking_id]);
-
-	const fetchData = async (id) => {
-		try {
-			setLoading(true);
-			const res = await GetBookingOverviewById(id);
-			setData(res?.data?.data);
-		} catch (err) {
-			console.error(err);
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	const haversineDistance = (lat1, lon1, lat2, lon2) => {
 		if (!lat1 || !lon1 || !lat2 || !lon2) return "---";

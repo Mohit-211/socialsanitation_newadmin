@@ -6,11 +6,8 @@ import { DatePicker, Input, Button, Spin, message, Badge } from "antd";
 import { Clock, Download, Save } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { excelStyles, saveXlsx } from "@/utils/excel";
-import {
-  getEmployeeDayOverview,
-  getEmployeeRangeOverview,
-  updateEmployeeTimesheet,
-} from "@/services/api/timesheetApi";
+import { correctTimesheet, getTimesheetDay, getTimesheetRange } from "@/services/api/timesheetApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
 import "./EmployeeTimesheetPage.scss";
 
 const EmployeeTimesheetPage = () => {
@@ -18,7 +15,7 @@ const EmployeeTimesheetPage = () => {
     dayjs().tz("America/New_York"),
   );
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
 
   const [rangeStart, setRangeStart] = useState(null);
@@ -36,21 +33,22 @@ const EmployeeTimesheetPage = () => {
   };
 
   /* FETCH */
-  const fetchData = async (dateObj) => {
+  // The day's rows; they are edited here before each is saved.
+  const loadDay = (dateObj) =>
+    getTimesheetDay(getESTDateString(dateObj))
+      .then((res) => setEmployees(dataOf(res)?.employees || []))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the timesheet")))
+      .finally(() => setLoading(false));
+
+  const fetchData = (dateObj) => {
     setLoading(true);
-    try {
-      const res = await getEmployeeDayOverview({
-        date: getESTDateString(dateObj),
-      });
-      setEmployees(res.data.data.employees || []);
-    } catch {
-      message.error("Failed to load data");
-    }
-    setLoading(false);
+    return loadDay(dateObj);
   };
 
   useEffect(() => {
-    fetchData(selectedDate);
+    loadDay(selectedDate);
+    // Loaded once on opening; picking a date loads that day.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* HANDLE CHANGE */
@@ -76,9 +74,8 @@ const EmployeeTimesheetPage = () => {
   const onSave = async (emp) => {
     setSavingId(emp.employee_id);
     try {
-      await updateEmployeeTimesheet({
+      await correctTimesheet({
         employee_id: emp.employee_id,
-        role_id: emp.role_id,
         date: getESTDateString(selectedDate),
         clock_in: emp.clock_in,
         clock_out: emp.clock_out,
@@ -87,12 +84,10 @@ const EmployeeTimesheetPage = () => {
         total_amount: Number(emp.total_amount || 0),
       });
 
-      message.success("Timesheet updated successfully!");
-
-      // ✅ IMPORTANT: REFRESH DATA
+      message.success("Timesheet saved");
       await fetchData(selectedDate);
-    } catch {
-      message.error("Failed to save timesheet");
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't save the timesheet"));
     }
     setSavingId(null);
   };
@@ -182,13 +177,13 @@ const EmployeeTimesheetPage = () => {
     try {
       setDownloading(true);
 
-      const res = await getEmployeeRangeOverview({
-        start_date: dayjs(rangeStart).format("YYYY-MM-DD"),
-        end_date: dayjs(rangeEnd).format("YYYY-MM-DD"),
-        employee_type: employeeTypeFilter || undefined,
+      const res = await getTimesheetRange({
+        startDate: dayjs(rangeStart).format("YYYY-MM-DD"),
+        endDate: dayjs(rangeEnd).format("YYYY-MM-DD"),
+        employeeType: employeeTypeFilter || undefined,
       });
 
-      const rows = res.data.data.rows;
+      const rows = dataOf(res)?.rows || [];
 
       if (!rows.length) {
         message.warning("No data found");

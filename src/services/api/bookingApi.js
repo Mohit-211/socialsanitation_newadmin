@@ -1,5 +1,4 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
 // Bookings: visits for a client (at one of their addresses) or for someone
 // who isn't one (a guest). A booking covers one or more services, takes a date
@@ -72,19 +71,3 @@ export const stopBookingSeries = (id, lastDate) =>
 
 /** Needs records.delete. Its visits from today that haven't started go. */
 export const deleteBookingSeries = (id) => httpClient.delete(`/booking-series/${id}`);
-
-// ---------------------------------------------------------------------------
-// Old /api/v1 calls, still used by the employee, invoice, schedule and day
-// overview screens until they move to /api/v2.
-
-/** @deprecated Use listEmployeeBookings. */
-export const GetBookingBySPId = (formData) => httpClient.post(API_BASE_URL + "admin/user/getBookingByEmployeeId", formData);
-
-/** @deprecated */
-export const GetDayOverview = (formData) => httpClient.post(API_BASE_URL + "admin/booking/getDayOverview", formData);
-
-/** @deprecated */
-export const GetBookingOverviewById = (id) => httpClient.get(API_BASE_URL + `admin/booking/getBookingOverviewById/${id}`);
-
-/** @deprecated */
-export const GantOverview = (payload) => httpClient.post(API_BASE_URL + "admin/booking/getDayOverviewForGantt", payload);

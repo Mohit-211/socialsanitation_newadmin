@@ -1,6 +1,8 @@
 import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import { GantOverview } from "@/services/api/bookingApi";
+import { useState } from "react";
+import { getGantt } from "@/services/api/dashboardApi";
+import { dataOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import { DatePicker } from "antd";
 import PageHeader from "@/components/PageHeader";
 import "./DayOverviewPage.scss";
@@ -14,33 +16,22 @@ const DayOverviewPage = () => {
 	const [selectedDate, setSelectedDate] = useState(
 		dayjs().tz("America/New_York")
 	);
-	const [employees, setEmployees] = useState([]);
-	const [loading, setLoading] = useState(false);
-
 	/** Convert EST date to YYYY-MM-DD */
 	const getESTDateString = (d) =>
 		dayjs(d).tz("America/New_York").format("YYYY-MM-DD");
+
+	const day = getESTDateString(selectedDate);
+	const { data: employees, loading } = useApiQuery(
+		() => getGantt(day).then((res) => dataOf(res)?.employees || []),
+		[day],
+		{ initial: [], errorText: "Couldn't load the day's schedule" },
+	);
 
 	/** Convert HH:mm → minutes */
 	const convertToMinutes = (time) => {
 		if (!time) return null;
 		const [h, m] = time.split(":").map(Number);
 		return h * 60 + m;
-	};
-
-	/** Fetch API */
-	const fetchData = async (dateObj) => {
-		setLoading(true);
-		try {
-			const formattedDate = getESTDateString(dateObj);
-
-			const res = await GantOverview({ date: formattedDate });
-
-			setEmployees(res.data.data.employees || []);
-		} catch (error) {
-			console.error("Gantt API Error:", error);
-		}
-		setLoading(false);
 	};
 
 	const formatTimeAMPM = (time) => {
@@ -58,16 +49,10 @@ const DayOverviewPage = () => {
 		return `${hour - 12} PM`;
 	};
 
-	/** Initial load */
-	useEffect(() => {
-		fetchData(selectedDate);
-	}, []);
-
 	/** On date change */
 	const onChangeDate = (newDate) => {
 		if (!newDate) return; // handles "null" when no date selected
 		setSelectedDate(newDate);
-		fetchData(newDate);
 	};
 
 	return (

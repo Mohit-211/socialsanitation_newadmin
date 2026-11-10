@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { Table, Button, Card, Row, Col, Statistic } from "antd";
+import { useMemo, useState } from "react";
+import { Table, Button, Card, Row, Col, Statistic, message } from "antd";
 import { ChevronLeft, ChevronRight, FileCheck, Users } from "lucide-react";
 import dayjs from "@/lib/dayjs";
 import { useNavigate } from "react-router";
-import { GetDayOverview } from "@/services/api/bookingApi";
+import { getDayOverview } from "@/services/api/dashboardApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import PageHeader from "@/components/PageHeader";
 import { excelStyles, saveXlsx } from "@/utils/excel";
 import "./SchedulePage.scss";
@@ -27,45 +29,24 @@ const SchedulePage = () => {
 	const [selectedDate, setSelectedDate] = useState(
 		dayjs().format("YYYY-MM-DD")
 	);
-	const [weekDates, setWeekDates] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [bookings, setBookings] = useState([]);
-
-	useEffect(() => {
+	// The seven days shown, from today moved by the offset.
+	const weekDates = useMemo(() => {
 		const base = dayjs().add(offset, "days");
-		generateWeek(base);
-	}, [offset]);
-
-	useEffect(() => {
-		if (selectedDate) fetchBookings(selectedDate);
-	}, [selectedDate]);
-
-	const generateWeek = (baseDate) => {
-		const days = [];
-		for (let i = 0; i < 7; i++) {
-			const dateObj = dayjs(baseDate).add(i, "days");
-			days.push({
+		return Array.from({ length: 7 }, (_, i) => {
+			const dateObj = base.add(i, "days");
+			return {
 				label: dateObj.format("ddd"),
 				date: dateObj.format("YYYY-MM-DD"),
 				display: dateObj.format("MM/DD/YYYY"),
-			});
-		}
-		setWeekDates(days);
-	};
-
-	const fetchBookings = async (date) => {
-		try {
-			setLoading(true);
-			const formData = new FormData();
-			formData.append("date", date);
-			const res = await GetDayOverview(formData);
-			setBookings(res?.data?.data?.bookings || []);
-		} catch (err) {
-			console.error("Error loading bookings", err);
-		} finally {
-			setLoading(false);
-		}
-	};
+			};
+		});
+	}, [offset]);
+	const [exporting, setExporting] = useState(false);
+	const { data: bookings, loading } = useApiQuery(
+		() => getDayOverview(selectedDate).then((res) => dataOf(res)?.bookings || []),
+		[selectedDate],
+		{ initial: [], skip: !selectedDate, errorText: "Couldn't load the day's visits" },
+	);
 
 	const columns = [
 		{
@@ -115,7 +96,7 @@ const SchedulePage = () => {
 	];
 
 const downloadExcel = async () => {
-    setLoading(true);
+    setExporting(true);
     try {
         // 1. DEFINE STYLES 🎨 (theme colors from excelStyles())
         const styles = excelStyles();
@@ -174,10 +155,8 @@ const downloadExcel = async () => {
             );
 
             // 3. Bookings data
-            const formData = new FormData();
-            formData.append("date", d.date);
-            const res = await GetDayOverview(formData);
-            const bookings = res?.data?.data?.bookings || [];
+            const res = await getDayOverview(d.date);
+            const bookings = dataOf(res)?.bookings || [];
 
             for (const booking of bookings) {
                 // Booking summary row
@@ -239,9 +218,9 @@ const downloadExcel = async () => {
             `Weekly_Bookings_${dayjs().format("YYYY-MM-DD")}.xlsx`
         );
     } catch (err) {
-        console.error("Error exporting Excel:", err);
+        message.error(errorMessage(err, "Couldn't make the Excel file"));
     } finally {
-        setLoading(false);
+        setExporting(false);
     }
 };
 
@@ -253,6 +232,7 @@ const downloadExcel = async () => {
 					<Button
 						type="primary"
 						onClick={downloadExcel}
+						loading={exporting}
 						className="weekly-overview__download"
 					>
 						Download Weekly Bookings (Excel)

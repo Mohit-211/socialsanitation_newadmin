@@ -1,77 +1,32 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-//get all products
-export const GetAllLeaveRequest = async () => {
-    try {
-        const res = await httpClient.get(API_BASE_URL + "attendance/getAllLeaveRequest");
-        return res;
-    } catch (error) {
-        console.error("Error fetching users:", error);
-        throw error;
-    }
-};
+// Attendance, breaks and leave. Times keep the New York wall time the
+// screens show (clock_in, clock_out). Rows name each person's roles and a
+// job_title in words.
 
-export const UpdateLeaveStatus = async (id, formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/updateLeaveStatus/${id}`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/**
+ * One day ({ date }: a row per employee, with status, clock_in, clock_out,
+ * total_hours and the clock-in and -out places) or a month ({ month, year }:
+ * a row per employee with monthly_attendance, a status a day).
+ */
+export const listAttendance = (params) => httpClient.get("/attendance", { params });
 
-  export const GetAttendanceByUserId = async (id, formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/getAttendanceByUserId/${id}`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** total_employees, present, on_leave and absent on a date. */
+export const getAttendanceStats = (date) => httpClient.get("/attendance/stats", { params: { date } });
 
-  export const GetAllAttendance = async (formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/getAllAttendance`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** A row a day of the month, with present_users. */
+export const getMonthPresence = ({ month, year }) =>
+  httpClient.get("/attendance/month-presence", { params: { month, year } });
 
-   export const GetDailyPresenceForMonth = async (formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/getDailyPresenceForMonth`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** Sets an employee's clock in and out on a date (HH:mm, New York); empty times are fine. */
+export const correctAttendance = ({ employee_id, date, clock_in, clock_out }) =>
+  httpClient.put("/attendance", { employee_id, date, clock_in, clock_out });
 
-     export const ManualClockInOut = async (formData) => {
-    return await httpClient.post(API_BASE_URL + `/attendance/manualClockInOut`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** A row per employee, with break_count and breaks, on a date. */
+export const listBreaks = (date) => httpClient.get("/breaks", { params: { date } });
 
-  export const GetTodayAttendanceStats = async (formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/getTodayAttendanceStats`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
+/** Leave requests, each with the employee as attendence_user. */
+export const listLeaveRequests = () => httpClient.get("/leave-requests");
 
-    export const GetAllBreaks = async (formData) => {
-    return await httpClient.post(API_BASE_URL + `attendance/getAllBreaks`, formData, {
-      headers: {
-        "x-access-token": `${localStorage.getItem("adminToken")}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  };
-
+/** status: ACCEPTED or REJECTED (answers 200). */
+export const answerLeaveRequest = (id, status) => httpClient.patch(`/leave-requests/${id}`, { status });

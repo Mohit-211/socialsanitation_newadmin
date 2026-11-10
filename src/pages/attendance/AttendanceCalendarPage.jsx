@@ -1,23 +1,30 @@
 import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import { Calendar, Badge, Spin, Modal, Button, TimePicker } from "antd";
+import { useMemo, useState } from "react";
+import { Calendar, Badge, Spin, Modal, Button, TimePicker, message } from "antd";
 import { ArrowLeft } from "lucide-react";
-import {
-	GetDailyPresenceForMonth,
-	ManualClockInOut,
-} from "@/services/api/attendanceApi";
+import { correctAttendance, getMonthPresence } from "@/services/api/attendanceApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
 import { useNavigate } from "react-router";
 import PageHeader from "@/components/PageHeader";
 import "./attendance.scss";
 
 const AttendanceCalendarPage = () => {
 	const navigate = useNavigate();
-	const [attendanceData, setAttendanceData] = useState({});
-	const [loading, setLoading] = useState(false);
+	const [month, setMonth] = useState(() => dayjs());
+	const { data: days, loading, reload } = useApiQuery(
+		() => getMonthPresence({ month: month.month() + 1, year: month.year() }).then(itemsOf),
+		[month.month(), month.year()],
+		{ initial: [], errorText: "Couldn't load the month's attendance" },
+	);
+	// Who was present, by date
+	const attendanceData = useMemo(
+		() => Object.fromEntries((days || []).map((item) => [item.date, item.present_users || []])),
+		[days],
+	);
 	const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 	const [manualForm, setManualForm] = useState({
 		user_id: "",
-		role_id: "",
 		user_name: "",
 		date: "",
 		clock_in: "",
@@ -33,35 +40,7 @@ const AttendanceCalendarPage = () => {
 		return dayjs.utc(val).format("HH:mm");
 	};
 
-	const fetchAttendance = async (month, year) => {
-		try {
-			setLoading(true);
-
-			const formData = new FormData();
-			formData.append("month", month);
-			formData.append("year", year);
-
-			const res = await GetDailyPresenceForMonth(formData);
-			const result = res.data.data; // ✅ correct structure
-
-			const dataMap = {};
-			result.forEach((item) => {
-				dataMap[item.date] = item.present_users;
-			});
-
-			setAttendanceData(dataMap);
-			setLoading(false);
-		} catch (error) {
-			console.error("Error fetching attendance:", error);
-			setLoading(false);
-		}
-	};
-
-	const handlePanelChange = (value) => {
-		const month = value.format("MM");
-		const year = value.format("YYYY");
-		fetchAttendance(month, year);
-	};
+	const handlePanelChange = (value) => setMonth(value);
 
 	const handleDateClick = (value) => {
 		const dateStr = value.format("YYYY-MM-DD");
@@ -97,28 +76,19 @@ const AttendanceCalendarPage = () => {
 
 	const handleManualSubmit = async () => {
 		try {
-			const formData = new FormData();
-			formData.append("employee_id", manualForm.user_id);
-			formData.append("role_id", manualForm.role_id);
-			formData.append("date", manualForm.date);
-			formData.append("clock_in", manualForm.clock_in || "");
-			formData.append("clock_out", manualForm.clock_out || "");
-
-			const res = await ManualClockInOut(formData);
-
-			if (res?.status === 200) {
-				setIsManualModalOpen(false);
-				handlePanelChange(dayjs(manualForm.date)); // 🔄 refresh calendar
-			}
+			await correctAttendance({
+				employee_id: manualForm.user_id,
+				date: manualForm.date,
+				clock_in: manualForm.clock_in || "",
+				clock_out: manualForm.clock_out || "",
+			});
+			message.success("Clock in and out saved");
+			setIsManualModalOpen(false);
+			reload();
 		} catch (err) {
-			console.error(err);
+			message.error(errorMessage(err, "Couldn't save the clock in and out"));
 		}
 	};
-
-	useEffect(() => {
-		const now = dayjs();
-		fetchAttendance(now.format("MM"), now.format("YYYY"));
-	}, []);
 
 	return (
 		<div>
@@ -241,7 +211,6 @@ const AttendanceCalendarPage = () => {
 												onClick={() => {
 													setManualForm({
 														user_id: u.user_id,
-														role_id: u.role_id,
 														user_name: u.name,
 														date: selectedDay,
 														clock_in: toHHMM(u.clock_in),

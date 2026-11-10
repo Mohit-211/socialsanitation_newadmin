@@ -1,10 +1,9 @@
 import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import {
-  GetAllAttendance,
-  GetTodayAttendanceStats,
-  ManualClockInOut,
-} from "@/services/api/attendanceApi";
+import { useState } from "react";
+import { correctAttendance, getAttendanceStats, listAttendance } from "@/services/api/attendanceApi";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { imageUrl } from "@/utils/files";
 import {
   Table,
   DatePicker,
@@ -13,10 +12,10 @@ import {
   Image,
   TimePicker,
   Input,
+  message,
 } from "antd";
 import "./attendance.scss";
 import { useNavigate } from "react-router";
-import { IMAGE_BASE_URL } from "@/config/env";
 import {
   CircleCheck,
   CirclePlus,
@@ -37,17 +36,38 @@ const StatCard = ({ label, value }) => (
 
 const AttendancePage = () => {
   const navigate = useNavigate();
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(dayjs());
-  const [monthlyData, setMonthlyData] = useState([]);
   const [isMonthlyView, setIsMonthlyView] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [stats, setStats] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(dayjs()); // default to current month
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState("");
+
+  const day = selectedDate.format("YYYY-MM-DD");
+  const monthToUse = selectedMonth || dayjs();
+
+  // The day's rows (numbered), or the month's, and the day's numbers.
+  const {
+    data: attendanceData,
+    loading,
+    reload: reloadDay,
+  } = useApiQuery(
+    () =>
+      listAttendance({ date: day })
+        .then(itemsOf)
+        .then((rows) => rows.map((item, index) => ({ ...item, autoIncrementId: index + 1 }))),
+    [day],
+    { initial: [], skip: isMonthlyView, errorText: "Couldn't load the attendance" },
+  );
+  const { data: monthlyData } = useApiQuery(
+    () => listAttendance({ month: monthToUse.month() + 1, year: monthToUse.year() }).then(itemsOf),
+    [monthToUse.month(), monthToUse.year()],
+    { initial: [], skip: !isMonthlyView, errorText: "Couldn't load the month's attendance" },
+  );
+  const { data: stats } = useApiQuery(() => getAttendanceStats(day).then(dataOf), [day], {
+    errorText: "Couldn't load the day's numbers",
+  });
 
   const openDetailsModal = (employeeName, entry) => {
     setSelectedEmployee(employeeName);
@@ -60,61 +80,6 @@ const AttendancePage = () => {
     return dayjs.utc(datetimeStr).format("hh:mm A");
   };
 
-  const openMonthlyAttendance = async () => {
-    try {
-      const monthToUse = selectedMonth || dayjs(); // Use selected or fallback to today
-      const formData = {
-        month: (monthToUse.month() + 1).toString().padStart(2, "0"), // 1–12
-        year: monthToUse.year().toString(),
-      };
-
-      const result = await GetAllAttendance(formData);
-      setMonthlyData(result.data.data || []);
-    } catch (err) {
-      console.error("Failed to load monthly attendance", err);
-    }
-  };
-
-  const getData = async () => {
-    try {
-      setLoading(true);
-
-      if (!selectedDate) {
-        console.warn("Selected date is missing. Skipping fetch.");
-        return;
-      }
-
-      const formData = {
-        date: selectedDate.format("YYYY-MM-DD"),
-      };
-
-      const result = await GetAllAttendance(formData);
-
-      const dataWithIndex = result.data.data.map((item, index) => ({
-        ...item,
-        autoIncrementId: index + 1,
-      }));
-      setAttendanceData(dataWithIndex);
-    } catch (e) {
-      console.error("Failed to fetch attendance:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🔹 Single source of truth for "what data do we need right now" —
-  // previously this was two separate effects with duplicate bodies keyed
-  // on different subsets of these same three values, which could double
-  // fetch or race depending on which state changed.
-  useEffect(() => {
-    if (!isMonthlyView) {
-      getData();
-    } else {
-      openMonthlyAttendance();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedMonth, isMonthlyView]);
-
   const handleMonthChange = (date) => {
     setSelectedMonth(date);
   };
@@ -124,25 +89,6 @@ const AttendancePage = () => {
       setSelectedDate(date);
     }
   };
-
-  // 🔹 Fixed: this previously took a `date` param that was never passed in
-  // and never used — it always read `selectedDate` from closure anyway.
-  const fetchTodayStats = async () => {
-    try {
-      const formData = {
-        date: selectedDate.format("YYYY-MM-DD"),
-      };
-      const result = await GetTodayAttendanceStats(formData);
-      setStats(result.data.data.data);
-    } catch (error) {
-      console.error("Failed to fetch today's attendance stats:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchTodayStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
 
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [manualForm, setManualForm] = useState({
@@ -174,7 +120,6 @@ const AttendancePage = () => {
   const openManualModal = (record) => {
     setManualForm({
       user_id: record.user_id,
-      role_id: record.role_id,
       user_name: record.user_name,
       date: record.date,
       clock_in: toHHMM(record.clock_in),
@@ -185,23 +130,17 @@ const AttendancePage = () => {
 
   const handleManualSubmit = async () => {
     try {
-      const formData = new FormData();
-      formData.append("employee_id", manualForm.user_id);
-      formData.append("role_id", manualForm.role_id);
-      formData.append("date", manualForm.date);
-      formData.append("clock_in", manualForm.clock_in || "");
-      formData.append("clock_out", manualForm.clock_out || "");
-
-      const res = await ManualClockInOut(formData);
-
-      if (res?.status === 200) {
-        setIsManualModalOpen(false);
-        getData(); // refresh table
-      } else {
-        console.error("API returned non-200 status:", res?.status);
-      }
+      await correctAttendance({
+        employee_id: manualForm.user_id,
+        date: manualForm.date,
+        clock_in: manualForm.clock_in || "",
+        clock_out: manualForm.clock_out || "",
+      });
+      message.success("Clock in and out saved");
+      setIsManualModalOpen(false);
+      reloadDay();
     } catch (err) {
-      console.error("Failed to update clock-in/out:", err);
+      message.error(errorMessage(err, "Couldn't save the clock in and out"));
     }
   };
 
@@ -222,18 +161,11 @@ const AttendancePage = () => {
     },
     {
       title: "Employee Type",
-      dataIndex: "role_id",
-      width: 100,
-      key: "role_id",
-      sorter: (a, b) => a.role_id - b.role_id,
-      render: (role_id) => {
-        const roleMap = {
-          7: "Inspector/ Supervisor",
-          8: "Quality Assurance Technician",
-          9: "Cleaner",
-        };
-        return roleMap[role_id] || "Unknown";
-      },
+      dataIndex: "job_title",
+      width: 140,
+      key: "job_title",
+      sorter: (a, b) => (a.job_title || "").localeCompare(b.job_title || ""),
+      render: (title, record) => title || (record.roles || []).map((role) => role.name).join(", ") || "—",
     },
     {
       title: "Date",
@@ -338,7 +270,7 @@ const AttendancePage = () => {
       render: (uri) =>
         uri ? (
           <Image
-            src={`${IMAGE_BASE_URL}${uri}`}
+            src={imageUrl(uri)}
             alt="Clock-In"
             crossOrigin="anonymous"
             width={50}
@@ -357,7 +289,7 @@ const AttendancePage = () => {
       render: (uri) =>
         uri ? (
           <Image
-            src={`${IMAGE_BASE_URL}${uri}`}
+            src={imageUrl(uri)}
             alt="Clock-Out"
             crossOrigin="anonymous"
             width={50}
@@ -475,7 +407,7 @@ const AttendancePage = () => {
           <Table
             dataSource={monthlyData.map((emp) => {
               const row = {
-                key: emp.user_id,
+                key: emp.user_id ?? emp.user_name,
                 employee: emp.user_name,
               };
               const currentMonth = selectedMonth || dayjs();
