@@ -36,6 +36,7 @@ const LeaveRequestsPage = lazy(() => import("@/pages/leave-requests/LeaveRequest
 const ServiceChecklistsPage = lazy(() => import("@/pages/service-checklists/ServiceChecklistsPage"));
 const BdmsPage = lazy(() => import("@/pages/bdm/BdmsPage"));
 const AssignBdmPage = lazy(() => import("@/pages/bdm/AssignBdmPage"));
+const ProfileRequestsPage = lazy(() => import("@/pages/profile-requests/ProfileRequestsPage"));
 const ComplaintsPage = lazy(() => import("@/pages/complaints/ComplaintsPage"));
 const DailyChecklistsPage = lazy(() => import("@/pages/daily-checklists/DailyChecklistsPage"));
 const AddDailyChecklistPage = lazy(() => import("@/pages/daily-checklists/AddDailyChecklistPage"));
@@ -156,6 +157,7 @@ const AppRoutes = () => (
         {/* BDMs are employees with the BDM role: old links open the employee form. */}
         <Route path="/add-bdm" element={<Navigate to="/addEmployee?role=bdm" replace />} />
         <Route path="/assign/:id" element={<AssignBdmPage />} />
+        <Route path="/profile-requests" element={<ProfileRequestsPage />} />
         <Route path="/reports" element={<ComplaintsPage />} />
         <Route path="/daily-checklist" element={<DailyChecklistsPage />} />
         <Route path="/add-daily-checklist" element={<AddDailyChecklistPage />} />

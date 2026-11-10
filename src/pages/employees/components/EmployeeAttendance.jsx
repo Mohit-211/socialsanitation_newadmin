@@ -1,228 +1,70 @@
-import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { GetAttendanceByUserId } from "@/services/api/attendanceApi";
-import { Table, Select, DatePicker, Image } from "antd";
-import { IMAGE_BASE_URL } from "@/config/env";
-import "@/pages/attendance/attendance.scss";
+import { useState } from "react";
+import { DatePicker, Image, Select, Space, Table } from "antd";
+import StatusTag from "@/components/StatusTag";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { listEmployeeAttendance } from "@/services/api/employeeApi";
+import { itemsOf } from "@/services/apiResult";
+import { DATE_FORMAT, formatDate, formatTime, toApiDate } from "@/utils/datetime";
+import { imageUrl } from "@/utils/files";
 
-const { RangePicker } = DatePicker;
+const PERIODS = [
+  { value: "TODAY", label: "Today" },
+  { value: "YESTERDAY", label: "Yesterday" },
+  { value: "THIS_WEEK", label: "This Week" },
+  { value: "THIS_MONTH", label: "This Month" },
+  { value: "PREVIOUS_MONTH", label: "Previous Month" },
+  { value: "CUSTOM", label: "Dates I Pick" },
+];
 
-const EmployeeAttendance = () => {
-	const { id } = useParams();
-	const [attendanceData, setAttendanceData] = useState([]);
-	const [loading, setLoading] = useState(false);
-	const [filterType, setFilterType] = useState("TODAY");
-	const [dateRange, setDateRange] = useState([]);
-	const [tableParams, setTableParams] = useState({
-		pagination: {
-			current: 1,
-			pageSize: 100,
-		},
-		sortField: null,
-		sortOrder: null,
-	});
+const photo = (uri) =>
+  uri ? <Image src={imageUrl(uri)} width={48} height={48} className="employee-attendance__photo" /> : "—";
 
-	const handleTableChange = (pagination, filters, sorter) => {
-		setTableParams({
-			pagination,
-			filters,
-			sortField: sorter.field,
-			sortOrder: sorter.order,
-		});
-	};
-	// 🔹 Fetch Attendance Data
-	const getData = async () => {
-		try {
-			setLoading(true);
-			const formData = { id, filterType };
-			if (filterType === "CUSTOM" && dateRange.length === 2) {
-				formData.start_date = dateRange[0];
-				formData.end_date = dateRange[1];
-			}
+// An employee's days: present (with clock-in and -out times and photos),
+// absent, or on leave, for a period (Eastern days).
+const EmployeeAttendance = ({ employeeId }) => {
+  const [period, setPeriod] = useState("THIS_WEEK");
+  const [range, setRange] = useState(null);
+  const custom = period === "CUSTOM";
+  const query = {
+    filterType: period,
+    ...(custom && range ? { start_date: toApiDate(range[0]), end_date: toApiDate(range[1]) } : {}),
+  };
 
-			let result = await GetAttendanceByUserId(id, formData);
-			// Add an auto-increment ID to each booking
-			const dataWithIndex = result.data.data.map((item, index) => ({
-				...item,
-				autoIncrementId: index + 1,
-			}));
-			setAttendanceData(dataWithIndex);
-		} catch (e) {
-			console.error(e);
-		} finally {
-			setLoading(false);
-		}
-	};
+  const { data: days, loading } = useApiQuery(
+    () => listEmployeeAttendance(employeeId, query).then(itemsOf),
+    [employeeId, query],
+    { initial: [], skip: custom && !range, errorText: "Couldn't load the attendance" },
+  );
 
-	// 🔹 Fetch Data on Load
-	useEffect(() => {
-		if (id) {
-			getData(filterType);
-		}
-	}, [id, filterType, dateRange]);
+  const columns = [
+    { title: "Date", dataIndex: "date", render: (date) => formatDate(date) },
+    { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
+    { title: "Clock In", dataIndex: "clock_in_est", render: (time) => formatTime(time) },
+    { title: "Clock Out", dataIndex: "clock_out_est", render: (time) => formatTime(time) },
+    { title: "Clock-In Photo", dataIndex: "clock_in_image_uri", render: photo },
+    { title: "Clock-Out Photo", dataIndex: "clock_out_image_uri", render: photo },
+    { title: "Hours", dataIndex: "total_hours", render: (hours) => (hours ? Number(hours).toFixed(2) : "—") },
+    { title: "Leave Reason", dataIndex: "leave_reason", render: (reason) => reason || "—" },
+  ];
 
-	// 🔹 Handle Filter Change
-	const handleFilterChange = (value) => {
-		setFilterType(value);
-
-		// Reset Date Range when switching filters
-		if (value !== "CUSTOM") {
-			setDateRange([]);
-		}
-	};
-
-	const handleDateRangeChange = (dates, dateStrings) => {
-		setDateRange(dateStrings);
-	};
-	// 🔹 Define Columns for Table
-	const columns = [
-		{
-			title: "Date",
-			dataIndex: "date",
-			key: "date",
-			width: "10%",
-			render: (date) => dayjs(date).format("MM/DD/YYYY"),
-		},
-		{
-			title: "Status",
-			dataIndex: "status",
-			key: "status",
-			render: (status) => {
-				let color =
-					status === "PRESENT"
-						? "var(--color-success-strong)"
-						: status === "ON LEAVE"
-						? "var(--color-info)"
-						: "var(--color-error)";
-				return (
-					<span className="attendance__status" style={{ color }}>
-						{status}
-					</span>
-				);
-			},
-		},
-		{
-			title: "Clock In",
-			dataIndex: "clock_in",
-			key: "clock_in",
-			render: (clock_in) =>
-				clock_in ? dayjs.utc(clock_in).format("hh:mm A") : "---",
-		},
-		{
-			title: "Clock Out",
-			dataIndex: "clock_out",
-			key: "clock_out",
-			render: (clock_out) =>
-				clock_out ? dayjs.utc(clock_out).format("hh:mm A") : "---",
-		},
-		{
-			title: "Clock-In Image",
-			dataIndex: "clock_in_image_uri",
-			key: "clock_in_image_uri",
-			render: (uri) =>
-				uri ? (
-					<Image
-						src={`${IMAGE_BASE_URL}${uri}`}
-						alt="Clock-In"
-						crossOrigin="anonymous"
-						width={50}
-						height={50}
-						className="attendance__thumb"
-					/>
-				) : (
-					<span>---</span>
-				),
-		},
-
-		{
-			title: "Clock-Out Image",
-			dataIndex: "clock_out_image_uri",
-			key: "clock_out_image_uri",
-			render: (uri) =>
-				uri ? (
-					<Image
-						src={`${IMAGE_BASE_URL}${uri}`}
-						alt="Clock-Out"
-						crossOrigin="anonymous"
-						width={50}
-						height={50}
-						className="attendance__thumb"
-					/>
-				) : (
-					<span>---</span>
-				),
-		},
-		{
-			title: "Total Hours",
-			dataIndex: "total_hours",
-			key: "total_hours",
-			render: (total_hours, record) =>
-				record.status === "PRESENT" ? total_hours || "0" : "---", // Show total hours only if Present
-		},
-
-		{
-			title: "Leave Reason",
-			dataIndex: "leave_reason",
-			key: "leave_reason",
-			render: (leave_reason) => (leave_reason ? leave_reason : "---"),
-		},
-	];
-
-	return (
-		<div>
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					marginBottom: "20px",
-				}}
-			>
-				<div>
-					<h5 className="section-title" style={{ marginBottom: "20px" }}>
-						User Attendance
-					</h5>
-				</div>
-
-				{/* 🔹 Filter Dropdown */}
-				<div>
-					<Select
-						value={filterType}
-						style={{ width: 200, marginBottom: "15px" }}
-						onChange={handleFilterChange}
-					>
-						<Select.Option value="TODAY">Today</Select.Option>
-						<Select.Option value="YESTERDAY">Yesterday</Select.Option>
-						<Select.Option value="THIS_WEEK">This Week</Select.Option>
-						<Select.Option value="THIS_MONTH">This Month</Select.Option>
-						<Select.Option value="PREVIOUS_MONTH">Previous Month</Select.Option>
-						<Select.Option value="CUSTOM">Custom Date Range</Select.Option>
-					</Select>
-
-					{/* 🔹 Show Date Pickers when "CUSTOM" is selected */}
-					{filterType === "CUSTOM" && (
-						<RangePicker
-							style={{ marginLeft: "10px", marginBottom: "15px" }}
-							onChange={handleDateRangeChange}
-							disabledDate={(current) =>
-								current && current > dayjs().endOf("day")
-							}
-						/>
-					)}
-				</div>
-			</div>
-
-			{/* 🔹 Attendance Table */}
-			<Table
-				columns={columns}
-				dataSource={attendanceData}
-				loading={loading}
-				pagination={tableParams.pagination}
-				onChange={handleTableChange}
-			/>
-		</div>
-	);
+  return (
+    <>
+      <Space wrap className="employee-attendance__filters">
+        <Select value={period} onChange={setPeriod} options={PERIODS} style={{ width: 180 }} />
+        {custom && <DatePicker.RangePicker format={DATE_FORMAT} value={range} onChange={setRange} />}
+      </Space>
+      <Table
+        rowKey="date"
+        size="middle"
+        loading={loading}
+        columns={columns}
+        dataSource={days || []}
+        pagination={(days || []).length > 31 ? { pageSize: 31 } : false}
+        scroll={{ x: "max-content" }}
+        locale={{ emptyText: custom && !range ? "Pick the dates." : "No days in this period." }}
+      />
+    </>
+  );
 };
 
 export default EmployeeAttendance;

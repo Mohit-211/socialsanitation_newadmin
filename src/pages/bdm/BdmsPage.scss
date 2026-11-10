@@ -1,202 +1,44 @@
-// BDM management pages: list, add, edit and assign users.
-
-// ---- List page ----
+// BDM pages: the list (BdmsPage.jsx) and giving clients (AssignBdmPage.jsx).
 
 .bdm-page__search.ant-input-affix-wrapper {
   width: 260px;
   max-width: 100%;
 }
 
-// Labelled row actions, colour-coded by what they do
-.bdm-action.ant-btn {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
+// One BDM's clients
+.bdm-clients {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.bdm-action--view.ant-btn {
-  color: var(--color-primary-strong);
-  border-color: var(--color-primary-border);
-}
-
-.bdm-action--view.ant-btn:not(:disabled):hover {
-  color: var(--color-primary-stronger);
-  border-color: var(--color-primary-border);
-  background: var(--color-primary-subtle);
-}
-
-.bdm-action--assign.ant-btn {
-  color: var(--color-success-strong);
-  border-color: var(--color-success);
-}
-
-.bdm-action--assign.ant-btn:not(:disabled):hover {
-  color: var(--color-success-strong);
-  border-color: var(--color-success);
-  background: var(--color-success-subtle);
-}
-
-.bdm-action--edit.ant-btn {
-  color: var(--color-warning-strong);
-  border-color: var(--color-warning);
-}
-
-.bdm-action--edit.ant-btn:not(:disabled):hover {
-  color: var(--color-warning-strong);
-  border-color: var(--color-warning);
-  background: var(--color-warning-subtle);
-}
-
-@media (max-width: 768px) {
-  .bdm-page__header .page-header__actions {
-    width: 100%;
-  }
-
-  .bdm-page__search.ant-input-affix-wrapper {
-    width: 100%;
-  }
-}
-
-// ---- Add / edit / assign forms ----
-
-.bdm-form {
-  padding: var(--space-6);
-}
-
-.bdm-form__fields {
+.bdm-clients__item {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-}
+  width: 100%;
+  padding: var(--space-3) var(--space-2);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
+  text-align: left;
+  cursor: pointer;
 
-.bdm-form__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5);
-}
-
-@media (min-width: 600px) {
-  .bdm-form__grid {
-    grid-template-columns: 1fr 1fr;
+  &:hover {
+    background: var(--color-bg-muted);
   }
 }
 
-// Edit page: editable fields | locked fields
-.bdm-form__columns {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-6);
+// Giving clients
+.bdm-assign {
+  max-width: 760px;
 }
 
-@media (min-width: 900px) {
-  .bdm-form__columns {
-    grid-template-columns: 1fr 1fr;
-  }
+.bdm-assign__summary {
+  margin-top: var(--space-3);
 }
 
-.bdm-form__section-label {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.bdm-form__field + .bdm-form__field {
-  margin-top: var(--space-4);
-}
-
-.bdm-form__actions {
+.bdm-assign__actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.bdm-form__actions--end {
   justify-content: flex-end;
-}
-
-.bdm-form__save.ant-btn {
-  min-width: 160px;
-}
-
-// ---- Intro banner: tinted strip with an icon badge ----
-
-.bdm-banner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-primary-subtle);
-  border: 1px solid var(--color-primary-soft);
-  border-radius: var(--radius-lg);
-}
-
-.bdm-banner--lg {
-  margin-bottom: 28px;
-  padding: 14px 18px;
-
-  .bdm-banner__icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .bdm-banner__title {
-    font-size: var(--text-md);
-  }
-
-  .bdm-banner__text {
-    font-size: var(--text-sm);
-  }
-}
-
-.bdm-banner__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.bdm-banner__body {
-  min-width: 0;
-}
-
-.bdm-banner__title {
-  margin: 0;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
-  color: var(--color-text);
-}
-
-.bdm-banner__text {
-  margin: 2px 0 0;
-  font-size: var(--text-xs);
-  line-height: 1.4;
-  color: var(--color-primary-strong);
-}
-
-// ---- Assign page: user options with an initial badge ----
-
-.bdm-assign__option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.bdm-assign__avatar {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-muted);
-  font-size: 11px;
-  line-height: 24px;
-  text-align: center;
+  margin-top: var(--space-4);
 }

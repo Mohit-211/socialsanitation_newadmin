@@ -42,6 +42,13 @@ const STATUS_TAGS = {
   active: { label: "Active", color: "green" },
   ending: { label: "Ending soon", color: "gold" },
   ended: { label: "Ended", color: "default" },
+  // attendance
+  PRESENT: { label: "Present", color: "green" },
+  ABSENT: { label: "Absent", color: "red" },
+  "ON LEAVE": { label: "On leave", color: "gold" },
+  // account requests
+  open: { label: "Open", color: "blue" },
+  done: { label: "Done", color: "green" },
 };
 
 /** { label, color } for a status code, falling back to the code in words. */

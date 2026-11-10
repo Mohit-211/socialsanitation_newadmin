@@ -1,0 +1,37 @@
+// A person's addresses (AddressesCard.jsx)
+
+.addresses-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.addresses-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.addresses-card__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.addresses-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.addresses-card__title {
+  font-weight: var(--font-weight-medium);
+}
+
+.addresses-card__actions {
+  flex-shrink: 0;
+}

@@ -1,101 +1,48 @@
-/* Employee list page (EmployeesPage.jsx). */
+// The employee list (EmployeesPage.jsx)
+
+.employee-list__filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
 
 .employee-list__search {
-  width: 260px;
+  width: 320px;
   max-width: 100%;
 }
 
-/* Lets the tooltip show while the wrapped button is disabled. */
-.employee-list__tooltip-target {
+.employee-list__role-filter {
+  min-width: 220px;
+}
+
+.employee-list__who,
+.employee-list__home {
+  display: flex;
+  flex-direction: column;
+  max-width: 260px;
+
+  span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+// The role tags open the roles dialog
+.employee-list__roles {
   display: inline-flex;
-}
-
-.employee-list__name {
-  display: block;
-  max-width: 130px;
-  overflow: hidden;
-  font-weight: var(--font-weight-medium);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.employee-list__email {
-  display: inline-block;
-  max-width: 175px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-.employee-list__reset.ant-btn {
-  flex-shrink: 0;
-}
-
-/* Login / logout image toggle: success colors when required, muted when not. */
-.icon-action.ant-btn.employee-list__toggle {
-  color: var(--color-text-subtle);
-  border-color: var(--color-border-strong);
-}
-
-.icon-action.ant-btn.employee-list__toggle--on {
-  color: var(--color-success-strong);
-  border-color: var(--color-success);
-}
-
-.icon-action.ant-btn.employee-list__toggle--on:not(:disabled):hover {
-  color: var(--color-success-strong);
-  border-color: var(--color-success);
-  background: var(--color-success-subtle);
-}
-
-.employee-list__actions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--space-2);
-}
-
-/* Address cell */
-.employee-list__address {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  cursor: default;
-}
-
-.employee-list__address--empty {
+  flex-wrap: wrap;
   align-items: center;
-  font-size: var(--text-sm);
-  color: var(--color-text-subtle);
-  cursor: auto;
-}
+  gap: 2px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
 
-.employee-list__address-icon {
-  flex-shrink: 0;
-  margin-top: 3px;
-  color: var(--color-text-subtle);
-}
-
-.employee-list__address-text {
-  min-width: 0;
-}
-
-.employee-list__address-street,
-.employee-list__address-location {
-  margin: 0;
-  overflow: hidden;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.employee-list__address-street {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-}
-
-.employee-list__address-location {
-  font-size: 11.5px;
-  color: var(--color-text-subtle);
+  &:hover {
+    background: var(--color-bg-muted);
+  }
 }

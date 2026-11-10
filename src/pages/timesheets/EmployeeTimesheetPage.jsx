@@ -1,7 +1,7 @@
 import dayjs from "@/lib/dayjs";
 import { useEffect, useState } from "react";
 import { Divider, Select } from "antd";
-import { UpdateEmployeeType } from "@/services/api/userApi";
+import { setEmployeeType } from "@/services/api/employeeApi";
 import { DatePicker, Input, Button, Spin, message, Badge } from "antd";
 import { Clock, Download, Save } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -99,13 +99,7 @@ const EmployeeTimesheetPage = () => {
 
   const updateEmployeeType = async (empId, type) => {
     try {
-      await UpdateEmployeeType(
-        {
-          user_id: empId,
-          employee_type: type,
-        },
-        localStorage.getItem("adminToken"),
-      );
+      await setEmployeeType(empId, type);
 
       message.success("Employee type updated");
 

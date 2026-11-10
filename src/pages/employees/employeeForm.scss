@@ -1,542 +1,75 @@
-// Employee add / edit forms (AddEmployeePage.jsx, EditEmployeePage.jsx).
-// The "Employee Address" block at the bottom is also used by
-// EmployeeDetailsPage.jsx.
-//
-// Breakpoints follow the old MUI ones: sm 600px, md 900px.
+// The employee form (Add / Edit Employee): the hiring form picker and the
+// employee's details.
 
-$md: 900px;
-
-// ==========================================================================
-// "How the hiring form auto-fill works" note (collapsible)
-// ==========================================================================
-
-.employee-help {
-  margin-bottom: var(--space-6);
-  overflow: hidden;
-  background: var(--color-bg-subtle);
-  border: 1px solid var(--color-success-border);
-  border-radius: var(--radius-lg);
+.employee-form-page {
+  max-width: 960px;
 }
 
-.employee-help__toggle {
+.form-card__alert {
+  margin-top: var(--space-3);
+}
+
+// The hiring form linked or picked
+.hiring-picked {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-3) var(--space-5);
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  user-select: none;
-  background: transparent;
-  border: 0;
-}
-
-.employee-help__icon {
-  flex-shrink: 0;
-  color: var(--color-success-strong);
-}
-
-.employee-help__title {
-  flex-grow: 1;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.employee-help__chevron {
-  flex-shrink: 0;
-  color: var(--color-text-muted);
-  transition: transform 150ms ease;
-
-  &--open {
-    transform: rotate(180deg);
-  }
-}
-
-.employee-help__steps {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--color-success-border);
-
-  // One row with an equal column per step (3 on Add, 4 on Edit).
-  @media (min-width: $md) {
-    grid-template-columns: none;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-  }
-}
-
-.employee-help__step {
-  display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 10px;
-}
-
-.employee-help__step-icon {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  color: var(--color-success-strong);
-  background: var(--color-success-subtle);
-  border-radius: var(--radius-md);
-}
-
-.employee-help__step-title {
-  margin: 0 0 2px;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.employee-help__step-text {
-  margin: 0;
-  font-size: var(--text-sm);
-  line-height: var(--line-height-base);
-  color: var(--color-text-muted);
-}
-
-// ==========================================================================
-// Form card and fields
-// ==========================================================================
-
-.employee-form__card {
-  padding: var(--space-6);
-}
-
-.employee-form__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.employee-form__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5);
-
-  @media (min-width: $md) {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-// Used together with the shared .field-label class.
-.field-label.employee-form__label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: var(--space-2);
-  font-size: var(--text-base);
-}
-
-.field-label.employee-form__label--spaced {
-  margin-bottom: var(--space-3);
-}
-
-.employee-form__label-hint {
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-subtle);
-}
-
-.employee-form__select {
-  width: 100%;
-}
-
-.employee-form__divider.ant-divider {
-  margin: 0;
-}
-
-.employee-form__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
-}
-
-.employee-form__location {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-subtle);
-
-  &--ready {
-    color: var(--color-success-strong);
-  }
-}
-
-// ==========================================================================
-// Section cards (Edit page) and the small uppercase heading they use
-// ==========================================================================
-
-.employee-section {
-  margin-bottom: var(--space-6);
-}
-
-.employee-section__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-}
-
-.employee-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-base);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.employee-section__description {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
-  color: var(--color-text-subtle);
-}
-
-// ==========================================================================
-// Hiring form search results
-// ==========================================================================
-
-.hiring-forms__count.ant-tag {
-  margin-inline: var(--space-1) 0;
-}
-
-.hiring-forms__status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-block: var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.hiring-forms__empty {
-  padding: var(--space-5);
-  font-size: var(--text-base);
-  color: var(--color-text-subtle);
-  text-align: center;
-  background: var(--color-bg-subtle);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-// antd renders radio groups inline with font-size 0 (for button groups).
-.hiring-forms__group.ant-radio-group {
-  display: block;
-  font-size: var(--text-base);
-}
-
-.hiring-forms__list {
-  display: grid;
-  gap: 10px;
-}
-
-.hiring-forms__card {
-  padding: 14px;
-  cursor: pointer;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
-
-  &:hover {
-    border-color: var(--color-border-strong);
-  }
-
-  &--selected,
-  &--selected:hover {
-    background: var(--color-primary-subtle);
-    border-color: var(--color-primary-border);
-    border-width: 1.5px;
-  }
-
-  // Hiring form submitted under a different email (Edit page).
-  &--blocked {
-    cursor: not-allowed;
-    opacity: 0.65;
-  }
-}
-
-// The radio and its label fill the card, radio pinned to the top.
-.hiring-forms__radio.ant-radio-wrapper {
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
-  margin: 0;
-
-  .ant-radio {
-    align-self: flex-start;
-    margin-top: 3px;
-  }
-
-  .ant-radio-label {
-    flex: 1;
-    min-width: 0;
-    padding-inline: var(--space-2) 0;
-  }
-}
-
-.hiring-forms__content {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
-  width: 100%;
-
-  @media (min-width: $md) {
-    flex-wrap: nowrap;
-  }
-}
-
-.hiring-forms__details {
-  display: block;
-  min-width: 0;
-}
-
-.hiring-forms__title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-
-  .ant-tag {
-    margin: 0;
-  }
-}
-
-.hiring-forms__name {
-  display: block;
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.hiring-forms__meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: var(--space-1);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
 
   svg {
-    flex-shrink: 0;
+    vertical-align: middle;
   }
 }
 
-.hiring-forms__date {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--color-text-subtle);
-}
-
-// Summary of the selected hiring form and its resolved location.
-.hiring-forms__selected {
-  padding: 18px;
-  background: var(--color-primary-subtle);
-  border: 1px solid var(--color-primary-soft);
-  border-radius: var(--radius-lg);
-
-  &--inset {
-    padding: var(--space-4);
-    margin-top: var(--space-4);
-  }
-}
-
-.hiring-forms__selected-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
-  font-size: var(--text-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-
-  .hiring-forms__selected--inset & {
-    margin-bottom: 10px;
-  }
-}
-
-.hiring-forms__selected-icon {
-  flex-shrink: 0;
-  color: var(--color-success-strong);
-}
-
-.hiring-forms__selected-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-
-  @media (min-width: $md) {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.hiring-forms__field {
-  min-width: 0;
-
-  &--span {
-    grid-column: 1 / -1;
-  }
-}
-
-.hiring-forms__field-label {
-  margin-bottom: 2px;
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-muted);
-}
-
-.hiring-forms__field-value {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-  overflow-wrap: anywhere;
-
-  &--muted {
-    color: var(--color-text-subtle);
-  }
-
-  &--ready {
-    color: var(--color-success-strong);
-  }
-}
-
-// ==========================================================================
-// Employee address block (Edit and View pages)
-// ==========================================================================
-
-.employee-address__header {
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-
-.employee-address__icon {
-  flex-shrink: 0;
-  color: var(--color-primary-strong);
-}
-
-// Lets the tooltip show while the wrapped button is disabled.
-.employee-address__tooltip-target {
-  display: inline-flex;
-}
-
-.employee-address__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
-  gap: var(--space-4);
-}
-
-.employee-address__card {
+// Search results: one applicant a row
+.hiring-picker__list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: var(--space-4);
-  background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-lg);
-}
-
-.employee-address__line {
-  display: flex;
-  align-items: flex-start;
   gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.employee-address__pin {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: var(--color-primary-strong);
-}
-
-.employee-address__text {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-base);
-  color: var(--color-text-secondary);
-}
-
-.employee-address__divider.ant-divider {
-  margin: var(--space-1) 0;
-}
-
-.employee-address__actions {
+.hiring-picker__item {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-
-  @media (min-width: $md) {
-    flex-wrap: nowrap;
-  }
-}
-
-.employee-address__empty {
-  padding: var(--space-6);
-  color: var(--color-text-subtle);
-  text-align: center;
-  background: var(--color-bg-subtle);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-.employee-address__empty-icon {
-  margin-bottom: var(--space-2);
-}
-
-.employee-address__empty-text {
-  margin: 0;
-  font-size: var(--text-base);
-  color: var(--color-text-subtle);
-}
-
-// Map preview inside the add / edit address modal.
-.employee-address__map {
-  height: 220px;
-  overflow: hidden;
-  border: 1px solid var(--color-border-subtle);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 
-  iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: 0;
+  &--picked {
+    border-color: var(--color-success-border);
+    background: var(--color-success-subtle);
   }
 }
 
-.employee-address__map-placeholder {
-  margin: 0;
-  padding-top: 80px;
-  color: var(--color-text-subtle);
-  text-align: center;
+.hiring-picker__body {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  svg {
+    vertical-align: middle;
+  }
+}
+
+.hiring-picker__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hiring-picker__problem {
+  margin-top: var(--space-2);
+}
+
+.hiring-picker__empty {
+  margin-top: var(--space-4);
 }

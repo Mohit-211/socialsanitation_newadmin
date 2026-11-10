@@ -1,0 +1,14 @@
+// Clients' account requests (ProfileRequestsPage.jsx, and on the client page)
+
+.profile-requests__filters {
+  margin-bottom: var(--space-4);
+}
+
+.profile-requests__details {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}

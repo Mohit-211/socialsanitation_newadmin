@@ -42,6 +42,7 @@ import {
   SprayCan,
   Star,
   User as UserIcon,
+  UserCog,
   UserPlus,
   Users,
   UsersRound,
@@ -125,6 +126,7 @@ const getMenuItems = ({ isSuperAdmin }) => {
       label: "PEOPLE MANAGEMENT",
       children: [
         { key: "/users", icon: icon(Building2), label: "Clients" },
+        { key: "/profile-requests", icon: icon(UserCog), label: "Account Requests" },
         { key: "/employees", icon: icon(Users), label: "Employees" },
         { key: "/hiring-form", icon: icon(UserPlus), label: "Hiring Form" },
         { key: "/attendance", icon: icon(CalendarCheck), label: "Attendance" },

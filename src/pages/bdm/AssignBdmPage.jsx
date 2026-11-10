@@ -1,165 +1,118 @@
-import { useLayoutEffect, useState } from "react";
-import {
-  GetAllUsers,
-  GetUserByBDMId,
-  AssignUser,
-} from "@/services/api/bdmApi";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import {
-  Select,
-  Button,
-  Form,
-  message,
-  Flex,
-  Divider,
-} from "antd";
-import { ArrowLeft, Users, CircleCheck } from "lucide-react";
+import { Alert, Button, Card, Select, Space, Spin, message } from "antd";
+import { ArrowLeft, CircleCheck } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { assignBdmClients, listBdmClients, listBdms } from "@/services/api/bdmApi";
+import { listUnassignedClients } from "@/services/api/clientApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
 import "./BdmsPage.scss";
 
+// Which clients a BDM looks after: theirs now, plus any client without a BDM.
+// Saving gives the new ones and takes away the ones removed.
 const AssignBdmPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [userData, setUserData] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [assignedUsers, setAssignedUsers] = useState([]);
-  const [removeUserIds, setRemoveUserIds] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+  const bdmId = Number(id);
+  const [picked, setPicked] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  useLayoutEffect(() => {
-    if (id) {
-      GetUserByBDMId(id)
-        .then((res) => {
-          const data = res.data.data;
-          const assignedUsersList = data.map((user) => ({
-            value: user.user_id,
-            label: user.user_bdm.user_profile.name,
-          }));
-          setAssignedUsers(assignedUsersList);
-          setSelectedUsers(assignedUsersList);
-          form.setFieldsValue({ user_id: assignedUsersList });
-        })
-        .catch(() => {
-          message.error("Error loading assigned users.");
-        });
-    }
-  }, [id, form]);
+  const { data: bdms } = useApiQuery(() => listBdms().then(itemsOf), [], { initial: [], silent: true });
+  const { data: current, loading: loadingCurrent } = useApiQuery(() => listBdmClients(bdmId).then(itemsOf), [bdmId], {
+    initial: [],
+    errorText: "Couldn't load the BDM's clients",
+  });
+  const { data: unassigned, loading: loadingFree } = useApiQuery(() => listUnassignedClients().then(itemsOf), [], {
+    initial: [],
+    errorText: "Couldn't load the clients without a BDM",
+  });
+  const bdm = (bdms || []).find((row) => row.id === bdmId);
 
-  useLayoutEffect(() => {
-    GetAllUsers()
-      .then((res) => {
-        setUserData(res.data.data);
-      })
-      .catch((err) => console.error(err));
-  }, []);
+  const currentIds = useMemo(() => (current || []).map((row) => row.user_id), [current]);
+  const chosen = picked ?? currentIds;
+  const options = useMemo(() => {
+    const theirs = (current || []).map((row) => ({
+      value: row.user_id,
+      label: row.user_bdm?.name || row.user_bdm?.email || `Client ${row.user_id}`,
+    }));
+    const free = (unassigned || [])
+      .filter((client) => !currentIds.includes(client.id))
+      .map((client) => ({ value: client.id, label: client.name || client.email }));
+    return [...theirs, ...free];
+  }, [current, unassigned, currentIds]);
 
-  const handleSelectionChange = (value) => {
-    const selectedIds = value.map((user) => user.value);
-    const assignedIds = assignedUsers.map((user) => user.value);
-    const removedUsers = assignedIds.filter((id) => !selectedIds.includes(id));
+  const added = chosen.filter((clientId) => !currentIds.includes(clientId));
+  const removed = currentIds.filter((clientId) => !chosen.includes(clientId));
 
-    setSelectedUsers(value);
-    setRemoveUserIds(removedUsers);
-  };
-
-  const handleAssignUsers = async () => {
-    setLoading(true);
+  const save = async () => {
+    setSaving(true);
     try {
-      const selectedUserIds = selectedUsers.map((user) => user.value);
-      const payload = {
-        bdm_id: id,
-        user_id: selectedUserIds,
-        remove_user_id: removeUserIds,
-      };
-
-      const response = await AssignUser(payload);
-      message.success(response.data.message || "Users assigned successfully!");
+      const res = await assignBdmClients({ bdmId, addClientIds: added, removeClientIds: removed });
+      message.success(res.data?.message || "Clients saved");
       navigate("/bdm-list");
-    } catch {
-      message.error("Failed to assign users.");
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't save the clients"));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   return (
-    <div>
+    <>
       <PageHeader
-        title="BDM MANAGEMENT"
-        subtitle="Select one or multiple clients to link with this manager"
+        title={`CLIENTS OF ${(bdm?.name || bdm?.email || "THE BDM").toUpperCase()}`}
+        subtitle="Their clients now, and any client without a BDM"
         actions={
-          <Button
-            size="large"
-            icon={<ArrowLeft size={16} />}
-            onClick={() => navigate("/bdm-list")}
-          >
-            Return to BDM List
+          <Button size="large" icon={<ArrowLeft size={16} />} onClick={() => navigate("/bdm-list")}>
+            All BDMs
           </Button>
         }
       />
-
-      <div className="surface bdm-form">
-        {/* Intro banner */}
-        <div className="bdm-banner">
-          <span className="bdm-banner__icon">
-            <Users size={18} />
-          </span>
-          <div className="bdm-banner__body">
-            <p className="bdm-banner__title">Selection Menu</p>
-            <p className="bdm-banner__text">
-              Users currently selected: <strong>{selectedUsers.length}</strong>
-            </p>
-          </div>
-        </div>
-
-        <Form layout="vertical" form={form} onFinish={handleAssignUsers}>
-          <Form.Item label="Available Users" name="user_id">
-            <Select
-              mode="multiple"
-              placeholder="Search and select users..."
-              labelInValue
-              value={selectedUsers}
-              onChange={handleSelectionChange}
-              style={{ width: "100%" }}
-              size="large"
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              options={userData.map((user) => ({
-                value: user.id,
-                label: user.name,
-              }))}
-              optionRender={(option) => (
-                <span className="bdm-assign__option">
-                  <span className="bdm-assign__avatar">
-                    {option.data.label?.charAt(0)}
-                  </span>
-                  {option.data.label}
-                </span>
-              )}
+      <Card className="form-card bdm-assign">
+        <Spin spinning={loadingCurrent || loadingFree}>
+          <label className="field-label" htmlFor="bdm-clients">
+            Clients
+          </label>
+          <Select
+            id="bdm-clients"
+            mode="multiple"
+            size="large"
+            style={{ width: "100%" }}
+            placeholder="Search clients"
+            optionFilterProp="label"
+            value={chosen}
+            onChange={setPicked}
+            options={options}
+          />
+          {(added.length > 0 || removed.length > 0) && (
+            <Alert
+              type="info"
+              showIcon
+              className="bdm-assign__summary"
+              title={[added.length && `${added.length} to give`, removed.length && `${removed.length} to take away`]
+                .filter(Boolean)
+                .join(", ")}
             />
-          </Form.Item>
-
-          <Divider style={{ margin: "var(--space-5) 0 var(--space-4)" }} />
-
-          <Flex justify="flex-end" gap="middle" wrap>
+          )}
+          <Space className="bdm-assign__actions">
             <Button size="large" onClick={() => navigate("/bdm-list")}>
               Cancel
             </Button>
             <Button
               type="primary"
-              htmlType="submit"
               size="large"
-              loading={loading}
               icon={<CircleCheck size={16} />}
+              loading={saving}
+              disabled={!added.length && !removed.length}
+              onClick={save}
             >
-              Save Assignments
+              Save
             </Button>
-          </Flex>
-        </Form>
-      </div>
-    </div>
+          </Space>
+        </Spin>
+      </Card>
+    </>
   );
 };
 

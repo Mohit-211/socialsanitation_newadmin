@@ -1,5 +1,4 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
 // Anyone's addresses: a client's places of service, an employee's home. A new
 // address needs address (the street), city_id, state_id and postal_code; also
@@ -25,24 +24,3 @@ export const makeAddressPrimary = (id) => httpClient.post(`/addresses/${id}/prim
 export const deleteAddress = (id) => httpClient.delete(`/addresses/${id}`);
 
 export const listEmployeesNearAddress = (id) => httpClient.get(`/addresses/${id}/nearest-employees`);
-
-// ---------------------------------------------------------------------------
-// Old /api/v1 calls, still used by screens that haven't moved to /api/v2 yet
-// (guest booking and the employee pages). They go once those screens move.
-
-/** @deprecated Use addAddress. */
-export const AddNewUserAddress = (formData) =>
-  httpClient.post(API_BASE_URL + "admin/user/addNewUserAddress", formData);
-
-/** @deprecated Use updateAddress. */
-export const EditAddress = (formData) => httpClient.put(API_BASE_URL + "user/editAddress", formData);
-
-/** @deprecated Use deleteAddress. */
-export const DeleteUserAddress = (addressId) =>
-  httpClient.delete(API_BASE_URL + "admin/user/delete-user-address/" + addressId);
-
-/** @deprecated Use listStates from referenceApi. */
-export const StateAPI = (id) => httpClient.get(API_BASE_URL + `country/${id}`);
-
-/** @deprecated Use listCities from referenceApi. */
-export const CityAPI = (state_id) => httpClient.get(API_BASE_URL + `state/${state_id}`);
