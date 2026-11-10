@@ -1,195 +1,139 @@
-import dayjs from "@/lib/dayjs";
-import { useEffect, useState } from "react";
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  message,
-  Row,
-  Col,
-  InputNumber,
-  DatePicker,
-} from "antd";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { Alert, Button, Space, Spin, message } from "antd";
+import { ArrowLeft, ExternalLink, FileCheck, FileText, ReceiptText, Send } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { UpdateContractAgreement, GetContractAgreementById } from "@/services/api/contractApi";
-import SignatureField from "@/components/SignatureField";
+import ShareToggle from "@/components/ShareToggle";
+import StatusTag from "@/components/StatusTag";
+import { getContract, resendContract, updateContract } from "@/services/api/contractApi";
+import { dataOf, errorMessage } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
+import { NEW_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
+import { formatDate, fromApiDate } from "@/utils/datetime";
+import ContractForm from "./components/ContractForm";
 
+const open = (url) => window.open(url, "_blank", "noopener");
+
+// One contract: where it stands (sent, signed, shared, paid link), what to do
+// next (resend, share, invoice it), and its fields. Saving sends a new copy.
 const EditContractPage = () => {
-  const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
-  const navigate = useNavigate();
   const { id } = useParams();
-  const [formData, setFormData] = useState({
-    signature: "",
+  const navigate = useNavigate();
+  const { returnPath, backLabel } = useClientFromQuery("contracts", "/contract-agreement");
+  const [resending, setResending] = useState(false);
+
+  const { data: contract, loading, reload } = useApiQuery(() => getContract(id).then(dataOf), [id], {
+    errorText: "Couldn't load the contract",
   });
 
-  const formatDate = (date) => (date ? dayjs(date).format("MM/DD/YYYY") : null);
-
-  const onFinish = async (values) => {
+  const resend = async () => {
+    setResending(true);
     try {
-      setLoading(true);
-
-      const res = await UpdateContractAgreement({
-        contract_id: id,
-        user_id: values.user_id,
-        client_company_name: values.client_company_name,
-        total_monthly_price: values.total_monthly_price,
-        service_address: values.service_address,
-        client_legal_name: values.client_legal_name,
-        client_representative: values.client_representative,
-        contract_date: formatDate(values.current_date),
-        signature: formData.signature,
-      });
-
-      if (res.status === 200) {
-        navigate("/contract-agreement");
-        message.success("Contract updated successfully");
-      }
-    } catch {
-      message.error("Error generating contract");
+      const sentTo = dataOf(await resendContract(id))?.sent_to;
+      message.success(sentTo ? `DocuSign emailed ${sentTo} again` : "DocuSign emailed the client again");
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't resend the contract"));
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   };
 
-  const getContract = async () => {
+  const submit = async (changes) => {
     try {
-      const res = await GetContractAgreementById(id);
-
-      const data = res.data.data;
-
-      form.setFieldsValue({
-        user_id: data.user_id,
-        client_company_name: data.client_company_name,
-        client_legal_name: data.client_legal_name,
-        client_representative: data.client_representative,
-        service_address: data.service_address,
-        total_monthly_price: Number(data.total_monthly_price),
-        current_date: data.contract_date
-          ? dayjs(data.contract_date, "MM/DD/YYYY")
-          : null,
-      });
-      setFormData((prev) => ({
-        ...prev,
-        signature: data.signature || "",
-      }));
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to load contract");
+      await updateContract(id, changes);
+      message.success("Contract saved; a new copy went to the client for signature");
+      navigate(returnPath);
+    } catch (error) {
+      message.error(errorMessage(error, "Couldn't save the contract"));
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      getContract();
-    }
-  }, [id]);
+  if (loading && !contract) {
+    return (
+      <div className="page-loader">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <>
       <PageHeader
-        title="CONTRACT AGREEMENT MANAGEMENT"
-        subtitle="Update an existing contract agreement"
+        title={contract?.client_company_name || "CONTRACT"}
+        subtitle={
+          contract && (
+            <Space size={8} wrap>
+              <StatusTag code={contract.status} />
+              {contract.sent_at && <span>Sent {formatDate(contract.sent_at)}</span>}
+              {contract.signed_at && <span>Signed {formatDate(contract.signed_at)}</span>}
+              {contract.shared_at && <span>In the client app since {formatDate(contract.shared_at)}</span>}
+            </Space>
+          )
+        }
         actions={
-          <Button
-            size="large"
-            icon={<ArrowLeft size={16} />}
-            onClick={() => navigate("/contract-agreement")}
-          >
-            Return to Contracts
-          </Button>
+          <Space wrap>
+            {contract?.file_url && (
+              <Button icon={<FileText size={16} />} onClick={() => open(contract.file_url)}>
+                PDF
+              </Button>
+            )}
+            {contract?.signed_file_url && (
+              <Button icon={<FileCheck size={16} />} onClick={() => open(contract.signed_file_url)}>
+                Signed Copy
+              </Button>
+            )}
+            {contract?.payment_url && (
+              <Button icon={<ExternalLink size={16} />} onClick={() => open(contract.payment_url)}>
+                Payment Link
+              </Button>
+            )}
+            {contract && !contract.signed_at && (
+              <Button icon={<Send size={16} />} onClick={resend} loading={resending}>
+                Resend
+              </Button>
+            )}
+            {contract && (
+              <ShareToggle kind="contract" id={contract.id} sharedAt={contract.shared_at} onChanged={reload} />
+            )}
+            {contract && (
+              <Button
+                icon={<ReceiptText size={16} />}
+                onClick={() => navigate(NEW_DOCUMENT_PATHS.invoice(contract.user_id, { contractId: contract.id }))}
+              >
+                Make an Invoice
+              </Button>
+            )}
+            <Button icon={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
+              {backLabel || "Return to Contracts"}
+            </Button>
+          </Space>
         }
       />
-
-      <Form form={form} layout="vertical" onFinish={onFinish}>
-        {/* CLIENT */}
-        <Card title="Contract Information" style={{ marginBottom: 20 }}>
-          <Row gutter={16}>
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Company Name"
-                name="client_company_name"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Client Legal Name"
-                name="client_legal_name"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={12} md={8}>
-              <Form.Item
-                label="Client Representative"
-                name="client_representative"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* SERVICE DETAILS */}
-        <Card title="Service Details" style={{ marginBottom: 20 }}>
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="Total Monthly Price"
-                name="total_monthly_price"
-                rules={[{ required: true }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  prefix="$"
-                  precision={6}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={24}>
-              <Form.Item
-                label="Service Address"
-                name="service_address"
-                rules={[{ required: true }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* CONTRACT DATE */}
-        <Card title="Contract Date" style={{ marginBottom: 20 }}>
-          <Form.Item
-            label="Current Date"
-            name="current_date"
-            rules={[{ required: true }]}
-          >
-            <DatePicker style={{ width: "100%" }} format="MM/DD/YYYY" />
-          </Form.Item>
-        </Card>
-
-        <Card title="Admin Signature" style={{ marginBottom: 20 }}>
-          <div className="signature-block" style={{ marginTop: 16 }}>
-            <SignatureField formData={formData} setFormData={setFormData} />
-          </div>
-        </Card>
-
-        <Button type="primary" htmlType="submit" loading={loading} block>
-          Update Contract
-        </Button>
-      </Form>
+      {contract && (
+        <>
+          <Alert
+            type="info"
+            showIcon
+            className="form-card"
+            title="Saving makes a new PDF and payment link and sends the client a new copy to sign. The old link closes unless it was paid."
+          />
+          <ContractForm
+            key={contract.id}
+            initialValues={{
+              client_company_name: contract.client_company_name,
+              client_legal_name: contract.client_legal_name,
+              client_representative: contract.client_representative,
+              service_address: contract.service_address,
+              total_monthly_price: contract.total_monthly_price,
+              contract_date: fromApiDate(contract.contract_date),
+            }}
+            initialSignature={contract.signature || ""}
+            submitLabel="Save and Send a New Copy"
+            onSubmit={submit}
+          />
+        </>
+      )}
     </>
   );
 };

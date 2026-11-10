@@ -1,191 +1,105 @@
-import { useEffect, useState } from "react";
-import { Button, message, Modal, Space, Table } from "antd";
+import { Button, Input, Modal, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
-
-import dayjs from "@/lib/dayjs";
+import { FileCheck, FileText, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { DeleteServiceEstimate, GetAllServiceEstimate } from "@/services/api/estimateApi";
-import { API_BASE_URL } from "@/config/env";
+import IconAction from "@/components/IconAction";
+import ShareToggle from "@/components/ShareToggle";
+import StatusTag from "@/components/StatusTag";
+import { deleteEstimate, listEstimates } from "@/services/api/estimateApi";
+import { errorMessage } from "@/services/apiResult";
+import { usePagedList } from "@/hooks/usePagedList";
+import { PERMISSION, useCan } from "@/lib/session";
+import { formatDate } from "@/utils/datetime";
 
+const open = (url) => window.open(url, "_blank", "noopener");
+
+// Every service estimate, newest first, searchable by company.
 const EstimatesPage = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const list = usePagedList((query) => listEstimates(query), { errorText: "Couldn't load the estimates" });
 
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 100,
-    },
-    sortField: null,
-    sortOrder: null,
-  });
-
-  const handleDelete = (id) => {
+  const confirmDelete = (estimate) =>
     Modal.confirm({
-      title: "Delete Service Estimate",
-      content: "Are you sure you want to delete this service estimate?",
+      title: `Delete the estimate for ${estimate.client_company_name}?`,
+      content: "This can't be undone.",
+      okText: "Delete",
+      okType: "danger",
       onOk: async () => {
-        await DeleteServiceEstimate(id);
-        message.success("Service Estimate deleted");
-        getData();
+        try {
+          await deleteEstimate(estimate.id);
+          message.success("Estimate deleted");
+          list.reload();
+        } catch (error) {
+          message.error(errorMessage(error, "Couldn't delete the estimate"));
+        }
       },
     });
-  };
 
   const columns = [
     {
-      title: "S.No.",
-      dataIndex: "index",
-      sorter: (a, b) => a.index - b.index,
-      width: "10%",
-    },
-    {
-      title: "Client Name",
+      title: "Company",
       dataIndex: "client_company_name",
-      width: "20%",
-    },
-
-    {
-      title: "File",
-      width: "20%",
-      render: (_, record) => {
-        let url = "";
-
-        if (record.status === "signed" && record.signed_file_name) {
-          url = `${API_BASE_URL}docs/${record.signed_file_name}`;
-        } else if (record.file_url) {
-          url = record.file_url;
-        }
-
-        if (!url) return "-";
-
-        return (
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            View PDF
-          </a>
-        );
-      },
+      render: (company, estimate) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/edit-service-estimate/${estimate.id}`)}>
+          {company || `Estimate ${estimate.id}`}
+        </Button>
+      ),
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      width: "20%",
-      render: (status) => {
-        if (status === "signed") return "Signed";
-        if (status === "pending_signature") return "Pending Signature";
-        return status;
-      },
+      title: "Client",
+      key: "client",
+      render: (_, estimate) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/viewUser/${estimate.user_id}?tab=estimates`)}>
+          {estimate.contact_name || estimate.client_email || "Client"}
+        </Button>
+      ),
     },
-
+    { title: "Frequency", dataIndex: "frequency", render: (frequency) => frequency || "—" },
+    { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
+    { title: "Sent", dataIndex: "sent_at", render: (date) => formatDate(date) },
+    { title: "Signed", dataIndex: "signed_at", render: (date) => formatDate(date) },
     {
-      title: "Created Date",
-      dataIndex: "created_at",
-      width: "20%",
-      render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
-    },
-    {
-      title: "Action",
-      width: "20%",
-      render: (_, record) => {
-        return (
-          <Space size="middle">
-            {record.status !== "signed" && (
-              <>
-                <Button
-                  onClick={() =>
-                    navigate(`/edit-service-estimate/${record.id}`)
-                  }
-                >
-                  Edit
-                </Button>
-              </>
-            )}
-
-            <Button danger onClick={() => handleDelete(record.id)}>
-              Delete
-            </Button>
-          </Space>
-        );
-      },
+      title: "Actions",
+      key: "actions",
+      width: 200,
+      render: (_, estimate) => (
+        <Space size={4}>
+          <IconAction icon={Pencil} title="Open" onClick={() => navigate(`/edit-service-estimate/${estimate.id}`)} />
+          {estimate.file_url && <IconAction icon={FileText} title="PDF" onClick={() => open(estimate.file_url)} />}
+          {estimate.signed_file_url && (
+            <IconAction icon={FileCheck} title="Signed copy" onClick={() => open(estimate.signed_file_url)} />
+          )}
+          <ShareToggle kind="estimate" id={estimate.id} sharedAt={estimate.shared_at} onChanged={list.reload} />
+          {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(estimate)} />}
+        </Space>
+      ),
     },
   ];
-
-  // Get all users
-  const getData = async () => {
-    try {
-      setLoading(true);
-      let result = await GetAllServiceEstimate();
-      // Adding index for serial number
-      const newData = result.data.data.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }));
-      setData(newData);
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 403) {
-        navigate("/error401");
-        console.error("Access denied. You do not have the required permissions.");
-      } else {
-        console.error("Error loading data. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getData({
-      page: tableParams.pagination.current,
-      pageSize: tableParams.pagination.pageSize,
-      sortField: tableParams.sortField,
-      sortOrder: tableParams.sortOrder,
-    });
-  }, [tableParams]);
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-    });
-  };
 
   return (
     <div>
       <PageHeader
-        title="Service Estimate Management"
-        subtitle="View & Generate PDFs"
+        title="SERVICE ESTIMATES"
+        subtitle="Estimates sent to clients for signature"
         actions={
           <>
-            <Button
+            <Input
+              allowClear
               size="large"
-              onClick={() => navigate("/universal-scope-of-work")}
-            >
-              Universal Scope Of Work
-            </Button>
-
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => navigate("/generate-estimate")}
-            >
-              Generate PDF
+              prefix={<Search size={16} className="text-subtle" />}
+              placeholder="Search by company"
+              style={{ width: 240 }}
+              value={list.searchText}
+              onChange={(event) => list.setSearchText(event.target.value)}
+            />
+            <Button type="primary" size="large" icon={<Plus size={16} />} onClick={() => navigate("/generate-estimate")}>
+              New Estimate
             </Button>
           </>
         }
       />
-
-      <Table
-        columns={columns}
-        rowKey={(record) => record.id}
-        dataSource={data}
-        pagination={tableParams.pagination}
-        loading={loading}
-        onChange={handleTableChange}
-      />
+      <Table rowKey="id" columns={columns} scroll={{ x: "max-content" }} size="middle" {...list.tableProps} />
     </div>
   );
 };

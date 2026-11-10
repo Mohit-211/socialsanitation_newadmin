@@ -4,13 +4,13 @@ import { MapPin, Pencil, Plus, Star, Trash2, Users } from "lucide-react";
 import IconAction from "@/components/IconAction";
 import AddressFormModal from "@/components/AddressFormModal";
 import NearestEmployeesModal from "@/components/NearestEmployeesModal";
-import { assignClientAdmin, getClient, getClientBdm, CLIENT_TYPES } from "@/services/api/clientApi";
+import ClientBdmSelect from "./ClientBdmSelect";
+import { assignClientAdmin, getClient, CLIENT_TYPES } from "@/services/api/clientApi";
 import { deleteAddress, listEmployeesNearAddress, makeAddressPrimary } from "@/services/api/addressApi";
 import { listAdmins } from "@/services/api/adminApi";
-import { assignBdmClients, listBdms } from "@/services/api/bdmApi";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { PERMISSION, useCan, useIsSuperAdmin } from "@/lib/session";
+import { PERMISSION, useCan } from "@/lib/session";
 import { formatDate } from "@/utils/datetime";
 
 const typeLabel = (code) => CLIENT_TYPES.find((type) => type.value === code)?.label || code || "—";
@@ -18,19 +18,15 @@ const typeLabel = (code) => CLIENT_TYPES.find((type) => type.value === code)?.la
 // Who the client is, who looks after them, and where they get serviced.
 const ClientProfileTab = ({ clientId, flow, onChanged }) => {
   const canDelete = useCan(PERMISSION.DELETE_RECORDS);
-  const isSuperAdmin = useIsSuperAdmin();
   const [addressForm, setAddressForm] = useState(null); // { address } to edit, {} to add
   const [nearestFor, setNearestFor] = useState(null);
   const [savingAdmin, setSavingAdmin] = useState(false);
-  const [savingBdm, setSavingBdm] = useState(false);
   const addresses = flow?.addresses ?? [];
 
   const { data: client, setData: setClient } = useApiQuery(() => getClient(clientId).then(dataOf), [clientId], {
     errorText: "Couldn't load the client",
   });
   const { data: admins } = useApiQuery(() => listAdmins().then(itemsOf), [], { initial: [] });
-  const { data: bdms } = useApiQuery(() => listBdms().then(itemsOf), [], { initial: [] });
-  const { data: bdm, setData: setBdm } = useApiQuery(() => getClientBdm(clientId).then(dataOf), [clientId]);
 
   const changeAdmin = async (adminId) => {
     setSavingAdmin(true);
@@ -42,21 +38,6 @@ const ClientProfileTab = ({ clientId, flow, onChanged }) => {
       message.error(errorMessage(error, "Couldn't change the assigned admin"));
     } finally {
       setSavingAdmin(false);
-    }
-  };
-
-  // Giving the client to a BDM takes them from any other BDM.
-  const changeBdm = async (bdmId) => {
-    setSavingBdm(true);
-    try {
-      if (bdmId) await assignBdmClients({ bdmId, addClientIds: [Number(clientId)] });
-      else if (bdm?.id) await assignBdmClients({ bdmId: bdm.id, removeClientIds: [Number(clientId)] });
-      setBdm(bdmId ? bdms.find((item) => item.id === bdmId) ?? null : null);
-      message.success(bdmId ? "BDM assigned" : "BDM removed");
-    } catch (error) {
-      message.error(errorMessage(error, "Couldn't change the BDM"));
-    } finally {
-      setSavingBdm(false);
     }
   };
 
@@ -124,18 +105,7 @@ const ClientProfileTab = ({ clientId, flow, onChanged }) => {
             <label className="field-label" htmlFor="client-bdm">
               Business Development Manager
             </label>
-            <Select
-              id="client-bdm"
-              value={bdm?.id ?? undefined}
-              placeholder="No BDM"
-              allowClear
-              disabled={!isSuperAdmin}
-              title={isSuperAdmin ? undefined : "BDM changes are for Super Admins"}
-              loading={savingBdm}
-              onChange={(value) => changeBdm(value ?? null)}
-              options={(bdms || []).map((item) => ({ value: item.id, label: item.name || item.email }))}
-              style={{ width: "100%" }}
-            />
+            <ClientBdmSelect id="client-bdm" clientId={clientId} />
           </div>
         </div>
       </Card>

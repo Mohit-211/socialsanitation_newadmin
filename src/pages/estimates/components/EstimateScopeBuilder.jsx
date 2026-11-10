@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Switch, message, Empty, Modal, Tooltip } from "antd";
+import { useRef, useState } from "react";
+import { Switch, message, Empty, Modal, Spin, Tooltip } from "antd";
 import {
-  ChartColumn,
   ChevronDown,
   ChevronUp,
   CircleCheck,
@@ -13,17 +12,30 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
-import "@/styles/clientChart.scss";
 import "@/styles/scopeBuilder.scss";
 import {
-  CreateEstimateSection,
-  UpdateEstimateSection,
-  DeleteEstimateSection,
-  CreateEstimateItem,
-  UpdateEstimateItem,
-  DeleteEstimateItem,
-} from "@/services/api/scopeApi";
-import { GetClientChecklistByUserId } from "@/services/api/bookingApi";
+  addEstimateItem,
+  addEstimateSection,
+  deleteEstimateItem,
+  deleteEstimateSection,
+  getEstimateScope,
+  updateEstimateItem,
+  updateEstimateSection,
+} from "@/services/api/estimateApi";
+import { getSheet, listSheets } from "@/services/api/sheetApi";
+import { getClient } from "@/services/api/clientApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { PERMISSION, useCan } from "@/lib/session";
+import SheetAreasChart from "@/components/SheetAreasChart";
+
+const sortSections = (sections = []) =>
+  [...sections]
+    .map((section) => ({
+      ...section,
+      items: [...(section.items || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    }))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 const FreqBadge = ({ label, active, onClick }) => (
   <button
@@ -35,64 +47,41 @@ const FreqBadge = ({ label, active, onClick }) => (
   </button>
 );
 
-const EstimateScopeBuilder = ({
-  estimateId,
-  userId,
-  sections: initialSections = [],
-  onChange,
-}) => {
-  const [sections, setSections] = useState(initialSections);
+// The estimate's own copy of the scope: the sections and tasks its PDF
+// prints. Edits here change only this estimate, not the client's scope.
+const EstimateScopeBuilder = ({ estimateId, userId }) => {
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
   const [savingSection, setSavingSection] = useState(null);
   const [savingItem, setSavingItem] = useState(null);
-  const [clientChecklist, setClientChecklist] = useState([]);
-  const [loadingChecklist, setLoadingChecklist] = useState(false);
-  const [clientType, setClientType] = useState("");
 
   /* Collapse state */
-  const [chartCollapsed, setChartCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
 
   /* Refs */
   const sectionsEndRef = useRef(null);
-  const sectionRefs = useRef({});
 
-  /* FETCH CHECKLIST */
+  const {
+    data: sections,
+    loading,
+    setData: setSections,
+  } = useApiQuery(() => getEstimateScope(estimateId).then((res) => sortSections(itemsOf(res))), [estimateId], {
+    initial: [],
+    skip: !estimateId,
+    errorText: "Couldn't load the estimate's scope",
+  });
 
-  const fetchChecklist = async () => {
-    if (!userId) {
-      setClientChecklist([]);
-      setClientType("residential");
-      return;
-    }
-    try {
-      setLoadingChecklist(true);
-      const checklistRes = await GetClientChecklistByUserId(userId);
-      const checklistData = checklistRes?.data?.data?.data?.[0] || {};
-      setClientType(checklistData?.client_type || "residential");
-      const list = checklistData?.user_client_checklist_details || [];
-      setClientChecklist(list);
-    } catch (error) {
-      console.error(error);
-      setClientChecklist([]);
-      setClientType("residential");
-      message.error("Failed to fetch client checklist");
-    } finally {
-      setLoadingChecklist(false);
-    }
-  };
-
-  useEffect(() => {
-    setSections(initialSections);
-  }, [initialSections]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchChecklist();
-    }
-  }, [userId]);
-  useEffect(() => {
-    if (onChange) onChange(sections);
-  }, [sections]);
+  // The client's newest sheet, shown beside the tasks as the Initial Client Chart.
+  const { data: newestSheet, loading: loadingChecklist } = useApiQuery(
+    async () => {
+      const sheets = itemsOf(await listSheets(userId));
+      return sheets[0] ? dataOf(await getSheet(sheets[0].id)) : null;
+    },
+    [userId],
+    { skip: !userId },
+  );
+  const { data: client } = useApiQuery(() => getClient(userId).then(dataOf), [userId], { skip: !userId });
+  const clientChecklist = newestSheet?.areas ?? [];
+  const clientType = client?.client_type || "commercial";
 
   /* COLLAPSE HELPERS */
 
@@ -133,12 +122,12 @@ const EstimateScopeBuilder = ({
 
   const createSection = async () => {
     try {
-      const res = await CreateEstimateSection(estimateId, {
+      const res = await addEstimateSection(estimateId, {
         title: "New Section",
         is_red: false,
       });
-      const section = res?.data?.data?.data;
-      setSections((prev) => [...prev, { ...section, items: [] }]);
+      const section = dataOf(res);
+      setSections((prev) => [...prev, { ...section, items: section?.items || [] }]);
       message.success("Section created");
 
       /* Scroll to new section after state update */
@@ -146,8 +135,7 @@ const EstimateScopeBuilder = ({
         sectionsEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } catch (err) {
-      console.error(err);
-      message.error("Failed to create section");
+      message.error(errorMessage(err, "Couldn't create the section"));
     }
   };
 
@@ -156,15 +144,13 @@ const EstimateScopeBuilder = ({
   const saveSection = async (section, index) => {
     try {
       setSavingSection(index);
-      await UpdateEstimateSection(section.id, {
-        estimate_id: estimateId,
+      await updateEstimateSection(estimateId, section.id, {
         title: section.title,
         is_red: section.is_red,
       });
       message.success("Section saved");
     } catch (err) {
-      console.error(err);
-      message.error("Failed to save section");
+      message.error(errorMessage(err, "Couldn't save the section"));
     } finally {
       setSavingSection(null);
     }
@@ -181,11 +167,13 @@ const EstimateScopeBuilder = ({
         okText: "Delete",
         okButtonProps: { danger: true },
         onOk: async () => {
-          await DeleteEstimateSection(section.id, {
-            estimate_id: estimateId,
-          });
-          setSections((prev) => prev.filter((_, i) => i !== sectionIndex));
-          message.success("Section deleted");
+          try {
+            await deleteEstimateSection(estimateId, section.id);
+            setSections((prev) => prev.filter((_, i) => i !== sectionIndex));
+            message.success("Section deleted");
+          } catch (err) {
+            message.error(errorMessage(err, "Couldn't delete the section"));
+          }
         },
       });
     } catch (err) {
@@ -234,14 +222,14 @@ const EstimateScopeBuilder = ({
 
       if (!item.id) {
         /* CREATE */
-        const res = await CreateEstimateItem(estimateId, {
+        const res = await addEstimateItem(estimateId, {
           section_id: section.id,
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
           is_monthly: item.is_monthly,
         });
-        const saved = res?.data?.data?.data || res?.data?.data || res?.data;
+        const saved = dataOf(res) || {};
         setSections((prev) =>
           prev.map((sec, idx) => {
             if (idx !== sectionIndex) return sec;
@@ -256,8 +244,7 @@ const EstimateScopeBuilder = ({
         message.success("Task created");
       } else {
         /* UPDATE */
-        await UpdateEstimateItem(item.id, {
-          estimate_id: estimateId,
+        await updateEstimateItem(estimateId, item.id, {
           description: item.description,
           is_daily: item.is_daily,
           is_weekly: item.is_weekly,
@@ -266,8 +253,7 @@ const EstimateScopeBuilder = ({
         message.success("Task saved");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Save failed");
+      message.error(errorMessage(err, "Couldn't save the task"));
     } finally {
       setSavingItem(null);
     }
@@ -279,9 +265,7 @@ const EstimateScopeBuilder = ({
     try {
       const item = sections[sectionIndex].items[itemIndex];
       if (item.id) {
-        await DeleteEstimateItem(item.id, {
-          estimate_id: estimateId,
-        });
+        await deleteEstimateItem(estimateId, item.id);
       }
       setSections((prev) =>
         prev.map((section, idx) =>
@@ -295,17 +279,24 @@ const EstimateScopeBuilder = ({
       );
       message.success("Task deleted");
     } catch (err) {
-      console.error(err);
-      message.error("Delete failed");
+      message.error(errorMessage(err, "Couldn't delete the task"));
     }
   };
 
   /* EMPTY */
 
-  if (!userId) {
+  if (!estimateId) {
     return (
       <div className="usb-empty">
-        <Empty description="Select a client first" />
+        <Empty description="Save the estimate first" />
+      </div>
+    );
+  }
+
+  if (loading && !sections.length) {
+    return (
+      <div className="usb-loading">
+        <Spin size="large" />
       </div>
     );
   }
@@ -319,7 +310,7 @@ const EstimateScopeBuilder = ({
             <ClipboardList size={28} />
           </span>
           <div>
-            <h2 className="usb-header__title">Client Scope of Work</h2>
+            <h2 className="usb-header__title">This Estimate's Scope of Work</h2>
             <p className="usb-header__sub">
               {sections.length} section{sections.length !== 1 ? "s" : ""} ·{" "}
               {sections.reduce((acc, s) => acc + (s.items?.length || 0), 0)}{" "}
@@ -338,98 +329,13 @@ const EstimateScopeBuilder = ({
       </div>
 
       {/* ── INITIAL CLIENT CHART ── */}
-      <div className="usb-chart-card" style={{ marginBottom: "30px" }}>
-        <button
-          className="usb-chart-card__toggle"
-          onClick={() => setChartCollapsed((v) => !v)}
-        >
-          <ChartColumn size={16} className="usb-chart-card__toggle-icon" />
-          <span className="usb-chart-card__toggle-title">
-            Initial Client Chart
-          </span>
-          <span className="usb-chart-card__toggle-meta">
-            {chartCollapsed
-              ? `${clientChecklist.length} row${clientChecklist.length !== 1 ? "s" : ""} · click to expand`
-              : "click to collapse"}
-          </span>
-          {chartCollapsed ? (
-            <ChevronDown size={16} className="usb-chart-card__chevron" />
-          ) : (
-            <ChevronUp size={16} className="usb-chart-card__chevron" />
-          )}
-        </button>
-
-        {!chartCollapsed && (
-          <div className="usb-chart-card__body">
-            {loadingChecklist ? (
-              <p className="usb-chart-card__loading">Loading checklist…</p>
-            ) : clientChecklist.length > 0 ? (
-              <div className="usb-table-wrap">
-                <table className="usb-table">
-                  <thead>
-                    <tr>
-                      <th>Service Area</th>
-                      {clientType === "commercial" ? (
-                        <>
-                          <th>
-                            # of Trash Cans
-                            <br />
-                            <small>or Stalls</small>
-                          </th>
-                          <th>
-                            # of Desks
-                            <br />
-                            <small>or Sinks</small>
-                          </th>
-                          <th>
-                            # of Rooms
-                            <br />
-                            <small>or Restrooms</small>
-                          </th>
-                        </>
-                      ) : (
-                        <th>
-                          # of Desks / Trash Cans
-                          <span className="usb-th-note">
-                            (Big Buildings) or # of Restrooms
-                          </span>
-                        </th>
-                      )}
-                      <th>
-                        Flooring Type
-                        <span className="usb-th-note">
-                          Carpet, Hard Floor, VCT
-                        </span>
-                      </th>
-                      <th>Special Requests / Hot Spots</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientChecklist.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.service_area}</td>
-                        {clientType === "commercial" ? (
-                          <>
-                            <td>{item.stalls || 0}</td>
-                            <td>{item.sinks || 0}</td>
-                            <td>{item.restrooms || 0}</td>
-                          </>
-                        ) : (
-                          <td>{item.num_desks_trash_cans || 0}</td>
-                        )}
-                        <td>{item.flooring_type || "—"}</td>
-                        <td>{item.special_requests || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="usb-chart-card__empty">No checklist available</p>
-            )}
-          </div>
-        )}
-      </div>
+      <SheetAreasChart
+        areas={clientChecklist}
+        clientType={clientType}
+        loading={loadingChecklist}
+        title="Initial Client Chart (newest sheet)"
+        emptyText="This client has no sheet with areas"
+      />
 
       {/* ── NO SECTIONS ── */}
       {sections.length === 0 && (
@@ -437,7 +343,7 @@ const EstimateScopeBuilder = ({
           <div className="usb-empty__icon">
             <FolderOpen size={40} />
           </div>
-          <p className="usb-empty__text">No scope generated for this client.</p>
+          <p className="usb-empty__text">This estimate's scope has no sections.</p>
           <button className="usb-btn-add-section" onClick={createSection}>
             <Plus size={16} /> Add First Section
           </button>
@@ -456,7 +362,6 @@ const EstimateScopeBuilder = ({
               className={`usb-section-card ${
                 section.is_red ? "usb-section-card--red" : ""
               }`}
-              ref={(el) => (sectionRefs.current[sectionIndex] = el)}
             >
               {/* SECTION HEADER */}
               <div className="usb-section-card__header">
@@ -505,15 +410,17 @@ const EstimateScopeBuilder = ({
                   </Tooltip>
 
                   {/* Delete section */}
-                  <Tooltip title="Delete section">
-                    <button
-                      className="usb-btn usb-btn--danger"
-                      onClick={() => deleteSection(sectionIndex)}
-                    >
-                      <Trash2 size={14} />
-                      <span>Delete</span>
-                    </button>
-                  </Tooltip>
+                  {canDelete && (
+                    <Tooltip title="Delete section">
+                      <button
+                        className="usb-btn usb-btn--danger"
+                        onClick={() => deleteSection(sectionIndex)}
+                      >
+                        <Trash2 size={14} />
+                        <span>Delete</span>
+                      </button>
+                    </Tooltip>
+                  )}
 
                   {/* Collapse toggle */}
                   <button
@@ -646,16 +553,18 @@ const EstimateScopeBuilder = ({
                           </button>
                         </Tooltip>
 
-                        {/* Delete task */}
-                        <Tooltip title="Delete task">
-                          <button
-                            className="usb-btn usb-btn--danger"
-                            onClick={() => deleteItem(sectionIndex, itemIndex)}
-                          >
-                            <Trash2 size={14} />
-                            <span>Delete</span>
-                          </button>
-                        </Tooltip>
+                        {/* Delete task (an unsaved one is only discarded) */}
+                        {(canDelete || !item.id) && (
+                          <Tooltip title={item.id ? "Delete task" : "Discard task"}>
+                            <button
+                              className="usb-btn usb-btn--danger"
+                              onClick={() => deleteItem(sectionIndex, itemIndex)}
+                            >
+                              <Trash2 size={14} />
+                              <span>{item.id ? "Delete" : "Discard"}</span>
+                            </button>
+                          </Tooltip>
+                        )}
                       </div>
                     );
                   })}

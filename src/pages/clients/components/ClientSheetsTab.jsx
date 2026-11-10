@@ -4,7 +4,7 @@ import IconAction from "@/components/IconAction";
 import { deleteSheet } from "@/services/api/sheetApi";
 import { errorMessage } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
-import ShareToggle from "./ShareToggle";
+import ShareToggle from "@/components/ShareToggle";
 import { dateColumn, sharedColumn, titleColumn } from "./flowColumns";
 
 // Step 1: the client's Initial Client Sheets. Each is a walk-through of the

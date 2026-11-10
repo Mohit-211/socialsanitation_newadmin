@@ -1,4 +1,3 @@
-import dayjs from "@/lib/dayjs";
 import { useEffect, useState } from "react";
 import "./serviceRequests.scss";
 import { useNavigate, useParams } from "react-router";
@@ -13,20 +12,19 @@ import {
   Popconfirm,
 } from "antd";
 import { DatePicker } from "antd";
-import {
-  UpdateServiceRequest,
-  GetServiceRequestById,
-} from "@/services/api/serviceRequestApi";
-import { GetUserById } from "@/services/api/userApi";
+import { getServiceRequest, updateServiceRequest } from "@/services/api/serviceRequestApi";
+import { listServiceNames } from "@/services/api/serviceApi";
+import { errorMessage, dataOf, itemsOf } from "@/services/apiResult";
+import { fromApiDate } from "@/utils/datetime";
+import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
 import SignatureField from "@/components/SignatureField";
-import { GetAllServiceNameByAdmin } from "@/services/api/bookingApi";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
 const { Option } = Select;
 
 const EditServiceRequestPage = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [services, setServices] = useState([]);
   const { id } = useParams();
   const [formData, setFormData] = useState({
@@ -54,82 +52,59 @@ const EditServiceRequestPage = () => {
     totalAmount: "",
     date: null,
   });
-  const [userId, setUserId] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [client, setClient] = useState(null);
+  // Opened from a client's page, saving goes back there.
+  const { returnPath } = useClientFromQuery("service-requests", "/service-request");
 
-  const loadQuote = async () => {
-    setIsLoading(true);
-
-    try {
-      const res = await GetServiceRequestById(id);
-
-      const quote = res.data.data;
-
-      setFormData({
-        user_id: quote.user_id,
-        ref: quote.ref_no,
-        reference_type: quote.ref_type,
-        dueDate: dayjs(quote.due_date),
-        toCompany: quote.to_company_name,
-        address1: quote.address_1,
-        address2: quote.address_2,
-        totalAmount: quote.total_due,
-        date: dayjs(quote.date),
-        signature: quote.signature,
-        service_days: quote.service_days,
-
-        items:
-          quote.service_request_quote_item?.map((item) => ({
-            description: item.description,
-            frequency: item.frequency,
-            quantity: item.quantity,
-            calculation_type: item.calculation_type || "na",
-            sqft: item.sqft ?? "N/A",
-            hour: item.hour ?? "",
-            unit_price: item.unit_price,
-            amount: item.amount,
-          })) || [],
-      });
-
-      setUserId(quote.user_id);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Loads the request; an answer for an old id is ignored.
   useEffect(() => {
-    loadQuote();
+    let current = true;
+    getServiceRequest(id)
+      .then((res) => {
+        if (!current) return;
+        const quote = dataOf(res);
+        setFormData({
+          user_id: quote.user_id,
+          ref: quote.ref_no,
+          reference_type: quote.ref_type,
+          dueDate: fromApiDate(quote.due_date),
+          toCompany: quote.to_company_name,
+          address1: quote.address_1,
+          address2: quote.address_2,
+          totalAmount: quote.total_due,
+          date: fromApiDate(quote.date),
+          signature: quote.signature,
+          service_days: quote.service_days,
+
+          items:
+            quote.items?.map((item) => ({
+              description: item.description,
+              frequency: item.frequency,
+              quantity: item.quantity,
+              calculation_type: item.calculation_type || "na",
+              sqft: item.sqft ?? "N/A",
+              hour: item.hour ?? "",
+              unit_price: item.unit_price,
+              amount: item.amount,
+            })) || [],
+        });
+        setClient(quote.client || null);
+      })
+      .catch((error) => {
+        if (current) message.error(errorMessage(error, "Couldn't load the service request"));
+      })
+      .finally(() => {
+        if (current) setIsLoading(false);
+      });
+    return () => {
+      current = false;
+    };
   }, [id]);
 
   useEffect(() => {
-    if (!userId) return;
-
-    GetUserById(userId)
-      .then((res) => {
-        const user = res.data.data;
-
-        setUserData(user);
-
-        const primaryAddress = user.user_address?.[0];
-
-        setFormData((prev) => ({
-          ...prev,
-          toCompany: user.user_profile?.name || "",
-          address1: primaryAddress
-            ? `${primaryAddress.address}, ${primaryAddress.user_city?.name}`
-            : "",
-          address2: primaryAddress
-            ? `${primaryAddress.user_state?.name}, ${primaryAddress.user_country?.name}`
-            : "",
-        }));
-      })
-      .catch(() => {
-        message.error("Failed to load user");
-      });
-  }, [userId]);
-
-  useEffect(() => {
-    GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
+    listServiceNames()
+      .then((res) => setServices(itemsOf(res)))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the services")));
   }, []);
 
   const formatAmount = (value) => {
@@ -237,8 +212,6 @@ const EditServiceRequestPage = () => {
 
     try {
       const payload = {
-        request_id: Number(id),
-
         user_id: formData.user_id,
 
         ref_type: formData.reference_type,
@@ -263,17 +236,11 @@ const EditServiceRequestPage = () => {
         })),
       };
 
-      const response = await UpdateServiceRequest(payload);
-
-      if (response.status === 200) {
-        message.success("Service request sent for signature successfully.");
-
-        setTimeout(() => navigate("/service-request"), 1000);
-      } else {
-        message.error("Something went wrong");
-      }
+      await updateServiceRequest(id, payload);
+      message.success("Service request saved; a new copy went to the client for signature");
+      navigate(returnPath);
     } catch (error) {
-      message.error("Error: " + error.message);
+      message.error(errorMessage(error, "Couldn't save the service request"));
     } finally {
       setIsLoading(false);
     }
@@ -316,11 +283,7 @@ const EditServiceRequestPage = () => {
                 "description",
                 selectedService?.name || "",
               );
-              handleItemChange(
-                index,
-                "unit_price",
-                selectedService?.price || "",
-              );
+
             }}
             allowClear
           >
@@ -497,7 +460,7 @@ const EditServiceRequestPage = () => {
           <div>
             <strong>CLIENT</strong>
 
-            <Input value={userData?.user_profile?.name || ""} readOnly />
+            <Input value={client?.name || client?.email || ""} readOnly />
           </div>
           <div>
             <strong>

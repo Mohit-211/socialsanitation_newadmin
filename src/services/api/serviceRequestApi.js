@@ -1,62 +1,27 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-export const GetAllUserName = async () => {
-  const res = await httpClient.get(API_BASE_URL + "admin/user/getAllUserName");
-  return res;
-};
+// Service requests: extra work for a client, emailed as a PDF and sent for
+// signature by DocuSign. Share and Unshare live in documentApi.js.
 
-export const CreateServiceRequest = async (formData) => {
-  try {
-    const res = await httpClient.post(
-      API_BASE_URL + "admin/user/submitServiceRequest",
-      formData,
-    );
+/** Query: page, limit, month, user_id, search (reference or company). */
+export const listServiceRequests = (params) => httpClient.get("/service-requests", { params });
 
-    return res;
-  } catch (error) {
-    console.error("Error creating service request:", error);
-    throw error;
-  }
-};
+/** One request, with items, client and signature. */
+export const getServiceRequest = (id) => httpClient.get(`/service-requests/${id}`);
 
-export const GetAllServiceRequests = async (month = null) => {
-  try {
-    const res = await httpClient.get(
-      API_BASE_URL + `admin/user/getAllServiceRequests?month=${month}`,
-    );
+/**
+ * user_id and items are required, with ref_no or ref_type; also service_days,
+ * due_date, date, to_company_name, address_1, address_2 and signature. Each
+ * line is worked out from quantity and unit_price.
+ */
+export const createServiceRequest = (request) => httpClient.post("/service-requests", request);
 
-    return res;
-  } catch (error) {
-    console.error("Error fetching service requests:", error);
-    throw error;
-  }
-};
+/** The whole request again (ref_no required): replaces the lines and sends it for signature again. */
+export const updateServiceRequest = (id, request) => httpClient.put(`/service-requests/${id}`, request);
 
-export const GetNextServiceRequestRef = async (ref_type) => {
-  return httpClient.get(API_BASE_URL + `admin/user/getNextServiceRequestRef`, {
-    params: { ref_type },
-  });
-};
+/** Needs records.delete. */
+export const deleteServiceRequest = (id) => httpClient.delete(`/service-requests/${id}`);
 
-export const DeleteServiceRequest = async (id) => {
-  return httpClient.delete(`${API_BASE_URL}admin/user/deleteServiceRequest/${id}`);
-};
-
-export const GetServiceRequestById = async (id) => {
-  return httpClient.get(`${API_BASE_URL}admin/user/getServiceRequestById/${id}`);
-};
-
-export const UpdateServiceRequest = async (formData) => {
-  try {
-    const res = await httpClient.put(
-      API_BASE_URL + "admin/user/editServiceRequest",
-      formData,
-    );
-
-    return res;
-  } catch (error) {
-    console.error("Error creating service request:", error);
-    throw error;
-  }
-};
+/** data: ref_no and sequence. */
+export const getNextServiceRequestRef = (refType) =>
+  httpClient.get("/service-requests/next-ref", { params: { ref_type: refType } });

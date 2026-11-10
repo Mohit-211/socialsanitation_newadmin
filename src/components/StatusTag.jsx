@@ -1,5 +1,5 @@
 import { Tag } from "antd";
-import { statusTag } from "../clientFlow";
+import { statusTag } from "@/utils/format";
 
 /** A status code as a colored tag, in words people read. */
 const StatusTag = ({ code }) => {

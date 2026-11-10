@@ -7,7 +7,7 @@ import { deleteScopeOfWork, getScopeOfWorkPdf } from "@/services/api/scopeApi";
 import { dataOf, errorMessage } from "@/services/apiResult";
 import { PERMISSION, useCan, useIsSuperAdmin } from "@/lib/session";
 import { NEW_DOCUMENT_PATHS } from "../clientFlow";
-import ShareToggle from "./ShareToggle";
+import ShareToggle from "@/components/ShareToggle";
 import { dateColumn, sharedColumn, titleColumn } from "./flowColumns";
 
 // Step 2: scopes of work. Each is made from a sheet (or the whole master

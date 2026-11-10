@@ -13,6 +13,9 @@ import "./NearestEmployeesModal.scss";
 // zooms to it.
 const CLUSTER_MILES = 2;
 
+// One array for the loader: a new one each render makes it reload the script.
+const MAP_LIBRARIES = ["maps"];
+
 // Google Maps needs real colors, so the tokens are read at run time.
 const markerColors = () => ({
   place: cssVar("--color-primary-strong"),
@@ -35,7 +38,7 @@ const NearestEmployeesModal = ({ open, subtitle, load, onClose }) => {
   const mapRef = useRef(null);
   const [selectedId, setSelectedId] = useState(null);
   const colors = useMemo(() => markerColors(), []);
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY, libraries: ["maps"] });
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY, libraries: MAP_LIBRARIES });
 
   const { data, loading } = useApiQuery(() => load().then(dataOf), [open], {
     skip: !open,

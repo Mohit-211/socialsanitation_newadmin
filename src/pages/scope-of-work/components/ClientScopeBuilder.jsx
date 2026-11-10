@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button, Select, Switch, message, Spin, Empty, Modal, Tooltip } from "antd";
 import {
-  ChartColumn,
   ChevronDown,
   ChevronUp,
   CircleCheck,
@@ -28,7 +27,6 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import "@/styles/clientChart.scss";
 import "@/styles/scopeBuilder.scss";
 import {
   addScopeItem,
@@ -43,6 +41,7 @@ import {
   updateScopeSection,
 } from "@/services/api/scopeApi";
 import { getSheet } from "@/services/api/sheetApi";
+import SheetAreasChart from "@/components/SheetAreasChart";
 import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { PERMISSION, useCan } from "@/lib/session";
@@ -129,7 +128,6 @@ const ClientScopeBuilder = ({ scopeId }) => {
   const [masterSectionId, setMasterSectionId] = useState();
   const [addingMaster, setAddingMaster] = useState(false);
 
-  const [chartCollapsed, setChartCollapsed] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
 
   // Requires the pointer to move 5px before a drag starts — this is what
@@ -536,102 +534,16 @@ const ClientScopeBuilder = ({ scopeId }) => {
         </div>
       </div>
 
-      <div className="usb-chart-card" style={{ marginBottom: "30px" }}>
-        <button
-          className="usb-chart-card__toggle"
-          onClick={() => setChartCollapsed((v) => !v)}
-        >
-          <ChartColumn size={16} className="usb-chart-card__toggle-icon" />
-          <span className="usb-chart-card__toggle-title">
-            Initial Client Chart
-          </span>
-          <span className="usb-chart-card__toggle-meta">
-            {chartCollapsed
-              ? `${clientChecklist.length} row${clientChecklist.length !== 1 ? "s" : ""} · click to expand`
-              : "click to collapse"}
-          </span>
-          {chartCollapsed ? (
-            <ChevronDown size={16} className="usb-chart-card__chevron" />
-          ) : (
-            <ChevronUp size={16} className="usb-chart-card__chevron" />
-          )}
-        </button>
-
-        {!chartCollapsed && (
-          <div className="usb-chart-card__body">
-            {loadingChecklist ? (
-              <p className="usb-chart-card__loading">Loading the client sheet…</p>
-            ) : clientChecklist.length > 0 ? (
-              <div className="usb-table-wrap">
-                <table className="usb-table">
-                  <thead>
-                    <tr>
-                      <th>Service Area</th>
-                      {clientType === "commercial" ? (
-                        <>
-                          <th>
-                            # of Trash Cans
-                            <br />
-                            <small>or Stalls</small>
-                          </th>
-                          <th>
-                            # of Desks
-                            <br />
-                            <small>or Sinks</small>
-                          </th>
-                          <th>
-                            # of Rooms
-                            <br />
-                            <small>or Restrooms</small>
-                          </th>
-                        </>
-                      ) : (
-                        <th>
-                          # of Desks / Trash Cans
-                          <span className="usb-th-note">
-                            (Big Buildings) or # of Restrooms
-                          </span>
-                        </th>
-                      )}
-                      <th>
-                        Flooring Type
-                        <span className="usb-th-note">
-                          Carpet, Hard Floor, VCT
-                        </span>
-                      </th>
-                      <th>Special Requests / Hot Spots</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientChecklist.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.service_area}</td>
-                        {clientType === "commercial" ? (
-                          <>
-                            <td>{item.stalls || 0}</td>
-                            <td>{item.sinks || 0}</td>
-                            <td>{item.restrooms || 0}</td>
-                          </>
-                        ) : (
-                          <td>{item.num_desks_trash_cans || 0}</td>
-                        )}
-                        <td>{item.flooring_type || "—"}</td>
-                        <td>{item.special_requests || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="usb-chart-card__empty">
-                {scope?.client_sheet_id
-                  ? "This sheet has no areas"
-                  : "This scope was made from the whole master list, not a sheet"}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+      <SheetAreasChart
+        areas={clientChecklist}
+        clientType={clientType}
+        loading={loadingChecklist}
+        emptyText={
+          scope?.client_sheet_id
+            ? "This sheet has no areas"
+            : "This scope was made from the whole master list, not a sheet"
+        }
+      />
 
       {sections.length === 0 && (
         <div className="usb-empty usb-empty--inner">

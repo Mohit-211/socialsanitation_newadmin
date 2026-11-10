@@ -354,6 +354,20 @@ samp {
   }
 }
 
+/* A link-styled button in a table cell, such as a name that opens its record. */
+.ant-btn.table-link {
+  height: auto;
+  padding: 0;
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  white-space: normal;
+}
+
+/* A card section inside a long form, such as a document editor. */
+.ant-card.form-card {
+  margin-bottom: var(--space-5);
+}
+
 /* Form fields side by side, one column on phones:
    <div className="form-grid form-grid--2">…Form.Items…</div> */
 .form-grid {

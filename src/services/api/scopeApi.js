@@ -92,26 +92,3 @@ export const getScope = (clientType = "commercial") =>
 
 /** @deprecated A client has many scopes now: use listClientScopes and getScopeOfWork. */
 export const GetUserScopeView = (userId) => httpClient.get(`${API_BASE_URL}admin/auth/user-scope-view/${userId}`);
-
-/** @deprecated */
-export const CreateEstimateSection = (estimateId, data) =>
-  httpClient.post(`${API_BASE_URL}admin/auth/estimate-section/${estimateId}`, data);
-
-/** @deprecated */
-export const UpdateEstimateSection = (id, data) =>
-  httpClient.put(`${API_BASE_URL}admin/auth/estimate-section/${id}`, data);
-
-/** @deprecated */
-export const DeleteEstimateSection = (id, data) =>
-  httpClient.delete(`${API_BASE_URL}admin/auth/estimate-section/${id}`, { data });
-
-/** @deprecated */
-export const CreateEstimateItem = (sectionId, data) =>
-  httpClient.post(`${API_BASE_URL}admin/auth/estimate-item/${sectionId}`, data);
-
-/** @deprecated */
-export const UpdateEstimateItem = (id, data) => httpClient.put(`${API_BASE_URL}admin/auth/estimate-item/${id}`, data);
-
-/** @deprecated */
-export const DeleteEstimateItem = (id, data) =>
-  httpClient.delete(`${API_BASE_URL}admin/auth/estimate-item/${id}`, { data });

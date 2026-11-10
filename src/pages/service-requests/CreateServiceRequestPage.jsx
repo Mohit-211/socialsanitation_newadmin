@@ -13,19 +13,20 @@ import {
   Popconfirm,
 } from "antd";
 import { DatePicker } from "antd";
-import { GetAllServiceNameByAdmin } from "@/services/api/bookingApi";
 import SignatureField from "@/components/SignatureField";
-import {
-  CreateServiceRequest,
-  GetAllUserName,
-  GetNextServiceRequestRef,
-} from "@/services/api/serviceRequestApi";
+import { createServiceRequest, getNextServiceRequestRef } from "@/services/api/serviceRequestApi";
+import { listServiceNames } from "@/services/api/serviceApi";
+import { listClientPicks } from "@/services/api/clientApi";
+import { dataOf, errorMessage, itemsOf } from "@/services/apiResult";
+import { useClientFromQuery } from "@/pages/clients/useClientFromQuery";
 import { COMPANY_LOGO_URL } from "@/config/brand";
 
 const { Option } = Select;
 
 const CreateServiceRequestPage = () => {
   const navigate = useNavigate();
+  // Opened from a client's page, the client is already chosen and saving goes back there.
+  const { clientId, fromClientPage, returnPath } = useClientFromQuery("service-requests", "/service-request");
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState([]);
   const [formData, setFormData] = useState({
@@ -58,16 +59,8 @@ const CreateServiceRequestPage = () => {
   const [quoteStatus, setQuoteStatus] = useState("DRAFT"); // DRAFT | SAVED
   const [isRefManuallyEdited, setIsRefManuallyEdited] = useState(false);
 
-  useEffect(() => {
-    GetAllServiceNameByAdmin().then((res) => setServices(res.data.data || []));
-
-    GetAllUserName().then((res) => {
-      setUsers(res.data.data || []);
-    });
-  }, []);
-
-  const handleUserChange = (userId) => {
-    const user = users.find((u) => u.id === userId);
+  const handleUserChange = (userId, list = users) => {
+    const user = list.find((u) => u.id === userId);
 
     if (!user) return;
 
@@ -85,6 +78,22 @@ const CreateServiceRequestPage = () => {
       address2: `${address.state || ""}${address.country ? ", " + address.country : ""}`,
     }));
   };
+
+  useEffect(() => {
+    listServiceNames()
+      .then((res) => setServices(itemsOf(res)))
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the services")));
+
+    listClientPicks()
+      .then((res) => {
+        const clients = itemsOf(res);
+        setUsers(clients);
+        if (clientId) handleUserChange(clientId, clients);
+      })
+      .catch((error) => message.error(errorMessage(error, "Couldn't load the clients")));
+    // The client from the address is read once, when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...formData.items];
@@ -211,18 +220,12 @@ const CreateServiceRequestPage = () => {
         })),
       };
 
-      const response = await CreateServiceRequest(payload);
-
-      if (response.status === 200) {
-        setQuoteStatus("SAVED");
-        message.success("Service request sent for signature successfully.");
-
-        setTimeout(() => navigate("/service-request"), 1000);
-      } else {
-        message.error("Something went wrong");
-      }
+      await createServiceRequest(payload);
+      setQuoteStatus("SAVED");
+      message.success("Service request sent to the client for signature");
+      navigate(returnPath);
     } catch (error) {
-      message.error("Error: " + error.message);
+      message.error(errorMessage(error, "Couldn't send the service request"));
     } finally {
       setIsLoading(false);
     }
@@ -265,11 +268,6 @@ const CreateServiceRequestPage = () => {
                 index,
                 "description",
                 selectedService?.name || "",
-              );
-              handleItemChange(
-                index,
-                "unit_price",
-                selectedService?.price || "",
               );
             }}
             allowClear
@@ -409,11 +407,11 @@ const CreateServiceRequestPage = () => {
 
                 if (!formData.ref || !isRefManuallyEdited) {
                   try {
-                    const res = await GetNextServiceRequestRef(value);
+                    const res = await getNextServiceRequestRef(value);
 
                     setFormData((prev) => ({
                       ...prev,
-                      ref: res.data.data.ref_no,
+                      ref: dataOf(res)?.ref_no || prev.ref,
                     }));
 
                     setIsRefManuallyEdited(false);
@@ -507,7 +505,9 @@ const CreateServiceRequestPage = () => {
               placeholder="Select Client"
               style={{ width: "100%", marginBottom: 10 }}
               optionFilterProp="children"
-              onChange={handleUserChange}
+              value={formData.user_id}
+              disabled={fromClientPage}
+              onChange={(value) => handleUserChange(value)}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
               }

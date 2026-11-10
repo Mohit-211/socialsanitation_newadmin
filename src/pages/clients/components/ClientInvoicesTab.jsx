@@ -6,8 +6,9 @@ import { deleteInvoice, markInvoicePaid, remindInvoice, sendInvoice } from "@/se
 import { errorMessage } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
 import { formatDate, formatDateTime } from "@/utils/datetime";
-import { EDIT_DOCUMENT_PATHS, NEW_DOCUMENT_PATHS, formatMoney } from "../clientFlow";
-import StatusTag from "./StatusTag";
+import { NEW_DOCUMENT_PATHS, editPathFromClient } from "../clientFlow";
+import { formatMoney } from "@/utils/format";
+import StatusTag from "@/components/StatusTag";
 
 const OPEN_STATES = new Set(["sent", "deposit_paid", "overdue"]);
 
@@ -71,7 +72,7 @@ const ClientInvoicesTab = ({ clientId, flow, onChanged }) => {
       title: "Invoice",
       key: "ref",
       render: (_, invoice) => (
-        <Button type="link" className="client-flow__link" onClick={() => navigate(EDIT_DOCUMENT_PATHS.invoice(invoice.id))}>
+        <Button type="link" className="client-flow__link" onClick={() => navigate(editPathFromClient("invoice", invoice.id, clientId))}>
           {invoice.custom_ref_no || invoice.ref_no || `Invoice ${invoice.id}`}
         </Button>
       ),
@@ -99,7 +100,7 @@ const ClientInvoicesTab = ({ clientId, flow, onChanged }) => {
       width: 200,
       render: (_, invoice) => (
         <Space size={4}>
-          <IconAction icon={Pencil} title="Open" onClick={() => navigate(EDIT_DOCUMENT_PATHS.invoice(invoice.id))} />
+          <IconAction icon={Pencil} title="Open" onClick={() => navigate(editPathFromClient("invoice", invoice.id, clientId))} />
           {invoice.pdf_url && (
             <IconAction icon={FileText} title="PDF" onClick={() => window.open(invoice.pdf_url, "_blank", "noopener")} />
           )}

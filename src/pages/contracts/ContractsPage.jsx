@@ -1,187 +1,118 @@
-import { useEffect, useState } from "react";
-import { Button, message, Modal, Space, Table } from "antd";
+import { Button, Input, Modal, Space, Table, message } from "antd";
 import { useNavigate } from "react-router";
-import { Plus } from "lucide-react";
-import dayjs from "@/lib/dayjs";
+import { FileCheck, FileText, Pencil, Plus, ReceiptText, Search, Trash2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { DeleteContractAgreement, GetAllContractAgreements } from "@/services/api/contractApi";
-import { API_BASE_URL } from "@/config/env";
+import IconAction from "@/components/IconAction";
+import ShareToggle from "@/components/ShareToggle";
+import StatusTag from "@/components/StatusTag";
+import { deleteContract, listContracts } from "@/services/api/contractApi";
+import { errorMessage } from "@/services/apiResult";
+import { usePagedList } from "@/hooks/usePagedList";
+import { PERMISSION, useCan } from "@/lib/session";
+import { NEW_DOCUMENT_PATHS } from "@/pages/clients/clientFlow";
+import { formatDate } from "@/utils/datetime";
+import { formatMoney } from "@/utils/format";
 
+const open = (url) => window.open(url, "_blank", "noopener");
+
+// Every contract agreement, newest first, searchable by company.
 const ContractsPage = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+  const list = usePagedList((query) => listContracts(query), { errorText: "Couldn't load the contracts" });
 
-  const [tableParams, setTableParams] = useState({
-    pagination: {
-      current: 1,
-      pageSize: 100,
-    },
-    sortField: null,
-    sortOrder: null,
-  });
-
-  const handleDelete = (id) => {
+  const confirmDelete = (contract) =>
     Modal.confirm({
-      title: "Delete Contract",
-      content: "Are you sure you want to delete this Contract Agreement?",
+      title: `Delete the contract for ${contract.client_company_name}?`,
+      content: "Its payment link closes. This can't be undone.",
+      okText: "Delete",
+      okType: "danger",
       onOk: async () => {
-        await DeleteContractAgreement(id);
-        message.success("Contract Agreement deleted");
-        getData();
+        try {
+          await deleteContract(contract.id);
+          message.success("Contract deleted");
+          list.reload();
+        } catch (error) {
+          message.error(errorMessage(error, "Couldn't delete the contract"));
+        }
       },
     });
-  };
 
   const columns = [
     {
-      title: "S.No.",
-      dataIndex: "index",
-      sorter: (a, b) => a.index - b.index,
-      width: "10%",
+      title: "Company",
+      dataIndex: "client_company_name",
+      render: (company, contract) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/edit-contract-agreement/${contract.id}`)}>
+          {company || `Contract ${contract.id}`}
+        </Button>
+      ),
     },
     {
-      title: "Client Name",
-      width: "20%",
-      render: (_, record) =>
-        record.client_name || record.client_company_name || "-",
+      title: "Client",
+      key: "client",
+      render: (_, contract) => (
+        <Button type="link" className="table-link" onClick={() => navigate(`/viewUser/${contract.user_id}?tab=contracts`)}>
+          {contract.client_name || contract.client_email || "Client"}
+        </Button>
+      ),
     },
-
+    { title: "Monthly Price", dataIndex: "total_monthly_price", align: "right", render: formatMoney },
+    { title: "Contract Date", dataIndex: "contract_date", render: (date) => formatDate(date) },
+    { title: "Status", dataIndex: "status", render: (status) => <StatusTag code={status} /> },
+    { title: "Sent", dataIndex: "sent_at", render: (date) => formatDate(date) },
+    { title: "Signed", dataIndex: "signed_at", render: (date) => formatDate(date) },
     {
-      title: "File",
-      width: "20%",
-      render: (_, record) => {
-        let url = "";
-
-        if (record.status === "signed" && record.signed_file_name) {
-          url = `${API_BASE_URL}docs/${record.signed_file_name}`;
-        } else if (record.file_url) {
-          url = record.file_url;
-        }
-
-        if (!url) return "-";
-
-        return (
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            View PDF
-          </a>
-        );
-      },
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      width: "20%",
-      render: (status) => {
-        if (status === "signed") return "Signed";
-        if (status === "pending_signature") return "Pending Signature";
-        return status;
-      },
-    },
-
-    {
-      title: "Created Date",
-      dataIndex: "created_at",
-      width: "20%",
-      render: (date) => dayjs(date).format("MM/DD/YYYY HH:mm A"),
-    },
-    {
-      title: "Action",
-      width: "20%",
-      render: (_, record) => {
-        return (
-          <Space size="middle">
-            {record.status !== "signed" && (
-              <>
-                <Button
-                  onClick={() =>
-                    navigate(`/edit-contract-agreement/${record.id}`)
-                  }
-                >
-                  Edit
-                </Button>
-
-              </>
-            )}
-
-            <Button danger onClick={() => handleDelete(record.id)}>
-              Delete
-            </Button>
-          </Space>
-        );
-      },
+      title: "Actions",
+      key: "actions",
+      width: 230,
+      render: (_, contract) => (
+        <Space size={4}>
+          <IconAction icon={Pencil} title="Open" onClick={() => navigate(`/edit-contract-agreement/${contract.id}`)} />
+          {contract.file_url && <IconAction icon={FileText} title="PDF" onClick={() => open(contract.file_url)} />}
+          {contract.signed_file_url && (
+            <IconAction icon={FileCheck} title="Signed copy" onClick={() => open(contract.signed_file_url)} />
+          )}
+          <ShareToggle kind="contract" id={contract.id} sharedAt={contract.shared_at} onChanged={list.reload} />
+          <IconAction
+            icon={ReceiptText}
+            title="Make an invoice for this contract"
+            onClick={() => navigate(NEW_DOCUMENT_PATHS.invoice(contract.user_id, { contractId: contract.id }))}
+          />
+          {canDelete && <IconAction icon={Trash2} title="Delete" danger onClick={() => confirmDelete(contract)} />}
+        </Space>
+      ),
     },
   ];
-
-  // Get all users
-  const getData = async () => {
-    try {
-      setLoading(true);
-      let result = await GetAllContractAgreements();
-      // Adding index for serial number
-      const newData = result.data.data.map((item, index) => ({
-        ...item,
-        index: index + 1,
-      }));
-      setData(newData);
-    } catch (e) {
-      console.error(e);
-      if (e.response && e.response.status === 403) {
-        navigate("/error401");
-        console.error("Access denied. You do not have the required permissions.");
-      } else {
-        console.error("Error loading data. Please try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getData({
-      page: tableParams.pagination.current,
-      pageSize: tableParams.pagination.pageSize,
-      sortField: tableParams.sortField,
-      sortOrder: tableParams.sortOrder,
-    });
-  }, [tableParams]);
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setTableParams({
-      pagination,
-      filters,
-      sortField: sorter.field,
-      sortOrder: sorter.order,
-    });
-  };
 
   return (
     <div>
       <PageHeader
-        title="CONTRACT AGREEMENT MANAGEMENT"
-        subtitle="View & manage contract agreements"
+        title="CONTRACTS"
+        subtitle="Contract agreements sent to clients for signature"
         actions={
-          <Button
-            type="primary"
-            size="large"
-            icon={<Plus size={16} />}
-            onClick={() => navigate("/create-contract-agreement")}
-          >
-            Generate Contract
-          </Button>
+          <>
+            <Input
+              allowClear
+              size="large"
+              prefix={<Search size={16} className="text-subtle" />}
+              placeholder="Search by company"
+              style={{ width: 240 }}
+              value={list.searchText}
+              onChange={(event) => list.setSearchText(event.target.value)}
+            />
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus size={16} />}
+              onClick={() => navigate("/create-contract-agreement")}
+            >
+              New Contract
+            </Button>
+          </>
         }
       />
-
-      <Table
-        columns={columns}
-        rowKey={(record) => record.id}
-        dataSource={data}
-        pagination={tableParams.pagination}
-        loading={loading}
-        onChange={handleTableChange}
-        bordered
-        size="middle"
-      />
+      <Table rowKey="id" columns={columns} scroll={{ x: "max-content" }} size="middle" {...list.tableProps} />
     </div>
   );
 };

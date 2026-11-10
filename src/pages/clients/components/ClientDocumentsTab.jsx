@@ -6,8 +6,8 @@ import { deleteDocument, DOCUMENT_KINDS } from "@/services/api/documentApi";
 import { createInvoice } from "@/services/api/invoiceApi";
 import { dataOf, errorMessage } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
-import { EDIT_DOCUMENT_PATHS, NEW_DOCUMENT_PATHS } from "../clientFlow";
-import ShareToggle from "./ShareToggle";
+import { EDIT_DOCUMENT_PATHS, NEW_DOCUMENT_PATHS, editPathFromClient } from "../clientFlow";
+import ShareToggle from "@/components/ShareToggle";
 import { dateColumn, moneyColumn, sharedColumn, statusColumn, titleColumn } from "./flowColumns";
 
 // One kind of sales document on the client page: its list, with Edit, Share,
@@ -62,7 +62,7 @@ const ClientDocumentsTab = ({ tab, clientId, flow, onChanged }) => {
   const editPath = kind && EDIT_DOCUMENT_PATHS[kind];
   const newPath = NEW_DOCUMENT_PATHS[config.newPath || kind];
 
-  const open = editPath ? (row) => navigate(editPath(row.id)) : undefined;
+  const open = editPath ? (row) => navigate(editPathFromClient(kind, row.id, clientId)) : undefined;
 
   const invoiceFromQuote = async (row) => {
     try {

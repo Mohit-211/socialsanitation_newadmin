@@ -23,7 +23,9 @@ const PageHeader = ({ title, subtitle, actions, card = true, className = "" }) =
     <header className={classes}>
       <div className="page-header__text">
         <h1 className="page-title">{title}</h1>
-        {subtitle ? <p className="page-sub-title">{subtitle}</p> : null}
+        {/* A text subtitle is a paragraph; tags or buttons can't sit inside one. */}
+        {subtitle && typeof subtitle === "string" ? <p className="page-sub-title">{subtitle}</p> : null}
+        {subtitle && typeof subtitle !== "string" ? <div className="page-sub-title">{subtitle}</div> : null}
       </div>
       {actions ? <div className="page-header__actions">{actions}</div> : null}
     </header>

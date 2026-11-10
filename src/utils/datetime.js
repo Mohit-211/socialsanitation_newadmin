@@ -11,6 +11,10 @@ export const API_DATE_FORMAT = "YYYY-MM-DD";
 export const API_TIME_FORMAT = "HH:mm";
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+// Some older records keep a date as US text, such as a contract's date.
+const US_DATE = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+// A date-only field stored as a timestamp: midnight UTC, which means that calendar day.
+const MIDNIGHT_UTC = /^\d{4}-\d{2}-\d{2}T00:00:00(\.0+)?Z$/;
 const TIME_ONLY = /^\d{1,2}:\d{2}(:\d{2})?$/;
 
 /**
@@ -22,8 +26,10 @@ export function formatDate(value, fallback = "—") {
   if (typeof value === "string" && DATE_ONLY.test(value)) {
     return dayjs(value, API_DATE_FORMAT).format(DATE_FORMAT);
   }
-  // A midnight-UTC timestamp for a date-only field still means that calendar day.
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T00:00:00(\.0+)?Z$/.test(value)) {
+  if (typeof value === "string" && US_DATE.test(value)) {
+    return dayjs(value, "M/D/YYYY").format(DATE_FORMAT);
+  }
+  if (typeof value === "string" && MIDNIGHT_UTC.test(value)) {
     return dayjs(value.slice(0, 10), API_DATE_FORMAT).format(DATE_FORMAT);
   }
   const parsed = dayjs(value);
@@ -66,10 +72,23 @@ export function toApiTime(value) {
   return parsed.isValid() ? parsed.format(API_TIME_FORMAT) : null;
 }
 
-/** A dayjs value for a date picker from an API date (YYYY-MM-DD); null when empty. */
+/**
+ * A dayjs value for a date picker from a date the API sent: YYYY-MM-DD, US
+ * text (11/05/2026), or a timestamp. None of them shift with the browser's
+ * time zone. Null when empty or unreadable.
+ */
 export function fromApiDate(value) {
   if (!value) return null;
-  const parsed = dayjs(String(value).slice(0, 10), API_DATE_FORMAT);
+  const text = String(value);
+  let parsed;
+  if (US_DATE.test(text)) parsed = dayjs(text, "M/D/YYYY");
+  else if (DATE_ONLY.test(text.slice(0, 10)) && (text.length === 10 || MIDNIGHT_UTC.test(text))) {
+    parsed = dayjs(text.slice(0, 10), API_DATE_FORMAT);
+  } else {
+    // A real moment: the calendar day it is in Eastern time.
+    const moment = dayjs(text);
+    parsed = moment.isValid() ? dayjs(moment.tz(BUSINESS_TIME_ZONE).format(API_DATE_FORMAT), API_DATE_FORMAT) : moment;
+  }
   return parsed.isValid() ? parsed : null;
 }
 

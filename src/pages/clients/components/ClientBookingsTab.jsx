@@ -4,7 +4,7 @@ import { Eye, Plus } from "lucide-react";
 import IconAction from "@/components/IconAction";
 import { formatDate, formatTime } from "@/utils/datetime";
 import { NEW_DOCUMENT_PATHS } from "../clientFlow";
-import StatusTag from "./StatusTag";
+import StatusTag from "@/components/StatusTag";
 
 const timeRange = (start, end) => (start ? `${formatTime(start)}${end ? ` – ${formatTime(end)}` : ""}` : "—");
 const serviceNames = (services) => (services || []).map((service) => service.name).join(", ") || "—";

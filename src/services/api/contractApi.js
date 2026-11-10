@@ -1,31 +1,26 @@
 import httpClient from "@/services/httpClient";
-import { API_BASE_URL } from "@/config/env";
 
-// contarct agreement api
+// Contract agreements. Each makes a Square link and a PDF and goes to the
+// client for signature by DocuSign. Share and Unshare live in documentApi.js.
 
-export const GetAllContractAgreements = async () => {
-  const res = await httpClient.get(API_BASE_URL + `admin/auth/getAllContractAgreements`);
-  return res;
-};
+/** Query: page, limit, user_id, status, search (company). */
+export const listContracts = (params) => httpClient.get("/contracts", { params });
 
-export const GetContractAgreementById = async (id) => {
-  return httpClient.get(API_BASE_URL + `admin/auth/contract-agreement/${id}`);
-};
+/** One contract, with its signature. */
+export const getContract = (id) => httpClient.get(`/contracts/${id}`);
 
-export const GenerateContractAgreement = async (formData) => {
-  return await httpClient.post(
-    API_BASE_URL + `admin/auth/generate-contract-agreement`,
-    formData,
-  );
-};
+/**
+ * user_id, client_company_name, client_legal_name and total_monthly_price
+ * (more than 0) are required; also service_address, client_representative,
+ * contract_date and signature.
+ */
+export const createContract = (contract) => httpClient.post("/contracts", contract);
 
-export const UpdateContractAgreement = async (formData) => {
-  return await httpClient.put(
-    API_BASE_URL + `admin/auth/updateContractAgreement`,
-    formData,
-  );
-};
+/** The whole contract again, without user_id: a new link, PDF and envelope. */
+export const updateContract = (id, contract) => httpClient.put(`/contracts/${id}`, contract);
 
-export const DeleteContractAgreement = async (id) => {
-  return httpClient.delete(API_BASE_URL + `admin/auth/deleteContractAgreement/${id}`);
-};
+/** Needs records.delete. */
+export const deleteContract = (id) => httpClient.delete(`/contracts/${id}`);
+
+/** DocuSign emails the client again; data.sent_to says who. */
+export const resendContract = (id) => httpClient.post(`/contracts/${id}/resend`);

@@ -6,7 +6,7 @@ import { ENQUIRY_STATUSES, getEnquiry, setEnquiryStatus } from "@/services/api/e
 import { dataOf, errorMessage } from "@/services/apiResult";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { formatDate, formatDateTime } from "@/utils/datetime";
-import { formatMoney } from "../clientFlow";
+import { formatMoney } from "@/utils/format";
 
 // Enquiries the client sent from the app. The office calls them back and
 // marks each one contacted, then closed; the client sees the status.

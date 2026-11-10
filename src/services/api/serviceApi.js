@@ -1,6 +1,15 @@
 import httpClient from "@/services/httpClient";
 import { API_BASE_URL } from "@/config/env";
 
+// Services are a name and a short description (no price: prices are agreed
+// per client).
+
+/** data.items: id and name of every service, for pickers. */
+export const listServiceNames = () => httpClient.get("/service-names");
+
+// ---------------------------------------------------------------------------
+// Old /api/v1 calls, still used by the service screens until they move.
+
 export const GetServices = async (adminToken) => {
   try {
     const res = await httpClient.get(API_BASE_URL + "service/getAllServicesByAdmin", {

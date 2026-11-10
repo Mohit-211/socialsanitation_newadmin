@@ -1,7 +1,7 @@
 import { Button, Tag, Tooltip } from "antd";
 import { formatDate } from "@/utils/datetime";
-import { formatMoney } from "../clientFlow";
-import StatusTag from "./StatusTag";
+import { formatMoney } from "@/utils/format";
+import StatusTag from "@/components/StatusTag";
 
 // Table columns the client page's lists share.
 
