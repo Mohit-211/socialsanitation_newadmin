@@ -91,9 +91,12 @@
   margin-bottom: var(--space-3);
 }
 
-// Profile tab
+// Profile tab. The column is held to the tab's width: with an automatic
+// column, the account requests table (scrolling sideways) measured itself,
+// widened the column, measured again, and the page grew without end.
 .client-profile {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
