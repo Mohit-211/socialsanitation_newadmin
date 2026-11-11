@@ -1,0 +1,662 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+	Typography,
+	Spin,
+	Input,
+	Button,
+	Divider,
+	Avatar,
+	message,
+	Modal,
+	Tooltip,
+	Upload,
+	Empty,
+} from "antd";
+import {
+	ArrowLeft,
+	CircleX,
+	FileText,
+	Info,
+	Paperclip,
+	Pencil,
+	Send,
+	Smile,
+	Users,
+} from "lucide-react";
+import { ref as dbRef, onValue, query, orderByChild, get } from "firebase/database";
+import { useNavigate } from "react-router";
+import EmojiPicker from "emoji-picker-react";
+import {
+	deleteGroup,
+	listGroupParticipants,
+	listGroups,
+	renameGroup,
+	sendGroupMessage,
+} from "@/services/api/groupChatApi";
+import { errorMessage, itemsOf } from "@/services/apiResult";
+import { PERMISSION, useCan } from "@/lib/session";
+import { getProfile } from "@/services/api/authApi";
+import db from "@/lib/firebase";
+import { formatTime } from "@/utils/datetime";
+import { MAX_UPLOAD_MB, acceptOf, uploadKindOf, type UploadKind } from "@/utils/uploads";
+import type { Group, SessionUser, TeamParticipant } from "@/types";
+import "./GroupChatPage.scss";
+
+const { Text } = Typography;
+const { TextArea } = Input;
+
+const TEXTAREA_ID = "chat-message-textarea";
+const ACCEPTED_TYPES = acceptOf("image", "video", "pdf");
+const MAX_FILE_SIZE_MB: Record<UploadKind, number> = { image: 10, video: MAX_UPLOAD_MB, pdf: 20 };
+
+/** A file sent with a message through the API. */
+interface MessageFile {
+	url?: string;
+	fileName?: string;
+	type?: string;
+}
+
+/** A group message as Firebase keeps it. Older ones carry one file_url or image_url instead of attachments. */
+interface GroupMessage {
+	id: string;
+	sender?: string;
+	sender_name?: string | null;
+	message?: string | null;
+	timestamp?: number | null;
+	attachments?: Record<string, MessageFile> | null;
+	file_url?: string | null;
+	image_url?: string | null;
+	imageUrls?: string[] | null;
+	type?: string | null;
+	file_name?: string | null;
+	file_size?: number | null;
+}
+
+/** A group in the list, under the key the page keeps it by. */
+type GroupRow = Group & { groupId: string };
+
+const formatFileSize = (bytes: number | null | undefined) => {
+	if (!bytes) return "";
+	if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const initial = (name: string | null | undefined) => (name || "U")[0].toUpperCase();
+
+// Only what the API takes, by extension: .mp4 and .mov videos, not any video.
+const getFileKind = uploadKindOf;
+
+const isAllowedFile = (file: File) => {
+	const kind = getFileKind(file);
+	return kind !== null && file.size / (1024 * 1024) <= MAX_FILE_SIZE_MB[kind];
+};
+
+const focusTextArea = () =>
+	setTimeout(() => document.getElementById(TEXTAREA_ID)?.focus(), 0);
+
+const GroupChatPage = () => {
+	const navigate = useNavigate();
+	const [groups, setGroups] = useState<GroupRow[]>([]);
+	const [loadingGroups, setLoadingGroups] = useState(true);
+	const [selectedGroup, setSelectedGroup] = useState<GroupRow | null>(null);
+	const [messages, setMessages] = useState<GroupMessage[]>([]);
+	const [newMessage, setNewMessage] = useState("");
+	const [sending, setSending] = useState(false);
+	const [userData, setUserData] = useState<SessionUser | null>(null);
+	const [isEditingGroupName, setIsEditingGroupName] = useState(false);
+	const [editedGroupName, setEditedGroupName] = useState("");
+	const [isGroupInfoVisible, setIsGroupInfoVisible] = useState(false);
+	const [groupParticipants, setGroupParticipants] = useState<TeamParticipant[]>([]);
+	const [groupCreatedAt, setGroupCreatedAt] = useState<string | number | null>(null);
+	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+	const messagesRef = useRef<HTMLDivElement>(null);
+
+	const canDelete = useCan(PERMISSION.DELETE_RECORDS);
+	const groupId = selectedGroup?.groupId;
+	// Admins are users: their sender key is admin_<users.id> (older messages may say bdm_).
+	const senderKey = userData ? `admin_${userData.id}` : null;
+	const isMine = (sender: string | undefined) => userData !== null && (sender === senderKey || sender === `bdm_${userData.id}`);
+
+	// The admin's groups, each with its last message, from the API.
+	const fetchGroups = async () => {
+		try {
+			const res = await listGroups();
+			setGroups(itemsOf(res).map((group) => ({ ...group, groupId: group.id })));
+		} catch (error) {
+			message.error(errorMessage(error, "Couldn't load the groups"));
+		} finally {
+			setLoadingGroups(false);
+		}
+	};
+
+	// Load profile and groups once.
+	useEffect(() => {
+		getProfile()
+			.then((result) => setUserData(result.data?.data))
+			.catch((error) => console.error("Failed to fetch admin profile:", error));
+		// Async fetch: state is only set after the request resolves.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		fetchGroups();
+	}, []);
+
+	// Live messages for the open group. The cleanup detaches the Firebase
+	// listener when the group changes or the page unmounts — without it,
+	// listeners pile up and keep firing after leaving the page.
+	useEffect(() => {
+		if (!groupId) return undefined;
+		const messageQuery = query(
+			dbRef(db, `GroupChats/${groupId}/messages`),
+			orderByChild("timestamp")
+		);
+		const unsubscribe = onValue(messageQuery, (snapshot) => {
+			const data: Record<string, Omit<GroupMessage, "id">> = snapshot.val() || {};
+			setMessages(Object.entries(data).map(([id, msg]) => ({ id, ...msg })));
+		});
+		return unsubscribe;
+	}, [groupId]);
+
+	// Scroll only the message pane (scrollIntoView would also scroll the page).
+	useEffect(() => {
+		const el = messagesRef.current;
+		if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+	}, [messages]);
+
+	// Preview URLs are created once per file list and released afterwards.
+	const filePreviews = useMemo(
+		() =>
+			selectedFiles.map((file) => ({
+				kind: getFileKind(file),
+				name: file.name,
+				url: URL.createObjectURL(file),
+			})),
+		[selectedFiles]
+	);
+	useEffect(
+		() => () => filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url)),
+		[filePreviews]
+	);
+
+	const handleBeforeUpload = (file: File, fileList: File[]) => {
+		// Called once per file; add the whole batch only on its first file.
+		if (file === fileList[0]) {
+			setSelectedFiles((prev) => [
+				...prev,
+				...fileList.filter(isAllowedFile),
+			]);
+			focusTextArea();
+		}
+		if (!isAllowedFile(file)) {
+			const kind = getFileKind(file);
+			message.error(
+				kind
+					? `${file.name} is larger than ${MAX_FILE_SIZE_MB[kind]} MB.`
+					: `${file.name} can't be sent: only JPG, PNG, GIF or WEBP images, MP4 or MOV videos, and PDFs.`
+			);
+		}
+		return false; // Prevent auto upload
+	};
+
+	const removeFile = (index: number) => {
+		setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const canSend = newMessage.trim() || selectedFiles.length > 0;
+
+	// The API stores the message under the admin's name and uploads the files.
+	const handleSend = async () => {
+		if (!groupId || !canSend || sending) return;
+		setSending(true);
+		try {
+			await sendGroupMessage(groupId, { message: newMessage.trim(), files: selectedFiles });
+			setSelectedFiles([]);
+			setNewMessage("");
+		} catch (err) {
+			message.error(errorMessage(err, "Couldn't send the message"));
+		} finally {
+			setSending(false);
+		}
+	};
+
+	const handleGroupClick = (group: GroupRow) => {
+		if (group.groupId !== groupId) {
+			setMessages([]);
+			setIsEditingGroupName(false);
+			setShowEmojiPicker(false);
+		}
+		setSelectedGroup(group);
+	};
+
+	const handleUpdateGroupName = async () => {
+		const newName = editedGroupName.trim();
+		if (!groupId || !newName) return;
+
+		try {
+			await renameGroup(groupId, newName);
+			message.success("Group renamed");
+			setIsEditingGroupName(false);
+			setSelectedGroup((prev) => prev && { ...prev, name: newName });
+			fetchGroups();
+		} catch (error) {
+			message.error(errorMessage(error, "Couldn't rename the group"));
+		}
+	};
+
+	const fetchGroupDetails = async () => {
+		if (!groupId) return;
+		try {
+			const snapshot = await get(dbRef(db, `GroupChats/${groupId}`));
+			setGroupCreatedAt(snapshot.val()?.created_at);
+
+			const res = await listGroupParticipants(groupId);
+			setGroupParticipants(itemsOf(res));
+			setIsGroupInfoVisible(true);
+		} catch (err) {
+			console.error("Failed to fetch group info", err);
+		}
+	};
+
+	const handleDeleteGroup = async () => {
+		if (!groupId) return;
+
+		try {
+			await deleteGroup(groupId);
+			message.success("Group deleted");
+			setIsGroupInfoVisible(false);
+			setSelectedGroup(null);
+			await fetchGroups();
+		} catch (err) {
+			message.error(errorMessage(err, "Couldn't delete the group"));
+		}
+	};
+
+	// Resolves a message to its attachment, if any. Messages sent before
+	// this update only carry image_url, so they fall back to type "image".
+	const renderAttachment = (msg: Partial<GroupMessage>): ReactNode => {
+		// Messages sent through the API carry attachments (url, fileName, type IMAGE, VIDEO or PDF).
+		const files = Object.values(msg.attachments || {});
+		if (files.length) {
+			return (
+				<div className="group-chat__attachments">
+					{files.map((file, index) => (
+						<div key={file.url || index}>
+							{renderAttachment({
+								file_url: file.url,
+								file_name: file.fileName,
+								type: String(file.type || "").toLowerCase() || "image",
+							})}
+						</div>
+					))}
+				</div>
+			);
+		}
+		const url = msg.file_url || msg.image_url || msg.imageUrls?.[0];
+		if (!url) return null;
+
+		const type = msg.type || "image";
+
+		if (type === "video") {
+			return (
+				<video
+					className="group-chat__video"
+					src={url}
+					controls
+					preload="metadata"
+				/>
+			);
+		}
+
+		if (type === "pdf") {
+			return (
+				<a
+					className="group-chat__file"
+					href={url}
+					target="_blank"
+					rel="noreferrer"
+				>
+					<span className="group-chat__file-icon">
+						<FileText size={18} />
+					</span>
+					<span className="group-chat__file-info">
+						<span className="group-chat__file-name">
+							{msg.file_name || "Document.pdf"}
+						</span>
+						<span className="group-chat__file-meta">
+							PDF{msg.file_size ? ` · ${formatFileSize(msg.file_size)}` : ""}
+						</span>
+					</span>
+				</a>
+			);
+		}
+
+		return (
+			<a href={url} target="_blank" rel="noreferrer">
+				<img className="group-chat__image" src={url} alt="Uploaded" />
+			</a>
+		);
+	};
+
+	const renderGroupList = () => {
+		if (loadingGroups) {
+			return (
+				<div className="group-chat__center">
+					<Spin />
+				</div>
+			);
+		}
+		if (groups.length === 0) {
+			return (
+				<div className="group-chat__center">
+					<Empty description="No groups yet" />
+				</div>
+			);
+		}
+		return groups.map((group) => (
+			<button
+				type="button"
+				key={group.groupId}
+				className={`group-chat__item${
+					group.groupId === groupId ? " group-chat__item--active" : ""
+				}`}
+				onClick={() => handleGroupClick(group)}
+			>
+				<Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
+				<div className="group-chat__item-body">
+					<div className="group-chat__item-top">
+						<span className="group-chat__item-name">{group.name}</span>
+						{group.last_message_time && (
+							<span className="group-chat__item-time">
+								{formatTime(group.last_message_time)}
+							</span>
+						)}
+					</div>
+					<span className="group-chat__item-preview">
+						{group.last_message || "No messages yet."}
+					</span>
+				</div>
+			</button>
+		));
+	};
+
+	const renderHeader = (group: GroupRow) => (
+		<div className="group-chat__header">
+			<Button
+				className="chat-layout__back"
+				type="text"
+				aria-label="Back to chats"
+				icon={<ArrowLeft size={16} />}
+				onClick={() => setSelectedGroup(null)}
+			/>
+			<Avatar className="group-chat__item-avatar" icon={<Users size={18} />} />
+
+			{isEditingGroupName ? (
+				<div className="group-chat__rename">
+					<Input
+						autoFocus
+						value={editedGroupName}
+						onChange={(e) => setEditedGroupName(e.target.value)}
+						onPressEnter={handleUpdateGroupName}
+					/>
+					<Button
+						type="primary"
+						onClick={handleUpdateGroupName}
+						disabled={!editedGroupName.trim()}
+					>
+						Save
+					</Button>
+					<Button onClick={() => setIsEditingGroupName(false)}>Cancel</Button>
+				</div>
+			) : (
+				<>
+					<h2 className="group-chat__title">{group.name}</h2>
+					<Tooltip title="Rename group">
+						<Button
+							type="text"
+							aria-label="Rename group"
+							icon={<Pencil size={16} />}
+							onClick={() => {
+								setEditedGroupName(group.name);
+								setIsEditingGroupName(true);
+							}}
+						/>
+					</Tooltip>
+					<Tooltip title="Group Info">
+						<Button
+							type="text"
+							className="group-chat__header-end"
+							aria-label="Group Info"
+							icon={<Info size={16} />}
+							onClick={fetchGroupDetails}
+						/>
+					</Tooltip>
+				</>
+			)}
+		</div>
+	);
+
+	const renderMessages = () => (
+		<div className="group-chat__messages" ref={messagesRef}>
+			{messages.length === 0 ? (
+				<div className="group-chat__center">
+					<Text type="secondary">No messages yet.</Text>
+				</div>
+			) : (
+				messages.map((msg) => {
+					const isSender = isMine(msg.sender);
+					const attachment = renderAttachment(msg);
+					return (
+						<div
+							key={msg.id}
+							className={`group-chat__row${
+								isSender ? " group-chat__row--mine" : ""
+							}`}
+						>
+							{!isSender && (
+								<Avatar size="small" className="group-chat__msg-avatar">
+									{initial(msg.sender_name)}
+								</Avatar>
+							)}
+							<div className="group-chat__bubble">
+								{!isSender && (
+									<span className="group-chat__sender">
+										{msg.sender_name || msg.sender}
+									</span>
+								)}
+								{attachment}
+								{msg.message && !attachment && (
+									<span className="group-chat__text">{msg.message}</span>
+								)}
+								<span className="group-chat__time">
+									{msg.timestamp ? formatTime(msg.timestamp) : "Sending..."}
+								</span>
+							</div>
+						</div>
+					);
+				})
+			)}
+		</div>
+	);
+
+	const renderComposer = () => (
+		<div className="group-chat__composer">
+			{selectedFiles.length > 0 && (
+				<div className="group-chat__previews">
+					{filePreviews.map((preview, index) => (
+						<div key={preview.url} className="group-chat__preview">
+							{preview.kind === "image" && (
+								<img src={preview.url} alt="preview" />
+							)}
+							{preview.kind === "video" && (
+								<video
+									className="group-chat__preview-media"
+									src={preview.url}
+									muted
+									preload="metadata"
+								/>
+							)}
+							{preview.kind === "pdf" && (
+								<div className="group-chat__preview-file">
+									<FileText size={20} />
+									<span className="group-chat__preview-name">
+										{preview.name}
+									</span>
+								</div>
+							)}
+							<CircleX
+								size={16}
+								className="group-chat__preview-remove"
+								onClick={() => removeFile(index)}
+							/>
+						</div>
+					))}
+				</div>
+			)}
+
+			{showEmojiPicker && (
+				<div className="group-chat__emoji">
+					<EmojiPicker
+						theme="light"
+						onEmojiClick={(emojiData) => {
+							setNewMessage((prev) => prev + emojiData.emoji);
+							setShowEmojiPicker(false);
+							focusTextArea();
+						}}
+					/>
+				</div>
+			)}
+
+			<div className="group-chat__input-row">
+				<Upload
+					multiple
+					accept={ACCEPTED_TYPES}
+					showUploadList={false}
+					beforeUpload={handleBeforeUpload}
+				>
+					<Tooltip title="Attach Images, Videos or PDFs">
+						<Button
+							shape="circle"
+							type="text"
+							aria-label="Attach files"
+							icon={<Paperclip size={18} />}
+						/>
+					</Tooltip>
+				</Upload>
+				<Tooltip title="Add Emoji">
+					<Button
+						shape="circle"
+						type="text"
+						aria-label="Add emoji"
+						icon={<Smile size={18} />}
+						onClick={() => setShowEmojiPicker((open) => !open)}
+					/>
+				</Tooltip>
+
+				<TextArea
+					id={TEXTAREA_ID}
+					className="group-chat__textarea"
+					autoSize={{ minRows: 1, maxRows: 5 }}
+					placeholder="Type a message"
+					value={newMessage}
+					onChange={(e) => setNewMessage(e.target.value)}
+					onPressEnter={(e) => {
+						if (!e.shiftKey) {
+							e.preventDefault();
+							handleSend();
+						}
+					}}
+				/>
+
+				<Button
+					type="primary"
+					shape="circle"
+					icon={<Send size={16} />}
+					aria-label="Send"
+					onClick={handleSend}
+					loading={sending}
+					disabled={!canSend}
+				/>
+			</div>
+		</div>
+	);
+
+	return (
+		<div
+			className={`group-chat chat-layout${
+				selectedGroup ? " chat-layout--open" : ""
+			}`}
+		>
+			{/* Left panel: groups — scrolls on its own */}
+			<aside className="group-chat__panel group-chat__list chat-layout__list">
+				<div className="group-chat__list-header">
+					<h2 className="group-chat__title">Chats</h2>
+					<Button icon={<ArrowLeft size={16} />} onClick={() => navigate("/")}>
+						Dashboard
+					</Button>
+				</div>
+				<div className="group-chat__list-scroll">{renderGroupList()}</div>
+			</aside>
+
+			{/* Right panel: conversation — only the messages scroll */}
+			<section className="group-chat__panel group-chat__conversation chat-layout__conversation">
+				{selectedGroup ? (
+					<>
+						{renderHeader(selectedGroup)}
+						{renderMessages()}
+						{renderComposer()}
+					</>
+				) : (
+					<div className="group-chat__center">
+						<Empty
+							image={Empty.PRESENTED_IMAGE_SIMPLE}
+							description="Select a group to start chatting."
+						/>
+					</div>
+				)}
+			</section>
+
+			<Modal
+				title="Group Info"
+				open={isGroupInfoVisible}
+				onCancel={() => setIsGroupInfoVisible(false)}
+				footer={[
+					canDelete && (
+						<Button key="delete" danger onClick={handleDeleteGroup}>
+							Delete Group
+						</Button>
+					),
+					<Button key="close" onClick={() => setIsGroupInfoVisible(false)}>
+						Close
+					</Button>,
+				]}
+			>
+				<p>
+					<strong>Group Name:</strong> {selectedGroup?.name}
+				</p>
+				<p>
+					<strong>Created At:</strong>{" "}
+					{groupCreatedAt ? new Date(groupCreatedAt).toLocaleString() : "N/A"}
+				</p>
+
+				<Divider style={{ margin: "var(--space-3) 0" }} />
+
+				<h4>Participants</h4>
+				<div className="group-chat__participants">
+					{groupParticipants.map((p) => (
+						<div key={p.key} className="group-chat__participant">
+							<Avatar className="group-chat__participant-avatar">
+								{initial(p.name)}
+							</Avatar>
+							<div>
+								<div className="group-chat__participant-name">{p.name}</div>
+								<div className="group-chat__participant-role">{p.role}</div>
+							</div>
+						</div>
+					))}
+				</div>
+			</Modal>
+		</div>
+	);
+};
+
+export default GroupChatPage;

@@ -1,0 +1,134 @@
+import dayjs from "@/lib/dayjs";
+import type { Dayjs } from "dayjs";
+
+/** A date or time as the API sends it, as pickers hold it, or empty. */
+export type DateInput = string | number | Date | Dayjs | null | undefined;
+
+// Dates and times as the business reads them: 11/10/2026 and 9:30 AM, in
+// Eastern time. The API sends and takes dates as YYYY-MM-DD and times as
+// 24-hour HH:mm; timestamps (created_at and the like) are full date-times.
+
+export const BUSINESS_TIME_ZONE = "America/New_York";
+export const DATE_FORMAT = "MM/DD/YYYY";
+export const TIME_FORMAT = "h:mm A";
+export const API_DATE_FORMAT = "YYYY-MM-DD";
+export const API_TIME_FORMAT = "HH:mm";
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+// Some records keep a date as US text: a contract's date (11/05/2026), or a
+// date on the hiring form (11-05-2026).
+const US_DATE = /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/;
+// A date-only field stored as a timestamp: midnight UTC, which means that calendar day.
+const MIDNIGHT_UTC = /^\d{4}-\d{2}-\d{2}T00:00:00(\.0+)?Z$/;
+const TIME_ONLY = /^\d{1,2}:\d{2}(:\d{2})?$/;
+
+/**
+ * A date to show: "11/10/2026". A date-only value (YYYY-MM-DD) is shown as
+ * it is, never shifted by a time zone; a timestamp is shown in Eastern time.
+ */
+export function formatDate(value: DateInput, fallback = "—"): string {
+  if (!value) return fallback;
+  if (typeof value === "string" && DATE_ONLY.test(value)) {
+    return dayjs(value, API_DATE_FORMAT).format(DATE_FORMAT);
+  }
+  if (typeof value === "string" && US_DATE.test(value)) {
+    return dayjs(value.replace(/-/g, "/"), "M/D/YYYY").format(DATE_FORMAT);
+  }
+  if (typeof value === "string" && MIDNIGHT_UTC.test(value)) {
+    return dayjs(value.slice(0, 10), API_DATE_FORMAT).format(DATE_FORMAT);
+  }
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.tz(BUSINESS_TIME_ZONE).format(DATE_FORMAT) : fallback;
+}
+
+/** A time to show: "9:30 AM", from "09:30", "21:05:00" or a timestamp. */
+export function formatTime(value: DateInput, fallback = "—"): string {
+  if (!value) return fallback;
+  if (typeof value === "string" && TIME_ONLY.test(value)) {
+    const parsed = dayjs(value, value.length > 5 ? "HH:mm:ss" : "HH:mm");
+    return parsed.isValid() ? parsed.format(TIME_FORMAT) : fallback;
+  }
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.tz(BUSINESS_TIME_ZONE).format(TIME_FORMAT) : fallback;
+}
+
+/** A moment to show: "11/10/2026 9:30 AM", in Eastern time. */
+export function formatDateTime(value: DateInput, fallback = "—"): string {
+  if (!value) return fallback;
+  const parsed = dayjs(value);
+  return parsed.isValid()
+    ? parsed.tz(BUSINESS_TIME_ZONE).format(`${DATE_FORMAT} ${TIME_FORMAT}`)
+    : fallback;
+}
+
+/**
+ * A New York wall time the API keeps in a timestamp's UTC fields, as it does
+ * for clock-ins, clock-outs and breaks: "2026-11-10T09:05:00.000Z" means
+ * 9:05 AM in New York. Shown as kept, never shifted: "9:05 AM". Also takes
+ * "09:05:00" and "2026-11-10 09:05:00".
+ */
+export function formatWallTime(value: DateInput, fallback = "—"): string {
+  if (!value) return fallback;
+  if (typeof value === "string" && TIME_ONLY.test(value)) return formatTime(value, fallback);
+  const parsed = dayjs.utc(value);
+  return parsed.isValid() ? parsed.format(TIME_FORMAT) : fallback;
+}
+
+/** The day of such a wall time (see formatWallTime): "11/10/2026". */
+export function formatWallDate(value: DateInput, fallback = "—"): string {
+  if (!value) return fallback;
+  const parsed = dayjs.utc(value);
+  return parsed.isValid() ? parsed.format(DATE_FORMAT) : fallback;
+}
+
+/** A date with its weekday, for headings: "Tuesday, 11/10/2026". */
+export function formatWeekdayDate(value: DateInput, fallback = "—"): string {
+  const day = fromApiDate(value);
+  return day ? `${day.format("dddd")}, ${day.format(DATE_FORMAT)}` : fallback;
+}
+
+/** A date for the API (YYYY-MM-DD) from a dayjs value, Date or string; null when empty. */
+export function toApiDate(value: DateInput): string | null {
+  if (!value) return null;
+  if (typeof value === "string" && DATE_ONLY.test(value)) return value;
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format(API_DATE_FORMAT) : null;
+}
+
+/** A time for the API (HH:mm) from a dayjs value; null when empty. */
+export function toApiTime(value: DateInput): string | null {
+  if (!value) return null;
+  if (typeof value === "string" && TIME_ONLY.test(value)) return value.slice(0, 5);
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format(API_TIME_FORMAT) : null;
+}
+
+/**
+ * A dayjs value for a date picker from a date the API sent: YYYY-MM-DD, US
+ * text (11/05/2026), or a timestamp. None of them shift with the browser's
+ * time zone. Null when empty or unreadable.
+ */
+export function fromApiDate(value: DateInput): Dayjs | null {
+  if (!value) return null;
+  const text = String(value);
+  let parsed: Dayjs;
+  if (US_DATE.test(text)) parsed = dayjs(text.replace(/-/g, "/"), "M/D/YYYY");
+  else if (DATE_ONLY.test(text.slice(0, 10)) && (text.length === 10 || MIDNIGHT_UTC.test(text))) {
+    parsed = dayjs(text.slice(0, 10), API_DATE_FORMAT);
+  } else {
+    // A real moment: the calendar day it is in Eastern time.
+    const moment = dayjs(text);
+    parsed = moment.isValid() ? dayjs(moment.tz(BUSINESS_TIME_ZONE).format(API_DATE_FORMAT), API_DATE_FORMAT) : moment;
+  }
+  return parsed.isValid() ? parsed : null;
+}
+
+/** A dayjs value for a time picker from an API time (HH:mm or HH:mm:ss); null when empty. */
+export function fromApiTime(value: DateInput): Dayjs | null {
+  if (!value) return null;
+  const parsed = dayjs(String(value).slice(0, 5), API_TIME_FORMAT);
+  return parsed.isValid() ? parsed : null;
+}
+
+/** Today's date in Eastern time, as YYYY-MM-DD. */
+export const todayInBusinessTz = () => dayjs().tz(BUSINESS_TIME_ZONE).format(API_DATE_FORMAT);

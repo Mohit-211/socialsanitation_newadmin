@@ -1,0 +1,345 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { Table, Button, Descriptions, Modal } from "antd";
+import dayjs from "@/lib/dayjs";
+import { ArrowLeft, MapPin } from "lucide-react";
+import { getVisitOverview } from "@/services/api/dashboardApi";
+import { dataOf } from "@/services/apiResult";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import PageHeader from "@/components/PageHeader";
+import { formatDate, formatWallTime } from "@/utils/datetime";
+import "./DayDetailsPage.scss";
+import type { TableColumnsType } from "antd";
+import type { CrewBreak, VisitCrewDay } from "@/types";
+import { useRouteParam } from "@/hooks/useRouteParam";
+
+const DayDetailsPage = () => {
+	const booking_id = useRouteParam("booking_id");
+	const navigate = useNavigate();
+	const { data, loading } = useApiQuery(() => getVisitOverview(booking_id).then(dataOf), [booking_id], {
+		skip: !booking_id,
+		errorText: "Couldn't load the visit's day",
+	});
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedBreaks, setSelectedBreaks] = useState<CrewBreak[]>([]);
+	const [selectedEmployeeName, setSelectedEmployeeName] = useState("");
+
+	const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+		if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
+
+		const toRad = (x: number) => (x * Math.PI) / 180;
+		const R = 6371; // Earth radius in km
+
+		const dLat = toRad(lat2 - lat1);
+		const dLon = toRad(lon2 - lon1);
+
+		const a =
+			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+			Math.cos(toRad(lat1)) *
+				Math.cos(toRad(lat2)) *
+				Math.sin(dLon / 2) *
+				Math.sin(dLon / 2);
+
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return `${(R * c).toFixed(2)} km`;
+	};
+
+	const columns: TableColumnsType<VisitCrewDay> = [
+		{
+			title: "Sr. No",
+			render: (_value, _record, index) => index + 1,
+		},
+		{
+			title: "Employee Name",
+			dataIndex: "name",
+		},
+		{
+			title: "Clock In",
+			dataIndex: "clock_in",
+			key: "clock_in",
+			render: (clock_in: string | null) =>
+				clock_in
+					? dayjs(`${data?.date} ${clock_in}`, "YYYY-MM-DD HH:mm:ss").format(
+							"hh:mm A"
+					  )
+					: "---",
+		},
+
+		{
+			title: "Clock Out",
+			dataIndex: "clock_out",
+			key: "clock_out",
+			render: (clock_out: string | null) =>
+				clock_out
+					? dayjs(`${data?.date} ${clock_out}`, "YYYY-MM-DD HH:mm:ss").format(
+							"hh:mm A"
+					  )
+					: "---",
+		},
+		{
+			title: "Clock-In Delay",
+			key: "clock_in_delay",
+			render: (_value, record) => {
+				if (!record.clock_in || !data?.date || !data?.time) return "---";
+
+				const bookingTime = dayjs(
+					`${data.date} ${data.time}`,
+					"YYYY-MM-DD HH:mm:ss"
+				);
+				const clockInTime = dayjs(
+					`${data.date} ${record.clock_in}`,
+					"YYYY-MM-DD HH:mm:ss"
+				);
+
+				if (!bookingTime.isValid() || !clockInTime.isValid()) return "---";
+
+				const diff = clockInTime.diff(bookingTime, "minute");
+
+				if (Math.abs(diff) <= 5) return "No delay";
+
+				const hrs = Math.floor(Math.abs(diff) / 60);
+				const mins = Math.abs(diff) % 60;
+				const label = diff < 0 ? "early" : "late";
+
+				if (hrs > 0) {
+					return `${hrs} hour${hrs > 1 ? "s" : ""}${
+						mins > 0 ? ` ${mins} minute${mins !== 1 ? "s" : ""}` : ""
+					} ${label}`;
+				}
+				return `${mins} minute${mins !== 1 ? "s" : ""} ${label}`;
+			},
+		},
+		{
+			title: "Total Hours",
+			dataIndex: "total_hours",
+			key: "total_hours",
+			render: (text: string | null) => text || "---",
+		},
+		{
+			title: "Breaks",
+			key: "breaks",
+			render: (_value, record) =>
+				record.number_of_breaks > 0 ? (
+					<Button
+						size="small"
+						type="link"
+						onClick={() => {
+							setSelectedBreaks(record.breaks);
+							setSelectedEmployeeName(record.name ?? "");
+							setIsModalOpen(true);
+						}}
+					>
+						View ({record.number_of_breaks})
+					</Button>
+				) : (
+					"---"
+				),
+		},
+
+		{
+			title: "Clock-in Distance",
+			key: "clock_in_distance",
+			render: (_value, record) => {
+				const lat = parseFloat(String(record.clock_in_lat));
+				const lng = parseFloat(String(record.clock_in_lang));
+				const distance = haversineDistance(
+					parseFloat(String(data?.address?.address_lat)),
+					parseFloat(String(data?.address?.address_long)),
+					lat,
+					lng
+				);
+
+				return lat && lng ? (
+					<>
+						{distance}{" "}
+						<a
+							href={`https://www.google.com/maps?q=${lat},${lng}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							title="View on Map"
+						>
+							<MapPin size={14} className="day-details__map-icon" />
+						</a>
+					</>
+				) : (
+					"---"
+				);
+			},
+		},
+		{
+			title: "Clock-out Distance",
+			key: "clock_out_distance",
+			render: (_value, record) => {
+				const lat = parseFloat(String(record.clock_out_lat));
+				const lng = parseFloat(String(record.clock_out_lang));
+				const distance = haversineDistance(
+					parseFloat(String(data?.address?.address_lat)),
+					parseFloat(String(data?.address?.address_long)),
+					lat,
+					lng
+				);
+
+				return lat && lng ? (
+					<>
+						{distance}{" "}
+						<a
+							href={`https://www.google.com/maps?q=${lat},${lng}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							title="View on Map"
+						>
+							<MapPin size={14} className="day-details__map-icon" />
+						</a>
+					</>
+				) : (
+					"---"
+				);
+			},
+		},
+	];
+
+	if (!data) return null;
+
+	return (
+		<>
+			<PageHeader
+				title={`Booking Overview – ${data.booking_unique_id}`}
+				actions={
+					<Button
+						type="default"
+						icon={<ArrowLeft size={16} />}
+						onClick={() => navigate(-1)}
+					>
+						Back
+					</Button>
+				}
+			/>
+
+			<div className="surface surface--padded">
+				<Descriptions
+					bordered
+					column={1}
+					size="small"
+					className="day-details__descriptions"
+				>
+					<Descriptions.Item label="Booking Date">
+						{formatDate(data.date)}
+					</Descriptions.Item>
+					<Descriptions.Item label="Booking Time">
+						{formatWallTime(data.time)}
+					</Descriptions.Item>
+
+					<Descriptions.Item label="Booking Name">
+						{data.booking_name}
+					</Descriptions.Item>
+					<Descriptions.Item label="Client Name">
+						{data.client_name}
+					</Descriptions.Item>
+					<Descriptions.Item label="Address">
+						{data.address?.address_line_1
+							? [
+									data.address.address_line_1,
+									data.address.city,
+									data.address.state,
+									data.address.country,
+							  ]
+									.filter(Boolean)
+									.join(", ")
+							: "N/A"}
+					</Descriptions.Item>
+				</Descriptions>
+
+				<Table
+					columns={columns}
+					dataSource={data.employees}
+					rowKey="id"
+					loading={loading}
+					pagination={false}
+					bordered
+				/>
+			</div>
+
+			<Modal
+				width={800}
+				title={`Break Details – ${selectedEmployeeName}`}
+				open={isModalOpen}
+				footer={null}
+				onCancel={() => setIsModalOpen(false)}
+			>
+				{selectedBreaks?.length > 0 ? (
+					<Table
+						columns={[
+							{
+								title: "Break Start (EST)",
+								dataIndex: "break_start_est",
+								key: "break_start_est",
+							},
+							{
+								title: "Break End (EST)",
+								dataIndex: "break_end_est",
+								key: "break_end_est",
+							},
+							{
+								title: "Duration",
+								dataIndex: "duration_minutes",
+								key: "duration_minutes",
+								render: (mins: string | null) => `${mins} minutes`,
+							},
+							{
+								title: "Status",
+								dataIndex: "status",
+								key: "status",
+								render: (status: string) => status || "---",
+							},
+							{
+								title: "Break Start Location",
+								key: "break_start_lat",
+								render: (_value, record) => {
+									if (record.break_start_lat && record.break_start_lng) {
+										return (
+											<a
+												href={`https://www.google.com/maps?q=${record.break_start_lat},${record.break_start_lng}`}
+												target="_blank"
+												rel="noopener noreferrer"
+											>
+												View on Map
+											</a>
+										);
+									}
+									return "---";
+								},
+							},
+
+							{
+								title: "Break End Location",
+								key: "break_end_lat",
+								render: (_value, record) => {
+									if (record.break_end_lat && record.break_end_lng) {
+										return (
+											<a
+												href={`https://www.google.com/maps?q=${record.break_end_lat},${record.break_end_lng}`}
+												target="_blank"
+												rel="noopener noreferrer"
+											>
+												View on Map
+											</a>
+										);
+									}
+									return "---";
+								},
+							},
+						]}
+						dataSource={selectedBreaks.map((entry, index) => ({ ...entry, key: index }))}
+						pagination={false}
+						bordered
+						size="small"
+					/>
+				) : (
+					<p>No break data available.</p>
+				)}
+			</Modal>
+		</>
+	);
+};
+
+export default DayDetailsPage;
