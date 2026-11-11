@@ -37,7 +37,7 @@ import { errorMessage, itemsOf } from "@/services/apiResult";
 import { PERMISSION, useCan } from "@/lib/session";
 import { getProfile } from "@/services/api/authApi";
 import db from "@/lib/firebase";
-import { formatTime } from "@/utils/datetime";
+import { formatDateTime, formatTime } from "@/utils/datetime";
 import { MAX_UPLOAD_MB, acceptOf, uploadKindOf, type UploadKind } from "@/utils/uploads";
 import type { Group, SessionUser, TeamParticipant } from "@/types";
 import "./GroupChatPage.scss";
@@ -635,7 +635,7 @@ const GroupChatPage = () => {
 				</p>
 				<p>
 					<strong>Created At:</strong>{" "}
-					{groupCreatedAt ? new Date(groupCreatedAt).toLocaleString() : "N/A"}
+					{formatDateTime(groupCreatedAt, "N/A")}
 				</p>
 
 				<Divider style={{ margin: "var(--space-3) 0" }} />

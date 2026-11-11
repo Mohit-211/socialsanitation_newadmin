@@ -93,8 +93,9 @@ const EmployeeEquipmentRecordsPage = () => {
   const [sendingAssignmentId, setSendingAssignmentId] = useState<number | null>(null);
 
   // Loads the month's records; sets state only once the request settles.
-  const loadRecords = () =>
-    listMonthlyEquipment({ month: selectedMonth, page, limit: pageSize, search: searchTerm })
+  // A new search passes its term, as the state still holds the old one.
+  const loadRecords = (search = searchTerm) =>
+    listMonthlyEquipment({ month: selectedMonth, page, limit: pageSize, search })
       .then((res) => {
         setRecords(res?.data?.data?.items || []);
         setPagination(res?.data?.data?.pagination || null);
@@ -102,11 +103,6 @@ const EmployeeEquipmentRecordsPage = () => {
       })
       .catch(() => message.error("Couldn't load the equipment records."))
       .finally(() => setLoading(false));
-
-  const fetchRecords = () => {
-    setLoading(true);
-    return loadRecords();
-  };
 
   useEffect(() => {
     loadRecords();
@@ -121,10 +117,13 @@ const EmployeeEquipmentRecordsPage = () => {
     setPage(1);
   };
 
+  // On another page, going back to page 1 reloads (with the new term);
+  // already on page 1, it loads here.
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setPage(1);
-    fetchRecords();
+    setLoading(true);
+    if (page !== 1) setPage(1);
+    else loadRecords(value);
   };
 
   const handleSendAssignmentEmail = async (assignment: MonthlyAssignment, employeeName: string | null) => {

@@ -66,7 +66,8 @@ const RestockRequestsPage = () => {
         );
     };
 
-    const allColumns: TableColumnsType<RequestRow> = [
+    // antd hides a column below its `responsive` breakpoints by itself.
+    const columns: TableColumnsType<RequestRow> = [
         {
             title: "S.No.",
             dataIndex: "index",
@@ -148,7 +149,6 @@ const RestockRequestsPage = () => {
             ),
         },
     ];
-    const columns = allColumns.filter(col => !col.responsive || col.responsive.includes('md')); // Basic responsive filter for simplicity
 
     const getData = async () => {
         try {
