@@ -62,8 +62,12 @@ const EditContractPage = () => {
   const note: { type: "info" | "warning"; title: string } = draft
     ? {
         type: "info",
+        // The price comes worked out from the estimate's recurring lines when
+        // the backend can read them; otherwise the office sets it.
         title: contract?.estimate_id
-          ? "Drafted from the client's signed estimate. Set the monthly price and date, check the rest, and save: that makes the PDF and sends it to the client for signature."
+          ? contract.total_monthly_price != null
+            ? "Drafted from the client's signed estimate, with a monthly price worked out from its recurring lines (the office's email shows how). Check the price and date, check the rest, and save: that makes the PDF and sends it to the client for signature."
+            : "Drafted from the client's signed estimate. Set the monthly price and date, check the rest, and save: that makes the PDF and sends it to the client for signature."
           : savingNote(contract?.status).title,
       }
     : savingNote(contract?.status);
