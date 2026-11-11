@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Attendance pages: daily list and monthly summary (AttendancePage.jsx),
-   the per-employee table (employees/components/EmployeeAttendance.jsx)
-   and the monthly calendar (AttendanceCalendarPage.jsx).
+   Attendance pages: daily list and monthly summary (AttendancePage.tsx),
+   the per-employee table (employees/components/EmployeeAttendance.tsx)
+   and the monthly calendar (AttendanceCalendarPage.tsx).
    ========================================================================== */
 
 /* Page header with a stacked block of filters on the right. */
@@ -111,7 +111,7 @@
   line-height: 2;
 }
 
-/* ---- Monthly calendar (AttendanceCalendarPage.jsx) ------------------- */
+/* ---- Monthly calendar (AttendanceCalendarPage.tsx) ------------------- */
 
 .attendance-calendar__cell {
   font-size: var(--text-xs);

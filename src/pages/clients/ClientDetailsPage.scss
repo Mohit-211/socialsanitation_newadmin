@@ -1,4 +1,4 @@
-// The client page (ClientDetailsPage.jsx): a header with the New menu, and
+// The client page (ClientDetailsPage.tsx): a header with the New menu, and
 // one tab per step of the client's flow, each with its list and New button.
 
 .client-flow__title {
@@ -99,7 +99,6 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
-
 
 // What a document was made from: its estimate, scope and calculation
 .client-flow__sources {

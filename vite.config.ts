@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
-// Every variable the app needs (see .env.example and src/config/env.js).
+// Every variable the app needs (see .env.example and src/config/env.ts).
 const REQUIRED_ENV = [
   "VITE_API_URL",
   "VITE_GOOGLE_MAPS_API_KEY",

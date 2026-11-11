@@ -6,7 +6,7 @@ import type { ClientFlow } from "@/types";
 const label = (row: ParentRow) => `${row.title} · ${statusTag(row.status).label}`;
 
 /**
- * What a new service request adds to (see ../addsTo.js). The picker: `value` is { estimate_id } or { quote_id } or {}, and
+ * What a new service request adds to (see ../addsTo.ts). The picker: `value` is { estimate_id } or { quote_id } or {}, and
  * `onChange` gets the same. `documents` are the client's (useClientDocuments).
  */
 export interface AddsToPickerProps {

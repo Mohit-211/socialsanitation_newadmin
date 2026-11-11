@@ -125,7 +125,7 @@
     border: 2px solid var(--color-bg);
 
     // Light tints of the theme colors, cycled per row
-    // (keep in sync with BAR_TONE_COUNT in DayOverviewPage.jsx).
+    // (keep in sync with BAR_TONE_COUNT in DayOverviewPage.tsx).
     &--tone-0 { background: color-mix(in srgb, var(--color-primary) 45%, var(--color-bg)); }
     &--tone-1 { background: color-mix(in srgb, var(--color-secondary) 25%, var(--color-bg)); }
     &--tone-2 { background: color-mix(in srgb, var(--color-warning) 30%, var(--color-bg)); }

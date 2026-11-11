@@ -4,7 +4,7 @@
    This file is the single source of truth for the app's look. Every color,
    font, radius, shadow and spacing value used by pages and components comes
    from the tokens below. antd reads the same tokens at startup
-   (src/theme/antdTheme.js), so antd components and custom styles stay in
+   (src/theme/antdTheme.ts), so antd components and custom styles stay in
    sync: change a value here and the whole app follows.
 
    Brand colors are light, so they are used as FILLS with dark "on" text.
@@ -183,7 +183,7 @@ samp {
    Shared building blocks
    ========================================================================== */
 
-/* Page heading. Use <PageHeader> (src/components/PageHeader.jsx), which
+/* Page heading. Use <PageHeader> (src/components/PageHeader.tsx), which
    renders these classes. */
 .page-title {
   font-family: var(--font-sans) !important;
@@ -283,7 +283,7 @@ samp {
   color: var(--color-warning-strong);
 }
 
-/* Row action buttons in tables. Use <IconAction> (src/components/IconAction.jsx). */
+/* Row action buttons in tables. Use <IconAction> (src/components/IconAction.tsx). */
 .icon-action.ant-btn {
   color: var(--color-primary-strong);
   border-color: var(--color-border);
@@ -305,7 +305,7 @@ samp {
   background: var(--color-error-subtle);
 }
 
-/* Placeholder while a page's code loads (src/components/PageLoader.jsx) */
+/* Placeholder while a page's code loads (src/components/PageLoader.tsx) */
 .page-loader {
   display: flex;
   align-items: center;

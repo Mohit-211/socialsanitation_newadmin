@@ -1,6 +1,6 @@
 // Group chat: a fixed-height page where the group list and the message
 // pane each scroll on their own. Mobile pane switching lives in index.css
-// (.chat-layout*). TeamsPage.jsx reuses these styles.
+// (.chat-layout*). TeamsPage.tsx reuses these styles.
 
 .group-chat {
 	display: flex;
