@@ -23,7 +23,7 @@ import StatusTag from "@/components/StatusTag";
 import { savingNote } from "@/utils/signing";
 import { pickedParent } from "./addsTo";
 import SignatureField from "@/components/SignatureField";
-import { COMPANY_LOGO_URL } from "@/config/brand";
+import { COMPANY_ADDRESS, COMPANY_LOGO_URL } from "@/config/brand";
 import { useRouteParam } from "@/hooks/useRouteParam";
 import type { Dayjs } from "dayjs";
 import type { TableColumnsType } from "antd";
@@ -520,9 +520,9 @@ const EditServiceRequestPage = () => {
             <br />
             SOCIAL SANITATION COMMERCIAL CLEANING SOLUTIONS
             <br />
-            5201 N 44TH ST
+            {COMPANY_ADDRESS.line1}
             <br />
-            Tampa FL 33610
+            {COMPANY_ADDRESS.line2}
           </div>
           <div>
             <strong>CLIENT</strong>

@@ -15,7 +15,7 @@ import {
 import { ChevronDown, GripVertical, Info, Plus, Trash2 } from "lucide-react";
 import ClientSelect from "@/components/ClientSelect";
 import SignatureField from "@/components/SignatureField";
-import { COMPANY_LOGO_URL } from "@/config/brand";
+import { COMPANY_ADDRESS, COMPANY_LOGO_URL } from "@/config/brand";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { listAddresses } from "@/services/api/addressApi";
 import { getNextInvoiceRef } from "@/services/api/invoiceApi";
@@ -604,9 +604,9 @@ const InvoiceEditor = ({
           <br />
           SOCIAL SANITATION COMMERCIAL CLEANING SOLUTIONS
           <br />
-          5201 N 44TH ST
+          {COMPANY_ADDRESS.line1}
           <br />
-          Tampa FL 33610
+          {COMPANY_ADDRESS.line2}
         </div>
         <div>
           <strong>
